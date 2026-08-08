@@ -178,7 +178,7 @@ const RULES: RuleDef[] = [
     area: 'athletic',
     priority: 95,
     cooldownDays: 10,
-    evaluate: (data, today) => {
+    evaluate: (data) => {
       const verts = data.measurements.filter((m) => m.vertIn !== undefined)
       if (verts.length < 2) return null
       const last = verts[verts.length - 1]
