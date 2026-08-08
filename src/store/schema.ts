@@ -18,6 +18,8 @@ const settingsSchema = z.object({
   restTimerEnabled: z.boolean(),
   lastExportAt: z.string().nullable(),
   onboarded: z.boolean(),
+  remindersEnabled: z.boolean(),
+  reminderTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/)).max(3),
 })
 
 const setLogSchema = z.object({
@@ -184,12 +186,18 @@ export const envelopeSchema = z.object({
 
 // ---------- Migrations ----------
 
-/**
- * migrations[n] upgrades an envelope from schema n to n+1.
- * Empty today (v1 is current); the rail exists so imports from any
- * older app version always land on the current shape.
- */
-const migrations: Record<number, (env: Record<string, unknown>) => Record<string, unknown>> = {}
+/** migrations[n] upgrades an envelope from schema n to n+1. */
+const migrations: Record<number, (env: Record<string, unknown>) => Record<string, unknown>> = {
+  // v1 → v2: reminder settings added
+  1: (env) => {
+    const e = env as { data?: { settings?: Record<string, unknown> } }
+    if (e.data?.settings) {
+      e.data.settings.remindersEnabled ??= false
+      e.data.settings.reminderTimes ??= ['11:30', '17:30', '20:30']
+    }
+    return env
+  },
+}
 
 export function migrate(env: unknown): Envelope {
   if (typeof env !== 'object' || env === null) {

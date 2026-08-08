@@ -1,17 +1,75 @@
+import { useState } from 'react'
 import { Sheet } from '../../components/Sheet'
 import { Toggle } from '../../components/ui'
 import { useAppStore } from '../../store/appStore'
 import { mondayOf } from '../../engine/calendar'
+import {
+  disableReminders,
+  enableReminders,
+  notificationSupport,
+  refreshReminders,
+} from '../../logic/reminders'
 
 const WD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const settings = useAppStore((s) => s.data.settings)
   const update = useAppStore((s) => s.update)
+  const [notifDenied, setNotifDenied] = useState(false)
+  const support = notificationSupport()
 
   return (
     <Sheet open={open} onClose={onClose} title="Settings">
       <div className="space-y-4 pb-6">
+        <div>
+          <Toggle
+            on={settings.remindersEnabled}
+            onChange={async (v) => {
+              setNotifDenied(false)
+              if (v) {
+                const ok = await enableReminders()
+                if (!ok) setNotifDenied(true)
+              } else {
+                disableReminders()
+              }
+            }}
+            label="Training reminders"
+            sub="Nudges on unfinished training days, plus a badge on the app icon until the session is done."
+          />
+          {notifDenied && (
+            <p className="mt-1.5 text-[11.5px] font-semibold text-danger">
+              Notifications are blocked{support === 'unsupported' ? ' (not supported here)' : ' — allow them in your browser/app settings, then flip this again'}.
+            </p>
+          )}
+          {settings.remindersEnabled && (
+            <div className="mt-2.5">
+              <div className="mb-1 text-[12px] font-bold text-ink-dim">Remind me around</div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {settings.reminderTimes.map((t, i) => (
+                  <input
+                    key={i}
+                    type="time"
+                    value={t}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      if (!v) return
+                      update((d) => {
+                        d.settings.reminderTimes[i] = v
+                      })
+                      refreshReminders()
+                    }}
+                    className="rounded-xl border border-edge bg-surface-2 px-2 py-2.5 text-center text-[13px] font-bold outline-none [color-scheme:dark]"
+                  />
+                ))}
+              </div>
+              <p className="mt-1.5 text-[10.5px] leading-snug text-ink-faint">
+                Reminders only fire on training days with no finished session. Background delivery works
+                best installed on Android; on iPhone you'll get the app-icon badge plus reminders when
+                you open or switch back to the app (no server = no iOS background push).
+              </p>
+            </div>
+          )}
+        </div>
         <div>
           <div className="mb-1 text-[12px] font-bold text-ink-dim">Phase start (Monday of week 1)</div>
           <input

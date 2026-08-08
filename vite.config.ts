@@ -11,6 +11,13 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+      },
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
         name: 'NAOD V3 — Hybrid Athlete',
@@ -33,10 +40,6 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
     }),
   ],

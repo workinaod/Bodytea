@@ -58,6 +58,25 @@ if (await q.count()) {
   await q.click()
   await page.waitForTimeout(300)
   await page.screenshot({ path: `${OUT}/10-guide.png` })
+  await page.getByRole('button', { name: 'Close' }).click()
+}
+
+// Focus mode: start the session and walk one set into a break
+const readiness = page.getByRole('button', { name: /Readiness check → start/ })
+const start = page.getByRole('button', { name: 'Start session', exact: true })
+if (await readiness.isVisible().catch(() => false)) {
+  await readiness.click()
+  await page.getByRole('button', { name: /^Start session$/ }).click()
+} else if (await start.isVisible().catch(() => false)) {
+  await start.click()
+}
+await page.waitForTimeout(400)
+await page.screenshot({ path: `${OUT}/11-focus.png` })
+const next = page.getByRole('button', { name: /NEXT SET|SET DONE/ })
+if (await next.isVisible().catch(() => false)) {
+  await next.click()
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: `${OUT}/12-break.png` })
 }
 
 await browser.close()

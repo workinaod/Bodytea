@@ -9,6 +9,7 @@ import { CoachScreen } from './screens/coach/CoachScreen'
 import { Onboarding } from './screens/Onboarding'
 import { ReconcileSheet } from './screens/ReconcileSheet'
 import { dailyCoachSweep } from './logic/actions'
+import { refreshReminders, syncReminderMeta } from './logic/reminders'
 import { mondayOf, todayISO } from './engine/calendar'
 
 export default function App() {
@@ -17,13 +18,29 @@ export default function App() {
   const [tab, setTab] = useState<TabId>('today')
 
   useEffect(() => {
-    if (onboarded) dailyCoachSweep()
-    // re-run the sweep when the app returns to the foreground on a new day
+    if (onboarded) {
+      dailyCoachSweep()
+      refreshReminders()
+    }
+    // re-run when the app returns to the foreground (possibly on a new day)
     const onVis = () => {
-      if (document.visibilityState === 'visible') dailyCoachSweep()
+      if (document.visibilityState === 'visible') {
+        dailyCoachSweep()
+        refreshReminders()
+      }
     }
     document.addEventListener('visibilitychange', onVis)
-    return () => document.removeEventListener('visibilitychange', onVis)
+    // keep the SW's reminder mirror + app badge in sync with state changes
+    let metaTimer: ReturnType<typeof setTimeout> | null = null
+    const unsub = useAppStore.subscribe(() => {
+      if (metaTimer) clearTimeout(metaTimer)
+      metaTimer = setTimeout(() => void syncReminderMeta(), 800)
+    })
+    return () => {
+      document.removeEventListener('visibilitychange', onVis)
+      unsub()
+      if (metaTimer) clearTimeout(metaTimer)
+    }
   }, [onboarded])
 
   if (!onboarded) return <Onboarding />

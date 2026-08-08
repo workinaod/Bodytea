@@ -32,16 +32,24 @@ test('full core loop: onboard → session → meals → debrief → export', asy
       await startBtn.click()
     }
 
-    // ---- Log a set on the first exercise ----
-    await expect(page.getByText(/sets ·/)).toBeVisible()
-    const check = page.locator('button:has-text("✓")').first()
-    await check.click()
+    // ---- Focus mode is the default session UI ----
+    await expect(page.getByText(/Set 1 of/)).toBeVisible()
+    const next = page.getByRole('button', { name: /NEXT SET|SET DONE/ })
+    await expect(next).toBeVisible()
+    await next.click()
+    // either the break screen appears (skip it) or the next set is up
+    const skipRest = page.getByRole('button', { name: /skip the rest/ })
+    if (await skipRest.isVisible().catch(() => false)) {
+      await skipRest.click()
+    }
 
-    // ---- Persistence: reload keeps the in-progress session ----
+    // ---- Persistence: reload keeps the in-progress session (focus mode) ----
     await page.reload()
-    await expect(page.getByText(/sets ·/)).toBeVisible()
+    await expect(page.getByText(/Set \d+ of/)).toBeVisible()
 
-    // ---- Finish → debrief ----
+    // ---- Switch to list view and finish → debrief ----
+    await page.getByRole('button', { name: /list/ }).click()
+    await expect(page.getByText(/sets ·/)).toBeVisible()
     await page.getByRole('button', { name: /Finish session/ }).click()
     await expect(page.getByText('Session debrief')).toBeVisible()
     await expect(page.getByText('Eat now')).toBeVisible()

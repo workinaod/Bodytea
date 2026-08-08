@@ -9,6 +9,7 @@ import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
 import { finishSession, startSession } from '../../logic/actions'
 import { SessionView } from './SessionView'
+import { FocusView } from './FocusView'
 import { ReadinessSheet } from './ReadinessSheet'
 import { SkipFlow } from './SkipFlow'
 import { DebriefSheet } from './DebriefSheet'
@@ -19,6 +20,7 @@ export function TodayScreen() {
   const [date, setDate] = useState(todayISO())
   const [readinessOpen, setReadinessOpen] = useState(false)
   const [skipOpen, setSkipOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'focus' | 'list'>('focus')
   const [guideId, setGuideId] = useState<string | null>(null)
   const [debrief, setDebrief] = useState<{ data: DebriefData; coachLine?: string } | null>(null)
 
@@ -122,14 +124,32 @@ export function TodayScreen() {
         </Card>
       )}
 
-      {inProgress && (
-        <SessionView
+      {inProgress && viewMode === 'focus' && (
+        <FocusView
           day={day}
           session={session}
           onOpenGuide={setGuideId}
           onFinish={handleFinish}
           onSkip={() => setSkipOpen(true)}
+          onListView={() => setViewMode('list')}
         />
+      )}
+      {inProgress && viewMode === 'list' && (
+        <>
+          <button
+            onClick={() => setViewMode('focus')}
+            className="w-full rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-[13px] font-black text-accent-soft"
+          >
+            ⛶ Back to focus mode
+          </button>
+          <SessionView
+            day={day}
+            session={session}
+            onOpenGuide={setGuideId}
+            onFinish={handleFinish}
+            onSkip={() => setSkipOpen(true)}
+          />
+        </>
       )}
 
       {/* Preview (not started yet) */}

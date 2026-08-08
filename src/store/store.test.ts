@@ -65,6 +65,22 @@ describe('backup round trip', () => {
   })
 })
 
+describe('migrations', () => {
+  it('upgrades a v1 backup (no reminder settings) to the current schema', () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { settings: Record<string, unknown> }
+    }
+    env.schemaVersion = 1
+    delete env.data.settings.remindersEnabled
+    delete env.data.settings.reminderTimes
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.schemaVersion).toBe(2)
+    expect(parsed.data.settings.remindersEnabled).toBe(false)
+    expect(parsed.data.settings.reminderTimes).toEqual(['11:30', '17:30', '20:30'])
+  })
+})
+
 describe('import validation', () => {
   it('rejects non-JSON', () => {
     expect(() => parseEnvelope('not json')).toThrow(/not valid JSON/)

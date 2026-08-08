@@ -33,13 +33,17 @@ export class LocalStorageDriver implements StorageDriver {
 
 const DB_NAME = 'naod-photos'
 const STORE = 'photos'
+const META_STORE = 'meta'
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1)
+    const req = indexedDB.open(DB_NAME, 2)
     req.onupgradeneeded = () => {
       if (!req.result.objectStoreNames.contains(STORE)) {
         req.result.createObjectStore(STORE)
+      }
+      if (!req.result.objectStoreNames.contains(META_STORE)) {
+        req.result.createObjectStore(META_STORE)
       }
     }
     req.onsuccess = () => resolve(req.result)
@@ -48,31 +52,56 @@ function openDB(): Promise<IDBDatabase> {
 }
 
 async function withStore<T>(
+  storeName: string,
   mode: IDBTransactionMode,
   fn: (store: IDBObjectStore) => IDBRequest<T>,
 ): Promise<T> {
   const db = await openDB()
   return new Promise<T>((resolve, reject) => {
-    const tx = db.transaction(STORE, mode)
-    const req = fn(tx.objectStore(STORE))
+    const tx = db.transaction(storeName, mode)
+    const req = fn(tx.objectStore(storeName))
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
   })
 }
 
+/**
+ * Small key-value mirror the service worker reads (the SW cannot access
+ * localStorage). Holds reminder config + today's training status.
+ */
+export interface ReminderMeta {
+  enabled: boolean
+  times: string[]
+  todayDate: string
+  todayScheduled: boolean
+  todayDone: boolean
+  todayTitle: string
+  lastNotifiedAt: string | null
+}
+
+export const MetaStore = {
+  async get(): Promise<ReminderMeta | null> {
+    const r = await withStore<ReminderMeta | undefined>(META_STORE, 'readonly', (s) => s.get('reminders'))
+    return r ?? null
+  },
+  async set(meta: ReminderMeta): Promise<void> {
+    await withStore(META_STORE, 'readwrite', (s) => s.put(meta, 'reminders'))
+  },
+}
+
 export const PhotoStore = {
   async put(id: string, blob: Blob): Promise<void> {
-    await withStore('readwrite', (s) => s.put(blob, id))
+    await withStore(STORE, 'readwrite', (s) => s.put(blob, id))
   },
   async get(id: string): Promise<Blob | null> {
-    const r = await withStore<Blob | undefined>('readonly', (s) => s.get(id))
+    const r = await withStore<Blob | undefined>(STORE, 'readonly', (s) => s.get(id))
     return r ?? null
   },
   async delete(id: string): Promise<void> {
-    await withStore('readwrite', (s) => s.delete(id))
+    await withStore(STORE, 'readwrite', (s) => s.delete(id))
   },
   async keys(): Promise<string[]> {
-    const r = await withStore<IDBValidKey[]>('readonly', (s) => s.getAllKeys())
+    const r = await withStore<IDBValidKey[]>(STORE, 'readonly', (s) => s.getAllKeys())
     return r.map(String)
   },
 }

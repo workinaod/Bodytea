@@ -372,6 +372,10 @@ export interface Settings {
   restTimerEnabled: boolean
   lastExportAt: string | null
   onboarded: boolean
+  /** Train-today reminder notifications. */
+  remindersEnabled: boolean
+  /** Local times "HH:MM" (up to 3) when reminders may fire on unfinished training days. */
+  reminderTimes: string[]
 }
 
 export interface AppData {
@@ -389,7 +393,7 @@ export interface AppData {
   coach: CoachLogState
 }
 
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export interface Envelope {
   schemaVersion: number
@@ -419,6 +423,8 @@ export function defaultSettings(phaseStartDate: ISODate, installedAt: ISODate = 
     restTimerEnabled: true,
     lastExportAt: null,
     onboarded: false,
+    remindersEnabled: false,
+    reminderTimes: ['11:30', '17:30', '20:30'],
   }
 }
 
