@@ -68,6 +68,8 @@ const weekSchema = z.object({
   ),
   tierPlacement: z.record(z.string(), weekday).optional(),
   ballThisWeek: z.boolean().nullable(),
+  ballDates: z.array(isoDate),
+  cnsSwapDates: z.array(isoDate),
   cardio: z.object({ exerciseId: z.string(), weekday }).nullable().optional(),
   gigFlags: z.object({
     djFriNight: z.boolean().optional(),
@@ -148,6 +150,7 @@ const coachSchema = z.object({
       situation: z.string().optional(),
       text: z.string(),
       excuseId: z.string().optional(),
+      weekISO: isoDate.optional(),
       debrief: z
         .object({
           date: isoDate,
@@ -194,6 +197,15 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     if (e.data?.settings) {
       e.data.settings.remindersEnabled ??= false
       e.data.settings.reminderTimes ??= ['11:30', '17:30', '20:30']
+    }
+    return env
+  },
+  // v2 → v3: same-day ball logging + CNS swap-outs per week
+  2: (env) => {
+    const e = env as { data?: { weeks?: Record<string, Record<string, unknown>> } }
+    for (const w of Object.values(e.data?.weeks ?? {})) {
+      w.ballDates ??= []
+      w.cnsSwapDates ??= []
     }
     return env
   },

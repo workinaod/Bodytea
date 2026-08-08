@@ -75,9 +75,30 @@ describe('migrations', () => {
     delete env.data.settings.remindersEnabled
     delete env.data.settings.reminderTimes
     const parsed = parseEnvelope(JSON.stringify(env))
-    expect(parsed.schemaVersion).toBe(2)
+    expect(parsed.schemaVersion).toBe(3)
     expect(parsed.data.settings.remindersEnabled).toBe(false)
     expect(parsed.data.settings.reminderTimes).toEqual(['11:30', '17:30', '20:30'])
+  })
+
+  it('upgrades a v2 backup (weeks without ball fields) to v3', () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { weeks: Record<string, Record<string, unknown>> }
+    }
+    env.schemaVersion = 2
+    env.data.weeks['2026-08-10'] = {
+      mondayISO: '2026-08-10',
+      tier: 1,
+      tierPickedAt: null,
+      tierChanges: [],
+      ballThisWeek: null,
+      gigFlags: {},
+      badSleepDates: [],
+    }
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.schemaVersion).toBe(3)
+    expect(parsed.data.weeks['2026-08-10'].ballDates).toEqual([])
+    expect(parsed.data.weeks['2026-08-10'].cnsSwapDates).toEqual([])
   })
 })
 

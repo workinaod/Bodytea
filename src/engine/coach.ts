@@ -221,6 +221,45 @@ export function excuseAccepted(opts: {
   return false
 }
 
+// ---------- Tier-drop record hygiene ----------
+
+const TIER_DROP_SITUATIONS = new Set(['tier-drop-planned', 'tier-drop-midweek'])
+
+/** Remove this week's tier-drop feed items (dedupe on re-drop, cleanup on revert). */
+export function pruneTierDropFeed(d: AppData, monday: ISODate): void {
+  d.coach.feed = d.coach.feed.filter(
+    (f) => !(f.weekISO === monday && f.situation && TIER_DROP_SITUATIONS.has(f.situation)),
+  )
+}
+
+/** Remove this week's tier-drop excuses (only on an untrained revert). */
+export function pruneTierDropExcuses(d: AppData, monday: ISODate): void {
+  d.excuses = d.excuses.filter(
+    (e) => !(e.action === 'tier-drop' && mondayOf(e.date) === monday),
+  )
+  for (const w of Object.values(d.weeks)) {
+    if (w.mondayISO === monday) {
+      for (const c of w.tierChanges) delete c.excuseId
+    }
+  }
+}
+
+/**
+ * Was any session actually performed under the dropped tier? A drop
+ * becomes permanent record once training happened on it; an untrained
+ * revert wipes the slate.
+ */
+export function trainedInDroppedTier(d: AppData, monday: ISODate): boolean {
+  const week = d.weeks[monday]
+  if (!week) return false
+  const firstDrop = week.tierChanges.find((c) => c.to > c.from)
+  if (!firstDrop) return false
+  const dropDate = firstDrop.at.slice(0, 10)
+  return Object.values(d.sessions).some(
+    (s) => mondayOf(s.date) === monday && s.status !== 'skipped' && s.date >= dropDate,
+  )
+}
+
 // ---------- Fallback-week monitor ----------
 
 /** Tier 2/3 weeks among the trailing `window` week states (incl. current). */

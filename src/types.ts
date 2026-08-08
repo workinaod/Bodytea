@@ -224,8 +224,12 @@ export interface WeekState {
   tierChanges: { at: string; from: Tier; to: Tier; excuseId?: string }[]
   /** Tier 2/3 day placement (weekday per role). Explosive can move, never be removed. */
   tierPlacement?: Partial<Record<TierDayRole, Weekday>>
-  /** Playing ball this week? null = unanswered. */
+  /** Weekly forecast: playing ball this week? null = unanswered. */
   ballThisWeek: boolean | null
+  /** Days ball was actually played — logged same-day from the Today tab. */
+  ballDates: ISODate[]
+  /** CNS days whose speed work was swapped out (plan-sanctioned after a hard run). */
+  cnsSwapDates: ISODate[]
   /** Scheduled cardio backup (replaces ball on no-ball weeks). */
   cardio?: { exerciseId: string; weekday: Weekday } | null
   gigFlags: {
@@ -326,6 +330,8 @@ export interface CoachFeedItem {
   situation?: CoachSituation
   text: string
   excuseId?: string
+  /** Week this item is about (Monday ISO) — lets reverts prune the record. */
+  weekISO?: ISODate
   debrief?: DebriefData
 }
 
@@ -393,7 +399,7 @@ export interface AppData {
   coach: CoachLogState
 }
 
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 export interface Envelope {
   schemaVersion: number
@@ -435,6 +441,8 @@ export function defaultWeekState(mondayISO: ISODate): WeekState {
     tierPickedAt: null,
     tierChanges: [],
     ballThisWeek: null,
+    ballDates: [],
+    cnsSwapDates: [],
     cardio: null,
     gigFlags: {},
     badSleepDates: [],

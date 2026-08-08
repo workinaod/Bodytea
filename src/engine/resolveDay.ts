@@ -61,6 +61,36 @@ function twoConsecutiveBadNightsBefore(week: WeekState, dateISO: ISODate): boole
   return all.has(d1) && all.has(d2)
 }
 
+/**
+ * The "at least ONE cardio session" rule, made mandatory. Required on a
+ * Tier-1 week when no ball has been logged AND either the forecast says
+ * no ball or the week has reached Thursday without a run — until a
+ * cardio-backup session is completed or scheduled.
+ */
+export function cardioRequiredForWeek(data: AppData, dateISO: ISODate): boolean {
+  const week = weekStateFor(data, dateISO)
+  if (week.tier !== 1) return false // Tier 2/3: "skip the formal cardio"
+  if (week.ballDates.length > 0) return false
+  const wd = weekdayOf(dateISO)
+  const lateWeek = wd >= 4 || wd === 0
+  if (week.ballThisWeek !== false && !lateWeek) return false
+  // already satisfied by a completed cardio session this week?
+  const monday = mondayOf(dateISO)
+  for (let i = 0; i < 7; i++) {
+    const s = data.sessions[addDaysISO(monday, i)]
+    if (s && s.templateId === 'cardio' && s.status !== 'skipped') return false
+  }
+  return true
+}
+
+/** Cheap check: is `date` a CNS day for its tier? (no full resolution — avoids recursion) */
+function resolveDayShallowCns(data: AppData, dateISO: ISODate): boolean {
+  const week = weekStateFor(data, dateISO)
+  const templateId = tierTemplateId(week.tier, weekdayOf(dateISO), week)
+  if (!templateId) return false
+  return getTemplate(templateId).cns ?? false
+}
+
 export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   const weekday = weekdayOf(dateISO)
   const week = weekStateFor(data, dateISO)
@@ -70,6 +100,25 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   )
   const banners: DayBanner[] = []
   const phaseComplete = weekIndex > 16
+
+  // Same-day ball reality (yesterday may live in the previous week's state)
+  const ballToday = week.ballDates.includes(dateISO)
+  const yesterdayISO = addDaysISO(dateISO, -1)
+  const ballYesterday = weekStateFor(data, yesterdayISO).ballDates.includes(yesterdayISO)
+  if (ballToday) {
+    banners.push({
+      id: 'ball-today',
+      text: "🏀 Ball logged today — that's this week's conditioning. Don't stack extra cardio on top.",
+      tone: 'success',
+    })
+    if (!resolveDayShallowCns(data, dateISO) && resolveDayShallowCns(data, addDaysISO(dateISO, 1))) {
+      banners.push({
+        id: 'ball-eve-of-cns',
+        text: "Tomorrow is a max-effort speed day. If today's run was hard, tomorrow will offer a plan-sanctioned swap to lifts only.",
+        tone: 'info',
+      })
+    }
+  }
 
   const base: Omit<ResolvedDay, 'templateId' | 'title' | 'tagline' | 'kind' | 'cns' | 'exercises' | 'note'> = {
     date: dateISO,
@@ -85,7 +134,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   }
 
   // --- Scheduled cardio backup lands on its chosen weekday ---
-  if (week.cardio && week.cardio.weekday === weekday) {
+  // (dissolves if ball actually got played — backups replace ball, never stack)
+  if (week.cardio && week.cardio.weekday === weekday && week.ballDates.length === 0) {
     const opt = CARDIO_OPTIONS.find((c) => c.exerciseId === week.cardio!.exerciseId)
     const def = getExercise(week.cardio.exerciseId)
     if (weekday === 4) {
@@ -116,15 +166,38 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     }
   }
 
+  const cardioRequired = cardioRequiredForWeek(data, dateISO)
+
+  // --- Mandatory cardio: Thursday flips from mobility to the backup
+  //     chooser ONLY when the user declared a no-ball week (with no
+  //     forecast, late-week no-ball stays a nag — Saturday ball is still
+  //     possible in the same-day model) ---
+  if (weekday === 4 && week.tier === 1 && week.ballThisWeek === false && cardioRequired && !week.cardio) {
+    banners.push({
+      id: 'cardio-required',
+      text: 'No ball logged this week — the backup session is REQUIRED, not optional. Pick one below; it replaces mobility today (or move it in the Week tab). Log a run and this disappears.',
+      tone: 'warn',
+    })
+    return {
+      ...base,
+      templateId: null,
+      title: 'Cardio Backup — required',
+      tagline: 'Replaces basketball this week. Option A if tired, Option B if fresh.',
+      kind: 'cardio-backup',
+      cns: false,
+      exercises: [],
+      note: 'The rule: if no ball that week, do at least ONE of these. They replace ball — never stack them on top.',
+    }
+  }
+
   const templateId = tierTemplateId(week.tier, weekday, week)
 
   // --- Rest day (includes tier 2/3 non-training days) ---
   if (!templateId) {
-    // Thursday cardio nag on no-ball weeks
-    if (weekday === 4 && week.ballThisWeek === false && !week.cardio) {
+    if (cardioRequired && !week.cardio) {
       banners.push({
         id: 'cardio-nag',
-        text: 'No ball this week and no cardio backup scheduled. The rule: at least ONE session. Pick one in the Week tab.',
+        text: 'No ball logged this week and no backup scheduled. The rule: at least ONE session — Thursday holds the slot, or pick a day in the Week tab.',
         tone: 'warn',
       })
     }
@@ -206,6 +279,23 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     })
   }
 
+  // --- Same-day ball rules (PDF: never speed work pre-fatigued) ---
+  const isCns = template.cns ?? false
+  if (isCns && ballYesterday && !week.cnsSwapDates.includes(dateISO)) {
+    banners.push({
+      id: 'ball-before-cns',
+      text: '🏀 You ran yesterday. If it was a hard run, today\'s max-effort speed work is pre-fatigued — swapping it out for lifts only is plan-sanctioned (button below).',
+      tone: 'warn',
+    })
+  }
+  if (isCns && week.cnsSwapDates.includes(dateISO)) {
+    exercises = exercises.filter((e) => e.kind !== 'sprint' && e.kind !== 'jump')
+    banners.push({
+      id: 'cns-swapped',
+      text: 'Speed work swapped out today (plan-sanctioned after a hard run). Lifts only — the explosive quality already got trained on the court.',
+      tone: 'info',
+    })
+  }
   // --- Two consecutive bad-sleep nights ---
   if (twoConsecutiveBadNightsBefore(week, dateISO) && template.kind === 'session') {
     exercises = applyBadSleepCut(exercises)
@@ -223,6 +313,17 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     banners.push({
       id: 'readiness',
       text: 'Readiness downgrade active: explosive volume −1/3, lifts light. Fast and fresh beats tired and grinding.',
+      tone: 'warn',
+    })
+  }
+
+  // Cardio still owed: nudge on the week's low-stress days (tier-1 rest
+  // Sunday and no-forecast Thursday mobility ride this path, not the
+  // null-template one)
+  if (cardioRequired && !week.cardio && (template.kind === 'rest' || template.kind === 'mobility')) {
+    banners.push({
+      id: 'cardio-nag',
+      text: 'No ball logged this week and no backup scheduled. The rule: at least ONE session — pick one in the Week tab, or log the run you played.',
       tone: 'warn',
     })
   }

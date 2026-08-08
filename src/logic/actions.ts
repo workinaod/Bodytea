@@ -18,6 +18,9 @@ import { getTemplate } from '../plan/templates'
 import {
   anyGigFlag,
   busyButMealsLogged,
+  pruneTierDropExcuses,
+  pruneTierDropFeed,
+  trainedInDroppedTier,
   coachMessageFor,
   contradictionsOnSessionFinish,
   escalationLevel,
@@ -42,6 +45,7 @@ export function pushCoachMessage(
   vars: Record<string, string | number> = {},
   poolOverride?: string,
   excuseId?: string,
+  weekISO?: string,
 ): string {
   const data = store().data
   const msg = coachMessageFor(data, situation, todayISO(), vars, poolOverride)
@@ -53,6 +57,7 @@ export function pushCoachMessage(
       situation,
       text: msg.text,
       excuseId,
+      weekISO,
     })
     d.coach.shownMessageIds = pushShown(d.coach.shownMessageIds, msg.shownId)
   })
@@ -368,17 +373,54 @@ export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: Excus
   })
 
   if (isDrop) {
+    // one live drop message per week — a re-drop replaces, never stacks
+    store().update((d) => pruneTierDropFeed(d, monday))
     if (isPlannedPick || excuseInfo?.proofPhotoId) {
-      pushCoachMessage('tier-drop-planned', { tier: to }, undefined, excuseId)
+      pushCoachMessage('tier-drop-planned', { tier: to }, undefined, excuseId, monday)
     } else {
-      pushCoachMessage('tier-drop-midweek', { tier: to }, undefined, excuseId)
+      pushCoachMessage('tier-drop-midweek', { tier: to }, undefined, excuseId, monday)
     }
     const fallbacks = fallbackWeekCount(store().data, todayISO())
     const nagged = store().data.coach.feed.some(
       (f) => f.situation === 'chronic-fallback' && daysBetween(f.at.slice(0, 10), todayISO()) < 7,
     )
     if (fallbacks >= 4 && !nagged) pushCoachMessage('chronic-fallback', { count: fallbacks })
+  } else {
+    // Revert upward: an untrained drop leaves no record — the messages and
+    // excuses disappear. Train even once in the dropped tier and it's permanent.
+    store().update((d) => {
+      if (!trainedInDroppedTier(d, monday)) {
+        pruneTierDropFeed(d, monday)
+        pruneTierDropExcuses(d, monday)
+      }
+    })
   }
+}
+
+// ---------- Same-day ball / cardio ----------
+
+export function toggleBallToday(date: ISODate): void {
+  store().updateWeek(date, (w) => {
+    w.ballDates = w.ballDates.includes(date)
+      ? w.ballDates.filter((d) => d !== date)
+      : [...w.ballDates, date]
+  })
+}
+
+/** Swap a CNS day's speed work out (plan-sanctioned after a hard run). */
+export function toggleCnsSwap(date: ISODate): void {
+  store().updateWeek(date, (w) => {
+    w.cnsSwapDates = w.cnsSwapDates.includes(date)
+      ? w.cnsSwapDates.filter((d) => d !== date)
+      : [...w.cnsSwapDates, date]
+  })
+}
+
+/** Pick the required cardio option for a day (from the Today chooser). */
+export function chooseCardio(date: ISODate, exerciseId: string): void {
+  store().updateWeek(date, (w) => {
+    w.cardio = { exerciseId, weekday: weekdayOf(date) }
+  })
 }
 
 // ---------- Reconcile resolutions ----------

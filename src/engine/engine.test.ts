@@ -291,13 +291,16 @@ describe('resolveDay integration', () => {
     expect(ids(thu.exercises)).toEqual(['hill-sprint'])
   })
 
-  it('no-ball week without scheduled backup nags on Thursday', () => {
+  it('tier-1 no-ball week nags on the rest day; tier 2 stays quiet (skip formal cardio)', () => {
     const data = makeData()
     const monday = mondayOf(START)
+    data.weeks[monday] = { ...defaultWeekState(monday), ballThisWeek: false }
+    const sun = resolveDay('2026-08-16', data)
+    expect(sun.banners.some((b) => b.id === 'cardio-nag')).toBe(true)
+
     data.weeks[monday] = { ...defaultWeekState(monday), tier: 2, ballThisWeek: false }
-    // Thursday is a rest day in tier 2 → nag banner rides on the rest day
     const thu = resolveDay('2026-08-13', data)
-    expect(thu.banners.some((b) => b.id === 'cardio-nag')).toBe(true)
+    expect(thu.banners.some((b) => b.id === 'cardio-nag')).toBe(false)
   })
 
   it('phase completes after week 16 but training loops on', () => {
@@ -315,6 +318,74 @@ describe('resolveDay integration', () => {
     const mv = minimumViableFor(getTemplate(day.templateId!), day.exercises)
     expect(mv.exercises.length).toBeGreaterThanOrEqual(2)
     expect(ids(mv.exercises)).toContain('max-velocity-sprint')
+  })
+})
+
+describe('same-day ball + mandatory cardio', () => {
+  it('declared no-ball week: Thursday flips to the required cardio chooser', () => {
+    const data = makeData()
+    const monday = mondayOf(START)
+    data.weeks[monday] = { ...defaultWeekState(monday), ballThisWeek: false }
+    const thu = resolveDay('2026-08-13', data)
+    expect(thu.kind).toBe('cardio-backup')
+    expect(thu.exercises.length).toBe(0)
+    expect(thu.banners.some((b) => b.id === 'cardio-required')).toBe(true)
+  })
+
+  it('logging a ball day clears the requirement and dissolves scheduled backups', () => {
+    const data = makeData()
+    const monday = mondayOf(START)
+    data.weeks[monday] = {
+      ...defaultWeekState(monday),
+      ballThisWeek: false,
+      ballDates: ['2026-08-11'],
+      cardio: { exerciseId: 'hill-sprint', weekday: 4 },
+    }
+    const thu = resolveDay('2026-08-13', data)
+    expect(thu.kind).toBe('mobility') // back to normal Thursday
+    const tue = resolveDay('2026-08-11', data)
+    expect(tue.banners.some((b) => b.id === 'ball-today')).toBe(true)
+  })
+
+  it('no forecast + late week: nag banner, no forced takeover', () => {
+    const data = makeData()
+    const thu = resolveDay('2026-08-13', data) // ballThisWeek null
+    expect(thu.kind).toBe('mobility')
+    const sun = resolveDay('2026-08-16', data)
+    expect(sun.banners.some((b) => b.id === 'cardio-nag')).toBe(true)
+  })
+
+  it('ball yesterday offers a CNS swap; swapping strips sprints and jumps only', () => {
+    const data = makeData()
+    const monday = mondayOf(START)
+    // ball Sunday (previous week) before Monday CNS
+    const prevMonday = mondayOf('2026-08-09')
+    data.weeks[prevMonday] = { ...defaultWeekState(prevMonday), ballDates: ['2026-08-09'] }
+    let mon = resolveDay('2026-08-10', data)
+    expect(mon.banners.some((b) => b.id === 'ball-before-cns')).toBe(true)
+
+    data.weeks[monday] = { ...defaultWeekState(monday), cnsSwapDates: ['2026-08-10'] }
+    mon = resolveDay('2026-08-10', data)
+    expect(mon.banners.some((b) => b.id === 'cns-swapped')).toBe(true)
+    expect(mon.exercises.some((e) => e.kind === 'sprint' || e.kind === 'jump')).toBe(false)
+    expect(mon.exercises.some((e) => e.exerciseId === 'romanian-deadlift')).toBe(true)
+  })
+
+  it('ball on the eve of a CNS day warns ahead', () => {
+    const data = makeData()
+    const monday = mondayOf('2026-08-09')
+    data.weeks[monday] = { ...defaultWeekState(monday), ballDates: ['2026-08-09'] }
+    const sun = resolveDay('2026-08-09', data)
+    expect(sun.banners.some((b) => b.id === 'ball-eve-of-cns')).toBe(true)
+  })
+
+  it('tier 2/3 weeks never require formal cardio (PDF: skip it)', () => {
+    const data = makeData()
+    const monday = mondayOf(START)
+    data.weeks[monday] = { ...defaultWeekState(monday), tier: 2, ballThisWeek: false }
+    const thu = resolveDay('2026-08-13', data)
+    expect(thu.kind).toBe('rest')
+    expect(thu.banners.some((b) => b.id === 'cardio-required')).toBe(false)
   })
 })
 

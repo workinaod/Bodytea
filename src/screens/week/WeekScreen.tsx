@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { ResolvedDay, Tier, TierDayRole, Weekday } from '../../types'
 import { useAppStore } from '../../store/appStore'
-import { resolveDay } from '../../engine/resolveDay'
+import { cardioRequiredForWeek, resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatShort, mondayOf, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { Card, Chip, SectionTitle, Toggle } from '../../components/ui'
@@ -50,6 +50,18 @@ export function WeekScreen() {
     if (d.date < data.settings.installedAt) return { dot: 'bg-edge', label: 'before the app' }
     if (d.date < today) return { dot: 'bg-danger/50', label: 'unaccounted' }
     return { dot: 'bg-surface-2 border border-edge', label: 'upcoming' }
+  }
+
+  function markersFor(d: ResolvedDay): string[] {
+    const out: string[] = []
+    const wd = weekdayOf(d.date)
+    if (week?.ballDates.includes(d.date)) out.push('🏀 ball')
+    if ((wd === 5 && week?.gigFlags.djFriNight) || (wd === 6 && week?.gigFlags.djSatNight)) out.push('🎧 gig')
+    if (wd === 1 && week?.gigFlags.longShiftBeforeMon) out.push('⚡ −1 jump set')
+    if (week?.cnsSwapDates.includes(d.date)) out.push('⇄ lifts only')
+    if (d.banners.some((b) => b.id === 'bad-sleep')) out.push('😴 −⅓ vol')
+    if (d.isDeload && d.kind === 'session') out.push('deload ½')
+    return out
   }
 
   function handleTierTap(to: Tier) {
@@ -167,10 +179,16 @@ export function WeekScreen() {
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${st.dot}`} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[13.5px] font-bold">{d.title}</div>
-                  <div className="text-[11px] font-semibold text-ink-faint">
-                    {st.label}
-                    {d.isDeload && d.kind === 'session' ? ' · deload volume' : ''}
-                  </div>
+                  <div className="text-[11px] font-semibold text-ink-faint">{st.label}</div>
+                  {markersFor(d).length > 0 && (
+                    <div className="mt-0.5 flex flex-wrap gap-1">
+                      {markersFor(d).map((m) => (
+                        <span key={m} className="rounded-full border border-gold/30 bg-gold/8 px-1.5 py-px text-[9.5px] font-bold text-gold">
+                          {m}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <span className="text-ink-faint">▸</span>
               </div>
@@ -225,12 +243,15 @@ export function WeekScreen() {
       <SectionTitle>Basketball / cardio</SectionTitle>
       <Card className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-[13.5px] font-bold">Playing ball this week?</span>
+          <div>
+            <div className="text-[13.5px] font-bold">Expecting ball this week?</div>
+            <div className="text-[10.5px] text-ink-faint">Log actual runs on the day — Today tab, 🏀 chip.</div>
+          </div>
           <div className="flex gap-1.5">
             {[true, false].map((v) => (
               <button
                 key={String(v)}
-                onClick={() => updateWeek(weekStart, (w) => { w.ballThisWeek = v; if (v) w.cardio = null })}
+                onClick={() => updateWeek(weekStart, (w) => { w.ballThisWeek = v })}
                 className={`rounded-lg px-4 py-2 text-[12px] font-bold ${
                   week?.ballThisWeek === v ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
                 }`}
@@ -240,10 +261,24 @@ export function WeekScreen() {
             ))}
           </div>
         </div>
-        {week?.ballThisWeek === false && (
+
+        {(week?.ballDates.length ?? 0) > 0 ? (
+          <p className="rounded-xl border border-lime/30 bg-lime/8 px-3 py-2 text-[12px] font-bold text-lime">
+            🏀 Covered — ball logged {week!.ballDates.map((d) => WD_LABEL[weekdayOf(d)]).join(', ')}. No
+            backup owed.
+          </p>
+        ) : (
           <>
-            <p className="text-[12px] leading-snug text-gold">
-              No ball = at least ONE backup session. It replaces basketball, it doesn't stack on top.
+            <p className={`rounded-xl border px-3 py-2 text-[12px] font-bold ${
+              cardioRequiredForWeek(data, addDaysISO(weekStart, 3))
+                ? 'border-gold/30 bg-gold/8 text-gold'
+                : 'border-edge bg-surface-2 text-ink-dim'
+            }`}>
+              {cardioRequiredForWeek(data, addDaysISO(weekStart, 3))
+                ? week?.cardio
+                  ? 'Backup scheduled ✓ — it replaces ball, never stacks on top.'
+                  : 'REQUIRED: no ball logged → one backup session this week. Thursday holds the slot until you pick.'
+                : 'If the ball doesn\'t happen, one backup session is the rule. It replaces ball, never stacks on top.'}
             </p>
             {(['A', 'B', 'circuit'] as const).map((g) => (
               <div key={g}>

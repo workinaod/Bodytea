@@ -186,6 +186,54 @@ describe('proof acceptance rules', () => {
   })
 })
 
+describe('tier-drop record hygiene', () => {
+  async function withDrop() {
+    const { pruneTierDropFeed, pruneTierDropExcuses, trainedInDroppedTier } = await import('./coach')
+    const d = makeData()
+    const monday = '2026-08-10'
+    d.weeks[monday] = {
+      ...defaultWeekState(monday),
+      tier: 2,
+      tierChanges: [{ at: '2026-08-11T09:00:00.000Z', from: 1, to: 2, excuseId: 'x-drop' }],
+    }
+    d.excuses.push({
+      id: 'x-drop', at: '2026-08-11T09:00:00.000Z', date: monday, scope: 'week',
+      action: 'tier-drop', reason: 'busy', accepted: false, minimumViableTaken: false, escalationLevelAtTime: 0,
+    })
+    d.coach.feed.push({
+      id: 'f1', at: '2026-08-11T09:00:00.000Z', kind: 'coach',
+      situation: 'tier-drop-planned', text: 'Tier 2 locked.', weekISO: monday, excuseId: 'x-drop',
+    })
+    return { d, monday, pruneTierDropFeed, pruneTierDropExcuses, trainedInDroppedTier }
+  }
+
+  it('an untrained revert wipes the feed and the excuse', async () => {
+    const { d, monday, pruneTierDropFeed, pruneTierDropExcuses, trainedInDroppedTier } = await withDrop()
+    expect(trainedInDroppedTier(d, monday)).toBe(false)
+    pruneTierDropFeed(d, monday)
+    pruneTierDropExcuses(d, monday)
+    expect(d.coach.feed.length).toBe(0)
+    expect(d.excuses.length).toBe(0)
+  })
+
+  it('training in the dropped tier makes the record permanent', async () => {
+    const { d, monday, trainedInDroppedTier } = await withDrop()
+    d.sessions['2026-08-12'] = { date: '2026-08-12', templateId: 't2-upper', status: 'completed', exercises: [] }
+    expect(trainedInDroppedTier(d, monday)).toBe(true)
+    // a session BEFORE the drop doesn't count
+    const d2 = (await withDrop()).d
+    d2.sessions['2026-08-10'] = { date: '2026-08-10', templateId: 'monday', status: 'completed', exercises: [] }
+    expect(trainedInDroppedTier(d2, monday)).toBe(false)
+  })
+
+  it('prune only touches the targeted week', async () => {
+    const { d, monday, pruneTierDropFeed } = await withDrop()
+    d.coach.feed.push({ id: 'f2', at: '2026-08-04T09:00:00.000Z', kind: 'coach', situation: 'tier-drop-planned', text: 'Older week.', weekISO: '2026-08-03' })
+    pruneTierDropFeed(d, monday)
+    expect(d.coach.feed.map((f) => f.id)).toEqual(['f2'])
+  })
+})
+
 describe('fallback week monitor', () => {
   it('counts tier 2/3 weeks in the trailing window', () => {
     const d = makeData()

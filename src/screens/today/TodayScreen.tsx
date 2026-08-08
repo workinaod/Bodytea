@@ -2,14 +2,15 @@ import { useMemo, useState } from 'react'
 import type { DebriefData } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
-import { addDaysISO, formatDayLabel, todayISO } from '../../engine/calendar'
+import { addDaysISO, formatDayLabel, mondayOf, todayISO, weekdayOf } from '../../engine/calendar'
 import { lateNightGraceDate } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
 import { BannerRow, Btn, Card, Chip, EmptyNote } from '../../components/ui'
 import { getExercise } from '../../plan/exercises'
+import { CARDIO_GROUP_INFO, CARDIO_OPTIONS } from '../../plan/templates'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
-import { finishSession, startSession } from '../../logic/actions'
+import { chooseCardio, finishSession, startSession, toggleBallToday, toggleCnsSwap } from '../../logic/actions'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
 import { ReadinessSheet } from './ReadinessSheet'
@@ -36,6 +37,13 @@ export function TodayScreen() {
 
   const day = useMemo(() => resolveDay(date, data), [date, data])
   const session = data.sessions[date]
+  const week = data.weeks[mondayOf(date)]
+  const ballToday = week?.ballDates.includes(date) ?? false
+  const yesterday = addDaysISO(date, -1)
+  const ballYesterday = data.weeks[mondayOf(yesterday)]?.ballDates.includes(yesterday) ?? false
+  const cnsSwapped = week?.cnsSwapDates.includes(date) ?? false
+  const canSwapCns =
+    day.cns && (ballYesterday || (weekdayOf(date) === 6 && week?.gigFlags.djSatNight))
   const inProgress = session && session.status === 'partial' && !session.endedAt
   const finished = session && (session.endedAt || session.status === 'completed' || session.status === 'downgraded-completed')
   const skipped = session?.status === 'skipped'
@@ -101,6 +109,20 @@ export function TodayScreen() {
       {day.banners.map((b) => (
         <BannerRow key={b.id} banner={b} />
       ))}
+
+      {/* Same-day reality: ball is a day-of decision, not a weekly plan */}
+      {date <= realToday && !finished && (
+        <div className="flex flex-wrap gap-1.5">
+          <Chip tone={ballToday ? 'lime' : 'default'} onClick={() => toggleBallToday(date)}>
+            🏀 {ballToday ? 'Ball logged ✓ (tap to undo)' : 'Played ball today?'}
+          </Chip>
+          {canSwapCns && !session && (
+            <Chip tone={cnsSwapped ? 'gold' : 'cyan'} onClick={() => toggleCnsSwap(date)}>
+              {cnsSwapped ? '↩ undo speed-work swap' : '⇄ swap speed work out (sanctioned)'}
+            </Chip>
+          )}
+        </div>
+      )}
 
       {/* Title */}
       <div>
@@ -168,8 +190,41 @@ export function TodayScreen() {
         </>
       )}
 
+      {/* Required cardio: the chooser IS the day until an option is picked */}
+      {!session && day.kind === 'cardio-backup' && day.exercises.length === 0 && (
+        <div className="space-y-3">
+          {(['A', 'B', 'circuit'] as const).map((g) => (
+            <Card key={g} className="space-y-2">
+              <div>
+                <div className="text-[12px] font-black uppercase tracking-wider text-accent">
+                  {CARDIO_GROUP_INFO[g].title}
+                </div>
+                <div className="mt-0.5 text-[11px] leading-snug text-ink-faint">{CARDIO_GROUP_INFO[g].when}</div>
+              </div>
+              {CARDIO_OPTIONS.filter((c) => c.group === g).map((c) => {
+                const def = getExercise(c.exerciseId)
+                return (
+                  <button
+                    key={c.exerciseId}
+                    onClick={() => chooseCardio(date, c.exerciseId)}
+                    className="flex w-full items-center justify-between rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-left active:border-accent/40"
+                  >
+                    <span className="text-[13.5px] font-bold">{def.name}</span>
+                    <span className="font-mono text-[11.5px] text-ink-dim">{c.repText}</span>
+                  </button>
+                )
+              })}
+            </Card>
+          ))}
+          <p className="px-1 text-[11.5px] leading-snug text-ink-faint">
+            Pick one — it becomes today's session. Logged a run instead? Tap the 🏀 chip above and
+            this requirement clears itself.
+          </p>
+        </div>
+      )}
+
       {/* Preview (not started yet) */}
-      {!session && day.kind !== 'rest' && (
+      {!session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
         <>
           <div className="space-y-2">
             {day.exercises.map((r) => {
