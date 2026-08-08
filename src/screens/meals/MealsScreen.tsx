@@ -102,9 +102,9 @@ export function MealsScreen() {
             onClick={() => addMealEntry(date, { label: `${t.slot}: ${t.name}`, proteinG: t.proteinG, kcal: t.kcal, source: 'mealTemplate' })}
             className="rounded-2xl border border-edge bg-surface p-3.5 text-left active:border-accent/40 active:bg-accent/5"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-[13.5px] font-extrabold">{t.slot} — {t.name}</span>
-              <span className="font-mono text-[12px] font-bold text-accent-soft">+{t.proteinG}g P</span>
+              <span className="shrink-0 whitespace-nowrap font-mono text-[12px] font-bold text-accent-soft">+{t.proteinG}g P</span>
             </div>
             <div className="mt-0.5 flex items-center justify-between">
               <span className="pr-2 text-[11px] leading-snug text-ink-faint">{t.detail}</span>

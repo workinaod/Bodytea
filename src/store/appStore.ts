@@ -20,7 +20,7 @@ const driver = new LocalStorageDriver()
 
 function hydrate(): AppData {
   const raw = driver.load()
-  if (!raw) return emptyAppData(mondayOf(todayISO()))
+  if (!raw) return emptyAppData(mondayOf(todayISO()), todayISO())
   try {
     return parseEnvelope(raw).data
   } catch (e) {
@@ -31,7 +31,7 @@ function hydrate(): AppData {
     } catch {
       /* ignore */
     }
-    return emptyAppData(mondayOf(todayISO()))
+    return emptyAppData(mondayOf(todayISO()), todayISO())
   }
 }
 

@@ -361,6 +361,8 @@ export interface Insight {
 export interface Settings {
   /** Always a Monday (snapped at onboarding). */
   phaseStartDate: ISODate
+  /** The day the app was set up — reconcile never interrogates days before it. */
+  installedAt: ISODate
   /** Weekly measurement morning. PDF: "Sunday is good". */
   checkinWeekday: Weekday
   /** The 3–4 week check-in rule adjustment (+kcal on training days). */
@@ -407,9 +409,10 @@ export const DEFAULT_SUPPLEMENTS: Record<SupplementId, boolean> = {
   electrolytes: false,
 }
 
-export function defaultSettings(phaseStartDate: ISODate): Settings {
+export function defaultSettings(phaseStartDate: ISODate, installedAt: ISODate = phaseStartDate): Settings {
   return {
     phaseStartDate,
+    installedAt,
     checkinWeekday: 0,
     trainingDayKcalBonus: 0,
     proteinTargetG: 200,
@@ -432,9 +435,9 @@ export function defaultWeekState(mondayISO: ISODate): WeekState {
   }
 }
 
-export function emptyAppData(phaseStartDate: ISODate): AppData {
+export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate): AppData {
   return {
-    settings: defaultSettings(phaseStartDate),
+    settings: defaultSettings(phaseStartDate, installedAt),
     weeks: {},
     sessions: {},
     excuses: [],

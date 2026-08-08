@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ExcuseReason } from '../types'
 import { useAppStore } from '../store/appStore'
 import { findUnexplainedMisses, groupMissesByWeek } from '../engine/reconcile'
@@ -36,11 +36,14 @@ export function ReconcileSheet() {
   const fileRef = useRef<HTMLInputElement>(null)
   const pendingProofDate = useRef<string | null>(null)
 
+  useEffect(() => {
+    if (misses.length > 0 && !confronted.current) {
+      confronted.current = true
+      pushCoachMessage('unexplained-miss', { date: formatShort(misses[0].date) })
+    }
+  }, [misses])
+
   if (misses.length === 0) return null
-  if (!confronted.current) {
-    confronted.current = true
-    pushCoachMessage('unexplained-miss', { date: formatShort(misses[0].date) })
-  }
 
   const weeks = groupMissesByWeek(misses)
   const latestCoach = data.coach.feed.find((f) => f.situation === 'unexplained-miss')

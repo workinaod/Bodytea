@@ -44,6 +44,7 @@ export function WeekScreen() {
       if (s.status === 'downgraded-completed') return { dot: 'bg-lime', label: 'done (light)' }
       return { dot: 'bg-gold', label: s.endedAt ? 'partial' : 'in progress' }
     }
+    if (d.date < data.settings.installedAt) return { dot: 'bg-edge', label: 'before the app' }
     if (d.date < todayISO()) return { dot: 'bg-danger/50', label: 'unaccounted' }
     return { dot: 'bg-surface-2 border border-edge', label: 'upcoming' }
   }

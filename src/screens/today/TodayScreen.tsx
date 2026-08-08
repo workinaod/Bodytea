@@ -168,13 +168,15 @@ export function TodayScreen() {
           )}
 
           {today && (
-            <div className="sticky bottom-[76px] z-30 flex gap-2 pt-1">
-              <Btn kind="ghost" className="flex-1" onClick={() => setSkipOpen(true)}>
-                Can't train
-              </Btn>
-              <Btn className="flex-[2]" onClick={handleStart}>
-                {day.cns ? 'Readiness check → start' : 'Start session'}
-              </Btn>
+            <div className="sticky bottom-[64px] z-30 -mx-4 bg-gradient-to-t from-bg via-bg/95 to-transparent px-4 pb-2 pt-6">
+              <div className="flex gap-2">
+                <Btn kind="ghost" className="flex-1 bg-bg" onClick={() => setSkipOpen(true)}>
+                  Can't train
+                </Btn>
+                <Btn className="flex-[2]" onClick={handleStart}>
+                  {day.cns ? 'Readiness check → start' : 'Start session'}
+                </Btn>
+              </div>
             </div>
           )}
           {!today && (

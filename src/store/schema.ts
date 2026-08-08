@@ -11,6 +11,7 @@ const weekday = z.number().int().min(0).max(6)
 
 const settingsSchema = z.object({
   phaseStartDate: isoDate,
+  installedAt: isoDate,
   checkinWeekday: weekday,
   trainingDayKcalBonus: z.union([z.literal(0), z.literal(150), z.literal(200)]),
   proteinTargetG: z.number().positive(),

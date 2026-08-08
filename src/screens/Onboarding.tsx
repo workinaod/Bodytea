@@ -17,7 +17,7 @@ export function Onboarding() {
       {step === 0 && (
         <div className="space-y-5">
           <div>
-            <div className="text-[13px] font-black uppercase tracking-[0.2em]able text-accent">Hybrid Athlete</div>
+            <div className="text-[13px] font-black uppercase tracking-[0.2em] text-accent">Hybrid Athlete</div>
             <h1 className="mt-1 text-[40px] font-black leading-none tracking-tight">NAOD V3</h1>
             <p className="mt-3 text-[14px] leading-relaxed text-ink-dim">
               Your 16-week plan, turned into a coach that guides every session, tracks every number,
@@ -104,6 +104,7 @@ export function Onboarding() {
               } catch { /* unsupported */ }
               update((d) => {
                 d.settings.phaseStartDate = start
+                d.settings.installedAt = todayISO()
                 d.settings.onboarded = true
               })
               if (weight || waist || vert) {

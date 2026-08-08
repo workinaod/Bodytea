@@ -35,9 +35,12 @@ export function findUnexplainedMisses(
 ): MissedDay[] {
   const out: MissedDay[] = []
   const start = data.settings.phaseStartDate
+  const installed = data.settings.installedAt
   for (let i = 1; i <= maxDays; i++) {
     const date = addDaysISO(today, -i)
     if (daysBetween(start, date) < 0) break
+    // the app can't interrogate days from before it existed
+    if (daysBetween(installed, date) < 0) break
     const resolved = resolveDay(date, data)
     const scheduled =
       resolved.kind === 'session' || resolved.kind === 'mobility' || resolved.kind === 'cardio-backup'

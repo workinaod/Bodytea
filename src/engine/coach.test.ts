@@ -230,6 +230,14 @@ describe('reconcile', () => {
     d.excuses.push({ ...excuse('2026-08-10', true, 'travel'), scope: 'week' })
     expect(findUnexplainedMisses(d, '2026-08-17')).toEqual([])
   })
+
+  it('never interrogates days from before the app was installed', () => {
+    const d = makeData()
+    // phase aligned to a past Monday, but the app installed mid-week Friday
+    d.settings.installedAt = '2026-08-14'
+    const misses = findUnexplainedMisses(d, '2026-08-17')
+    expect(misses.map((m) => m.date)).toEqual(['2026-08-14', '2026-08-15'])
+  })
 })
 
 describe('debrief composer', () => {
