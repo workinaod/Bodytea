@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Measurement } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { addDaysISO, formatShort, todayISO, weekdayOf } from '../../engine/calendar'
+import { useToday } from '../../logic/clock'
 import {
   adherenceMap,
   currentStreak,
@@ -56,7 +57,7 @@ export function ProgressScreen() {
   const streak = currentStreak(data)
   const sessions = totalSessions(data)
   const heat = useMemo(() => adherenceMap(data, 12 * 7), [data])
-  const today = todayISO()
+  const today = useToday()
   const isCheckinDay = weekdayOf(today) === data.settings.checkinWeekday
   const lastCheckin = data.measurements[data.measurements.length - 1]
   const checkinDue =
@@ -201,7 +202,7 @@ export function ProgressScreen() {
 // ---------- Check-in sheet ----------
 
 function CheckinSheet({ open, onClose, last }: { open: boolean; onClose: () => void; last?: Measurement }) {
-  const [m, setM] = useState<Measurement>(() => ({
+  const fresh = (): Measurement => ({
     date: todayISO(),
     photoIds: {},
     weightLb: last?.weightLb,
@@ -210,10 +211,18 @@ function CheckinSheet({ open, onClose, last }: { open: boolean; onClose: () => v
     armsIn: last?.armsIn,
     thighIn: last?.thighIn,
     vertIn: last?.vertIn,
-  }))
+  })
+  const [m, setM] = useState<Measurement>(fresh)
   const [busy, setBusy] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const angleRef = useRef<'front' | 'side' | 'back'>('front')
+
+  // Re-seed the form (incl. the DATE) each time the sheet opens — the
+  // component mounts with the screen, not with the sheet.
+  useEffect(() => {
+    if (open) setM(fresh())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const fields = [
     { key: 'weightLb', label: 'Weight', step: 0.5, unit: 'lb' },

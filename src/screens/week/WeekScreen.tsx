@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import type { ResolvedDay, Tier, TierDayRole, Weekday } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
-import { addDaysISO, formatShort, isToday, mondayOf, todayISO, weekdayOf } from '../../engine/calendar'
+import { addDaysISO, formatShort, mondayOf, weekdayOf } from '../../engine/calendar'
+import { useToday } from '../../logic/clock'
 import { Card, Chip, SectionTitle, Toggle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { CARDIO_GROUP_INFO, CARDIO_OPTIONS, TIER_DEFAULT_PLACEMENT } from '../../plan/templates'
@@ -21,7 +22,9 @@ const TIER_INFO: Record<Tier, { name: string; blurb: string }> = {
 export function WeekScreen() {
   const data = useAppStore((s) => s.data)
   const updateWeek = useAppStore((s) => s.updateWeek)
-  const [weekStart, setWeekStart] = useState(() => mondayOf(todayISO()))
+  const today = useToday()
+  const [selected, setSelected] = useState<string | null>(null)
+  const weekStart = selected ?? mondayOf(today)
   const [preview, setPreview] = useState<ResolvedDay | null>(null)
   const [tierDropTo, setTierDropTo] = useState<Tier | null>(null)
 
@@ -31,7 +34,7 @@ export function WeekScreen() {
     () => Array.from({ length: 7 }, (_, i) => resolveDay(addDaysISO(weekStart, i), data)),
     [weekStart, data],
   )
-  const thisWeek = weekStart === mondayOf(todayISO())
+  const thisWeek = weekStart === mondayOf(today)
   const needsPick = thisWeek && !week?.tierPickedAt
 
   function statusFor(d: ResolvedDay): { dot: string; label: string } {
@@ -45,7 +48,7 @@ export function WeekScreen() {
       return { dot: 'bg-gold', label: s.endedAt ? 'partial' : 'in progress' }
     }
     if (d.date < data.settings.installedAt) return { dot: 'bg-edge', label: 'before the app' }
-    if (d.date < todayISO()) return { dot: 'bg-danger/50', label: 'unaccounted' }
+    if (d.date < today) return { dot: 'bg-danger/50', label: 'unaccounted' }
     return { dot: 'bg-surface-2 border border-edge', label: 'upcoming' }
   }
 
@@ -66,10 +69,10 @@ export function WeekScreen() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setWeekStart(addDaysISO(weekStart, -7))}>
+        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(weekStart, -7))}>
           ‹
         </button>
-        <button onClick={() => setWeekStart(mondayOf(todayISO()))} className="text-center">
+        <button onClick={() => setSelected(null)} className="text-center">
           <div className="text-[17px] font-black tracking-tight">
             Week of {formatShort(weekStart)}
           </div>
@@ -77,7 +80,7 @@ export function WeekScreen() {
             Week {days[0].weekIndex} · Block {days[0].blockIndex} · {days[0].isDeload ? 'DELOAD' : `Week ${days[0].abWeek}`}
           </div>
         </button>
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setWeekStart(addDaysISO(weekStart, 7))}>
+        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(weekStart, 7))}>
           ›
         </button>
       </div>
@@ -156,7 +159,7 @@ export function WeekScreen() {
             <Card key={d.date} onClick={() => setPreview(d)} className="!py-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 text-center">
-                  <div className={`text-[11px] font-black ${isToday(d.date) ? 'text-accent' : 'text-ink-faint'}`}>
+                  <div className={`text-[11px] font-black ${d.date === today ? 'text-accent' : 'text-ink-faint'}`}>
                     {WD_LABEL[weekdayOf(d.date)]}
                   </div>
                   <div className="text-[10px] text-ink-faint">{formatShort(d.date).split(' ')[1]}</div>
@@ -206,10 +209,10 @@ export function WeekScreen() {
           sub="Monday drops a jump set — legs arrive pre-fatigued."
         />
         <Toggle
-          on={(week?.badSleepDates ?? []).includes(addDaysISO(todayISO(), -1))}
+          on={(week?.badSleepDates ?? []).includes(addDaysISO(today, -1))}
           onChange={(v) =>
-            updateWeek(mondayOf(addDaysISO(todayISO(), -1)), (w) => {
-              const y = addDaysISO(todayISO(), -1)
+            updateWeek(mondayOf(addDaysISO(today, -1)), (w) => {
+              const y = addDaysISO(today, -1)
               w.badSleepDates = v ? [...new Set([...w.badSleepDates, y])] : w.badSleepDates.filter((d) => d !== y)
             })
           }

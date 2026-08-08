@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ResolvedDay, SessionLog } from '../../types'
 import { getExercise } from '../../plan/exercises'
 import { Btn, Chip, Stepper } from '../../components/ui'
@@ -31,7 +31,7 @@ export function SessionView({
   const restEnabled = useAppStore((s) => s.data.settings.restTimerEnabled)
   const [, force] = useState(0)
 
-  useMemo(() => {
+  useEffect(() => {
     const id = setInterval(() => force((x) => x + 1), 30000)
     return () => clearInterval(id)
   }, [])

@@ -10,14 +10,22 @@ import { Onboarding } from './screens/Onboarding'
 import { ReconcileSheet } from './screens/ReconcileSheet'
 import { dailyCoachSweep } from './logic/actions'
 import { refreshReminders, syncReminderMeta } from './logic/reminders'
-import { mondayOf, todayISO } from './engine/calendar'
+import { startClock, useToday } from './logic/clock'
+import { mondayOf } from './engine/calendar'
 
 export default function App() {
   const onboarded = useAppStore((s) => s.data.settings.onboarded)
-  const weekPicked = useAppStore((s) => !!s.data.weeks[mondayOf(todayISO())]?.tierPickedAt)
+  const today = useToday()
+  const monday = mondayOf(today)
+  const weekPicked = useAppStore((s) => !!s.data.weeks[monday]?.tierPickedAt)
   const [tab, setTab] = useState<TabId>('today')
 
   useEffect(() => {
+    // the heartbeat that keeps the whole app on the real current day
+    startClock(() => {
+      dailyCoachSweep()
+      refreshReminders()
+    })
     if (onboarded) {
       dailyCoachSweep()
       refreshReminders()

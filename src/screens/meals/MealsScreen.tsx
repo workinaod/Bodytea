@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
-import { addDaysISO, formatDayLabel, isToday, todayISO } from '../../engine/calendar'
+import { addDaysISO, formatDayLabel } from '../../engine/calendar'
+import { useToday } from '../../logic/clock'
 import { kcalTargetFor, nutritionDayType } from '../../engine/resolveDay'
 import { kcalBumpSuggestion, kcalFor, proteinFor, proteinStreak } from '../../engine/stats'
 import { FOODS, GROCERY_LIST, LATE_NIGHT, MEAL_TEMPLATES, SUPPLEMENTS } from '../../plan/foods'
@@ -17,7 +18,9 @@ import {
 export function MealsScreen() {
   const data = useAppStore((s) => s.data)
   const update = useAppStore((s) => s.update)
-  const [date, setDate] = useState(todayISO())
+  const today = useToday()
+  const [selected, setSelected] = useState<string | null>(null)
+  const date = selected ?? today
   const [customOpen, setCustomOpen] = useState(false)
   const [groceryOpen, setGroceryOpen] = useState(false)
 
@@ -47,13 +50,13 @@ export function MealsScreen() {
   return (
     <div className="space-y-3 pb-6">
       <div className="flex items-center justify-between">
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setDate(addDaysISO(date, -1))}>
+        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(date, -1))}>
           ‹
         </button>
-        <button onClick={() => setDate(todayISO())} className="text-center">
-          <div className="text-[17px] font-black tracking-tight">{isToday(date) ? "Today's fuel" : formatDayLabel(date)}</div>
+        <button onClick={() => setSelected(null)} className="text-center">
+          <div className="text-[17px] font-black tracking-tight">{date === today ? "Today's fuel" : formatDayLabel(date)}</div>
         </button>
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setDate(addDaysISO(date, 1))}>
+        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(date, 1))}>
           ›
         </button>
       </div>

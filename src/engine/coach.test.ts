@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData, type ExcuseRecord } from '../types'
 import {
+  anyGigFlag,
   busyButMealsLogged,
   coachMessageFor,
   contradictionsOnSessionFinish,
   escalationLevel,
+  excuseAccepted,
   fallbackWeekCount,
+  gigSanctioned,
   interpolate,
   pickVariant,
 } from './coach'
+import { validateProofFile } from '../store/storage'
 import { generateInsights } from './insights'
 import { findUnexplainedMisses } from './reconcile'
 import { composeDebrief } from './debrief'
@@ -142,6 +146,43 @@ describe('contradictions', () => {
     }
     expect(busyButMealsLogged(d, '2026-08-12')).toBe(true)
     expect(busyButMealsLogged(d, '2026-08-13')).toBe(false)
+  })
+})
+
+describe('proof acceptance rules', () => {
+  it('fresh images pass validation, stale and non-images fail', () => {
+    const now = Date.now()
+    expect(validateProofFile({ lastModified: now - 3600_000, type: 'image/png' }).ok).toBe(true)
+    const stale = validateProofFile({ lastModified: now - 20 * 86400_000, type: 'image/jpeg' })
+    expect(stale.ok).toBe(false)
+    if (!stale.ok) {
+      expect(stale.reason).toBe('stale')
+      expect(stale.ageDays).toBe(20)
+    }
+    expect(validateProofFile({ lastModified: now, type: 'application/pdf' }).ok).toBe(false)
+    // no timestamp → benefit of the doubt
+    expect(validateProofFile({ type: 'image/jpeg' }).ok).toBe(true)
+  })
+
+  it('gig claims verify against the week flags declared in advance', () => {
+    const week = { ...defaultWeekState('2026-08-10'), gigFlags: { djFriNight: true } }
+    expect(gigSanctioned(week, '2026-08-14')).toBe(true) // Friday, flagged
+    expect(gigSanctioned(week, '2026-08-15')).toBe(false) // Saturday, not flagged
+    expect(gigSanctioned(undefined, '2026-08-14')).toBe(false)
+    expect(anyGigFlag(week)).toBe(true)
+    expect(anyGigFlag(defaultWeekState('2026-08-10'))).toBe(false)
+  })
+
+  it('excuseAccepted: proof accepts; gig only with matching flags; nothing else auto-accepts', () => {
+    const week = { ...defaultWeekState('2026-08-10'), gigFlags: { djSatNight: true } }
+    expect(excuseAccepted({ reason: 'busy', proofPhotoId: 'p1', week, date: '2026-08-12', scope: 'day' })).toBe(true)
+    expect(excuseAccepted({ reason: 'busy', week, date: '2026-08-12', scope: 'day' })).toBe(false)
+    expect(excuseAccepted({ reason: 'gig', week, date: '2026-08-15', scope: 'day' })).toBe(true) // Sat, flagged
+    expect(excuseAccepted({ reason: 'gig', week, date: '2026-08-14', scope: 'day' })).toBe(false) // Fri, not flagged
+    expect(excuseAccepted({ reason: 'gig', week, date: '2026-08-10', scope: 'week' })).toBe(true) // any flag covers the week scope
+    // travel/sick no longer auto-accept without proof
+    expect(excuseAccepted({ reason: 'travel', week, date: '2026-08-10', scope: 'week' })).toBe(false)
+    expect(excuseAccepted({ reason: 'sick', week, date: '2026-08-12', scope: 'day' })).toBe(false)
   })
 })
 

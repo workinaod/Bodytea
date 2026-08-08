@@ -1,7 +1,9 @@
 import { Sheet } from '../../components/Sheet'
 import { Chip } from '../../components/ui'
+import { MuscleMap } from '../../components/MuscleMap'
 import { YouTubeEmbed } from '../../components/YouTubeEmbed'
 import { getExercise } from '../../plan/exercises'
+import { musclesFor } from '../../plan/muscles'
 
 /** The full "how / what / why / don't" guide for one exercise. */
 export function ExerciseGuideSheet({
@@ -13,6 +15,7 @@ export function ExerciseGuideSheet({
 }) {
   if (!exerciseId) return null
   const def = getExercise(exerciseId)
+  const muscles = musclesFor(exerciseId)
   return (
     <Sheet open onClose={onClose} title={def.name}>
       <div className="space-y-5 pb-6">
@@ -24,6 +27,13 @@ export function ExerciseGuideSheet({
             <Chip key={q} tone="cyan">{q}</Chip>
           ))}
         </div>
+
+        <section className="rounded-2xl border border-edge bg-surface p-4">
+          <h4 className="mb-2 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
+            Muscles activated
+          </h4>
+          <MuscleMap primary={muscles.primary} secondary={muscles.secondary} />
+        </section>
 
         {def.cue && (
           <div className="rounded-xl border border-gold/30 bg-gold/8 px-3.5 py-3 text-[13px] font-semibold leading-snug text-gold">

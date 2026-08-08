@@ -106,6 +106,30 @@ export const PhotoStore = {
   },
 }
 
+// ---------- Proof validation ----------
+
+export const PROOF_MAX_AGE_DAYS = 7
+
+export type ProofCheck =
+  | { ok: true; ageDays: number }
+  | { ok: false; reason: 'stale' | 'not-image'; ageDays: number }
+
+/**
+ * The mechanical proof check: the picked file must be an image created
+ * within the last week (screenshots/photos carry their capture time in
+ * `lastModified`). An old random photo is not evidence of THIS week's
+ * conflict. Files with no timestamp get the benefit of the doubt.
+ */
+export function validateProofFile(file: { lastModified?: number; type?: string }): ProofCheck {
+  if (file.type && !file.type.startsWith('image/')) {
+    return { ok: false, reason: 'not-image', ageDays: 0 }
+  }
+  if (!file.lastModified) return { ok: true, ageDays: 0 }
+  const ageDays = Math.floor((Date.now() - file.lastModified) / 86400000)
+  if (ageDays > PROOF_MAX_AGE_DAYS) return { ok: false, reason: 'stale', ageDays }
+  return { ok: true, ageDays: Math.max(0, ageDays) }
+}
+
 // ---------- Photo capture helpers (browser only) ----------
 
 /** Downscale an image file to max 1280px JPEG q0.8 — keeps year-scale storage sane. */

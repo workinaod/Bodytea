@@ -1,12 +1,14 @@
 import type {
   AppData,
   CoachSituation,
+  ExcuseReason,
   ExcuseRecord,
   ISODate,
   SessionLog,
+  WeekState,
 } from '../types'
 import { MESSAGE_POOLS } from '../plan/messages'
-import { addDaysISO, daysBetween, formatShort, mondayOf } from './calendar'
+import { addDaysISO, daysBetween, formatShort, mondayOf, weekdayOf } from './calendar'
 
 // ============================================================
 // The accountability engine. Pure functions: the UI feeds events
@@ -175,6 +177,48 @@ export function contradictionsOnSessionFinish(
 export function busyButMealsLogged(data: AppData, date: ISODate): boolean {
   const meals = data.meals[date]
   return (meals?.entries.length ?? 0) >= 4
+}
+
+// ---------- Excuse acceptance (the rules that make proof real) ----------
+
+/**
+ * A gig claim is auto-accepted only when the matching gig flag was already
+ * set on that week in the Week tab — a conflict declared in advance is a
+ * fact the app can verify from its own state.
+ */
+export function gigSanctioned(week: WeekState | undefined, date: ISODate): boolean {
+  if (!week) return false
+  const wd = weekdayOf(date)
+  if (wd === 5) return !!week.gigFlags.djFriNight
+  if (wd === 6) return !!week.gigFlags.djSatNight
+  if (wd === 1) return !!week.gigFlags.longShiftBeforeMon
+  return false
+}
+
+export function anyGigFlag(week: WeekState | undefined): boolean {
+  return !!(
+    week &&
+    (week.gigFlags.djFriNight || week.gigFlags.djSatNight || week.gigFlags.longShiftBeforeMon)
+  )
+}
+
+/**
+ * Single acceptance rule used by every excuse writer: proof (already
+ * freshness-validated at capture) accepts; a gig claim accepts only when
+ * the week's gig flags corroborate it. Nothing else auto-accepts.
+ */
+export function excuseAccepted(opts: {
+  reason: ExcuseReason
+  proofPhotoId?: string
+  week: WeekState | undefined
+  date: ISODate
+  scope: 'day' | 'week'
+}): boolean {
+  if (opts.proofPhotoId) return true
+  if (opts.reason === 'gig') {
+    return opts.scope === 'week' ? anyGigFlag(opts.week) : gigSanctioned(opts.week, opts.date)
+  }
+  return false
 }
 
 // ---------- Fallback-week monitor ----------

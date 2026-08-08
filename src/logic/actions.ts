@@ -16,10 +16,12 @@ import { resolveDay } from '../engine/resolveDay'
 import { applyReadinessDowngrade, minimumViableFor } from '../engine/transforms'
 import { getTemplate } from '../plan/templates'
 import {
+  anyGigFlag,
   busyButMealsLogged,
   coachMessageFor,
   contradictionsOnSessionFinish,
   escalationLevel,
+  excuseAccepted,
   fallbackWeekCount,
   pushShown,
 } from '../engine/coach'
@@ -243,7 +245,13 @@ export function resolveSkipFlow(opts: {
   const data = store().data
   const resolved = resolveDay(date, data)
   const level = escalationLevel(data.excuses, todayISO())
-  const accepted = !!proofPhotoId || reason === 'gig'
+  const accepted = excuseAccepted({
+    reason,
+    proofPhotoId,
+    week: data.weeks[mondayOf(date)],
+    date,
+    scope: 'day',
+  })
 
   const excuseId = uid()
   store().update((d) => {
@@ -335,7 +343,7 @@ export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: Excus
   let excuseId: string | undefined
   if (isDrop && !isPlannedPick) {
     excuseId = uid()
-    const accepted = !!excuseInfo?.proofPhotoId || excuseInfo?.reason === 'gig'
+    const accepted = !!excuseInfo?.proofPhotoId || (excuseInfo?.reason === 'gig' && anyGigFlag(week))
     store().update((d) => {
       d.excuses.push({
         id: excuseId!,
@@ -389,7 +397,13 @@ export function resolveMissAsTrained(date: ISODate, templateId: string | null): 
 }
 
 export function resolveMissWithReason(date: ISODate, reason: ExcuseReason, proofPhotoId?: string): void {
-  const accepted = !!proofPhotoId || reason === 'gig'
+  const accepted = excuseAccepted({
+    reason,
+    proofPhotoId,
+    week: store().data.weeks[mondayOf(date)],
+    date,
+    scope: 'day',
+  })
   const excuseId = uid()
   store().update((d) => {
     d.excuses.push({
@@ -409,7 +423,13 @@ export function resolveMissWithReason(date: ISODate, reason: ExcuseReason, proof
 }
 
 export function writeOffWeek(monday: ISODate, reason: ExcuseReason, proofPhotoId?: string): void {
-  const accepted = !!proofPhotoId || reason === 'travel' || reason === 'sick' || reason === 'gig'
+  const accepted = excuseAccepted({
+    reason,
+    proofPhotoId,
+    week: store().data.weeks[monday],
+    date: monday,
+    scope: 'week',
+  })
   store().update((d) => {
     d.excuses.push({
       id: uid(),

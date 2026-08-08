@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react'
 import type { DebriefData } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
-import { addDaysISO, formatDayLabel, isToday, todayISO } from '../../engine/calendar'
+import { addDaysISO, formatDayLabel, todayISO } from '../../engine/calendar'
+import { lateNightGraceDate } from '../../engine/rollover'
+import { useToday } from '../../logic/clock'
 import { BannerRow, Btn, Card, Chip, EmptyNote } from '../../components/ui'
 import { getExercise } from '../../plan/exercises'
 import { REST_DAY_CARDS } from '../../plan/debrief'
@@ -17,19 +19,27 @@ import { ExerciseGuideSheet } from './ExerciseGuideSheet'
 
 export function TodayScreen() {
   const data = useAppStore((s) => s.data)
-  const [date, setDate] = useState(todayISO())
+  const realToday = useToday()
+  // null = follow the live day; set only by explicit ‹ › navigation
+  const [selected, setSelected] = useState<string | null>(null)
   const [readinessOpen, setReadinessOpen] = useState(false)
   const [skipOpen, setSkipOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'focus' | 'list'>('focus')
   const [guideId, setGuideId] = useState<string | null>(null)
   const [debrief, setDebrief] = useState<{ data: DebriefData; coachLine?: string } | null>(null)
 
+  // Just after midnight, an unfinished session keeps the live view on
+  // yesterday so it logs under the day actually trained.
+  const graceDate = lateNightGraceDate(data.sessions, realToday, new Date())
+  const homeDate = graceDate ?? realToday
+  const date = selected ?? homeDate
+
   const day = useMemo(() => resolveDay(date, data), [date, data])
   const session = data.sessions[date]
   const inProgress = session && session.status === 'partial' && !session.endedAt
   const finished = session && (session.endedAt || session.status === 'completed' || session.status === 'downgraded-completed')
   const skipped = session?.status === 'skipped'
-  const today = isToday(date)
+  const today = date === homeDate
 
   const restCard = useMemo(() => {
     if (day.kind !== 'rest') return null
@@ -58,19 +68,25 @@ export function TodayScreen() {
     <div className="space-y-3">
       {/* Date header */}
       <div className="flex items-center justify-between">
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setDate(addDaysISO(date, -1))}>
+        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(date, -1))}>
           ‹
         </button>
-        <button className="text-center" onClick={() => setDate(todayISO())}>
+        <button className="text-center" onClick={() => setSelected(null)}>
           <div className="text-[17px] font-black tracking-tight">
             {today ? 'Today' : formatDayLabel(date)}
           </div>
           {!today && <div className="text-[10px] font-bold text-accent">tap to jump to today</div>}
         </button>
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setDate(addDaysISO(date, 1))}>
+        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(date, 1))}>
           ›
         </button>
       </div>
+
+      {graceDate && date === graceDate && (
+        <div className="rounded-xl border border-cyan/25 bg-cyan/8 px-3 py-2.5 text-[12.5px] leading-snug text-cyan">
+          After midnight — still finishing yesterday's session. It logs under {formatDayLabel(graceDate)}.
+        </div>
+      )}
 
       {/* Context chips */}
       <div className="flex flex-wrap items-center gap-1.5">

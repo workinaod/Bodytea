@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ExcuseReason } from '../types'
 import { useAppStore } from '../store/appStore'
 import { findUnexplainedMisses, groupMissesByWeek } from '../engine/reconcile'
-import { formatShort, todayISO } from '../engine/calendar'
+import { formatShort } from '../engine/calendar'
+import { useToday } from '../logic/clock'
 import { Btn, Chip } from '../components/ui'
 import { Sheet } from '../components/Sheet'
 import {
@@ -12,6 +13,7 @@ import {
   savePhotoFile,
   writeOffWeek,
 } from '../logic/actions'
+import { validateProofFile } from '../store/storage'
 
 const REASONS: { id: ExcuseReason; label: string }[] = [
   { id: 'busy', label: 'Busy' },
@@ -29,10 +31,12 @@ const REASONS: { id: ExcuseReason; label: string }[] = [
  */
 export function ReconcileSheet() {
   const data = useAppStore((s) => s.data)
-  const misses = useMemo(() => findUnexplainedMisses(data, todayISO()), [data])
+  const today = useToday()
+  const misses = useMemo(() => findUnexplainedMisses(data, today), [data, today])
   const confronted = useRef(false)
   const [activeReason, setActiveReason] = useState<Record<string, ExcuseReason>>({})
   const [proofBusy, setProofBusy] = useState<string | null>(null)
+  const [proofRejected, setProofRejected] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const pendingProofDate = useRef<string | null>(null)
 
@@ -60,6 +64,11 @@ export function ReconcileSheet() {
           The record only works if it's complete. Close these out — takes seconds each, or write off
           a whole week at once.
         </p>
+        {proofRejected && (
+          <div className="rounded-xl border border-danger/30 bg-danger/8 px-3.5 py-3 text-[12.5px] font-bold leading-snug text-danger">
+            {proofRejected}
+          </div>
+        )}
 
         <input
           ref={fileRef}
@@ -69,7 +78,18 @@ export function ReconcileSheet() {
           onChange={async (e) => {
             const f = e.target.files?.[0]
             const date = pendingProofDate.current
+            e.target.value = ''
             if (!f || !date) return
+            const check = validateProofFile(f)
+            if (!check.ok) {
+              setProofRejected(
+                check.reason === 'stale'
+                  ? `That image is ${check.ageDays} days old — not proof of that week. Resolve it as unproven or find the real screenshot.`
+                  : 'Images only. Calendar screenshot, schedule, gig poster.',
+              )
+              return
+            }
+            setProofRejected(null)
             setProofBusy(date)
             try {
               const meta = await savePhotoFile(f, 'proof')

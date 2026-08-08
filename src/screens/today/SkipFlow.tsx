@@ -7,6 +7,7 @@ import { minimumViableFor } from '../../engine/transforms'
 import { getTemplate } from '../../plan/templates'
 import { todayISO } from '../../engine/calendar'
 import { useAppStore } from '../../store/appStore'
+import { validateProofFile } from '../../store/storage'
 import { pushCoachMessage, resolveSkipFlow, savePhotoFile } from '../../logic/actions'
 
 const REASONS: { id: ExcuseReason; label: string }[] = [
@@ -39,6 +40,8 @@ export function SkipFlow({
   const [claimText, setClaimText] = useState('')
   const [proofId, setProofId] = useState<string | undefined>()
   const [proofBusy, setProofBusy] = useState(false)
+  const [proofError, setProofError] = useState<string | null>(null)
+  const [pendingProof, setPendingProof] = useState<{ file: File; url: string } | null>(null)
   const [confirmText, setConfirmText] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const warnedExplosive = useRef(false)
@@ -52,16 +55,40 @@ export function SkipFlow({
     pushCoachMessage('explosive-day-warning')
   }
 
-  async function onProofPick(file: File) {
+  function onProofPick(file: File) {
+    setProofError(null)
+    // The mechanical check: proof must be a fresh image (this week's
+    // screenshot/photo), not something dug out of the camera roll.
+    const check = validateProofFile(file)
+    if (!check.ok) {
+      setProofError(
+        check.reason === 'stale'
+          ? `That image is ${check.ageDays} days old. A conflict THIS week has proof FROM this week. Fresh screenshot or no proof.`
+          : 'That file is not an image. Calendar screenshot, schedule photo, gig poster — pictures only.',
+      )
+      return
+    }
+    setPendingProof({ file, url: URL.createObjectURL(file) })
+  }
+
+  async function confirmProof() {
+    if (!pendingProof) return
     setProofBusy(true)
     try {
-      const meta = await savePhotoFile(file, 'proof')
+      const meta = await savePhotoFile(pendingProof.file, 'proof')
       setProofId(meta.id)
+      URL.revokeObjectURL(pendingProof.url)
+      setPendingProof(null)
     } catch (e) {
       console.error('proof save failed', e)
     } finally {
       setProofBusy(false)
     }
+  }
+
+  function discardPending() {
+    if (pendingProof) URL.revokeObjectURL(pendingProof.url)
+    setPendingProof(null)
   }
 
   function finish(takeMinimum: boolean) {
@@ -157,16 +184,37 @@ export function SkipFlow({
               if (f) void onProofPick(f)
             }}
           />
-          {proofId ? (
+          {proofError && (
+            <div className="rounded-xl border border-danger/30 bg-danger/8 px-3.5 py-3 text-[12.5px] font-bold leading-snug text-danger">
+              {proofError}
+            </div>
+          )}
+          {pendingProof ? (
+            <div className="space-y-2.5 rounded-xl border border-gold/30 bg-gold/8 p-3.5">
+              <img src={pendingProof.url} alt="proof preview" className="max-h-52 w-full rounded-lg object-contain" />
+              <p className="text-[12.5px] font-semibold leading-snug text-gold">
+                This goes in the ledger permanently, next to your name. Does it actually show the
+                conflict?
+              </p>
+              <div className="flex gap-2">
+                <Btn kind="ghost" className="flex-1" onClick={discardPending}>
+                  Wrong photo
+                </Btn>
+                <Btn kind="lime" className="flex-1" disabled={proofBusy} onClick={() => void confirmProof()}>
+                  {proofBusy ? 'Saving…' : 'It shows it — attach'}
+                </Btn>
+              </div>
+            </div>
+          ) : proofId ? (
             <div className="flex items-center justify-between rounded-xl border border-lime/30 bg-lime/8 px-3.5 py-3">
-              <span className="text-[13px] font-bold text-lime">✓ Proof attached — accepted</span>
+              <span className="text-[13px] font-bold text-lime">✓ Fresh proof attached — accepted</span>
               <button className="text-[12px] font-semibold text-ink-faint underline" onClick={() => setProofId(undefined)}>
                 remove
               </button>
             </div>
           ) : (
             <Btn kind="subtle" className="w-full" onClick={() => fileRef.current?.click()} disabled={proofBusy}>
-              {proofBusy ? 'Saving…' : '📎 Attach proof (calendar / schedule / gig poster)'}
+              📎 Attach proof (calendar / schedule / gig poster)
             </Btn>
           )}
           <div className="flex gap-2">

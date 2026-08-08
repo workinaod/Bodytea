@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { mondayOf, todayISO } from '../engine/calendar'
+import { useToday } from '../logic/clock'
 import { Btn, Card, Stepper } from '../components/ui'
 import { saveMeasurement } from '../logic/actions'
 
 export function Onboarding() {
   const update = useAppStore((s) => s.update)
   const [step, setStep] = useState(0)
-  const [start, setStart] = useState(() => mondayOf(todayISO()))
+  const today = useToday()
+  const [pickedStart, setPickedStart] = useState<string | null>(null)
+  const start = pickedStart ?? mondayOf(today)
   const [weight, setWeight] = useState<number | undefined>(197)
   const [waist, setWaist] = useState<number | undefined>()
   const [vert, setVert] = useState<number | undefined>()
@@ -46,7 +49,7 @@ export function Onboarding() {
           <input
             type="date"
             value={start}
-            onChange={(e) => e.target.value && setStart(mondayOf(e.target.value))}
+            onChange={(e) => e.target.value && setPickedStart(mondayOf(e.target.value))}
             className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[15px] font-bold outline-none [color-scheme:dark]"
           />
           <p className="text-[11.5px] text-ink-faint">Snapped to Monday: {start}</p>

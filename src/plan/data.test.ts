@@ -97,6 +97,25 @@ describe('block rotation', () => {
   })
 })
 
+describe('muscle map data', () => {
+  it('every exercise has a muscle activation mapping with valid regions', async () => {
+    const { EXERCISE_MUSCLES } = await import('./muscles')
+    const { ALL_REGIONS } = await import('../components/MuscleMap')
+    for (const id of Object.keys(EXERCISES)) {
+      const m = EXERCISE_MUSCLES[id]
+      expect(m, `missing muscle map for ${id}`).toBeDefined()
+      expect(m.primary.length, `${id} primary`).toBeGreaterThanOrEqual(1)
+      for (const r of [...m.primary, ...m.secondary]) {
+        expect(ALL_REGIONS, `${id} region ${r}`).toContain(r)
+      }
+    }
+    // no orphan mappings either
+    for (const id of Object.keys(EXERCISE_MUSCLES)) {
+      expect(EXERCISES[id], `orphan mapping ${id}`).toBeDefined()
+    }
+  })
+})
+
 describe('nutrition data', () => {
   it('foods have sane macros', () => {
     for (const f of FOODS) {

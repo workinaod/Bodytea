@@ -1,0 +1,58 @@
+import { describe, expect, it } from 'vitest'
+import type { SessionLog } from '../types'
+import { lateNightGraceDate, msUntilNextMidnight } from './rollover'
+
+describe('msUntilNextMidnight', () => {
+  it('computes the wall-clock distance to just past midnight', () => {
+    const ms = msUntilNextMidnight(new Date(2026, 7, 8, 22, 0, 0)) // Aug 8, 10pm
+    expect(ms).toBe(2 * 3600_000 + 2000)
+  })
+
+  it('is DST-safe across the US spring-forward night (Mar 8 2026)', () => {
+    // 10pm Mar 7 → midnight Mar 8 is a normal 2h; 10pm Mar 8 → Mar 9 too.
+    // The interesting case: from 1:30am on the transition night the distance
+    // must reflect the actual wall clock, never go negative or overshoot 25h.
+    const fromLateNight = msUntilNextMidnight(new Date(2026, 2, 8, 1, 30, 0))
+    expect(fromLateNight).toBeGreaterThan(0)
+    expect(fromLateNight).toBeLessThanOrEqual(25 * 3600_000)
+    const fallBack = msUntilNextMidnight(new Date(2026, 10, 1, 1, 30, 0))
+    expect(fallBack).toBeGreaterThan(0)
+    expect(fallBack).toBeLessThanOrEqual(25 * 3600_000)
+  })
+
+  it('never returns less than a second', () => {
+    expect(msUntilNextMidnight(new Date(2026, 7, 9, 0, 0, 1, 900))).toBeGreaterThanOrEqual(1000)
+  })
+})
+
+describe('lateNightGraceDate', () => {
+  const inProgress: SessionLog = {
+    date: '2026-08-08',
+    templateId: 'saturday',
+    status: 'partial',
+    startedAt: '2026-08-08T23:10:00.000Z',
+    exercises: [],
+  }
+
+  it("anchors on yesterday at 00:30 when yesterday's session is unfinished", () => {
+    const sessions = { '2026-08-08': inProgress }
+    const grace = lateNightGraceDate(sessions, '2026-08-09', new Date(2026, 7, 9, 0, 30))
+    expect(grace).toBe('2026-08-08')
+  })
+
+  it('ends at 03:00', () => {
+    const sessions = { '2026-08-08': inProgress }
+    expect(lateNightGraceDate(sessions, '2026-08-09', new Date(2026, 7, 9, 3, 1))).toBeNull()
+  })
+
+  it('does not apply when the session is finished or absent', () => {
+    const done = { ...inProgress, status: 'completed' as const, endedAt: '2026-08-09T00:05:00.000Z' }
+    expect(lateNightGraceDate({ '2026-08-08': done }, '2026-08-09', new Date(2026, 7, 9, 0, 30))).toBeNull()
+    expect(lateNightGraceDate({}, '2026-08-09', new Date(2026, 7, 9, 0, 30))).toBeNull()
+  })
+
+  it('refuses to act when today and the wall clock disagree', () => {
+    const sessions = { '2026-08-08': inProgress }
+    expect(lateNightGraceDate(sessions, '2026-08-10', new Date(2026, 7, 9, 0, 30))).toBeNull()
+  })
+})

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
-import { daysBetween, formatShort, todayISO } from '../../engine/calendar'
+import { daysBetween, formatShort } from '../../engine/calendar'
+import { useToday } from '../../logic/clock'
 import { unprovenExcusesInWindow } from '../../engine/coach'
 import { MOTIVATION_QUOTES, MOTIVATION_VIDEOS } from '../../plan/messages'
 import { GUIDE_SECTIONS } from '../../plan/guide'
@@ -27,14 +28,15 @@ export function CoachScreen() {
   const [guideExercise, setGuideExercise] = useState<string | null>(null)
   const [feedCount, setFeedCount] = useState(20)
 
-  const unproven = unprovenExcusesInWindow(data.excuses, todayISO()).length
+  const today = useToday()
+  const unproven = unprovenExcusesInWindow(data.excuses, today).length
   const backupDays = data.settings.lastExportAt
-    ? daysBetween(data.settings.lastExportAt.slice(0, 10), todayISO())
+    ? daysBetween(data.settings.lastExportAt.slice(0, 10), today)
     : null
 
   const quote = useMemo(
-    () => MOTIVATION_QUOTES[daysBetween('2026-01-01', todayISO()) % MOTIVATION_QUOTES.length],
-    [],
+    () => MOTIVATION_QUOTES[daysBetween('2026-01-01', today) % MOTIVATION_QUOTES.length],
+    [today],
   )
 
   return (

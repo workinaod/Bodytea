@@ -83,3 +83,32 @@ test('full core loop: onboard → session → meals → debrief → export', asy
   })
   expect(swCount).toBeGreaterThan(0)
 })
+
+test('midnight rollover advances the app without a reload', async ({ page }) => {
+  // Wednesday Aug 12 2026, 23:58 local — a heavy lower day
+  await page.clock.install({ time: new Date(2026, 7, 12, 23, 58) })
+  await page.goto('./')
+  await page.getByText('Set it up (60 seconds)').click()
+  await page.getByText('Next — baseline numbers').click()
+  await page.getByText('Last step').click()
+  await page.getByText("Let's work.").click()
+
+  await expect(page.getByText('Lower Strength + Hypertrophy')).toBeVisible()
+
+  // Cross midnight (the 30s safety check and midnight timer both fire)
+  await page.clock.fastForward('00:05:00')
+
+  // Thursday's mobility day appears with NO reload or navigation
+  await expect(page.getByText('Mobility + Active Recovery')).toBeVisible({ timeout: 10_000 })
+
+  // The reconcile gate also fires on day change: Wednesday went unaccounted
+  // and the Sergeant blocks the app until it's answered.
+  await expect(page.getByText(/unaccounted for/)).toBeVisible()
+  await page.getByText('Tired', { exact: true }).click()
+  await page.getByRole('button', { name: 'Skipped, no proof' }).click()
+  await expect(page.getByText(/unaccounted for/)).not.toBeVisible()
+
+  // Meals follow too: Thursday is a rest day → 2,500 kcal target
+  await page.getByRole('button', { name: 'Meals', exact: true }).click()
+  await expect(page.getByText(/Rest day · 2500 kcal/)).toBeVisible()
+})
