@@ -21,6 +21,11 @@ export default function App() {
   const [tab, setTab] = useState<TabId>('today')
 
   useEffect(() => {
+    // Cloud sync restores only for devices that have used an account —
+    // local-only users never load (or run) the network code path.
+    if (localStorage.getItem('bodytea.sync')) {
+      void import('./cloud/sync').then((m) => m.initCloudSync()).catch(() => {})
+    }
     // the heartbeat that keeps the whole app on the real current day
     startClock(() => {
       dailyCoachSweep()

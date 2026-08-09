@@ -13,6 +13,7 @@ import { DebriefSheet } from '../today/DebriefSheet'
 import { ExerciseGuideSheet } from '../today/ExerciseGuideSheet'
 import { SettingsSheet } from './SettingsSheet'
 import { DataTransferSheet } from './DataTransferSheet'
+import { AccountSheet } from './AccountSheet'
 import { ExcuseLedger } from './ExcuseLedger'
 import { BookletScreen } from '../booklet/BookletScreen'
 import type { DebriefData } from '../../types'
@@ -26,6 +27,7 @@ export function CoachScreen() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dataOpen, setDataOpen] = useState(false)
   const [bookletOpen, setBookletOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const [debrief, setDebrief] = useState<DebriefData | null>(null)
   const [guideExercise, setGuideExercise] = useState<string | null>(null)
   const [feedCount, setFeedCount] = useState(20)
@@ -48,6 +50,9 @@ export function CoachScreen() {
         <div className="flex gap-1.5">
           <button onClick={() => setSettingsOpen(true)} className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] font-bold text-ink-dim">
             ⚙︎
+          </button>
+          <button onClick={() => setAccountOpen(true)} className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] font-bold text-ink-dim">
+            ☁︎
           </button>
           <button onClick={() => setDataOpen(true)} className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] font-bold text-ink-dim">
             ⇅ data
@@ -183,6 +188,7 @@ export function CoachScreen() {
 
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <DataTransferSheet open={dataOpen} onClose={() => setDataOpen(false)} />
+      <AccountSheet open={accountOpen} onClose={() => setAccountOpen(false)} />
       {bookletOpen && <BookletScreen onClose={() => setBookletOpen(false)} />}
       <DebriefSheet debrief={debrief} onClose={() => setDebrief(null)} />
       <ExerciseGuideSheet exerciseId={guideExercise} onClose={() => setGuideExercise(null)} />
