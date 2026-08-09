@@ -84,15 +84,27 @@ function UpdateToast() {
 
   if (!show) return null
   return (
-    <div className="fixed inset-x-4 top-3 z-[70] mx-auto flex max-w-lg items-center justify-between rounded-2xl border border-cyan/30 bg-bg/95 px-4 py-3 shadow-2xl backdrop-blur">
-      <span className="text-[13px] font-bold text-cyan">Update ready</span>
-      <div className="flex gap-2">
-        <button className="rounded-lg bg-surface-2 px-3 py-1.5 text-[12px] font-bold text-ink-dim" onClick={() => setShow(false)}>
-          After my session
-        </button>
-        <button className="rounded-lg bg-cyan px-3 py-1.5 text-[12px] font-black text-black" onClick={() => reload?.()}>
-          Update now
-        </button>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center px-6">
+      <div className="absolute inset-0 bg-black/60 animate-fade-in" onClick={() => setShow(false)} />
+      <div className="relative w-full max-w-sm rounded-2xl border border-cyan/30 bg-bg p-5 shadow-2xl animate-fade-in">
+        <h3 className="text-[17px] font-black tracking-tight text-cyan">Update ready</h3>
+        <p className="mt-1 text-[13px] leading-snug text-ink-dim">
+          A new version of the app is available.
+        </p>
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            className="w-full rounded-xl bg-cyan py-3 text-[14px] font-black text-black active:scale-[0.98]"
+            onClick={() => reload?.()}
+          >
+            Update now
+          </button>
+          <button
+            className="w-full rounded-xl bg-surface-2 py-3 text-[13px] font-bold text-ink-dim active:scale-[0.98]"
+            onClick={() => setShow(false)}
+          >
+            After my session
+          </button>
+        </div>
       </div>
     </div>
   )
