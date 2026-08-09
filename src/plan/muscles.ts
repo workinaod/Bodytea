@@ -85,6 +85,25 @@ export const EXERCISE_MUSCLES: Record<string, MuscleActivation> = {
   'stair-run': { primary: ['quads', 'glutes'], secondary: ['calves', 'heart'] },
   'circuit-a': { primary: ['full-body'], secondary: ['heart'] },
   'circuit-b': { primary: ['abs', 'hip-flexors'], secondary: ['heart', 'full-body'] },
+
+  // ---- Generator catalog (bodyweight tier + gym machines) ----
+  'push-up': { primary: ['chest', 'triceps'], secondary: ['delts-front', 'abs'] },
+  'pike-push-up': { primary: ['delts-front', 'delts-side'], secondary: ['triceps', 'chest-upper'] },
+  'inverted-row': { primary: ['lats', 'mid-back'], secondary: ['biceps', 'delts-rear'] },
+  'chin-up': { primary: ['biceps', 'lats'], secondary: ['mid-back', 'forearms'] },
+  'split-squat': { primary: ['quads', 'glutes'], secondary: ['adductors', 'hamstrings'] },
+  'reverse-lunge': { primary: ['glutes', 'quads'], secondary: ['hamstrings'] },
+  'glute-bridge': { primary: ['glutes'], secondary: ['hamstrings', 'lower-back'] },
+  'hollow-hold': { primary: ['abs'], secondary: ['hip-flexors', 'quads'] },
+  'dead-bug': { primary: ['abs', 'obliques'], secondary: ['hip-flexors'] },
+  'db-shoulder-press': { primary: ['delts-front', 'delts-side'], secondary: ['triceps', 'chest-upper'] },
+  'lat-pulldown': { primary: ['lats'], secondary: ['biceps', 'mid-back'] },
+  'seated-cable-row': { primary: ['mid-back', 'lats'], secondary: ['biceps', 'delts-rear'] },
+  'leg-press': { primary: ['quads', 'glutes'], secondary: ['adductors', 'hamstrings'] },
+  'machine-leg-curl': { primary: ['hamstrings'], secondary: ['calves'] },
+  'bike-erg': { primary: ['heart'], secondary: ['quads', 'full-body'] },
+  'rowing-erg': { primary: ['heart'], secondary: ['mid-back', 'quads'] },
+  'db-rdl': { primary: ['hamstrings', 'glutes'], secondary: ['lower-back', 'forearms'] },
 }
 
 export function musclesFor(exerciseId: string): MuscleActivation {

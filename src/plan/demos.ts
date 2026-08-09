@@ -622,6 +622,130 @@ export const EXERCISE_DEMOS: Record<string, DemoSpec> = {
     F(P({ hy: 56, torso: 8, thighF: -8, shinF: -2, footF: 20, thighB: 95, shinB: -60, footB: 30, armF: -36, foreF: -40, armB: 40, foreB: 105 }), 300, 'Tall chest — steady repeatable pace'),
     F(P({ hy: 56.5, torso: 8, thighF: -4, shinF: -1, footF: 15, thighB: 30, shinB: -50, footB: 30, armF: -5, foreF: 0, armB: 5, foreB: 50 }), 300),
   ]),
+
+  // ================= GENERATOR CATALOG =================
+  'push-up': spec([
+    F(P({ hx: 46, hy: 71, torso: 84, head: 6, thighF: -80, shinF: -81, footF: 115, thighB: -76, shinB: -77, footB: 115, armF: 10, foreF: 14, armB: 6, foreB: 10 }), 600, 'One straight line — hands under the shoulders', { hold: 250 }),
+    F(P({ hx: 46, hy: 78, torso: 84, head: 6, thighF: -80, shinF: -81, footF: 115, thighB: -76, shinB: -77, footB: 115, armF: -42, foreF: 55, armB: -46, foreB: 51 }), 800, 'Chest to the floor — elbows 45°', { hold: 250 }),
+    F(P({ hx: 46, hy: 71, torso: 84, head: 6, thighF: -80, shinF: -81, footF: 115, thighB: -76, shinB: -77, footB: 115, armF: 10, foreF: 14, armB: 6, foreB: 10 }), 600, 'Press the floor away', { ease: 'out', hold: 300 }),
+  ]),
+  'pike-push-up': spec([
+    F(P({ hx: 50, hy: 52, torso: 122, head: 10, thighF: -30, shinF: -25, footF: 100, thighB: -26, shinB: -21, footB: 100, armF: 16, foreF: 18, armB: 12, foreB: 14 }), 650, 'Hips HIGH — inverted V', { hold: 300 }),
+    F(P({ hx: 50, hy: 56, torso: 126, head: 10, thighF: -32, shinF: -27, footF: 100, thighB: -28, shinB: -23, footB: 100, armF: -30, foreF: 62, armB: -34, foreB: 58 }), 800, 'Head slides between the hands', { hold: 250 }),
+    F(P({ hx: 50, hy: 52, torso: 122, head: 10, thighF: -30, shinF: -25, footF: 100, thighB: -26, shinB: -21, footB: 100, armF: 16, foreF: 18, armB: 12, foreB: 14 }), 620, 'Press back to the V', { ease: 'out', hold: 300 }),
+  ]),
+  'inverted-row': spec(
+    [
+      F(P({ hx: 50, hy: 72, torso: 70, head: -8, thighF: 42, shinF: 55, footF: -20, thighB: 46, shinB: 59, footB: -20, armF: 155, foreF: 160, armB: 151, foreB: 156 }), 650, 'Hang under the bar — arms long', { hold: 300 }),
+      F(P({ hx: 50, hy: 65, torso: 70, head: -8, thighF: 38, shinF: 51, footF: -20, thighB: 42, shinB: 55, footB: -20, armF: 185, foreF: 105, armB: 181, foreB: 101 }), 550, 'Pull the CHEST to the bar', { ease: 'out', hold: 350 }),
+      F(P({ hx: 50, hy: 72, torso: 70, head: -8, thighF: 42, shinF: 55, footF: -20, thighB: 46, shinB: 59, footB: -20, armF: 155, foreF: 160, armB: 151, foreB: 156 }), 850, 'Lower to a full stretch', { hold: 250 }),
+    ],
+    { kind: 'none' },
+    [seg(28, 46, 76, 46, 2.5), seg(30, 46, 30, 90, 1.8), seg(74, 46, 74, 90, 1.8)],
+  ),
+  'chin-up': spec(
+    [
+      F(P({ hx: 50, hy: 52, torso: 0, thighF: 3, shinF: 1, footF: 30, thighB: -3, shinB: 0, footB: 30, armF: 179, foreF: 179, armB: 177, foreB: 177 }), 650, 'Dead hang — palms toward you', { hold: 300 }),
+      F(P({ hx: 50, hy: 39, torso: 4, head: -4, thighF: 8, shinF: -22, footF: 35, thighB: 2, shinB: -28, footB: 35, armF: 95, foreF: 227, armB: 92, foreB: 224 }), 700, 'Elbows to your sides — chin over', { hold: 400 }),
+      F(P({ hx: 50, hy: 52, torso: 0, thighF: 3, shinF: 1, footF: 30, thighB: -3, shinB: 0, footB: 30, armF: 179, foreF: 179, armB: 177, foreB: 177 }), 950, 'All the way down — full stretch', { hold: 300 }),
+    ],
+    { kind: 'none' },
+    PULL_BAR,
+  ),
+  'split-squat': spec([
+    F(P({ hx: 52, hy: 60.5, torso: 6, thighF: 26, shinF: -8, thighB: -30, shinB: -60, footB: 40, armF: 12, foreF: 14, armB: -10, foreB: -8 }), 600, 'Long split stance — weight on the front leg', { hold: 300 }),
+    F(P({ hx: 52, hy: 70, torso: 12, thighF: 74, shinF: -8, thighB: -32, shinB: -84, footB: 140, armF: 12, foreF: 14, armB: -10, foreB: -8 }), 800, 'Back knee straight DOWN', { hold: 250 }),
+    F(P({ hx: 52, hy: 60.5, torso: 6, thighF: 26, shinF: -8, thighB: -30, shinB: -60, footB: 40, armF: 12, foreF: 14, armB: -10, foreB: -8 }), 620, 'Drive through the front heel', { ease: 'out', hold: 300 }),
+  ]),
+  'reverse-lunge': spec([
+    F(P({}), 550, 'Tall — step straight BACK', { hold: 250 }),
+    F(P({ hx: 46, hy: 71, torso: 8, thighF: 78, shinF: -6, thighB: -32, shinB: -82, footB: 145, armF: -14, foreF: -16, armB: 16, foreB: 18 }), 800, 'Back knee drops — front shin vertical', { hold: 250 }),
+    F(P({}), 620, 'Front heel drives you home', { ease: 'out', hold: 300 }),
+  ]),
+  'glute-bridge': spec([
+    F(P({ hx: 46, hy: 84, torso: -82, head: -18, thighF: 105, shinF: -55, thighB: 101, shinB: -51, armF: -78, foreF: -80, armB: 78, foreB: 80 }), 600, 'Heels close — ribs down', { hold: 250 }),
+    F(P({ hx: 48, hy: 74, torso: -62, head: -34, thighF: 96, shinF: -24, thighB: 92, shinB: -20, armF: -78, foreF: -80, armB: 78, foreB: 80 }), 600, 'Squeeze UP to a straight line — hold', { ease: 'out', hold: 600 }),
+    F(P({ hx: 46, hy: 84, torso: -82, head: -18, thighF: 105, shinF: -55, thighB: 101, shinB: -51, armF: -78, foreF: -80, armB: 78, foreB: 80 }), 800, 'Lower under control', { hold: 200 }),
+  ]),
+  'hollow-hold': spec([
+    F(P({ hx: 46, hy: 82, torso: -68, head: -26, thighF: 62, shinF: 66, footF: 45, thighB: 58, shinB: 62, footB: 45, armF: 100, foreF: 102, armB: 96, foreB: 98 }), 900, 'Lower back GLUED to the floor', { hold: 700 }),
+    F(P({ hx: 46, hy: 82, torso: -70, head: -28, thighF: 58, shinF: 62, footF: 45, thighB: 54, shinB: 58, footB: 45, armF: 104, foreF: 106, armB: 100, foreB: 102 }), 900, 'Shallow dish — breathe behind the brace', { hold: 700 }),
+  ]),
+  'dead-bug': spec([
+    F(P({ hx: 46, hy: 84, torso: -82, head: -18, thighF: 100, shinF: -15, thighB: 96, shinB: -11, armF: 170, foreF: 172, armB: 166, foreB: 168 }), 650, 'Arms up, knees over hips', { hold: 300 }),
+    F(P({ hx: 46, hy: 84, torso: -82, head: -18, thighF: 100, shinF: -15, thighB: 55, shinB: 35, footB: -10, armF: 115, foreF: 117, armB: 166, foreB: 168 }), 850, 'Opposite arm + leg lower — SLOW', { hold: 350 }),
+    F(P({ hx: 46, hy: 84, torso: -82, head: -18, thighF: 100, shinF: -15, thighB: 96, shinB: -11, armF: 170, foreF: 172, armB: 166, foreB: 168 }), 700, 'Back stays pressed down — switch', { hold: 300 }),
+    F(P({ hx: 46, hy: 84, torso: -82, head: -18, thighF: 55, shinF: 35, footF: -10, thighB: 96, shinB: -11, armF: 170, foreF: 172, armB: 111, foreB: 113 }), 850, 'Other side — exhale as you reach', { hold: 350 }),
+  ]),
+  'db-shoulder-press': spec(
+    [
+      F(P({ torso: 3, armF: 30, foreF: 168, armB: 27, foreB: 165 }), 600, 'Bells at the shoulders — ribs down', { hold: 300 }),
+      F(P({ torso: 1, armF: 172, foreF: 176, armB: 169, foreB: 173 }), 550, 'Press straight up — biceps by the ears', { ease: 'out', hold: 450 }),
+      F(P({ torso: 3, armF: 30, foreF: 168, armB: 27, foreB: 165 }), 850, 'Lower with control', { hold: 250 }),
+    ],
+    { kind: 'db', at: 'wrists' },
+  ),
+  'lat-pulldown': spec(
+    [
+      F(P({ hx: 46, hy: 70, torso: 8, thighF: 88, shinF: -6, thighB: 84, shinB: -2, armF: 168, foreF: 172, armB: 165, foreB: 169 }), 650, 'Blades set — arms long overhead', { hold: 300 }),
+      F(P({ hx: 46, hy: 70, torso: 12, thighF: 88, shinF: -6, thighB: 84, shinB: -2, armF: 55, foreF: 195, armB: 52, foreB: 192 }), 550, 'Elbows DOWN — bar to the chest', { ease: 'out', hold: 400 }),
+      F(P({ hx: 46, hy: 70, torso: 8, thighF: 88, shinF: -6, thighB: 84, shinB: -2, armF: 168, foreF: 172, armB: 165, foreB: 169 }), 900, 'Ride the stretch all the way up', { hold: 250 }),
+    ],
+    { kind: 'none' },
+    [seg(40, 12, 72, 12, 2.2), seg(28, 78, 52, 78, 3), seg(32, 78, 32, 90, 1.8), seg(48, 78, 48, 90, 1.8)],
+  ),
+  'seated-cable-row': spec(
+    [
+      F(P({ hx: 44, hy: 74, torso: 22, head: -6, thighF: 82, shinF: 40, footF: -30, thighB: 78, shinB: 36, footB: -30, armF: 95, foreF: 97, armB: 92, foreB: 94 }), 650, 'Full stretch — blades slide forward', { hold: 300 }),
+      F(P({ hx: 44, hy: 74, torso: 2, head: 0, thighF: 82, shinF: 40, footF: -30, thighB: 78, shinB: 36, footB: -30, armF: -25, foreF: 85, armB: -28, foreB: 82 }), 550, 'Pull to the lower ribs — chest proud', { ease: 'out', hold: 400 }),
+      F(P({ hx: 44, hy: 74, torso: 22, head: -6, thighF: 82, shinF: 40, footF: -30, thighB: 78, shinB: 36, footB: -30, armF: 95, foreF: 97, armB: 92, foreB: 94 }), 900, 'Return slow to the stretch', { hold: 250 }),
+    ],
+    { kind: 'none' },
+    [seg(24, 78, 60, 78, 3), seg(76, 60, 76, 90, 2.2)],
+  ),
+  'leg-press': spec(
+    [
+      F(P({ hx: 38, hy: 68, torso: -38, head: 30, thighF: 62, shinF: 30, footF: -20, thighB: 58, shinB: 26, footB: -20, armF: 35, foreF: 40, armB: 31, foreB: 36 }), 650, 'Feet mid-platform — back on the pad', { hold: 300 }),
+      F(P({ hx: 38, hy: 68, torso: -38, head: 30, thighF: 105, shinF: -20, footF: 20, thighB: 101, shinB: -24, footB: 20, armF: 35, foreF: 40, armB: 31, foreB: 36 }), 800, 'Lower until knees near the chest', { hold: 250 }),
+      F(P({ hx: 38, hy: 68, torso: -38, head: 30, thighF: 62, shinF: 30, footF: -20, thighB: 58, shinB: 26, footB: -20, armF: 35, foreF: 40, armB: 31, foreB: 36 }), 600, 'Press through mid-foot — never slam lockout', { ease: 'out', hold: 300 }),
+    ],
+    { kind: 'none' },
+    [seg(66, 44, 84, 78, 3), seg(20, 82, 48, 82, 3)],
+  ),
+  'machine-leg-curl': spec(
+    [
+      F(P({ hx: 46, hy: 76, torso: 86, head: 8, thighF: -82, shinF: -84, footF: 100, thighB: -78, shinB: -80, footB: 100, armF: 25, foreF: 60, armB: 21, foreB: 56 }), 650, 'Hips pinned — pad above the heels', { hold: 300 }),
+      F(P({ hx: 46, hy: 76, torso: 86, head: 8, thighF: -82, shinF: -160, footF: 40, thighB: -78, shinB: -156, footB: 40, armF: 25, foreF: 60, armB: 21, foreB: 56 }), 550, 'Curl the heels to the glutes — squeeze', { ease: 'out', hold: 400 }),
+      F(P({ hx: 46, hy: 76, torso: 86, head: 8, thighF: -82, shinF: -84, footF: 100, thighB: -78, shinB: -80, footB: 100, armF: 25, foreF: 60, armB: 21, foreB: 56 }), 1000, 'Three seconds down — full stretch', { hold: 250 }),
+    ],
+    { kind: 'none' },
+    [seg(20, 84, 80, 84, 3)],
+  ),
+  'bike-erg': spec(
+    [
+      F(P({ hx: 46, hy: 62, torso: 28, head: -8, thighF: 78, shinF: -30, footF: 15, thighB: 30, shinB: 25, footB: 15, armF: 55, foreF: 75, armB: 51, foreB: 71 }), 400, 'Smooth circles — quiet upper body'),
+      F(P({ hx: 46, hy: 62, torso: 28, head: -8, thighF: 30, shinF: 25, footF: 15, thighB: 78, shinB: -30, footB: 15, armF: 55, foreF: 75, armB: 51, foreB: 71 }), 400, 'Conversational pace = zone 2'),
+    ],
+    { kind: 'none' },
+    [seg(30, 78, 30, 90, 2), seg(64, 66, 64, 78, 2), seg(24, 90, 40, 90, 2.5), seg(56, 84, 74, 84, 2.5)],
+  ),
+  'rowing-erg': spec(
+    [
+      F(P({ hx: 42, hy: 72, torso: 30, head: -6, thighF: 95, shinF: -35, footF: -20, thighB: 91, shinB: -31, footB: -20, armF: 85, foreF: 88, armB: 81, foreB: 84 }), 700, 'Catch — arms long, shins vertical', { hold: 200 }),
+      F(P({ hx: 50, hy: 72, torso: -18, head: 10, thighF: 70, shinF: 35, footF: -20, thighB: 66, shinB: 31, footB: -20, armF: -20, foreF: 70, armB: -24, foreB: 66 }), 600, 'LEGS drive — then swing, then pull', { ease: 'out', hold: 350 }),
+      F(P({ hx: 42, hy: 72, torso: 30, head: -6, thighF: 95, shinF: -35, footF: -20, thighB: 91, shinB: -31, footB: -20, armF: 85, foreF: 88, armB: 81, foreB: 84 }), 800, 'Arms away, hips forward, slide up', { hold: 200 }),
+    ],
+    { kind: 'none' },
+    [seg(18, 82, 86, 82, 2.5), seg(80, 62, 80, 82, 2.2)],
+  ),
+  'db-rdl': spec(
+    [
+      F(P({ armF: 4, foreF: 4, armB: 2, foreB: 2 }), 550, 'Bells on the thighs — soft knees', { hold: 250 }),
+      F(P({ hx: 43, hy: 59.5, torso: 52, head: -8, thighF: 18, shinF: 2, thighB: 16, shinB: 4, armF: -6, foreF: -6, armB: -6, foreB: -6 }), 1000, 'Hips BACK — bells slide the legs', { hold: 300 }),
+      F(P({ armF: 4, foreF: 4, armB: 2, foreB: 2 }), 650, 'Drive the hips through — squeeze tall', { ease: 'out', hold: 350 }),
+    ],
+    { kind: 'db', at: 'wrists' },
+  ),
 }
 
 /** Demo for an exercise, with a safe standing fallback. */

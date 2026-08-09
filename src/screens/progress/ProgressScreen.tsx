@@ -89,6 +89,21 @@ export function ProgressScreen() {
 
   const activeMetric = METRICS.find((m) => m.key === metric)!
 
+  // Captions speak to the USER's booklet: custom targets win, then the
+  // goal statement for the metric closest to their goal; the owner's
+  // NAOD preset keeps its original captions.
+  const captionFor = (key: string, fallback: string): string => {
+    const plan = data.plan
+    if (plan.name === 'NAOD V3') return fallback
+    const hint = key === 'vertIn' ? 'vert' : key === 'armsIn' ? 'arm' : key === 'waistIn' ? 'waist' : key === 'weightLb' ? 'weight' : '␀'
+    const t = plan.customTargets.find((c) => c.label.toLowerCase().includes(hint))
+    if (t) return `Target: ${t.target}${t.unit} — “${plan.goalStatement}”`
+    if (key === 'vertIn' && (plan.goal === 'vertical' || plan.goal === 'speed')) return `“${plan.goalStatement}” — track the same touch point every time.`
+    if (key === 'waistIn' && plan.goal === 'lean') return 'THE metric for your cut — this line falling is the whole goal.'
+    if (key === 'weightLb' && plan.goal === 'muscle') return 'Should trend UP slowly — muscle is built, not wished for.'
+    return ''
+  }
+
   return (
     <div className="space-y-3 pb-6">
       <h1 className="text-[24px] font-black tracking-tight">Progress</h1>
@@ -153,8 +168,8 @@ export function ProgressScreen() {
           targetValue={metric === 'armsIn' ? 16 : undefined}
           targetLabel={metric === 'armsIn' ? '16" goal' : undefined}
         />
-        {activeMetric.caption && (
-          <p className="mt-1 text-[11px] font-semibold text-ink-faint">{activeMetric.caption}</p>
+        {captionFor(activeMetric.key, activeMetric.caption) && (
+          <p className="mt-1 text-[11px] font-semibold text-ink-faint">{captionFor(activeMetric.key, activeMetric.caption)}</p>
         )}
       </Card>
 

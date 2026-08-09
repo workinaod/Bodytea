@@ -116,6 +116,7 @@ export function coachMessageFor(
     count: unprovenExcusesInWindow(data.excuses, todayIso).length + 1,
     dates: priorDatesText(data.excuses, todayIso) || 'today',
     proteinTarget: data.settings.proteinTargetG,
+    goalPhrase: data.plan.goalStatement,
     level,
     ...vars,
   }

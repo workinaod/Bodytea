@@ -228,7 +228,7 @@ export const MESSAGE_POOLS: MessagePool[] = [
     variants: [
       '{streak} straight days at 200+ g protein. The most boring superpower in fitness, fully operational.',
       'Protein target hit {streak} days running. This is the invisible half of the recomp working.',
-      "{streak} days of 200 g. The plan said it's the number you never miss — you listened. The mirror will too.",
+      "{streak} days of {proteinTarget} g. The plan said it's the number you never miss — you listened. The mirror will too.",
       'Protein streak: {streak}. Meals are training. You are currently undefeated.',
     ],
   },

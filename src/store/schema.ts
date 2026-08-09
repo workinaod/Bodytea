@@ -56,7 +56,7 @@ const dayTemplateSchema = z.object({
   debriefKey: z.string().optional(),
 })
 
-const planConfigSchema = z.object({
+export const planConfigSchema = z.object({
   planVersion: z.literal(1),
   name: z.string().min(1),
   goal: z.enum(['vertical', 'speed', 'muscle', 'strength', 'lean', 'general']),

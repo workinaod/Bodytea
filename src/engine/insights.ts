@@ -119,7 +119,7 @@ const RULES: RuleDef[] = [
     },
     variants: [
       'Protein target hit {hit} of the last 7 days. The single most important nutrition number, handled. This is the invisible half of every PR.',
-      '{hit}/7 days at 200+ g protein this week. The plan said never miss it — you didn\'t. Muscle retention during a recomp is exactly this.',
+      '{hit}/7 days at {proteinTarget}+ g protein this week. The plan said never miss it — you didn\'t. Muscle retention during a recomp is exactly this.',
       'The week\'s protein ledger: {hit} of 7 on target. Boring, repeatable, undefeated. Keep the streak alive.',
     ],
   },
@@ -141,7 +141,7 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Protein hit only {hit} of the last 7 days. Training tears muscle down; without the 200 g it rebuilds at half speed. The shake + Greek yogurt combo closes 50 g in five minutes — no cooking.',
+      'Protein hit only {hit} of the last 7 days. Training tears muscle down; without the {proteinTarget} g it rebuilds at half speed. The shake + Greek yogurt combo closes 50 g in five minutes — no cooking.',
       '{hit}/7 on protein this week. Everything you lifted this week rebuilds slower because of it. Front-load tomorrow: eggs + yogurt at breakfast is 45 g before noon.',
       'The weak link this week wasn\'t training — it was {hit}/7 on protein. The plan\'s one unbreakable nutrition rule. Fix breakfast and the number fixes itself.',
     ],
@@ -412,7 +412,7 @@ const RULES: RuleDef[] = [
     },
     variants: [
       '{empty} of the last 7 days have zero meals logged. I can\'t coach what you don\'t log — and the protein target can\'t be "probably fine". The meal chips take literal seconds.',
-      'Food log went dark {empty} days this week. The recomp runs on the 200 g number and right now it\'s unverifiable. One tap per meal — that\'s the whole ask.',
+      'Food log went dark {empty} days this week. The recomp runs on the {proteinTarget} g number and right now it\'s unverifiable. One tap per meal — that\'s the whole ask.',
       '{empty} blank food days. If logging feels heavy, use only the big meal chips — five taps covers a whole day. Data in, insight out.',
     ],
   },
@@ -443,8 +443,13 @@ export function generateInsights(data: AppData, today: ISODate): Insight[] {
       vars = null
     }
     if (!vars) continue
+    const allVars: Record<string, unknown> = {
+      proteinTarget: data.settings.proteinTargetG,
+      goalPhrase: data.plan.goalStatement,
+      ...vars,
+    }
     const text = variantFor(rule, today).replace(/\{(\w+)\}/g, (_, k: string) =>
-      k in vars! ? String(vars![k]) : `{${k}}`,
+      k in allVars ? String(allVars[k]) : `{${k}}`,
     )
     out.push({
       ruleId: rule.id,

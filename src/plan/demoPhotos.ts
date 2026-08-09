@@ -241,6 +241,60 @@ export const DEMO_PHOTOS: Record<string, DemoPhotoSeq> = {
     ['Mountain_Climbers-0.webp', 'Hips low — drive the knee under you'],
     ['Mountain_Climbers-1.webp', 'Switch — quick light feet, steady pace'],
   ),
+
+  // ---- Generator catalog ----
+  'push-up': seq(
+    ['Pushups-0.webp', 'One straight line — hands under the shoulders'],
+    ['Pushups-1.webp', 'Chest to the floor — elbows 45°'],
+  ),
+  'chin-up': seq(
+    ['Chin-Up-0.webp', 'Dead hang — palms toward you'],
+    ['Chin-Up-1.webp', 'Elbows to your sides — chin clears the bar'],
+  ),
+  'inverted-row': seq(
+    ['Inverted_Row-0.webp', 'Hang under the bar — body one straight line'],
+    ['Inverted_Row-1.webp', 'Pull the CHEST to the bar — squeeze the blades'],
+  ),
+  'split-squat': seq(
+    ['Split_Squats-1.webp', 'Long split stance — weight on the front leg'],
+    ['Split_Squats-0.webp', 'Back knee sinks straight down'],
+  ),
+  'reverse-lunge': seq(
+    ['Dumbbell_Rear_Lunge-0.webp', 'Tall — step straight BACK'],
+    ['Dumbbell_Rear_Lunge-1.webp', 'Back knee drops — front shin stays vertical'],
+  ),
+  'glute-bridge': seq(
+    ['Butt_Lift_Bridge-1.webp', 'Heels close — ribs down'],
+    ['Butt_Lift_Bridge-0.webp', 'Squeeze UP to a straight line — hold the top'],
+  ),
+  'db-shoulder-press': seq(
+    ['Dumbbell_Shoulder_Press-1.webp', 'Bells at the shoulders — abs braced'],
+    ['Dumbbell_Shoulder_Press-0.webp', 'Press straight up — biceps by the ears'],
+  ),
+  'lat-pulldown': seq(
+    ['Wide-Grip_Lat_Pulldown-0.webp', 'Blades set first — arms long overhead'],
+    ['Wide-Grip_Lat_Pulldown-1.webp', 'Elbows DOWN — bar to the upper chest'],
+  ),
+  'seated-cable-row': seq(
+    ['Seated_Cable_Rows-0.webp', 'Full stretch — blades slide forward'],
+    ['Seated_Cable_Rows-1.webp', 'Pull to the lower ribs — chest proud'],
+  ),
+  'leg-press': seq(
+    ['Leg_Press-0.webp', 'Feet mid-platform — knees tracking the toes'],
+    ['Leg_Press-1.webp', 'Lower deep — butt stays ON the pad'],
+  ),
+  'machine-leg-curl': seq(
+    ['Lying_Leg_Curls-0.webp', 'Hips pinned — legs long, pad above the heels'],
+    ['Lying_Leg_Curls-1.webp', 'Curl the heels to the glutes — squeeze'],
+  ),
+  'bike-erg': seq(
+    ['Bicycling_Stationary-0.webp', 'Smooth circles — quiet upper body'],
+    ['Bicycling_Stationary-1.webp', 'Conversational pace = zone 2'],
+  ),
+  'rowing-erg': seq(
+    ['Rowing_Stationary-0.webp', 'Catch — arms long, shins vertical'],
+    ['Rowing_Stationary-1.webp', 'LEGS drive, hips swing, arms finish'],
+  ),
 }
 
 /** Photo sequence for an exercise, or null (falls back to the animated figure). */

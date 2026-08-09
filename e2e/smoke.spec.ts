@@ -1,22 +1,36 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 // One serial journey through the core loop — each step depends on the last.
 test.describe.configure({ mode: 'serial' })
 
-test('full core loop: onboard → session → meals → debrief → export', async ({ page }) => {
+/** Walk the generator onboarding: vertical goal, 6 days, home-db gear. */
+async function onboardGenerated(page: Page) {
+  await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Next — the goal' }).click()
+  await page.getByText('🏀 Dunk a basketball').click()
+  await page.getByPlaceholder(/dunk on a 10-ft rim/).fill('dunk on a 10-ft rim by June')
+  await page.getByRole('button', { name: 'Next — my week' }).click()
+  await page.getByRole('button', { name: '6 days' }).click()
+  await page.getByRole('button', { name: 'Next — my gear' }).click()
+  await page.getByRole('button', { name: 'Next — experience' }).click()
+  await page.getByRole('button', { name: 'Next — numbers' }).click()
+  await page.getByRole('button', { name: 'Generate my booklet' }).click()
+  await expect(page.getByText('Vertical Project — 6-Day')).toBeVisible()
+  await expect(page.getByText('“dunk on a 10-ft rim by June”')).toBeVisible()
+  await page.getByRole('button', { name: "Start Week 1 — let's work" }).click()
+}
+
+test('full core loop: onboard-generate → session → meals → debrief → export', async ({ page }) => {
   await page.goto('./')
 
-  // ---- Onboarding ----
-  await expect(page.getByRole('heading', { name: 'NAOD V3' })).toBeVisible()
-  await page.getByText('Set it up (60 seconds)').click()
-  await page.getByText('Next — baseline numbers').click()
-  await page.getByText('Last step').click()
-  await page.getByText("Let's work.").click()
+  // ---- Onboarding v2 generates a personal booklet ----
+  await expect(page.getByText('Your goal.')).toBeVisible()
+  await onboardGenerated(page)
 
   // ---- Today renders a resolved day ----
   await expect(page.getByText(/Week \d+/).first()).toBeVisible()
   const isRest = await page
-    .getByRole('heading', { name: 'Full Rest' })
+    .getByRole('heading', { name: /^(Full )?Rest/ })
     .isVisible()
     .catch(() => false)
 
@@ -62,7 +76,8 @@ test('full core loop: onboard → session → meals → debrief → export', asy
   await expect(page.getByText('Protein', { exact: true })).toBeVisible()
   const mealChip = page.locator('button', { hasText: /Breakfast — / }).first()
   await mealChip.click()
-  await expect(page.locator('text=/4[05] ?\\/ 200/').first()).toBeVisible({ timeout: 5000 })
+  // Generated plan @180 lb → protein target 180 g (1 g/lb)
+  await expect(page.locator('text=/4[05] ?\\/ 180/').first()).toBeVisible({ timeout: 5000 })
 
   // ---- Progress renders ----
   await page.getByRole('button', { name: 'Progress', exact: true }).click()
@@ -88,12 +103,9 @@ test('midnight rollover advances the app without a reload', async ({ page }) => 
   // Wednesday Aug 12 2026, 23:58 local — a heavy lower day
   await page.clock.install({ time: new Date(2026, 7, 12, 23, 58) })
   await page.goto('./')
-  await page.getByText('Set it up (60 seconds)').click()
-  await page.getByText('Next — baseline numbers').click()
-  await page.getByText('Last step').click()
-  await page.getByText("Let's work.").click()
+  await onboardGenerated(page)
 
-  await expect(page.getByText('Lower Strength + Hypertrophy')).toBeVisible()
+  await expect(page.getByText('Lower Strength', { exact: true })).toBeVisible()
 
   // Cross midnight (the 30s safety check and midnight timer both fire)
   await page.clock.fastForward('00:05:00')
@@ -108,7 +120,8 @@ test('midnight rollover advances the app without a reload', async ({ page }) => 
   await page.getByRole('button', { name: 'Skipped, no proof' }).click()
   await expect(page.getByText(/unaccounted for/)).not.toBeVisible()
 
-  // Meals follow too: Thursday is a rest day → 2,500 kcal target
+  // Meals follow too: Thursday is a rest day → the GENERATED rest target
+  // (180 lb vertical plan: 2700 base + 200 goal − 300 rest = 2600)
   await page.getByRole('button', { name: 'Meals', exact: true }).click()
-  await expect(page.getByText(/Rest day · 2500 kcal/)).toBeVisible()
+  await expect(page.getByText(/Rest day · 2600 kcal/)).toBeVisible()
 })
