@@ -61,6 +61,8 @@ export const planConfigSchema = z.object({
   name: z.string().min(1),
   goal: z.enum(['vertical', 'speed', 'muscle', 'strength', 'lean', 'general']),
   goalStatement: z.string(),
+  routineGoals: z.array(z.enum(['muscle', 'lose-weight', 'maintain', 'athletic'])).optional(),
+  whyWorks: z.string().optional(),
   customTargets: z.array(
     z.object({ label: z.string(), current: z.number().optional(), target: z.number(), unit: z.string() }),
   ),

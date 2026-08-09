@@ -111,6 +111,9 @@ export interface DayTemplate {
 /** Engine-level training emphasis a plan is built around. */
 export type Goal = 'vertical' | 'speed' | 'muscle' | 'strength' | 'lean' | 'general'
 
+/** What a bring-your-own routine is chasing — multi-select. */
+export type RoutineGoal = 'muscle' | 'lose-weight' | 'maintain' | 'athletic'
+
 /** Which voice the coach copy uses. */
 export type CopyFlavor = 'explosive' | 'physique' | 'general'
 
@@ -151,6 +154,13 @@ export interface PlanConfig {
   goal: Goal
   /** The user's goal in their own words — threads through copy + rationale. */
   goalStatement: string
+  /**
+   * Bring-your-own-routine: what the routine is chasing (multi-select).
+   * Absent on generated plans and the owner's preset.
+   */
+  routineGoals?: RoutineGoal[]
+  /** BYOR: their own answer to "why has this routine been working for you?" */
+  whyWorks?: string
   customTargets: CustomTarget[]
   copyFlavor: CopyFlavor
   daysPerWeek: number

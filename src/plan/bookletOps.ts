@@ -1,7 +1,7 @@
-import type { CustomTarget, DayTemplate, Goal, PlanConfig, TemplateEntry, Weekday } from '../types'
+import type { CustomTarget, DayTemplate, Goal, PlanConfig, RoutineGoal, TemplateEntry, Weekday } from '../types'
 import { getExercise, EXERCISES } from './exercises'
 import { equipFor } from './equip'
-import { buildNutrition, pickCardio, rationaleFor } from './generator'
+import { pickCardio, rationaleFor } from './generator'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -16,24 +16,66 @@ const ALL_TAGS: EquipTag[] = [
   'box', 'plate', 'machine', 'open-space', 'hill-stairs', 'court', 'treadmill',
 ]
 
+/** Labels for the routine-goal chips, shared by onboarding + the editor. */
+export const ROUTINE_GOAL_LABELS: Record<RoutineGoal, string> = {
+  muscle: '💪 Gaining muscle',
+  'lose-weight': '🔥 Losing weight',
+  maintain: '⚖️ Maintaining my body',
+  athletic: '⚡ Gaining athleticism',
+}
+
+/** Collapse the multi-select onto the engine's primary goal (copy voice, board badge). */
+export function primaryGoalOf(goals: RoutineGoal[]): Goal {
+  if (goals.includes('athletic')) return 'general'
+  if (goals.includes('muscle')) return 'muscle'
+  if (goals.includes('lose-weight')) return 'lean'
+  return 'general'
+}
+
+/**
+ * Calorie targets from the goal COMBINATION: surplus for muscle, deficit
+ * for a cut, near-maintenance for recomp (muscle + lose together).
+ */
+export function byorNutrition(goals: RoutineGoal[], bodyweightLb: number) {
+  const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
+  const base = Math.round((bw * 15) / 50) * 50
+  let adj = 0
+  if (goals.includes('muscle')) adj += 300
+  if (goals.includes('lose-weight')) adj -= 400
+  if (goals.includes('athletic')) adj += 150
+  if (goals.includes('muscle') && goals.includes('lose-weight')) {
+    adj = goals.includes('athletic') ? 0 : -100 // recomp: hold near maintenance
+  }
+  const kcalTraining = base + adj
+  return {
+    proteinTargetG: Math.min(260, Math.max(120, Math.round(bw))),
+    kcalTraining,
+    kcalRest: kcalTraining - 300,
+  }
+}
+
 /** A blank booklet for the bring-your-own-routine builder. */
-export function makeEmptyByorPlan(
-  goal: Goal,
-  goalStatement: string,
-  customTargets: CustomTarget[],
-  bodyweightLb: number,
-): { plan: PlanConfig; proteinTargetG: number } {
+export function makeEmptyByorPlan(args: {
+  routineGoals: RoutineGoal[]
+  goalStatement: string
+  customTargets: CustomTarget[]
+  bodyweightLb: number
+  whyWorks?: string
+}): { plan: PlanConfig; proteinTargetG: number } {
   const owned = new Set<EquipTag>(['none', ...ALL_TAGS])
-  const n = buildNutrition(goal, bodyweightLb)
+  const goal = primaryGoalOf(args.routineGoals)
+  const n = byorNutrition(args.routineGoals, args.bodyweightLb)
   return {
     proteinTargetG: n.proteinTargetG,
     plan: {
       planVersion: 1,
       name: 'My Routine',
       goal,
-      goalStatement: goalStatement.trim() || 'My routine, done right',
-      customTargets,
-      copyFlavor: goal === 'vertical' || goal === 'speed' ? 'explosive' : goal === 'muscle' || goal === 'lean' ? 'physique' : 'general',
+      goalStatement: args.goalStatement.trim() || 'My routine, done right',
+      routineGoals: args.routineGoals,
+      whyWorks: args.whyWorks?.trim() || undefined,
+      customTargets: args.customTargets,
+      copyFlavor: goal === 'muscle' || goal === 'lean' ? 'physique' : 'general',
       daysPerWeek: 0,
       equipment: ALL_TAGS,
       templates: {},
@@ -123,6 +165,13 @@ function templateSets(t: DayTemplate): number {
  */
 export function normalizeBooklet(draft: PlanConfig): PlanConfig {
   const plan: PlanConfig = structuredClone(draft)
+
+  // BYOR plans: keep the primary goal (copy voice, board badge) in sync
+  // with the multi-select whenever it was edited
+  if (plan.routineGoals !== undefined) {
+    plan.goal = primaryGoalOf(plan.routineGoals)
+    plan.copyFlavor = plan.goal === 'muscle' || plan.goal === 'lean' ? 'physique' : 'general'
+  }
 
   // Prune weekdays pointing at missing/empty templates
   for (const wd of Object.keys(plan.tier1ByWeekday)) {

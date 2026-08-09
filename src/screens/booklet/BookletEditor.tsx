@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import type { DayTemplate, PlanConfig, TemplateEntry, Weekday } from '../../types'
+import type { DayTemplate, PlanConfig, RoutineGoal, TemplateEntry, Weekday } from '../../types'
 import { EXERCISES, getExercise } from '../../plan/exercises'
 import { EXERCISE_MUSCLES } from '../../plan/muscles'
+import { ROUTINE_GOAL_LABELS } from '../../plan/bookletOps'
 import { photosFor } from '../../plan/demoPhotos'
 import { Btn, Card, Chip, Stepper } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
@@ -81,6 +82,42 @@ export function BookletEditor({
               className="mt-1 w-full resize-none rounded-xl border border-edge bg-surface-2 px-3 py-2.5 text-[13px] font-semibold outline-none focus:border-accent/60"
             />
           </div>
+          {draft.routineGoals !== undefined && (
+            <>
+              <div>
+                <label className="text-[11px] font-black uppercase tracking-wider text-ink-faint">This routine is chasing</label>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {(Object.keys(ROUTINE_GOAL_LABELS) as RoutineGoal[]).map((g) => (
+                    <Chip
+                      key={g}
+                      tone={draft.routineGoals?.includes(g) ? 'accent' : 'default'}
+                      onClick={() =>
+                        mutate((p) => {
+                          const cur = new Set(p.routineGoals ?? [])
+                          if (cur.has(g)) cur.delete(g)
+                          else cur.add(g)
+                          p.routineGoals = [...cur]
+                        })
+                      }
+                    >
+                      {ROUTINE_GOAL_LABELS[g]}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-black uppercase tracking-wider text-ink-faint">
+                  Why it's been working — your read
+                </label>
+                <textarea
+                  value={draft.whyWorks ?? ''}
+                  onChange={(e) => mutate((p) => { p.whyWorks = e.target.value || undefined })}
+                  rows={2}
+                  className="mt-1 w-full resize-none rounded-xl border border-edge bg-surface-2 px-3 py-2.5 text-[13px] font-semibold outline-none focus:border-accent/60"
+                />
+              </div>
+            </>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-bold">Training-day kcal</span>
             <Stepper

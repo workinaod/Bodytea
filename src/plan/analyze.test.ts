@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { analyzeRoutine } from './analyze'
 import { generatePlan } from './generator'
-import { makeEmptyByorPlan, normalizeBooklet, validateBooklet } from './bookletOps'
-import type { PlanConfig, TemplateEntry } from '../types'
+import { byorNutrition, makeEmptyByorPlan, normalizeBooklet, primaryGoalOf, validateBooklet } from './bookletOps'
+import type { PlanConfig, RoutineGoal, TemplateEntry } from '../types'
 import { emptyAppData, defaultWeekState } from '../types'
 import { resolveDay } from '../engine/resolveDay'
 import { addDaysISO } from '../engine/calendar'
@@ -11,8 +11,12 @@ const fixed = (exerciseId: string, sets = 3, repText = '10'): TemplateEntry => (
   entry: 'fixed', exerciseId, sets, repText, repsNum: Number(repText) || undefined,
 })
 
-function byorWith(days: { wd: number; title: string; entries: TemplateEntry[]; cns?: boolean }[], goal: Parameters<typeof makeEmptyByorPlan>[0] = 'general'): PlanConfig {
-  const { plan } = makeEmptyByorPlan(goal, 'test my routine', [], 180)
+function byorWith(
+  days: { wd: number; title: string; entries: TemplateEntry[]; cns?: boolean }[],
+  routineGoals: RoutineGoal[] = ['maintain'],
+  whyWorks?: string,
+): PlanConfig {
+  const { plan } = makeEmptyByorPlan({ routineGoals, goalStatement: 'test my routine', customTargets: [], bodyweightLb: 180, whyWorks })
   for (const d of days) {
     const id = `day-${d.wd}`
     plan.templates[id] = { id, title: d.title, tagline: '', kind: 'session', cns: d.cns, entries: d.entries }
@@ -43,12 +47,53 @@ describe('analyzeRoutine', () => {
     expect(notes.find((n) => n.id === 'hinge-present')?.tone).toBe('good')
   })
 
-  it('calls out a jump goal with no jump training', () => {
+  it('calls out an athleticism goal with no jump/sprint training', () => {
     const plan = byorWith(
       [{ wd: 1, title: 'Legs', entries: [fixed('goblet-squat', 4), fixed('db-rdl', 4)] }],
-      'vertical',
+      ['athletic'],
     )
     expect(analyzeRoutine(plan).find((n) => n.id === 'no-explosive')?.tone).toBe('warn')
+  })
+
+  it('reads the goal COMBINATION: recomp, cut, maintenance', () => {
+    const day = [{ wd: 1, title: 'Full', entries: [fixed('goblet-squat', 4), fixed('db-rdl', 4), fixed('one-arm-db-row', 3)] }]
+    const recomp = analyzeRoutine(byorWith(day, ['muscle', 'lose-weight']))
+    expect(recomp.find((n) => n.id === 'recomp')?.tone).toBe('info')
+    expect(recomp.some((n) => n.id === 'cut-fuel')).toBe(false)
+
+    expect(analyzeRoutine(byorWith(day, ['lose-weight'])).some((n) => n.id === 'cut-fuel')).toBe(true)
+    expect(analyzeRoutine(byorWith(day, ['maintain'])).some((n) => n.id === 'maintain-mode')).toBe(true)
+    expect(analyzeRoutine(byorWith(day, ['maintain', 'athletic'])).some((n) => n.id === 'maintain-mode')).toBe(false)
+  })
+
+  it('multi-goal nutrition: surplus, deficit, and near-maintenance recomp', () => {
+    // 180 lb → base 2700
+    expect(byorNutrition(['muscle'], 180).kcalTraining).toBe(3000)
+    expect(byorNutrition(['lose-weight'], 180).kcalTraining).toBe(2300)
+    expect(byorNutrition(['muscle', 'lose-weight'], 180).kcalTraining).toBe(2600)
+    expect(byorNutrition(['maintain'], 180).kcalTraining).toBe(2700)
+    expect(byorNutrition(['muscle'], 180).proteinTargetG).toBe(180)
+  })
+
+  it('collapses the multi-select onto a primary goal for the engine', () => {
+    expect(primaryGoalOf(['athletic', 'muscle'])).toBe('general')
+    expect(primaryGoalOf(['muscle', 'lose-weight'])).toBe('muscle')
+    expect(primaryGoalOf(['lose-weight'])).toBe('lean')
+    expect(primaryGoalOf(['maintain'])).toBe('general')
+  })
+
+  it('reads their "why it works" answer: overload, consistency, or on-record fallback', () => {
+    const day = [{ wd: 1, title: 'Full', entries: [fixed('goblet-squat', 4), fixed('db-rdl', 4)] }]
+    const overload = analyzeRoutine(byorWith(day, ['maintain'], 'my bench keeps going up because I add weight'))
+    expect(overload.find((n) => n.id === 'why-overload')?.tone).toBe('good')
+
+    const consistency = analyzeRoutine(byorWith(day, ['maintain'], 'I never miss because it fits my shifts'))
+    expect(consistency.find((n) => n.id === 'why-consistency')?.tone).toBe('good')
+
+    const vibes = analyzeRoutine(byorWith(day, ['maintain'], 'the vibes are simply right'))
+    expect(vibes.find((n) => n.id === 'why-noted')?.text).toContain('the vibes are simply right')
+
+    expect(analyzeRoutine(byorWith(day, ['maintain'])).some((n) => n.id.startsWith('why-'))).toBe(false)
   })
 
   it('flags 7 training days and marathon days', () => {
@@ -65,7 +110,7 @@ describe('analyzeRoutine', () => {
 
 describe('booklet normalize + validate', () => {
   it('validateBooklet catches empty weeks and thin days', () => {
-    const { plan } = makeEmptyByorPlan('general', 'x', [], 180)
+    const { plan } = makeEmptyByorPlan({ routineGoals: ['maintain'], goalStatement: 'x', customTargets: [], bodyweightLb: 180 })
     expect(validateBooklet(plan)).toContain('Add at least one training day to the week.')
     plan.templates['day-1'] = { id: 'day-1', title: 'Push', tagline: '', kind: 'session', entries: [fixed('push-up')] }
     plan.tier1ByWeekday[1] = 'day-1'
@@ -76,7 +121,7 @@ describe('booklet normalize + validate', () => {
     const plan = byorWith([
       { wd: 1, title: 'Power', cns: true, entries: [fixed('box-jump', 4, '3'), fixed('goblet-squat', 4), fixed('pogo-hop', 3, '20')] },
       { wd: 3, title: 'Full', entries: [fixed('db-rdl', 4), fixed('flat-db-press', 3), fixed('one-arm-db-row', 3)] },
-    ], 'vertical')
+    ], ['athletic'])
 
     expect(plan.templates['t2-lower']).toBeDefined()
     expect(plan.templates['t2-upper']).toBeDefined()

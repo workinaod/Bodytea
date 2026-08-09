@@ -86,21 +86,73 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
   const t = tally(plan)
   const notes: RoutineNote[] = []
   const goalWord = `“${plan.goalStatement}”`
+  const rg = plan.routineGoals ?? []
 
   // ---- Goal fit ----
-  if ((plan.goal === 'vertical' || plan.goal === 'speed') && t.explosive === 0) {
+  if ((plan.goal === 'vertical' || plan.goal === 'speed' || rg.includes('athletic')) && t.explosive === 0) {
     notes.push({
       id: 'no-explosive',
       tone: 'warn',
       text: `Your goal is ${goalWord} but nothing in this routine trains jumping or sprinting itself. Strength feeds the engine — jumps and sprints ARE the engine. Add a jump or sprint drill on a fresh day.`,
     })
   }
-  if (plan.goal === 'muscle' && t.lowerDays === 0) {
+  if ((plan.goal === 'muscle' || rg.includes('muscle')) && t.lowerDays === 0) {
     notes.push({
       id: 'no-lower-day',
       tone: 'warn',
       text: `Chasing ${goalWord} with no real lower-body day. Legs are half your muscle mass and the biggest growth signal you can send. One dedicated lower day minimum.`,
     })
+  }
+  if (rg.includes('muscle') && rg.includes('lose-weight')) {
+    notes.push({
+      id: 'recomp',
+      tone: 'info',
+      text: 'Muscle up AND weight down at the same time is a recomp — real, but slow. Calories are set near maintenance, the protein target is non-negotiable, and the win condition is strength holding while the scale drifts. Judge it monthly, not daily.',
+    })
+  } else if (rg.includes('lose-weight')) {
+    notes.push({
+      id: 'cut-fuel',
+      tone: 'info',
+      text: 'Losing weight is won in the kitchen — your calorie target sits below maintenance and the protein floor protects the muscle. This routine’s job is to make the loss read as fat, not strength. Keep the weights heavy; the deficit does the cutting.',
+    })
+  }
+  if (rg.length === 1 && rg[0] === 'maintain') {
+    notes.push({
+      id: 'maintain-mode',
+      tone: 'info',
+      text: 'Maintenance mode: the bar is showing up, not adding weight. Deloads and A/B weeks keep it fresh, and any PR that happens anyway is a free win the tracker will catch.',
+    })
+  }
+
+  // ---- Their own read on why it works ----
+  const why = (plan.whyWorks ?? '').trim()
+  if (why) {
+    const w = why.toLowerCase()
+    if (/(overload|heavier|add(ing|ed)? weight|stronger|progress|\bprs?\b|went up|going up)/.test(w)) {
+      notes.push({
+        id: 'why-overload',
+        tone: 'good',
+        text: 'You said it yourself — the weight keeps going up. That’s progressive overload, the one lever that matters most, and the PR tracker now keeps receipts on it. If the bar ever stalls for a month, that’s your signal, not a mystery.',
+      })
+    } else if (/(consisten|show(ing|ed)? up|every (day|week|session)|habit|stick|never miss|discipline|routine)/.test(w)) {
+      notes.push({
+        id: 'why-consistency',
+        tone: 'good',
+        text: 'You credited showing up — correct. Consistency beats a perfect plan every single time, and your streak is now on your profile where you can’t un-see it. Protect the reason it’s been easy to show up; that’s the actual engine.',
+      })
+    } else if (/(pain|hurt|injur|joint|knee|shoulder|back)/.test(w)) {
+      notes.push({
+        id: 'why-painfree',
+        tone: 'good',
+        text: 'It’s been working because nothing hurts — that’s not luck, that’s exercise selection that fits your body. Rotate carefully: when the app suggests swaps, keep the joint-friendly picks that earned their place.',
+      })
+    } else {
+      notes.push({
+        id: 'why-noted',
+        tone: 'info',
+        text: `Your read is on record: “${why.length > 90 ? `${why.slice(0, 90)}…` : why}”. The notes here are checked against it — if the structure ever stops backing that story, the coach says so to your face.`,
+      })
+    }
   }
 
   // ---- Balance ----

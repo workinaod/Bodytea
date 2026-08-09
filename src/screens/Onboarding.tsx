@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import type { CustomTarget, EquipTag, Goal, PlanConfig, Weekday } from '../types'
+import type { CustomTarget, EquipTag, Goal, PlanConfig, RoutineGoal, Weekday } from '../types'
 import { mondayOf, todayISO, formatShort, addDaysISO } from '../engine/calendar'
 import { useAppStore, uid } from '../store/appStore'
 import { saveMeasurement } from '../logic/actions'
 import { generatePlan, buildNutrition, type OnboardingAnswers } from '../plan/generator'
-import { makeEmptyByorPlan, normalizeBooklet, validateBooklet } from '../plan/bookletOps'
+import { byorNutrition, makeEmptyByorPlan, normalizeBooklet, validateBooklet, ROUTINE_GOAL_LABELS } from '../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../plan/analyze'
 import { BookletEditor } from './booklet/BookletEditor'
 import { Btn, Card, Chip, Stepper } from '../components/ui'
@@ -49,6 +49,8 @@ export function Onboarding() {
 
   const [displayName, setDisplayName] = useState('')
   const [goalChip, setGoalChip] = useState<number | null>(null)
+  const [routineGoals, setRoutineGoals] = useState<Set<RoutineGoal>>(new Set())
+  const [whyWorks, setWhyWorks] = useState('')
   const [goalStatement, setGoalStatement] = useState('')
   const [target1, setTarget1] = useState<{ label: string; target: string; unit: string }>({ label: '', target: '', unit: '' })
   const [days, setDays] = useState<3 | 4 | 5 | 6>(4)
@@ -103,6 +105,14 @@ export function Onboarding() {
       for (const n of notes.slice(0, 4)) {
         d.coach.feed.unshift({ id: uid(), at, kind: 'insight', text: `📓 Routine notes: ${n.text}` })
       }
+      if (plan.whyWorks?.trim()) {
+        d.coach.feed.unshift({
+          id: uid(),
+          at,
+          kind: 'insight',
+          text: `🗣 On record — why your routine works, in your words: “${plan.whyWorks.trim()}”`,
+        })
+      }
     })
     if (weight > 0 || vert > 0) {
       saveMeasurement({
@@ -114,23 +124,52 @@ export function Onboarding() {
     }
   }
 
-  /** BYOR: seed (or reuse) the empty booklet and open the builder step. */
+  function toggleRoutineGoal(g: RoutineGoal) {
+    setRoutineGoals((prev) => {
+      const next = new Set(prev)
+      if (next.has(g)) next.delete(g)
+      else next.add(g)
+      return next
+    })
+  }
+
+  /**
+   * BYOR: seed the booklet (or overlay the latest goal answers onto an
+   * existing draft — the built week survives a trip back to the goal step).
+   */
   function enterBuilder() {
-    if (!byorDraft) {
-      const seeded = makeEmptyByorPlan(goal, goalStatement, answers.customTargets, weight)
-      setByorDraft(seeded.plan)
-    }
+    const seeded = makeEmptyByorPlan({
+      routineGoals: [...routineGoals],
+      goalStatement,
+      customTargets: answers.customTargets,
+      bodyweightLb: weight,
+    })
+    setByorDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            routineGoals: seeded.plan.routineGoals,
+            goalStatement: seeded.plan.goalStatement,
+            goal: seeded.plan.goal,
+            copyFlavor: seeded.plan.copyFlavor,
+            customTargets: seeded.plan.customTargets,
+            nutrition: seeded.plan.nutrition,
+          }
+        : seeded.plan,
+    )
     setStep(8)
   }
 
   const byorNotes = useMemo(
-    () => (step === 9 && byorDraft ? analyzeRoutine(normalizeBooklet(byorDraft)) : []),
+    () => (step === 11 && byorDraft ? analyzeRoutine(normalizeBooklet(byorDraft)) : []),
     [step, byorDraft],
   )
 
   const next = () => setStep((s) => s + 1)
   const back = () => {
+    if (step === 11) return setStep(9) // notes → the why question
     if (step === 10) return setStep(7) // fine-tune → generated preview
+    if (step === 9) return setStep(8) // why → builder
     if (step === 8) return setStep(6) // builder → numbers
     if (step === 7) {
       setTuneDraft(null) // answers may change → stale tune draft
@@ -200,13 +239,24 @@ export function Onboarding() {
 
       {step === 2 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">What are you chasing?</h2>
+          <h2 className="text-[26px] font-black tracking-tight">
+            {mode === 'byor' ? 'What is this routine chasing?' : 'What are you chasing?'}
+          </h2>
+          {mode === 'byor' && (
+            <p className="mt-1 text-[13px] text-ink-dim">Pick every one that applies — the notes check your routine against them.</p>
+          )}
           <div className="mt-4 flex flex-wrap gap-2">
-            {GOAL_CHIPS.map((g, i) => (
-              <Chip key={g.label} tone={goalChip === i ? 'accent' : 'default'} onClick={() => setGoalChip(i)}>
-                {g.label}
-              </Chip>
-            ))}
+            {mode === 'byor'
+              ? (Object.keys(ROUTINE_GOAL_LABELS) as RoutineGoal[]).map((g) => (
+                  <Chip key={g} tone={routineGoals.has(g) ? 'accent' : 'default'} onClick={() => toggleRoutineGoal(g)}>
+                    {ROUTINE_GOAL_LABELS[g]}
+                  </Chip>
+                ))
+              : GOAL_CHIPS.map((g, i) => (
+                  <Chip key={g.label} tone={goalChip === i ? 'accent' : 'default'} onClick={() => setGoalChip(i)}>
+                    {g.label}
+                  </Chip>
+                ))}
           </div>
           <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Now say it in YOUR words</p>
           <textarea
@@ -243,12 +293,14 @@ export function Onboarding() {
           <Btn
             className="mt-6 w-full py-4"
             onClick={() => (mode === 'byor' ? setStep(6) : next())}
-            disabled={goalChip === null || goalStatement.trim().length < 4}
+            disabled={(mode === 'byor' ? routineGoals.size === 0 : goalChip === null) || goalStatement.trim().length < 4}
           >
             {mode === 'byor' ? 'Next — my numbers' : 'Next — my week'}
           </Btn>
-          {(goalChip === null || goalStatement.trim().length < 4) && (
-            <p className="mt-2 text-center text-[11.5px] text-ink-faint">Pick a goal AND write it in your own words.</p>
+          {((mode === 'byor' ? routineGoals.size === 0 : goalChip === null) || goalStatement.trim().length < 4) && (
+            <p className="mt-2 text-center text-[11.5px] text-ink-faint">
+              {mode === 'byor' ? 'Pick at least one AND write the goal in your own words.' : 'Pick a goal AND write it in your own words.'}
+            </p>
           )}
         </div>
       )}
@@ -465,15 +517,51 @@ export function Onboarding() {
               else setStep(9)
             }}
           >
-            Done — give me the notes
+            My routine's in — next
           </Btn>
         </div>
       )}
 
       {step === 9 && byorDraft && (
         <div className="flex flex-1 flex-col">
+          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">One honest question</div>
+          <h2 className="mt-1 text-[26px] font-black tracking-tight">Why has this routine been working for you?</h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
+            Be specific — “bench goes up every month”, “I actually show up when it's only 3 days”, “my knees stopped
+            hurting”. The coach reads your answer before writing the notes.
+          </p>
+          <textarea
+            value={whyWorks}
+            onChange={(e) => setWhyWorks(e.target.value)}
+            placeholder={'"I never miss because it\'s short"  ·  "squat added 40 lb this year"'}
+            rows={3}
+            className="mt-4 w-full resize-none rounded-xl border border-edge bg-surface px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:border-accent/60"
+          />
+          <p className="mt-1 text-[11px] text-ink-faint">
+            Goes on record in your coach feed. Leave it empty if it honestly hasn't been working — that's an answer too.
+          </p>
+          <Btn
+            className="mt-6 w-full py-4"
+            onClick={() => {
+              setByorDraft((prev) => (prev ? { ...prev, whyWorks: whyWorks.trim() || undefined } : prev))
+              setStep(11)
+            }}
+          >
+            Give me the notes
+          </Btn>
+        </div>
+      )}
+
+      {step === 11 && byorDraft && (
+        <div className="flex flex-1 flex-col">
           <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">The read on your routine</div>
           <h2 className="mt-1 text-[26px] font-black tracking-tight">Straight notes, no fluff</h2>
+          {byorDraft.whyWorks && (
+            <div className="mt-3 rounded-xl border-l-2 border-gold/50 bg-surface px-3.5 py-2.5">
+              <div className="text-[10px] font-black uppercase tracking-[0.14em] text-gold">Your read</div>
+              <p className="mt-0.5 text-[12.5px] italic leading-snug text-ink-dim">“{byorDraft.whyWorks}”</p>
+            </div>
+          )}
           <div className="mt-4 space-y-2">
             {byorNotes.map((n) => (
               <div key={n.id} className={`rounded-xl border px-3.5 py-2.5 ${NOTE_TONE[n.tone]}`}>
@@ -491,14 +579,14 @@ export function Onboarding() {
             onClick={() =>
               commitPlan(
                 normalizeBooklet(byorDraft),
-                buildNutrition(goal, weight).proteinTargetG,
+                byorNutrition(byorDraft.routineGoals ?? [], weight).proteinTargetG,
                 byorNotes.filter((n) => n.tone !== 'info'),
               )
             }
           >
             Start Week 1 — let's work
           </Btn>
-          <button onClick={back} className="mt-3 text-center text-[12px] font-semibold text-ink-faint underline">
+          <button onClick={() => setStep(8)} className="mt-3 text-center text-[12px] font-semibold text-ink-faint underline">
             keep editing
           </button>
         </div>

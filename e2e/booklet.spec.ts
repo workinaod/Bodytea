@@ -16,13 +16,15 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
 
-  await throughGoal(page, 'I already have a routine', '💪 Build muscle', 'add 10 lb of lean muscle')
+  // Multi-select routine goals: muscle + athleticism together
+  await throughGoal(page, 'I already have a routine', '💪 Gaining muscle', 'add 10 lb of lean muscle')
+  await page.getByText('⚡ Gaining athleticism').click()
   await page.getByRole('button', { name: 'Next — my numbers' }).click()
   await page.getByRole('button', { name: 'Next — build my week' }).click()
 
   // Empty week fails validation with a clear message
   await expect(page.getByRole('heading', { name: 'Build your week' })).toBeVisible()
-  await page.getByRole('button', { name: 'Done — give me the notes' }).click()
+  await page.getByRole('button', { name: "My routine's in — next" }).click()
   await expect(page.getByText('Add at least one training day to the week.')).toBeVisible()
 
   // Assemble Monday from the 77-exercise picker
@@ -42,10 +44,19 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await expect(page.getByText('Full Body A')).toBeVisible()
   await expect(page.getByText('3 exercises')).toBeVisible()
 
-  // Notes: honest read on the routine
-  await page.getByRole('button', { name: 'Done — give me the notes' }).click()
+  // The coach asks WHY it's been working before writing notes
+  await page.getByRole('button', { name: "My routine's in — next" }).click()
+  await expect(page.getByRole('heading', { name: 'Why has this routine been working for you?' })).toBeVisible()
+  await page.getByPlaceholder(/I never miss/).fill('my squat keeps going up because I add weight every week')
+  await page.getByRole('button', { name: 'Give me the notes' }).click()
+
+  // Notes: their claim on top, the honest read below
   await expect(page.getByRole('heading', { name: 'Straight notes, no fluff' })).toBeVisible()
+  await expect(page.getByText('Your read', { exact: true })).toBeVisible()
+  await expect(page.getByText(/progressive overload, the one lever/)).toBeVisible()
   await expect(page.getByText(/posterior chain gets its work/)).toBeVisible()
+  // athletic goal + zero jump work → called out
+  await expect(page.getByText(/jumps and sprints ARE the engine/)).toBeVisible()
   await expect(page.getByText(/automatic deload/)).toBeVisible()
 
   await page.getByRole('button', { name: "Start Week 1 — let's work" }).click()
@@ -54,9 +65,10 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await expect(page.getByText(/Week 1/).first()).toBeVisible()
   await expect(page.getByText('Full Body A').first()).toBeVisible()
 
-  // Notes landed in the coach feed, and My Booklet opens for later edits
+  // Notes + their on-record claim landed in the coach feed
   await page.getByRole('button', { name: 'Coach', exact: true }).click()
   await expect(page.getByText(/Routine notes:/).first()).toBeVisible()
+  await expect(page.getByText(/On record — why your routine works/)).toBeVisible()
   await page.getByText(/My Booklet — My Routine/).click()
   await expect(page.getByRole('heading', { name: 'My Booklet' })).toBeVisible()
   await expect(page.getByText('Full Body A')).toBeVisible()
