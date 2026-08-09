@@ -7,7 +7,7 @@ import { lateNightGraceDate } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
 import { BannerRow, Btn, Card, Chip, EmptyNote } from '../../components/ui'
 import { getExercise } from '../../plan/exercises'
-import { CARDIO_GROUP_INFO, CARDIO_OPTIONS } from '../../plan/templates'
+import { CARDIO_GROUP_INFO } from '../../plan/templates'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
 import { chooseCardio, finishSession, startSession, toggleBallToday, toggleCnsSwap } from '../../logic/actions'
@@ -201,7 +201,7 @@ export function TodayScreen() {
                 </div>
                 <div className="mt-0.5 text-[11px] leading-snug text-ink-faint">{CARDIO_GROUP_INFO[g].when}</div>
               </div>
-              {CARDIO_OPTIONS.filter((c) => c.group === g).map((c) => {
+              {data.plan.cardioOptions.filter((c) => c.group === g).map((c) => {
                 const def = getExercise(c.exerciseId)
                 return (
                   <button

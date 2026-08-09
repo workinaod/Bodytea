@@ -12,9 +12,8 @@ import type {
 import { DEFAULT_SUPPLEMENTS } from '../types'
 import { flushPersist, uid, useAppStore } from '../store/appStore'
 import { downscalePhoto, PhotoStore } from '../store/storage'
-import { resolveDay } from '../engine/resolveDay'
+import { planTemplate, resolveDay } from '../engine/resolveDay'
 import { applyReadinessDowngrade, minimumViableFor } from '../engine/transforms'
-import { getTemplate } from '../plan/templates'
 import {
   busyButMealsLogged,
   pruneTierDropExcuses,
@@ -277,7 +276,7 @@ export function resolveSkipFlow(opts: {
   let minViableLabel: string | undefined
   if (opts.takeMinimum || mode === 'lighten') {
     // Build the minimum-viable session as today's session
-    const template = resolved.templateId ? getTemplate(resolved.templateId) : null
+    const template = resolved.templateId ? planTemplate(store().data.plan, resolved.templateId) : null
     if (template) {
       const mv = minimumViableFor(template, resolved.exercises)
       minViableLabel = mv.label

@@ -26,7 +26,7 @@ export function MealsScreen() {
 
   const day = data.meals[date]
   const dayType = nutritionDayType(date, data)
-  const kcalTarget = kcalTargetFor(dayType, data.settings.trainingDayKcalBonus)
+  const kcalTarget = kcalTargetFor(data, dayType)
   const protein = proteinFor(data, date)
   const kcal = kcalFor(data, date)
   const pStreak = proteinStreak(data)
@@ -280,19 +280,14 @@ function CustomEntrySheet({ open, onClose, date }: { open: boolean; onClose: () 
 }
 
 function GroceryList() {
-  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem('naod.grocery') ?? '{}')
-    } catch {
-      return {}
-    }
-  })
+  // Checks live in AppData (schema v4) so they survive backups + sync.
+  const grocery = useAppStore((s) => s.data.grocery)
+  const update = useAppStore((s) => s.update)
+  const checked: Record<string, boolean> = Object.fromEntries(grocery.map((g) => [g, true]))
   function toggle(item: string) {
-    const next = { ...checked, [item]: !checked[item] }
-    setChecked(next)
-    try {
-      localStorage.setItem('naod.grocery', JSON.stringify(next))
-    } catch { /* ignore */ }
+    update((d) => {
+      d.grocery = d.grocery.includes(item) ? d.grocery.filter((x) => x !== item) : [...d.grocery, item]
+    })
   }
   return (
     <div className="space-y-4 pb-6">
@@ -323,12 +318,7 @@ function GroceryList() {
       ))}
       <button
         className="text-[11.5px] font-semibold text-ink-faint underline"
-        onClick={() => {
-          setChecked({})
-          try {
-            localStorage.setItem('naod.grocery', '{}')
-          } catch { /* ignore */ }
-        }}
+        onClick={() => update((d) => { d.grocery = [] })}
       >
         Reset all checks
       </button>

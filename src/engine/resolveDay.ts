@@ -1,14 +1,16 @@
 import type {
   AppData,
   DayBanner,
+  DayTemplate,
   ISODate,
+  PlanConfig,
   ResolvedDay,
   Tier,
   TierDayRole,
   WeekState,
   Weekday,
 } from '../types'
-import { defaultWeekState, KCAL_REST, KCAL_TRAINING } from '../types'
+import { defaultWeekState } from '../types'
 import { addDaysISO, mondayOf, weekdayOf, weekIndexFor } from './calendar'
 import {
   applyBadSleepCut,
@@ -18,23 +20,25 @@ import {
   buildFromTemplate,
   lighterCombinedPull,
 } from './transforms'
-import {
-  CARDIO_OPTIONS,
-  getTemplate,
-  TIER1_BY_WEEKDAY,
-  TIER_DEFAULT_PLACEMENT,
-  TIER_ROLE_TEMPLATES,
-} from '../plan/templates'
 import { getExercise } from '../plan/exercises'
 
 // ============================================================
 // The pipeline: (date, state) → ResolvedDay.
 // Deterministic and pure — the whole program logic lives here.
+// Every plan read comes from data.plan (the user's booklet);
+// the engine never touches the static plan modules.
 // ============================================================
 
 export function weekStateFor(data: AppData, dateISO: ISODate): WeekState {
   const monday = mondayOf(dateISO)
   return data.weeks[monday] ?? defaultWeekState(monday)
+}
+
+/** Template lookup on the user's plan (throws on unknown id, like the old getTemplate). */
+export function planTemplate(plan: PlanConfig, id: string): DayTemplate {
+  const t = plan.templates[id]
+  if (!t) throw new Error(`Unknown template id in plan "${plan.name}": ${id}`)
+  return t
 }
 
 export function blockMathFor(dateISO: ISODate, phaseStartISO: ISODate) {
@@ -46,12 +50,12 @@ export function blockMathFor(dateISO: ISODate, phaseStartISO: ISODate) {
   return { weekIndex, weekInBlock, blockIndex, abWeek, isDeload }
 }
 
-function tierTemplateId(tier: Tier, weekday: Weekday, week: WeekState): string | null {
-  if (tier === 1) return TIER1_BY_WEEKDAY[weekday]
-  const placement = { ...TIER_DEFAULT_PLACEMENT[tier], ...(week.tierPlacement ?? {}) }
+function tierTemplateId(plan: PlanConfig, tier: Tier, weekday: Weekday, week: WeekState): string | null {
+  if (tier === 1) return plan.tier1ByWeekday[weekday]
+  const placement = { ...plan.tierDefaultPlacement[tier], ...(week.tierPlacement ?? {}) }
   const role = (Object.keys(placement) as TierDayRole[]).find((r) => placement[r] === weekday)
   if (!role) return null
-  return TIER_ROLE_TEMPLATES[tier][role] ?? null
+  return plan.tierRoleTemplates[tier][role] ?? null
 }
 
 function twoConsecutiveBadNightsBefore(week: WeekState, dateISO: ISODate): boolean {
@@ -72,7 +76,7 @@ export function cardioRequiredForWeek(data: AppData, dateISO: ISODate): boolean 
   if (week.tier !== 1) return false // Tier 2/3: "skip the formal cardio"
   if (week.ballDates.length > 0) return false
   const wd = weekdayOf(dateISO)
-  const lateWeek = wd >= 4 || wd === 0
+  const lateWeek = wd >= data.plan.anchors.conditioningWeekday || wd === 0
   if (week.ballThisWeek !== false && !lateWeek) return false
   // already satisfied by a completed cardio session this week?
   const monday = mondayOf(dateISO)
@@ -86,12 +90,13 @@ export function cardioRequiredForWeek(data: AppData, dateISO: ISODate): boolean 
 /** Cheap check: is `date` a CNS day for its tier? (no full resolution — avoids recursion) */
 function resolveDayShallowCns(data: AppData, dateISO: ISODate): boolean {
   const week = weekStateFor(data, dateISO)
-  const templateId = tierTemplateId(week.tier, weekdayOf(dateISO), week)
+  const templateId = tierTemplateId(data.plan, week.tier, weekdayOf(dateISO), week)
   if (!templateId) return false
-  return getTemplate(templateId).cns ?? false
+  return planTemplate(data.plan, templateId).cns ?? false
 }
 
 export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
+  const plan = data.plan
   const weekday = weekdayOf(dateISO)
   const week = weekStateFor(data, dateISO)
   const { weekIndex, weekInBlock, blockIndex, abWeek, isDeload } = blockMathFor(
@@ -136,9 +141,9 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   // --- Scheduled cardio backup lands on its chosen weekday ---
   // (dissolves if ball actually got played — backups replace ball, never stack)
   if (week.cardio && week.cardio.weekday === weekday && week.ballDates.length === 0) {
-    const opt = CARDIO_OPTIONS.find((c) => c.exerciseId === week.cardio!.exerciseId)
+    const opt = plan.cardioOptions.find((c) => c.exerciseId === week.cardio!.exerciseId)
     const def = getExercise(week.cardio.exerciseId)
-    if (weekday === 4) {
+    if (weekday === plan.anchors.conditioningWeekday) {
       banners.push({
         id: 'cardio-replaces-mobility',
         text: 'Cardio backup replaces mobility today — it stands in for basketball this week, not on top of it.',
@@ -172,7 +177,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   //     chooser ONLY when the user declared a no-ball week (with no
   //     forecast, late-week no-ball stays a nag — Saturday ball is still
   //     possible in the same-day model) ---
-  if (weekday === 4 && week.tier === 1 && week.ballThisWeek === false && cardioRequired && !week.cardio) {
+  if (weekday === plan.anchors.conditioningWeekday && week.tier === 1 && week.ballThisWeek === false && cardioRequired && !week.cardio) {
     banners.push({
       id: 'cardio-required',
       text: 'No ball logged this week — the backup session is REQUIRED, not optional. Pick one below; it replaces mobility today (or move it in the Week tab). Log a run and this disappears.',
@@ -190,7 +195,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     }
   }
 
-  const templateId = tierTemplateId(week.tier, weekday, week)
+  const templateId = tierTemplateId(plan, week.tier, weekday, week)
 
   // --- Rest day (includes tier 2/3 non-training days) ---
   if (!templateId) {
@@ -212,10 +217,10 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     }
   }
 
-  const template = getTemplate(templateId)
+  const template = planTemplate(plan, templateId)
 
-  // --- DJ Friday: pull pushed to Saturday ---
-  if (week.gigFlags.friPushedToSat) {
+  // --- DJ Friday: pull pushed to Saturday (owner life-rule) ---
+  if (plan.lifeRules.djWeekend && week.gigFlags.friPushedToSat) {
     if (weekday === 5 && templateId === 'friday') {
       banners.push({
         id: 'fri-pushed',
@@ -234,9 +239,9 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     }
   }
 
-  let exercises = buildFromTemplate(template, blockIndex, abWeek)
+  let exercises = buildFromTemplate(template, blockIndex, abWeek, plan)
 
-  if (weekday === 6 && week.gigFlags.friPushedToSat && templateId === 'saturday') {
+  if (plan.lifeRules.djWeekend && weekday === 6 && week.gigFlags.friPushedToSat && templateId === 'saturday') {
     exercises = [...exercises, ...lighterCombinedPull()]
     banners.push({
       id: 'sat-combined',
@@ -255,22 +260,22 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     })
   }
 
-  // --- Gig flags ---
-  if (weekday === 5 && week.gigFlags.djFriNight && !week.gigFlags.friPushedToSat) {
+  // --- Gig flags (owner life-rules; generated plans switch these off) ---
+  if (plan.lifeRules.djWeekend && weekday === 5 && week.gigFlags.djFriNight && !week.gigFlags.friPushedToSat) {
     banners.push({
       id: 'dj-fri',
       text: 'DJ gig tonight: train this MORNING, or push the session to Saturday from the Week tab. Never lift heavy on 4 hours of sleep.',
       tone: 'warn',
     })
   }
-  if (weekday === 6 && week.gigFlags.djSatNight) {
+  if (plan.lifeRules.djWeekend && weekday === 6 && week.gigFlags.djSatNight) {
     banners.push({
       id: 'dj-sat',
       text: 'DJ gig tonight: do sprints/jumps EARLY today. If your legs are already dead from standing, skipping the jumps is plan-sanctioned — jumping fatigued teaches bad mechanics.',
       tone: 'warn',
     })
   }
-  if (weekday === 1 && week.gigFlags.longShiftBeforeMon) {
+  if (plan.lifeRules.longShiftMonday && weekday === 1 && week.gigFlags.longShiftBeforeMon) {
     exercises = applyLongShiftMonday(exercises)
     banners.push({
       id: 'long-shift',
@@ -362,31 +367,14 @@ export function nutritionDayType(dateISO: ISODate, data: AppData): 'training' | 
   return 'rest'
 }
 
-export function kcalTargetFor(dayType: 'training' | 'rest', bonus: number): number {
-  return dayType === 'training' ? KCAL_TRAINING + bonus : KCAL_REST
+export function kcalTargetFor(data: AppData, dayType: 'training' | 'rest'): number {
+  const n = data.plan.nutrition
+  return dayType === 'training' ? n.kcalTraining + data.settings.trainingDayKcalBonus : n.kcalRest
 }
 
-/** The debrief/recovery pool key for a template. */
-export function recoveryPoolKey(templateId: string | null, kind: string): string {
+/** The debrief/recovery pool key for a template (role-keyed via debriefKey). */
+export function recoveryPoolKey(data: AppData, templateId: string | null, kind: string): string {
   if (kind === 'cardio-backup') return 'cardio'
-  switch (templateId) {
-    case 'monday':
-      return 'monday'
-    case 'tuesday':
-    case 't2-upper':
-      return 'tuesday'
-    case 'wednesday':
-    case 't2-lower':
-    case 't3-fullbody':
-      return 'wednesday'
-    case 'thursday':
-      return 'thursday'
-    case 'friday':
-      return 'friday'
-    case 'saturday':
-    case 't3-explosive':
-      return 'saturday'
-    default:
-      return 'generic'
-  }
+  if (!templateId) return 'generic'
+  return data.plan.templates[templateId]?.debriefKey ?? 'generic'
 }

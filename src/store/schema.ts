@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SCHEMA_VERSION, type Envelope } from '../types'
+import { buildNaodPreset } from '../plan/presets/naod'
 
 // ============================================================
 // Import/load validation + migrations. Anything read from disk
@@ -20,6 +21,67 @@ const settingsSchema = z.object({
   onboarded: z.boolean(),
   remindersEnabled: z.boolean(),
   reminderTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/)).max(3),
+  units: z.enum(['imperial', 'metric']),
+})
+
+// ---------- Plan config (the booklet) ----------
+
+const prescription = {
+  sets: z.number().int().positive(),
+  repText: z.string(),
+  repsNum: z.number().optional(),
+}
+
+const templateEntrySchema = z.union([
+  z.object({ entry: z.literal('fixed'), exerciseId: z.string(), ...prescription }),
+  z.object({ entry: z.literal('slot'), slot: z.string(), ...prescription }),
+  z.object({
+    entry: z.literal('ab'),
+    a: z.object({ exerciseId: z.string(), ...prescription }),
+    b: z.object({ exerciseId: z.string(), ...prescription }),
+  }),
+])
+
+const dayTemplateSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  tagline: z.string(),
+  kind: z.enum(['session', 'mobility', 'cardio-backup', 'rest']),
+  cns: z.boolean().optional(),
+  entries: z.array(templateEntrySchema),
+  minViable: z
+    .object({ label: z.string(), items: z.array(z.object({ exerciseId: z.string(), ...prescription })) })
+    .optional(),
+  note: z.string().optional(),
+  debriefKey: z.string().optional(),
+})
+
+const planConfigSchema = z.object({
+  planVersion: z.literal(1),
+  name: z.string().min(1),
+  goal: z.enum(['vertical', 'speed', 'muscle', 'strength', 'lean', 'general']),
+  goalStatement: z.string(),
+  customTargets: z.array(
+    z.object({ label: z.string(), current: z.number().optional(), target: z.number(), unit: z.string() }),
+  ),
+  copyFlavor: z.enum(['explosive', 'physique', 'general']),
+  daysPerWeek: z.number().int().min(1).max(7),
+  equipment: z.array(z.string()),
+  templates: z.record(z.string(), dayTemplateSchema),
+  tier1ByWeekday: z.record(z.string(), z.string().nullable()),
+  tierRoleTemplates: z.record(z.string(), z.record(z.string(), z.string())),
+  tierDefaultPlacement: z.record(z.string(), z.record(z.string(), weekday)),
+  slots: z.record(z.string(), z.record(z.string(), z.string())),
+  slotRepOverrides: z.record(z.string(), z.object({ repText: z.string(), repsNum: z.number().optional() })),
+  cardioOptions: z.array(
+    z.object({ exerciseId: z.string(), repText: z.string(), group: z.enum(['A', 'B', 'circuit']) }),
+  ),
+  trackedLifts: z.array(z.object({ exerciseId: z.string(), label: z.string() })),
+  coreMovers: z.array(z.string()),
+  anchors: z.object({ conditioningWeekday: weekday, cnsWeekdays: z.array(weekday) }),
+  lifeRules: z.object({ djWeekend: z.boolean(), longShiftMonday: z.boolean() }),
+  rationale: z.record(z.string(), z.string()),
+  nutrition: z.object({ kcalTraining: z.number().positive(), kcalRest: z.number().positive() }),
 })
 
 const setLogSchema = z.object({
@@ -170,6 +232,8 @@ const coachSchema = z.object({
 
 const appDataSchema = z.object({
   settings: settingsSchema,
+  plan: planConfigSchema,
+  profile: z.object({ displayName: z.string().optional(), username: z.string().optional() }),
   weeks: z.record(z.string(), weekSchema),
   sessions: z.record(z.string(), sessionSchema),
   excuses: z.array(excuseSchema),
@@ -177,6 +241,7 @@ const appDataSchema = z.object({
   measurements: z.array(measurementSchema),
   photos: z.array(photoMetaSchema),
   coach: coachSchema,
+  grocery: z.array(z.string()),
 })
 
 export const envelopeSchema = z.object({
@@ -206,6 +271,20 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     for (const w of Object.values(e.data?.weeks ?? {})) {
       w.ballDates ??= []
       w.cnsSwapDates ??= []
+    }
+    return env
+  },
+  // v3 → v4: plan-as-data — the owner's booklet becomes stored PlanConfig
+  // (NAOD preset, byte-equivalent to the old static plan), plus profile,
+  // grocery adoption, and display units.
+  3: (env) => {
+    const e = env as { data?: Record<string, unknown> }
+    if (e.data) {
+      e.data.plan ??= buildNaodPreset()
+      e.data.profile ??= {}
+      e.data.grocery ??= []
+      const s = e.data.settings as Record<string, unknown> | undefined
+      if (s) s.units ??= 'imperial'
     }
     return env
   },

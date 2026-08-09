@@ -6,9 +6,9 @@
 // {proteinTarget} {kcalTarget} — interpolated with live numbers.
 // ============================================================
 
-/** Recovery notes keyed by template id (t2/t3 map onto these). */
+/** Recovery notes keyed by day ROLE (template.debriefKey points here). */
 export const RECOVERY_POOLS: Record<string, string[]> = {
-  monday: [
+  power: [
     'CNS day is done — the fatigue you earned today is invisible, not absent. An easy 10-minute walk this evening flushes the legs better than the couch does.',
     'Explosive work drains the nervous system more than the muscles. Protect tonight: real dinner, phone away earlier, no “one more episode”.',
     'Your calves and achilles took the box-jump landings. Thirty seconds per side of gentle calf stretching tonight pays interest on Saturday.',
@@ -17,7 +17,7 @@ export const RECOVERY_POOLS: Record<string, string[]> = {
     'First-step work rewires coordination while you sleep. The reps are done; the learning happens tonight. Give it the full eight hours to consolidate.',
     'Nervous-system days respond to warmth and calm: hot shower, big meal, low lights. Treat tonight like part of the program, because it is.',
   ],
-  tuesday: [
+  push: [
     'Shoulders and elbows did precision work today. Shake the arms loose during the evening — tension held after pressing is tension you warm up against Friday.',
     'Push day is done. Your rotator cuff work at the end was the insurance payment — the return shows up as pain-free pressing in month six.',
     'Chest and triceps rebuild fastest with protein spread through the evening, not one pile at dinner. Two feeds between now and bed beats one.',
@@ -26,7 +26,7 @@ export const RECOVERY_POOLS: Record<string, string[]> = {
     'If the elbows feel tender from pressing, a few slow wrist and forearm stretches tonight cost one minute and save a cranky close-grip day.',
     'Pressing posture bleeds into desk posture. Once tonight: squeeze the shoulder blades for 10 seconds, open the chest, undo the day.',
   ],
-  wednesday: [
+  lower: [
     'Heavy lower is in the bank. Expect the glutes and quads to speak tomorrow — Thursday’s mobility session is scheduled as the answer, not a coincidence.',
     'Tonight is the most important recovery night of the training week: biggest muscles, biggest repair job. Carbs AND protein at dinner — this is what training-day calories are for.',
     'Hip thrusts and squats drain deep. Legs-up-the-wall for five minutes tonight moves the pooled fluid and genuinely speeds tomorrow.',
@@ -35,7 +35,7 @@ export const RECOVERY_POOLS: Record<string, string[]> = {
     'A hot shower on the quads and glutes tonight, easy walk tomorrow. Boring, proven, effective — the pro recovery stack costs nothing.',
     'You lifted heavy and slow today so Saturday can be light and violent. Honor the trade: rest the legs tonight like they have a gig this weekend. They do.',
   ],
-  thursday: [
+  mobility: [
     'Mobility banked. The new ankle and hip range you just opened is temporary until you use it — tomorrow’s pulls and Saturday’s jumps cash it in.',
     'Active recovery means the work today WAS the recovery. Don’t undo it with a random hard workout tonight because you feel fresh. Feeling fresh is the product.',
     'The dead hangs decompressed your spine after three loading days. Sleep flat and let it stay long tonight.',
@@ -44,7 +44,7 @@ export const RECOVERY_POOLS: Record<string, string[]> = {
     'Your walk counted. Steps are the quiet engine of the recomp — they burn without borrowing from recovery.',
     'Two hard days are coming (pull Friday, speed Saturday). Today was the breath in between. Eat at rest-day numbers, sleep big, arrive hungry.',
   ],
-  friday: [
+  pull: [
     'Pull day done — lats, grip, and rear delts all paid. Forearms may pump up tonight from the carries and hangs; a minute of gentle wrist flexor stretching helps.',
     'Grip work today directly feeds tomorrow: rim grabs and ball security run on the forearms you just cooked. They recover fast — by morning they’re ready.',
     'IMPORTANT for tomorrow: Saturday is max speed. No leg work happened today on purpose. Keep it that way tonight — no bonus cardio, no late-night ball.',
@@ -53,7 +53,7 @@ export const RECOVERY_POOLS: Record<string, string[]> = {
     'Hangs and pulls lengthened the lats and spine. You’ll stand taller tonight — enjoy it, and get to bed early: tomorrow is the crown-jewel session of the week.',
     'Tomorrow morning: dynamic warm-up, then the fastest running of your week. Lay out what you need tonight. Remove every excuse before it forms.',
   ],
-  saturday: [
+  speed: [
     'Speed day complete — the most valuable session of your week is banked. The elastic system you just trained adapts over 48 quiet hours: tomorrow is FULL rest, and Monday arrives fresh.',
     'Max-velocity work leaves invisible fatigue: you feel fine, but the hamstrings and nervous system are spent. Respect Sunday completely — no “bonus” anything.',
     'Every approach jump today taught the penultimate rhythm. The pattern gets carved in during sleep — jumpers are made overnight, literally.',

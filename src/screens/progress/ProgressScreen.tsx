@@ -11,7 +11,6 @@ import {
   repMaxSeries,
   totalSessions,
 } from '../../engine/stats'
-import { TRACKED_LIFTS } from '../../plan/blocks'
 import { Btn, Card, Chip, SectionTitle, Stepper } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { Heatmap, SimpleLine } from '../../components/charts'
@@ -52,7 +51,7 @@ export function ProgressScreen() {
   const data = useAppStore((s) => s.data)
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [metric, setMetric] = useState<(typeof METRICS)[number]['key']>('waistIn')
-  const [lift, setLift] = useState(TRACKED_LIFTS[0].exerciseId)
+  const [lift, setLift] = useState(data.plan.trackedLifts[0]?.exerciseId ?? 'front-squat')
 
   const streak = currentStreak(data)
   const sessions = totalSessions(data)
@@ -162,7 +161,7 @@ export function ProgressScreen() {
       {/* Strength */}
       <SectionTitle>Strength (est. 1RM)</SectionTitle>
       <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-        {TRACKED_LIFTS.map((l) => (
+        {data.plan.trackedLifts.map((l) => (
           <Chip key={l.exerciseId} tone={lift === l.exerciseId ? 'accent' : 'default'} onClick={() => setLift(l.exerciseId)}>
             {l.label}
           </Chip>

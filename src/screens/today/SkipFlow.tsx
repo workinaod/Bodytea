@@ -4,7 +4,7 @@ import { Sheet } from '../../components/Sheet'
 import { Btn } from '../../components/ui'
 import { escalationLevel } from '../../engine/coach'
 import { minimumViableFor } from '../../engine/transforms'
-import { getTemplate } from '../../plan/templates'
+import { planTemplate } from '../../engine/resolveDay'
 import { todayISO } from '../../engine/calendar'
 import { useAppStore } from '../../store/appStore'
 import { validateProofFile } from '../../store/storage'
@@ -46,7 +46,8 @@ export function SkipFlow({
   const fileRef = useRef<HTMLInputElement>(null)
   const warnedExplosive = useRef(false)
 
-  const template = day.templateId ? getTemplate(day.templateId) : null
+  const plan = useAppStore((s) => s.data.plan)
+  const template = day.templateId ? planTemplate(plan, day.templateId) : null
   const mv = template ? minimumViableFor(template, day.exercises) : null
   const needsTypedConfirm = level >= 2 && !proofId && mode === 'skip'
 

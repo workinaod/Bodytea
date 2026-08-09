@@ -48,18 +48,13 @@ export interface ExerciseDef {
 
 // ---------- Program templates ----------
 
-/** Rotating accessory slots (4-week block rotation table). */
-export type SlotId =
-  | 'squatVariation'
-  | 'lowerAccessory'
-  | 'hamstring'
-  | 'press1'
-  | 'press2'
-  | 'rowVariation'
-  | 'curl'
-  | 'calf'
-  | 'coreMon'
-  | 'coreWed'
+/**
+ * Rotating accessory slot name. Free-form so generated plans can define
+ * their own slot vocabulary; the NAOD preset uses:
+ * squatVariation | lowerAccessory | hamstring | press1 | press2 |
+ * rowVariation | curl | calf | coreMon | coreWed
+ */
+export type SlotId = string
 
 export interface PrescriptionBase {
   sets: number
@@ -80,6 +75,13 @@ export type TemplateEntry =
 
 export type DayKind = 'session' | 'mobility' | 'cardio-backup' | 'rest'
 
+/** A cardio backup choice (replaces basketball on no-ball weeks). */
+export interface CardioOption {
+  exerciseId: string
+  repText: string
+  group: 'A' | 'B' | 'circuit'
+}
+
 export interface MinViableRecipe {
   label: string
   items: ({ exerciseId: string } & PrescriptionBase)[]
@@ -97,6 +99,85 @@ export interface DayTemplate {
   minViable?: MinViableRecipe
   /** The PDF's day note (form reminders / intent). */
   note?: string
+  /**
+   * Which debrief/recovery pool this day draws from
+   * (power | push | lower | mobility | pull | speed | cardio | generic).
+   */
+  debriefKey?: string
+}
+
+// ---------- Plan config (the generated / preset "booklet") ----------
+
+/** Engine-level training emphasis a plan is built around. */
+export type Goal = 'vertical' | 'speed' | 'muscle' | 'strength' | 'lean' | 'general'
+
+/** Which voice the coach copy uses. */
+export type CopyFlavor = 'explosive' | 'physique' | 'general'
+
+/** Normalized equipment vocabulary (ExerciseDef.equipment stays display prose). */
+export type EquipTag =
+  | 'none'
+  | 'dumbbell'
+  | 'barbell'
+  | 'bench'
+  | 'incline-bench'
+  | 'rack'
+  | 'pullup-bar'
+  | 'box'
+  | 'plate'
+  | 'machine'
+  | 'open-space'
+  | 'hill-stairs'
+  | 'court'
+  | 'treadmill'
+
+/** A user-stated measurable target ("vert 24 → 30 in"). */
+export interface CustomTarget {
+  label: string
+  current?: number
+  target: number
+  unit: string
+}
+
+/**
+ * Everything that defines a user's booklet. The owner's NAOD V3 preset and
+ * every generated plan share this shape; the engine reads ONLY from here —
+ * never from the static plan modules directly.
+ */
+export interface PlanConfig {
+  planVersion: 1
+  /** Booklet name shown in the shell ("NAOD V3", "Vertical — 4-Day"). */
+  name: string
+  goal: Goal
+  /** The user's goal in their own words — threads through copy + rationale. */
+  goalStatement: string
+  customTargets: CustomTarget[]
+  copyFlavor: CopyFlavor
+  daysPerWeek: number
+  equipment: EquipTag[]
+  templates: Record<string, DayTemplate>
+  tier1ByWeekday: Record<Weekday, string | null>
+  tierRoleTemplates: Record<2 | 3, Partial<Record<TierDayRole, string>>>
+  tierDefaultPlacement: Record<2 | 3, Partial<Record<TierDayRole, Weekday>>>
+  /** block → slotId → exerciseId */
+  slots: Record<1 | 2 | 3, Record<SlotId, string>>
+  slotRepOverrides: Record<string, { repText: string; repsNum?: number }>
+  cardioOptions: CardioOption[]
+  trackedLifts: { exerciseId: string; label: string }[]
+  coreMovers: string[]
+  /** Weekday semantics the engine needs (the old hardcoded literals). */
+  anchors: { conditioningWeekday: Weekday; cnsWeekdays: Weekday[] }
+  /** Owner-specific life accommodations; generated plans turn these off. */
+  lifeRules: { djWeekend: boolean; longShiftMonday: boolean }
+  /** exerciseId → goal-specific "why it's in YOUR plan" (falls back to def.why). */
+  rationale: Record<string, string>
+  nutrition: { kcalTraining: number; kcalRest: number }
+}
+
+export interface Profile {
+  displayName?: string
+  /** Cached leaderboard username (set when an account exists). */
+  username?: string
 }
 
 // ---------- Resolved day (engine output) ----------
@@ -382,10 +463,15 @@ export interface Settings {
   remindersEnabled: boolean
   /** Local times "HH:MM" (up to 3) when reminders may fire on unfinished training days. */
   reminderTimes: string[]
+  /** Display units (storage stays imperial internally). */
+  units: 'imperial' | 'metric'
 }
 
 export interface AppData {
   settings: Settings
+  /** The booklet this user trains from (NAOD preset or generated). */
+  plan: PlanConfig
+  profile: Profile
   /** Keyed by that week's Monday ISO date. */
   weeks: Record<ISODate, WeekState>
   /** Keyed by local ISO date. */
@@ -397,9 +483,11 @@ export interface AppData {
   measurements: Measurement[]
   photos: PhotoMeta[]
   coach: CoachLogState
+  /** Checked-off grocery item ids (absorbed the old naod.grocery key). */
+  grocery: string[]
 }
 
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 export interface Envelope {
   schemaVersion: number
@@ -431,6 +519,7 @@ export function defaultSettings(phaseStartDate: ISODate, installedAt: ISODate = 
     onboarded: false,
     remindersEnabled: false,
     reminderTimes: ['11:30', '17:30', '20:30'],
+    units: 'imperial',
   }
 }
 
@@ -449,9 +538,11 @@ export function defaultWeekState(mondayISO: ISODate): WeekState {
   }
 }
 
-export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate): AppData {
+export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, plan?: PlanConfig): AppData {
   return {
     settings: defaultSettings(phaseStartDate, installedAt),
+    plan: plan ?? buildNaodPreset(),
+    profile: {},
     weeks: {},
     sessions: {},
     excuses: [],
@@ -459,12 +550,19 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate): Ap
     measurements: [],
     photos: [],
     coach: { feed: [], shownMessageIds: [], surfacedInsights: {} },
+    grocery: [],
   }
 }
 
-// Nutrition constants (PDF "THE NUMBERS")
+// Nutrition constants (PDF "THE NUMBERS") — NAOD preset values; the live
+// targets an account trains against come from data.plan.nutrition.
 export const KCAL_TRAINING = 2800
 export const KCAL_REST = 2500
 export const CARBS_TRAINING = 300
 export const CARBS_REST = 225
 export const FAT_RANGE = '70–80 g'
+
+// The preset import makes emptyAppData self-sufficient. There is no runtime
+// cycle: every plan/ module imports THIS module type-only (erased), so the
+// runtime edge types → presets → templates/exercises is one-directional.
+import { buildNaodPreset } from './plan/presets/naod'

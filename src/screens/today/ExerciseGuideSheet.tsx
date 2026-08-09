@@ -7,6 +7,7 @@ import { getExercise } from '../../plan/exercises'
 import { musclesFor } from '../../plan/muscles'
 import { demoFor } from '../../plan/demos'
 import { photosFor } from '../../plan/demoPhotos'
+import { useAppStore } from '../../store/appStore'
 
 /** The full "how / what / why / don't" guide for one exercise. */
 export function ExerciseGuideSheet({
@@ -16,9 +17,11 @@ export function ExerciseGuideSheet({
   exerciseId: string | null
   onClose: () => void
 }) {
+  const rationale = useAppStore((s) => (exerciseId ? s.data.plan.rationale[exerciseId] : undefined))
   if (!exerciseId) return null
   const def = getExercise(exerciseId)
   const muscles = musclesFor(exerciseId)
+  const why = rationale ?? def.why
   return (
     <Sheet open onClose={onClose} title={def.name}>
       <div className="space-y-5 pb-6">
@@ -71,7 +74,7 @@ export function ExerciseGuideSheet({
           <h4 className="mb-2 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
             Why it's in YOUR plan
           </h4>
-          <p className="text-[13.5px] leading-relaxed text-ink-dim">{def.why}</p>
+          <p className="text-[13.5px] leading-relaxed text-ink-dim">{why}</p>
         </section>
 
         <section>

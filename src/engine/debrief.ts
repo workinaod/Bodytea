@@ -64,7 +64,7 @@ export function composeDebrief(
   surfacedInsightIds.push(...insights.map((i) => i.ruleId))
 
   // ---- Recovery ----
-  const poolKey = recoveryPoolKey(session.templateId, resolved.kind)
+  const poolKey = recoveryPoolKey(data, session.templateId, resolved.kind)
   const recovery: string[] = [...insightTexts]
   recovery.push(take(`recovery-${poolKey}`, RECOVERY_POOLS[poolKey] ?? RECOVERY_POOLS.generic))
 
@@ -72,7 +72,7 @@ export function composeDebrief(
   const dayType = nutritionDayType(session.date, data)
   const proteinSoFar = proteinFor(data, session.date)
   const proteinLeft = Math.max(0, data.settings.proteinTargetG - proteinSoFar)
-  const kcalTarget = kcalTargetFor(dayType, data.settings.trainingDayKcalBonus)
+  const kcalTarget = kcalTargetFor(data, dayType)
   const kcalLeft = Math.max(0, kcalTarget - kcalFor(data, session.date))
   const eat = [
     take(`eat-${dayType}`, EAT_NOW[dayType], {

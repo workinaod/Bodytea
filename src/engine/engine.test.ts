@@ -5,6 +5,9 @@ import { blockMathFor, nutritionDayType, resolveDay } from './resolveDay'
 import { currentStreak, detectPRs, e1RM, kcalBumpSuggestion, proteinFor } from './stats'
 import { applyDeload, applyReadinessDowngrade, buildFromTemplate, minimumViableFor } from './transforms'
 import { getTemplate } from '../plan/templates'
+import { buildNaodPreset } from '../plan/presets/naod'
+
+const PLAN = buildNaodPreset()
 
 // Phase start: Monday 2026-08-10 (all fixture dates are relative to it)
 const START = '2026-08-10'
@@ -75,7 +78,7 @@ describe('block math', () => {
 
 describe('slot resolution + A/B + dedupe', () => {
   it('block 1 Monday matches the PDF day table', () => {
-    const exs = buildFromTemplate(getTemplate('monday'), 1, 'A')
+    const exs = buildFromTemplate(getTemplate('monday'), 1, 'A', PLAN)
     expect(ids(exs)).toEqual([
       'falling-start-sprint',
       'box-jump',
@@ -88,24 +91,24 @@ describe('slot resolution + A/B + dedupe', () => {
   })
 
   it('block 1 Wednesday has the weighted sit-up (core offset)', () => {
-    const exs = buildFromTemplate(getTemplate('wednesday'), 1, 'A')
+    const exs = buildFromTemplate(getTemplate('wednesday'), 1, 'A', PLAN)
     expect(ids(exs)).toContain('weighted-situp')
     expect(ids(exs)).toContain('single-leg-rdl')
   })
 
   it('block 2 rotates the slots', () => {
-    const mon = buildFromTemplate(getTemplate('monday'), 2, 'A')
+    const mon = buildFromTemplate(getTemplate('monday'), 2, 'A', PLAN)
     expect(ids(mon)).toContain('db-front-squat')
     expect(ids(mon)).toContain('walking-lunge')
     expect(ids(mon)).toContain('weighted-situp')
-    const wed = buildFromTemplate(getTemplate('wednesday'), 2, 'A')
+    const wed = buildFromTemplate(getTemplate('wednesday'), 2, 'A', PLAN)
     expect(ids(wed)).toContain('good-morning')
     expect(ids(wed)).toContain('plank-side-plank')
   })
 
   it('Friday A/B alternates pullover and one-arm row', () => {
-    const a = buildFromTemplate(getTemplate('friday'), 1, 'A')
-    const b = buildFromTemplate(getTemplate('friday'), 1, 'B')
+    const a = buildFromTemplate(getTemplate('friday'), 1, 'A', PLAN)
+    const b = buildFromTemplate(getTemplate('friday'), 1, 'B', PLAN)
     expect(ids(a)).toContain('db-pullover')
     expect(ids(a)).not.toContain('one-arm-db-row')
     expect(ids(b)).toContain('one-arm-db-row')
@@ -113,7 +116,7 @@ describe('slot resolution + A/B + dedupe', () => {
   })
 
   it('block 2 week B: A/B pick collides with row slot → substitutes pullover', () => {
-    const exs = buildFromTemplate(getTemplate('friday'), 2, 'B')
+    const exs = buildFromTemplate(getTemplate('friday'), 2, 'B', PLAN)
     const list = ids(exs)
     // slot claims one-arm-db-row; the ab entry falls back to pullover
     expect(list.filter((x) => x === 'one-arm-db-row').length).toBe(1)
@@ -121,7 +124,7 @@ describe('slot resolution + A/B + dedupe', () => {
   })
 
   it('block 3 Friday: curl slot claims hammer → fixed hammer becomes EZ curl', () => {
-    const exs = buildFromTemplate(getTemplate('friday'), 3, 'A')
+    const exs = buildFromTemplate(getTemplate('friday'), 3, 'A', PLAN)
     const list = ids(exs)
     expect(list.filter((x) => x === 'hammer-curl').length).toBe(1)
     expect(list).toContain('ez-bar-curl')
@@ -131,7 +134,7 @@ describe('slot resolution + A/B + dedupe', () => {
     for (const block of [1, 2, 3] as const) {
       for (const ab of ['A', 'B'] as const) {
         for (const tid of ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']) {
-          const list = ids(buildFromTemplate(getTemplate(tid), block, ab))
+          const list = ids(buildFromTemplate(getTemplate(tid), block, ab, PLAN))
           expect(new Set(list).size, `${tid} b${block} ${ab}`).toBe(list.length)
         }
       }
@@ -139,7 +142,7 @@ describe('slot resolution + A/B + dedupe', () => {
   })
 
   it('plank slot gets its timed rep scheme via override', () => {
-    const wed = buildFromTemplate(getTemplate('wednesday'), 2, 'A')
+    const wed = buildFromTemplate(getTemplate('wednesday'), 2, 'A', PLAN)
     const plank = wed.find((e) => e.exerciseId === 'plank-side-plank')!
     expect(plank.repText).toBe('30-45 sec each')
   })
@@ -147,14 +150,14 @@ describe('slot resolution + A/B + dedupe', () => {
 
 describe('deload transform', () => {
   it('halves lift sets, halves rep-only explosive reps, leaves mobility alone', () => {
-    const mon = applyDeload(buildFromTemplate(getTemplate('monday'), 1, 'A'))
+    const mon = applyDeload(buildFromTemplate(getTemplate('monday'), 1, 'A', PLAN))
     const byId = Object.fromEntries(mon.map((e) => [e.exerciseId, e]))
     expect(byId['box-jump'].sets).toBe(2) // 4 → 2
     expect(byId['falling-start-sprint'].repsNum).toBe(3) // 5 → 3
     expect(byId['goblet-squat'].sets).toBe(2) // 4 → 2
     expect(byId['romanian-deadlift'].sets).toBe(2) // 3 → 2
 
-    const thu = applyDeload(buildFromTemplate(getTemplate('thursday'), 1, 'A'))
+    const thu = applyDeload(buildFromTemplate(getTemplate('thursday'), 1, 'A', PLAN))
     const hold = thu.find((e) => e.exerciseId === 'deep-squat-hold')!
     expect(hold.sets).toBe(3) // untouched
   })
@@ -162,7 +165,7 @@ describe('deload transform', () => {
 
 describe('readiness downgrade', () => {
   it('cuts explosive volume by a third and lights the lifts', () => {
-    const mon = applyReadinessDowngrade(buildFromTemplate(getTemplate('monday'), 1, 'A'))
+    const mon = applyReadinessDowngrade(buildFromTemplate(getTemplate('monday'), 1, 'A', PLAN))
     const byId = Object.fromEntries(mon.map((e) => [e.exerciseId, e]))
     expect(byId['box-jump'].sets).toBe(3) // round(4 * 2/3)
     expect(byId['falling-start-sprint'].repsNum).toBe(3) // round(5 * 2/3)
@@ -170,7 +173,7 @@ describe('readiness downgrade', () => {
   })
 
   it('stacks with deload (both rules respected, floor of 1)', () => {
-    const deloaded = applyDeload(buildFromTemplate(getTemplate('monday'), 1, 'A'))
+    const deloaded = applyDeload(buildFromTemplate(getTemplate('monday'), 1, 'A', PLAN))
     const both = applyReadinessDowngrade(deloaded)
     const byId = Object.fromEntries(both.map((e) => [e.exerciseId, e]))
     expect(byId['box-jump'].sets).toBe(1) // 4 → 2 → round(4/3)=1

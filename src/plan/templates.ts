@@ -1,4 +1,4 @@
-import type { DayTemplate, Weekday, TierDayRole } from '../types'
+import type { CardioOption, DayTemplate, Weekday, TierDayRole } from '../types'
 
 // ============================================================
 // Day templates transcribed from the NAOD V3 PDF.
@@ -284,11 +284,7 @@ export const TIER_DEFAULT_PLACEMENT: Record<2 | 3, Partial<Record<TierDayRole, W
 
 // ---------- Cardio backup options (replace basketball on no-ball weeks) ----------
 
-export interface CardioOption {
-  exerciseId: string
-  repText: string
-  group: 'A' | 'B' | 'circuit'
-}
+export type { CardioOption } from '../types'
 
 export const CARDIO_OPTIONS: CardioOption[] = [
   { exerciseId: 'easy-jog', repText: '25-30 min', group: 'A' },

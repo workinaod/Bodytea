@@ -6,7 +6,7 @@ import { addDaysISO, formatShort, mondayOf, weekdayOf } from '../../engine/calen
 import { useToday } from '../../logic/clock'
 import { Card, Chip, SectionTitle, Toggle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
-import { CARDIO_GROUP_INFO, CARDIO_OPTIONS, TIER_DEFAULT_PLACEMENT } from '../../plan/templates'
+import { CARDIO_GROUP_INFO } from '../../plan/templates'
 import { getExercise } from '../../plan/exercises'
 import { changeTier } from '../../logic/actions'
 import { TierDropSheet } from './TierDropSheet'
@@ -132,7 +132,7 @@ export function WeekScreen() {
         <>
           <SectionTitle>Day placement</SectionTitle>
           <Card className="space-y-3">
-            {(Object.entries({ ...TIER_DEFAULT_PLACEMENT[tier as 2 | 3], ...(week?.tierPlacement ?? {}) }) as [TierDayRole, Weekday][]).map(
+            {(Object.entries({ ...data.plan.tierDefaultPlacement[tier as 2 | 3], ...(week?.tierPlacement ?? {}) }) as [TierDayRole, Weekday][]).map(
               ([role, wd]) => (
                 <div key={role} className="flex items-center justify-between">
                   <span className="text-[13px] font-bold capitalize">
@@ -144,7 +144,7 @@ export function WeekScreen() {
                         key={d}
                         onClick={() =>
                           updateWeek(weekStart, (w) => {
-                            w.tierPlacement = { ...TIER_DEFAULT_PLACEMENT[tier as 2 | 3], ...(w.tierPlacement ?? {}), [role]: d as Weekday }
+                            w.tierPlacement = { ...data.plan.tierDefaultPlacement[tier as 2 | 3], ...(w.tierPlacement ?? {}), [role]: d as Weekday }
                           })
                         }
                         className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
@@ -290,7 +290,7 @@ export function WeekScreen() {
                 </div>
                 <div className="mb-0.5 text-[10.5px] text-ink-faint">{CARDIO_GROUP_INFO[g].when}</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {CARDIO_OPTIONS.filter((c) => c.group === g).map((c) => (
+                  {data.plan.cardioOptions.filter((c) => c.group === g).map((c) => (
                     <Chip
                       key={c.exerciseId}
                       tone={week?.cardio?.exerciseId === c.exerciseId ? 'accent' : 'default'}

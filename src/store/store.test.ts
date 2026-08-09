@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { emptyAppData } from '../types'
+import { emptyAppData, SCHEMA_VERSION } from '../types'
 import { buildExport, parseEnvelope, serializeState } from './backup'
 
 function fixtureData() {
@@ -75,7 +75,7 @@ describe('migrations', () => {
     delete env.data.settings.remindersEnabled
     delete env.data.settings.reminderTimes
     const parsed = parseEnvelope(JSON.stringify(env))
-    expect(parsed.schemaVersion).toBe(3)
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION)
     expect(parsed.data.settings.remindersEnabled).toBe(false)
     expect(parsed.data.settings.reminderTimes).toEqual(['11:30', '17:30', '20:30'])
   })
@@ -96,9 +96,31 @@ describe('migrations', () => {
       badSleepDates: [],
     }
     const parsed = parseEnvelope(JSON.stringify(env))
-    expect(parsed.schemaVersion).toBe(3)
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION)
     expect(parsed.data.weeks['2026-08-10'].ballDates).toEqual([])
     expect(parsed.data.weeks['2026-08-10'].cnsSwapDates).toEqual([])
+  })
+
+  it('upgrades a v3 backup to v4: NAOD preset injected, history untouched (owner continuity)', () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: Record<string, unknown> & { settings: Record<string, unknown> }
+    }
+    // Reconstruct a faithful v3 envelope: no plan/profile/grocery/units yet.
+    env.schemaVersion = 3
+    delete env.data.plan
+    delete env.data.profile
+    delete env.data.grocery
+    delete env.data.settings.units
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION)
+    expect(parsed.data.plan.name).toBe('NAOD V3')
+    expect(parsed.data.plan.goal).toBe('vertical')
+    expect(parsed.data.plan.lifeRules).toEqual({ djWeekend: true, longShiftMonday: true })
+    expect(Object.keys(parsed.data.plan.templates).length).toBeGreaterThanOrEqual(11)
+    expect(parsed.data.profile).toEqual({})
+    expect(parsed.data.grocery).toEqual([])
+    expect(parsed.data.settings.units).toBe('imperial')
   })
 })
 

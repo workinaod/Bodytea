@@ -216,7 +216,7 @@ describe('content pools (anti-repeat guarantees)', () => {
   })
 
   it('recovery pools cover every session/mobility template family', () => {
-    for (const key of ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'cardio', 'generic']) {
+    for (const key of ['power', 'push', 'lower', 'mobility', 'pull', 'speed', 'cardio', 'generic']) {
       expect(RECOVERY_POOLS[key], key).toBeDefined()
     }
   })

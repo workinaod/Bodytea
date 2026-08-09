@@ -1,7 +1,6 @@
 import type { AppData, ISODate, SessionLog } from '../types'
 import { addDaysISO, daysBetween, todayISO } from './calendar'
 import { resolveDay } from './resolveDay'
-import { TRACKED_LIFTS } from '../plan/blocks'
 import { getExercise } from '../plan/exercises'
 
 // ============================================================
@@ -244,7 +243,7 @@ export function kcalBumpSuggestion(data: AppData): KcalBumpSuggestion | null {
 
   // strength climbing? any tracked lift e1RM +3% over the same window
   let bestGain = 0
-  for (const { exerciseId } of TRACKED_LIFTS) {
+  for (const { exerciseId } of data.plan.trackedLifts) {
     const series = liftSeries(data, exerciseId)
     const recent = series.filter((p) => p.date > baseline.date)
     const before = series.filter((p) => p.date <= baseline.date)

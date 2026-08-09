@@ -18,11 +18,27 @@ import { parseEnvelope, serializeState } from './backup'
 
 const driver = new LocalStorageDriver()
 
+/** One-time adoption of the pre-v4 grocery key into AppData. */
+function adoptLegacyGrocery(data: AppData): AppData {
+  try {
+    const raw = localStorage.getItem('naod.grocery')
+    if (raw) {
+      const checked = JSON.parse(raw) as Record<string, boolean>
+      const items = Object.keys(checked).filter((k) => checked[k])
+      data.grocery = [...new Set([...data.grocery, ...items])]
+      localStorage.removeItem('naod.grocery')
+    }
+  } catch {
+    /* ignore */
+  }
+  return data
+}
+
 function hydrate(): AppData {
   const raw = driver.load()
   if (!raw) return emptyAppData(mondayOf(todayISO()), todayISO())
   try {
-    return parseEnvelope(raw).data
+    return adoptLegacyGrocery(parseEnvelope(raw).data)
   } catch (e) {
     // Never destroy possibly-recoverable data — park it and start fresh.
     console.error('State failed to load; parking corrupt copy', e)

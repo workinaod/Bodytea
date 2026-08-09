@@ -1,11 +1,11 @@
 import type {
   DayTemplate,
   MinViableRecipe,
+  PlanConfig,
   ResolvedExercise,
   TemplateEntry,
 } from '../types'
 import { getExercise } from '../plan/exercises'
-import { BLOCK_SLOTS, SLOT_REPTEXT_OVERRIDES } from '../plan/blocks'
 
 // ============================================================
 // Pure transforms. Order in resolveDay:
@@ -53,8 +53,9 @@ export function buildFromTemplate(
   template: DayTemplate,
   blockIndex: 1 | 2 | 3,
   abWeek: 'A' | 'B',
+  plan: PlanConfig,
 ): ResolvedExercise[] {
-  const slots = BLOCK_SLOTS[blockIndex]
+  const slots = plan.slots[blockIndex]
   const out: ResolvedExercise[] = []
   const seen = new Set<string>()
 
@@ -75,8 +76,8 @@ export function buildFromTemplate(
       push(makeResolved(entry.exerciseId, entry.sets, entry.repText, entry.repsNum))
     } else if (entry.entry === 'slot') {
       const exerciseId = slots[entry.slot]
-      if (seen.has(exerciseId)) continue
-      const override = SLOT_REPTEXT_OVERRIDES[exerciseId]
+      if (!exerciseId || seen.has(exerciseId)) continue
+      const override = plan.slotRepOverrides[exerciseId]
       // Per-day slot schemes (e.g. Wed calf 4x20) win over generic overrides
       // only when the exercise's own scheme fits; overrides exist for
       // exercises whose scheme shape differs (holds, non-per-side).
