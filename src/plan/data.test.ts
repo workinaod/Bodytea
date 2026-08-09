@@ -116,6 +116,34 @@ describe('muscle map data', () => {
   })
 })
 
+describe('exercise demo data', () => {
+  it('every exercise has an animated movement demo', async () => {
+    const { EXERCISE_DEMOS } = await import('./demos')
+    for (const id of Object.keys(EXERCISES)) {
+      const d = EXERCISE_DEMOS[id]
+      expect(d, `missing demo for ${id}`).toBeDefined()
+      expect(d.frames.length, `${id} frames`).toBeGreaterThanOrEqual(2)
+      expect(d.frames.filter((f) => f.label).length, `${id} phase labels`).toBeGreaterThanOrEqual(1)
+      for (const f of d.frames) {
+        expect(f.d, `${id} frame duration`).toBeGreaterThan(0)
+        expect(f.hold, `${id} frame hold`).toBeGreaterThanOrEqual(0)
+        for (const [k, v] of Object.entries(f.p)) {
+          expect(Number.isFinite(v), `${id} pose ${k}`).toBe(true)
+        }
+      }
+    }
+    // no orphan demos either
+    for (const id of Object.keys(EXERCISE_DEMOS)) {
+      expect(EXERCISES[id], `orphan demo ${id}`).toBeDefined()
+    }
+  })
+
+  it('demoFor falls back safely for unknown ids', async () => {
+    const { demoFor } = await import('./demos')
+    expect(demoFor('not-a-real-exercise').frames.length).toBeGreaterThanOrEqual(2)
+  })
+})
+
 describe('nutrition data', () => {
   it('foods have sane macros', () => {
     for (const f of FOODS) {

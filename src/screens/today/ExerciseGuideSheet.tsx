@@ -1,9 +1,11 @@
 import { Sheet } from '../../components/Sheet'
 import { Chip } from '../../components/ui'
 import { MuscleMap } from '../../components/MuscleMap'
+import { ExerciseDemo } from '../../components/ExerciseDemo'
 import { YouTubeEmbed } from '../../components/YouTubeEmbed'
 import { getExercise } from '../../plan/exercises'
 import { musclesFor } from '../../plan/muscles'
+import { demoFor } from '../../plan/demos'
 
 /** The full "how / what / why / don't" guide for one exercise. */
 export function ExerciseGuideSheet({
@@ -27,6 +29,13 @@ export function ExerciseGuideSheet({
             <Chip key={q} tone="cyan">{q}</Chip>
           ))}
         </div>
+
+        <section className="rounded-2xl border border-edge bg-surface p-4">
+          <h4 className="mb-1 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
+            The movement
+          </h4>
+          <ExerciseDemo spec={demoFor(exerciseId)} />
+        </section>
 
         <section className="rounded-2xl border border-edge bg-surface p-4">
           <h4 className="mb-2 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">

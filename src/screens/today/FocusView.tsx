@@ -5,7 +5,9 @@ import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../..
 import { patchSet, toggleExerciseSkipped } from '../../logic/actions'
 import { Stepper } from '../../components/ui'
 import { MuscleMap } from '../../components/MuscleMap'
+import { ExerciseDemo } from '../../components/ExerciseDemo'
 import { musclesFor } from '../../plan/muscles'
+import { demoFor } from '../../plan/demos'
 
 // ============================================================
 // Focus mode: one set at a time, how-to in the middle, a giant
@@ -266,25 +268,30 @@ export function FocusView({
             </div>
           )}
 
-          <div className={`${def.videoId || def.cue ? 'mt-3' : ''} flex gap-3`}>
-            <div className="w-[38%] shrink-0">
+          {/* The movement, animated — the promised mid-screen visual */}
+          <div className={`${def.videoId || def.cue ? 'mt-3' : ''} flex items-center gap-2`}>
+            <div className="min-w-0 flex-1">
+              <ExerciseDemo compact spec={demoFor(def.id)} />
+            </div>
+            <div className="w-[36%] shrink-0">
               <MuscleMap
                 compact
                 primary={musclesFor(def.id).primary}
                 secondary={musclesFor(def.id).secondary}
               />
             </div>
-            <ol className="min-w-0 flex-1 space-y-2">
-              {def.steps.slice(0, def.videoId ? 3 : 5).map((s, i) => (
-                <li key={i} className="flex gap-2.5 text-[13px] leading-snug text-ink-dim">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[10.5px] font-black text-accent">
-                    {i + 1}
-                  </span>
-                  <span>{s}</span>
-                </li>
-              ))}
-            </ol>
           </div>
+
+          <ol className="mt-3 space-y-2">
+            {def.steps.slice(0, def.videoId ? 3 : 4).map((s, i) => (
+              <li key={i} className="flex gap-2.5 text-[13px] leading-snug text-ink-dim">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[10.5px] font-black text-accent">
+                  {i + 1}
+                </span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ol>
         </div>
 
         {/* Weight / reps for THIS set */}

@@ -73,27 +73,19 @@ export function Sheet({
 
     const onStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement
+      // Dismiss-drag engages ONLY from the header/handle zone — content
+      // touches scroll the content, nothing else.
+      state.fromHandle = !!target.closest('[data-sheet-handle]')
+      if (!state.fromHandle) return
       state.startY = e.touches[0].clientY
       state.startedAt = Date.now()
-      state.fromHandle = !!target.closest('[data-sheet-handle]')
       state.active = true
       setDragging(true)
     }
 
     const onMove = (e: TouchEvent) => {
       if (!state.active) return
-      const clientY = e.touches[0].clientY
-      const dy = clientY - state.startY
-      if (!state.fromHandle) {
-        // From content: hijack only when the body is scrolled to the top
-        // and the pull is downward; otherwise it's a normal scroll.
-        const scroller = scrollBodyRef.current
-        if (!scroller || scroller.scrollTop > 0 || dy <= 0) {
-          state.startY = clientY // re-anchor so a later top-pull engages cleanly
-          if (dragYRef.current !== 0) setDrag(0)
-          return
-        }
-      }
+      const dy = e.touches[0].clientY - state.startY
       if (dy > 0) {
         e.preventDefault()
         setDrag(lockedRef.current ? Math.min(28, Math.sqrt(dy) * 3) : dy)
