@@ -8,6 +8,7 @@ import { MuscleMap } from '../../components/MuscleMap'
 import { ExerciseDemo } from '../../components/ExerciseDemo'
 import { musclesFor } from '../../plan/muscles'
 import { demoFor } from '../../plan/demos'
+import { photosFor } from '../../plan/demoPhotos'
 
 // ============================================================
 // Focus mode: one set at a time, how-to in the middle, a giant
@@ -271,7 +272,7 @@ export function FocusView({
           {/* The movement, animated — the promised mid-screen visual */}
           <div className={`${def.videoId || def.cue ? 'mt-3' : ''} flex items-center gap-2`}>
             <div className="min-w-0 flex-1">
-              <ExerciseDemo compact spec={demoFor(def.id)} />
+              <ExerciseDemo compact spec={demoFor(def.id)} photos={photosFor(def.id)} />
             </div>
             <div className="w-[36%] shrink-0">
               <MuscleMap

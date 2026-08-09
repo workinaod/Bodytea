@@ -142,6 +142,20 @@ describe('exercise demo data', () => {
     const { demoFor } = await import('./demos')
     expect(demoFor('not-a-real-exercise').frames.length).toBeGreaterThanOrEqual(2)
   })
+
+  it('photo demos map to real exercises and vendored files that exist', async () => {
+    const { DEMO_PHOTOS } = await import('./demoPhotos')
+    const { existsSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    expect(Object.keys(DEMO_PHOTOS).length).toBeGreaterThanOrEqual(40)
+    for (const [id, pair] of Object.entries(DEMO_PHOTOS)) {
+      expect(EXERCISES[id], `orphan photo mapping ${id}`).toBeDefined()
+      expect(pair.length, `${id} needs a start+end pair`).toBe(2)
+      for (const f of pair) {
+        expect(existsSync(join(process.cwd(), 'public/demo', f)), `${id}: missing public/demo/${f}`).toBe(true)
+      }
+    }
+  })
 })
 
 describe('nutrition data', () => {
