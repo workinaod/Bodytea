@@ -92,22 +92,32 @@ export function CoachScreen() {
       {/* Feed */}
       <SectionTitle>The record</SectionTitle>
       <div className="space-y-2">
-        {data.coach.feed.slice(0, feedCount).map((f) => (
-          <Card key={f.id} className="!py-3">
-            <div className="flex items-center justify-between">
-              <Chip tone={f.kind === 'debrief' ? 'cyan' : f.kind === 'insight' ? 'lime' : 'accent'}>
-                {f.kind === 'debrief' ? 'debrief' : f.kind === 'insight' ? 'insight' : (f.situation ?? 'coach')}
-              </Chip>
-              <span className="text-[10px] font-semibold text-ink-faint">{formatShort(f.at.slice(0, 10))}</span>
-            </div>
-            <p className="mt-2 text-[13px] leading-relaxed text-ink">{f.text}</p>
-            {f.debrief && (
-              <button className="mt-1.5 text-[12px] font-semibold text-cyan underline" onClick={() => setDebrief(f.debrief!)}>
-                open debrief
-              </button>
-            )}
-          </Card>
-        ))}
+        {data.coach.feed.slice(0, feedCount).map((f) => {
+          const linkedClaim = f.excuseId
+            ? data.excuses.find((e) => e.id === f.excuseId)?.claimText
+            : undefined
+          return (
+            <Card key={f.id} className="!py-3">
+              <div className="flex items-center justify-between">
+                <Chip tone={f.kind === 'debrief' ? 'cyan' : f.kind === 'insight' ? 'lime' : 'accent'}>
+                  {f.kind === 'debrief' ? 'debrief' : f.kind === 'insight' ? 'insight' : (f.situation ?? 'coach')}
+                </Chip>
+                <span className="text-[10px] font-semibold text-ink-faint">{formatShort(f.at.slice(0, 10))}</span>
+              </div>
+              <p className="mt-2 text-[13px] leading-relaxed text-ink">{f.text}</p>
+              {linkedClaim && (
+                <p className="mt-2 rounded-lg border-l-2 border-gold/50 bg-surface-2 px-3 py-2 text-[12.5px] italic leading-snug text-ink-dim">
+                  Your words: "{linkedClaim}"
+                </p>
+              )}
+              {f.debrief && (
+                <button className="mt-1.5 text-[12px] font-semibold text-cyan underline" onClick={() => setDebrief(f.debrief!)}>
+                  open debrief
+                </button>
+              )}
+            </Card>
+          )
+        })}
         {data.coach.feed.length === 0 && (
           <p className="py-6 text-center text-[12.5px] text-ink-faint">
             Nothing yet. Finish a session and the record starts.

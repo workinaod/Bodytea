@@ -111,10 +111,10 @@ export const MESSAGE_POOLS: MessagePool[] = [
     id: 'tier-drop-midweek',
     situation: 'tier-drop-midweek',
     variants: [
-      "Dropping tiers MID-week? The plan says pick at the START — deciding day-by-day is how weeks die. I'll allow it once; show proof next time or plan better Sunday.",
-      "Mid-week tier drop, no proof. That's not planning, that's retreating. Logged. Next week gets picked on Monday like the plan says.",
-      'You know the rule: tier at the start of the week, not when it gets hard. This one goes in the ledger.',
-      "Changing the deal halfway through. The week noticed. Sunday: pick honestly, then DON'T renegotiate.",
+      "Dropping tiers MID-week? The plan says pick at the START — deciding day-by-day is how weeks die. Your reason is on the record below; I'll be quoting it back if this becomes a pattern.",
+      "Mid-week tier drop. That's not planning, that's renegotiating with yourself. Your own words are logged — make sure they'd survive being read out loud.",
+      'You know the rule: tier at the start of the week, not when it gets hard. Your reason goes in the record. Next week gets picked on Monday.',
+      "Changing the deal halfway through. Fine — your reason's on the record. Sunday: pick honestly, then DON'T renegotiate.",
     ],
   },
 

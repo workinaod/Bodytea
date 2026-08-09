@@ -16,7 +16,6 @@ import { resolveDay } from '../engine/resolveDay'
 import { applyReadinessDowngrade, minimumViableFor } from '../engine/transforms'
 import { getTemplate } from '../plan/templates'
 import {
-  anyGigFlag,
   busyButMealsLogged,
   pruneTierDropExcuses,
   pruneTierDropFeed,
@@ -332,7 +331,7 @@ export function resolveSkipFlow(opts: {
 
 // ---------- Tier changes ----------
 
-export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: ExcuseReason; proofPhotoId?: string; claimText?: string }): void {
+export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: ExcuseReason; claimText: string }): void {
   const monday = mondayOf(date)
   const data = store().data
   const week = data.weeks[monday]
@@ -345,10 +344,12 @@ export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: Excus
   const isPlannedPick = !anySessionThisWeek && (weekdayOf(date) === 1 || !week?.tierPickedAt)
   const isDrop = to > from
 
+  // Every drop records the user's written reason. The reason IS the
+  // requirement (no proof for tier drops), so the record is `accepted`
+  // and never feeds the unproven-escalation counter.
   let excuseId: string | undefined
-  if (isDrop && !isPlannedPick) {
+  if (isDrop) {
     excuseId = uid()
-    const accepted = !!excuseInfo?.proofPhotoId || (excuseInfo?.reason === 'gig' && anyGigFlag(week))
     store().update((d) => {
       d.excuses.push({
         id: excuseId!,
@@ -358,8 +359,7 @@ export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: Excus
         action: 'tier-drop',
         reason: excuseInfo?.reason ?? 'none',
         claimText: excuseInfo?.claimText,
-        proofPhotoId: excuseInfo?.proofPhotoId,
-        accepted,
+        accepted: true,
         minimumViableTaken: false,
         escalationLevelAtTime: escalationLevel(d.excuses, todayISO()),
       })
@@ -375,7 +375,7 @@ export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: Excus
   if (isDrop) {
     // one live drop message per week — a re-drop replaces, never stacks
     store().update((d) => pruneTierDropFeed(d, monday))
-    if (isPlannedPick || excuseInfo?.proofPhotoId) {
+    if (isPlannedPick) {
       pushCoachMessage('tier-drop-planned', { tier: to }, undefined, excuseId, monday)
     } else {
       pushCoachMessage('tier-drop-midweek', { tier: to }, undefined, excuseId, monday)

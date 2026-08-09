@@ -66,17 +66,20 @@ export function WeekScreen() {
 
   function handleTierTap(to: Tier) {
     if (to === tier) return
-    const anySession = Object.values(data.sessions).some(
-      (s) => mondayOf(s.date) === weekStart && s.status !== 'skipped',
-    )
-    const isPlannedPick = !week?.tierPickedAt && !anySession
-    if (to > tier && !isPlannedPick) {
-      // mid-week drop → proof flow
+    if (to > tier) {
+      // EVERY drop goes through the sheet — the written reason is mandatory
       setTierDropTo(to)
     } else {
       changeTier(weekStart, to)
     }
   }
+
+  const dropIsPlanned = (() => {
+    const anySession = Object.values(data.sessions).some(
+      (s) => mondayOf(s.date) === weekStart && s.status !== 'skipped',
+    )
+    return !week?.tierPickedAt && !anySession
+  })()
 
   return (
     <div className="space-y-3">
@@ -348,6 +351,7 @@ export function WeekScreen() {
         <TierDropSheet
           to={tierDropTo}
           weekStart={weekStart}
+          planned={dropIsPlanned}
           onClose={() => setTierDropTo(null)}
         />
       )}

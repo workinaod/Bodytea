@@ -16,7 +16,7 @@ test('full core loop: onboard → session → meals → debrief → export', asy
   // ---- Today renders a resolved day ----
   await expect(page.getByText(/Week \d+/).first()).toBeVisible()
   const isRest = await page
-    .getByText('Full Rest')
+    .getByRole('heading', { name: 'Full Rest' })
     .isVisible()
     .catch(() => false)
 

@@ -198,7 +198,8 @@ describe('tier-drop record hygiene', () => {
     }
     d.excuses.push({
       id: 'x-drop', at: '2026-08-11T09:00:00.000Z', date: monday, scope: 'week',
-      action: 'tier-drop', reason: 'busy', accepted: false, minimumViableTaken: false, escalationLevelAtTime: 0,
+      action: 'tier-drop', reason: 'busy', claimText: 'Inventory week, three doubles.',
+      accepted: true, minimumViableTaken: false, escalationLevelAtTime: 0,
     })
     d.coach.feed.push({
       id: 'f1', at: '2026-08-11T09:00:00.000Z', kind: 'coach',
