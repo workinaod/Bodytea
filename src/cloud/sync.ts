@@ -94,6 +94,8 @@ async function pushNow(): Promise<void> {
     saveSyncMeta({ ...meta, lastRemoteExportedAt: envelope.exportedAt, lastSyncAt: new Date().toISOString() })
   }
   setStatus({ kind: 'idle', lastSyncAt: new Date().toISOString() })
+  // Piggyback the leaderboard row on successful backups (interval-gated inside)
+  void import('./board').then((m) => m.pushBoardStats()).catch(() => {})
 }
 
 async function fetchRemote(userId: string): Promise<Envelope | null> {

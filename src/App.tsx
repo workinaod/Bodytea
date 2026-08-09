@@ -5,6 +5,7 @@ import { TodayScreen } from './screens/today/TodayScreen'
 import { WeekScreen } from './screens/week/WeekScreen'
 import { MealsScreen } from './screens/meals/MealsScreen'
 import { ProgressScreen } from './screens/progress/ProgressScreen'
+import { BoardScreen } from './screens/board/BoardScreen'
 import { CoachScreen } from './screens/coach/CoachScreen'
 import { Onboarding } from './screens/Onboarding'
 import { ReconcileSheet } from './screens/ReconcileSheet'
@@ -64,6 +65,7 @@ export default function App() {
       {tab === 'week' && <WeekScreen />}
       {tab === 'meals' && <MealsScreen />}
       {tab === 'progress' && <ProgressScreen />}
+      {tab === 'board' && <BoardScreen />}
       {tab === 'coach' && <CoachScreen />}
 
       <TabBar tab={tab} onChange={setTab} alert={{ week: !weekPicked }} />

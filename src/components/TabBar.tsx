@@ -1,4 +1,4 @@
-export type TabId = 'today' | 'week' | 'meals' | 'progress' | 'coach'
+export type TabId = 'today' | 'week' | 'meals' | 'progress' | 'board' | 'coach'
 
 const TABS: { id: TabId; label: string; icon: (active: boolean) => JSX.Element }[] = [
   {
@@ -36,6 +36,16 @@ const TABS: { id: TabId; label: string; icon: (active: boolean) => JSX.Element }
     icon: (a) => (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round">
         <path d="M4 20V10M10 20V4M16 20v-6M21 20H3" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    id: 'board',
+    label: 'Board',
+    icon: (a) => (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 20V9h6v11M3 20v-6h6v6M15 20v-9h6v9M2 20h20" />
+        {a && <circle cx="12" cy="5" r="1.6" fill="var(--color-accent)" stroke="none" />}
       </svg>
     ),
   },
