@@ -292,11 +292,11 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
 
 export function migrate(env: unknown): Envelope {
   if (typeof env !== 'object' || env === null) {
-    throw new Error('Not a NAOD backup file')
+    throw new Error('Not a Bodytea backup file')
   }
   let e = env as Record<string, unknown>
   let v = typeof e.schemaVersion === 'number' ? e.schemaVersion : 0
-  if (v === 0) throw new Error('Missing schema version — not a NAOD backup file')
+  if (v === 0) throw new Error('Missing schema version — not a Bodytea backup file')
   if (v > SCHEMA_VERSION) {
     throw new Error(`This backup is from a newer app version (schema ${v}). Update the app first.`)
   }

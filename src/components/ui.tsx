@@ -17,7 +17,7 @@ export function Card({
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl border border-edge bg-surface p-4 ${onClick ? 'cursor-pointer active:scale-[0.99] transition-transform' : ''} ${className}`}
+      className={`rounded-2xl border border-edge bg-surface p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_28px_-16px_rgba(0,0,0,0.7)] ${onClick ? 'cursor-pointer transition-transform active:scale-[0.99]' : ''} ${className}`}
     >
       {children}
     </div>
@@ -55,7 +55,7 @@ export function Chip({
   return (
     <span
       onClick={onClick}
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold ${tones[tone]} ${onClick ? 'cursor-pointer active:opacity-70' : ''} ${className}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${tones[tone]} ${onClick ? 'cursor-pointer active:opacity-70' : ''} ${className}`}
     >
       {children}
     </span>
@@ -76,17 +76,18 @@ export function Btn({
   disabled?: boolean
 }) {
   const kinds: Record<string, string> = {
-    primary: 'bg-accent text-black font-extrabold shadow-lg shadow-accent/20',
+    primary:
+      'bg-gradient-to-b from-accent to-accent-deep text-black font-extrabold shadow-lg shadow-accent/25 [text-shadow:0_1px_0_rgba(255,255,255,0.18)]',
     lime: 'bg-lime text-black font-extrabold shadow-lg shadow-lime/20',
     ghost: 'bg-transparent border border-edge text-ink-dim font-semibold',
-    subtle: 'bg-surface-2 text-ink font-semibold',
+    subtle: 'bg-surface-2 border border-edge/60 text-ink font-semibold',
     danger: 'bg-danger/15 border border-danger/30 text-danger font-bold',
   }
   return (
     <button
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-xl px-4 py-3 text-sm transition-all active:scale-[0.98] disabled:opacity-40 ${kinds[kind]} ${className}`}
+      className={`rounded-xl px-4 py-3 text-sm transition-all active:translate-y-px active:scale-[0.985] disabled:opacity-40 ${kinds[kind]} ${className}`}
     >
       {children}
     </button>

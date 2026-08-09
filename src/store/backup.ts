@@ -54,5 +54,5 @@ export async function buildExport(
 
 export function exportFilename(includePhotos: boolean): string {
   const stamp = new Date().toISOString().slice(0, 10)
-  return `naod-v3-backup-${stamp}${includePhotos ? '' : '-data-only'}.json`
+  return `bodytea-backup-${stamp}${includePhotos ? '' : '-data-only'}.json`
 }

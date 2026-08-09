@@ -1,15 +1,16 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-bg: #09090f;
-  --color-surface: #131320;
-  --color-surface-2: #1c1c2e;
-  --color-edge: #2a2a40;
-  --color-ink: #f2f2f8;
-  --color-ink-dim: #9a9ab0;
-  --color-ink-faint: #62627a;
+  --color-bg: #07070d;
+  --color-surface: #10101c;
+  --color-surface-2: #1a1a2a;
+  --color-edge: #28283d;
+  --color-ink: #f4f4fa;
+  --color-ink-dim: #9d9db4;
+  --color-ink-faint: #64647e;
   --color-accent: #ff5c1f;
   --color-accent-soft: #ff8c5c;
+  --color-accent-deep: #e8490f;
   --color-lime: #b8f542;
   --color-cyan: #3fd9e0;
   --color-gold: #f5c542;
@@ -24,7 +25,12 @@ html {
 }
 
 body {
-  background: var(--color-bg);
+  /* Deep field with a faint arena-light bloom up top */
+  background:
+    radial-gradient(1100px 480px at 50% -12%, rgba(255, 92, 31, 0.075), transparent 62%),
+    radial-gradient(800px 380px at 108% -4%, rgba(63, 217, 224, 0.05), transparent 58%),
+    var(--color-bg);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family:
     system-ui,
@@ -32,7 +38,18 @@ body {
     'Segoe UI',
     Roboto,
     sans-serif;
+  font-variant-numeric: tabular-nums;
   overscroll-behavior-y: none;
+}
+
+::selection {
+  background: rgba(255, 92, 31, 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(255, 92, 31, 0.6);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* Hide scrollbars on chip rows but keep scrollability */
@@ -53,7 +70,7 @@ body {
   }
 }
 .animate-slide-up {
-  animation: slide-up 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+  animation: slide-up 0.3s cubic-bezier(0.22, 1.1, 0.36, 1);
 }
 
 @keyframes fade-in {
@@ -66,4 +83,18 @@ body {
 }
 .animate-fade-in {
   animation: fade-in 0.18s ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise 0.28s cubic-bezier(0.22, 1.1, 0.36, 1) both;
 }

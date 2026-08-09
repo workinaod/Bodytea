@@ -96,7 +96,7 @@ async function maybeNotify(): Promise<void> {
   if (meta.lastNotifiedAt && Date.now() - new Date(meta.lastNotifiedAt).getTime() < 3 * 3600_000) return
 
   const body = NUDGES[now.getDate() % NUDGES.length]
-  await self.registration.showNotification(`NAOD V3 — ${meta.todayTitle}`, {
+  await self.registration.showNotification(`Bodytea — ${meta.todayTitle}`, {
     body,
     tag: 'naod-train-reminder',
     icon: 'icons/pwa-192.png',

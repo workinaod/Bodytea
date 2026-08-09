@@ -245,7 +245,8 @@ function PodiumCard({ row, rank, category, me }: { row: BoardRow; rank: 1 | 2 | 
   const medals = { 1: '🥇', 2: '🥈', 3: '🥉' }
   return (
     <div
-      className={`rounded-2xl border text-center ${heights[rank]} ${
+      style={{ animationDelay: `${rank * 60}ms` }}
+      className={`animate-rise rounded-2xl border text-center ${heights[rank]} ${
         me ? 'border-accent/60 bg-accent/15' : rank === 1 ? 'border-gold/40 bg-gold/10' : 'border-edge bg-surface'
       }`}
     >

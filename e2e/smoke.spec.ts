@@ -89,7 +89,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: /Export data only/ }).click()
   const download = await downloadPromise
-  expect(download.suggestedFilename()).toMatch(/naod-v3-backup-.*-data-only\.json/)
+  expect(download.suggestedFilename()).toMatch(/bodytea-backup-.*-data-only\.json/)
 
   // ---- Service worker registered ----
   const swCount = await page.evaluate(async () => {

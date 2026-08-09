@@ -20,12 +20,12 @@ export default defineConfig({
       },
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'NAOD V3 — Hybrid Athlete',
-        short_name: 'NAOD V3',
+        name: 'Bodytea — Your goal. Your booklet.',
+        short_name: 'Bodytea',
         description:
-          'Training companion for the NAOD V3 hybrid athlete plan: workouts, meals, progress, and a coach that keeps you honest.',
-        theme_color: '#09090f',
-        background_color: '#09090f',
+          'Your goal in your own words becomes a full training booklet: workouts with photo demos, meals, progress, a global leaderboard, and a coach that keeps you honest.',
+        theme_color: '#07070d',
+        background_color: '#07070d',
         display: 'standalone',
         orientation: 'portrait',
         start_url: './',

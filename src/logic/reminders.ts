@@ -55,7 +55,7 @@ export async function syncReminderMeta(): Promise<void> {
 async function showLocalReminder(title: string): Promise<void> {
   if (Notification.permission !== 'granted') return
   const reg = await navigator.serviceWorker.getRegistration()
-  await reg?.showNotification(`NAOD V3 — ${title}`, {
+  await reg?.showNotification(`Bodytea — ${title}`, {
     body: 'Session still open today. Even the 10-minute minimum counts.',
     tag: 'naod-train-reminder',
     icon: 'icons/pwa-192.png',
