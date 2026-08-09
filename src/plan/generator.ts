@@ -322,7 +322,7 @@ const ROLE_TEMPLATE_ID: Record<Role, string> = {
 
 // ---------- Cardio ----------
 
-function pickCardio(owned: Set<EquipTag>): CardioOption[] {
+export function pickCardio(owned: Set<EquipTag>): CardioOption[] {
   const all: CardioOption[] = [
     { exerciseId: 'easy-jog', repText: '25-30 min', group: 'A' },
     { exerciseId: 'brisk-walk', repText: '30-45 min', group: 'A' },
@@ -375,6 +375,11 @@ const RATIONALE_TEMPLATES: Record<Goal, string[]> = {
   ],
 }
 
+/** Goal-voiced "why it's in YOUR plan" lines for a set of exercises. */
+export function rationaleFor(goal: Goal, goalStatement: string, ids: string[]): Record<string, string> {
+  return buildRationale(goal, goalStatement, ids)
+}
+
 function buildRationale(goal: Goal, goalStatement: string, ids: string[]): Record<string, string> {
   const pool = RATIONALE_TEMPLATES[goal]
   const out: Record<string, string> = {}
@@ -390,7 +395,7 @@ function buildRationale(goal: Goal, goalStatement: string, ids: string[]): Recor
 
 // ---------- Nutrition ----------
 
-function buildNutrition(goal: Goal, bodyweightLb: number) {
+export function buildNutrition(goal: Goal, bodyweightLb: number) {
   const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
   const base = Math.round((bw * 15) / 50) * 50
   const adj: Record<Goal, number> = { muscle: 300, strength: 250, vertical: 200, speed: 150, general: 100, lean: -300 }

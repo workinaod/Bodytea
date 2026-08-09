@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
-import type { CustomTarget, EquipTag, Goal, Weekday } from '../types'
+import type { CustomTarget, EquipTag, Goal, PlanConfig, Weekday } from '../types'
 import { mondayOf, todayISO, formatShort, addDaysISO } from '../engine/calendar'
-import { useAppStore } from '../store/appStore'
+import { useAppStore, uid } from '../store/appStore'
 import { saveMeasurement } from '../logic/actions'
-import { generatePlan, type OnboardingAnswers } from '../plan/generator'
-import { buildNaodPreset } from '../plan/presets/naod'
+import { generatePlan, buildNutrition, type OnboardingAnswers } from '../plan/generator'
+import { makeEmptyByorPlan, normalizeBooklet, validateBooklet } from '../plan/bookletOps'
+import { analyzeRoutine, type RoutineNote } from '../plan/analyze'
+import { BookletEditor } from './booklet/BookletEditor'
 import { Btn, Card, Chip, Stepper } from '../components/ui'
 
 // ============================================================
@@ -39,6 +41,11 @@ const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 export function Onboarding() {
   const update = useAppStore((s) => s.update)
   const [step, setStep] = useState(0)
+  const [mode, setMode] = useState<'gen' | 'byor'>('gen')
+  const [byorDraft, setByorDraft] = useState<PlanConfig | null>(null)
+  const [byorProblems, setByorProblems] = useState<string[]>([])
+  const [tuneDraft, setTuneDraft] = useState<PlanConfig | null>(null)
+  const [tuneProblems, setTuneProblems] = useState<string[]>([])
 
   const [displayName, setDisplayName] = useState('')
   const [goalChip, setGoalChip] = useState<number | null>(null)
@@ -82,21 +89,20 @@ export function Onboarding() {
     })
   }
 
-  function commit(useNaodPreset: boolean) {
+  function commitPlan(plan: PlanConfig, proteinTargetG: number, notes: RoutineNote[] = []) {
     const start = mondayOf(pickedStart)
-    const generated = useNaodPreset ? null : generatePlan(answers)
     void navigator.storage?.persist?.().catch(() => {})
     update((d) => {
       d.settings.phaseStartDate = start
       d.settings.installedAt = todayISO()
       d.settings.onboarded = true
-      if (generated) {
-        d.plan = generated.plan
-        d.settings.proteinTargetG = generated.proteinTargetG
-      } else {
-        d.plan = buildNaodPreset()
-      }
+      d.plan = plan
+      d.settings.proteinTargetG = proteinTargetG
       d.profile.displayName = displayName.trim() || undefined
+      const at = new Date().toISOString()
+      for (const n of notes.slice(0, 4)) {
+        d.coach.feed.unshift({ id: uid(), at, kind: 'insight', text: `📓 Routine notes: ${n.text}` })
+      }
     })
     if (weight > 0 || vert > 0) {
       saveMeasurement({
@@ -108,8 +114,31 @@ export function Onboarding() {
     }
   }
 
+  /** BYOR: seed (or reuse) the empty booklet and open the builder step. */
+  function enterBuilder() {
+    if (!byorDraft) {
+      const seeded = makeEmptyByorPlan(goal, goalStatement, answers.customTargets, weight)
+      setByorDraft(seeded.plan)
+    }
+    setStep(8)
+  }
+
+  const byorNotes = useMemo(
+    () => (step === 9 && byorDraft ? analyzeRoutine(normalizeBooklet(byorDraft)) : []),
+    [step, byorDraft],
+  )
+
   const next = () => setStep((s) => s + 1)
-  const back = () => setStep((s) => Math.max(0, s - 1))
+  const back = () => {
+    if (step === 10) return setStep(7) // fine-tune → generated preview
+    if (step === 8) return setStep(6) // builder → numbers
+    if (step === 7) {
+      setTuneDraft(null) // answers may change → stale tune draft
+      return setStep(6)
+    }
+    if (step === 6 && mode === 'byor') return setStep(2) // byor skips days/gear/experience
+    setStep((s) => Math.max(0, s - 1))
+  }
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-[max(env(safe-area-inset-top),24px)]">
@@ -120,7 +149,7 @@ export function Onboarding() {
           </button>
           <div className="flex gap-1">
             {Array.from({ length: 8 }, (_, i) => (
-              <span key={i} className={`h-1 rounded-full transition-all ${i === step - 0 ? 'w-5 bg-accent' : i < step ? 'w-2 bg-accent/50' : 'w-2 bg-surface-2'}`} />
+              <span key={i} className={`h-1 rounded-full transition-all ${i === Math.min(step, 7) ? 'w-5 bg-accent' : i < Math.min(step, 7) ? 'w-2 bg-accent/50' : 'w-2 bg-surface-2'}`} />
             ))}
           </div>
           <span className="w-14" />
@@ -141,9 +170,15 @@ export function Onboarding() {
             Answer a few questions straight and you get a full training booklet built for YOUR goal — workouts with
             photo demos, meals, deload weeks, and a coach that calls you out when you dodge.
           </p>
-          <Btn className="mt-8 w-full py-4 text-[16px]" onClick={next}>
+          <Btn className="mt-8 w-full py-4 text-[16px]" onClick={() => { setMode('gen'); next() }}>
             Build my plan
           </Btn>
+          <Btn kind="subtle" className="mt-3 w-full py-4" onClick={() => { setMode('byor'); next() }}>
+            I already have a routine
+          </Btn>
+          <p className="mt-2 text-center text-[11.5px] text-ink-faint">
+            Bring your own — the app maps it, tracks it, and gives you straight notes on it.
+          </p>
         </div>
       )}
 
@@ -207,10 +242,10 @@ export function Onboarding() {
           </div>
           <Btn
             className="mt-6 w-full py-4"
-            onClick={next}
+            onClick={() => (mode === 'byor' ? setStep(6) : next())}
             disabled={goalChip === null || goalStatement.trim().length < 4}
           >
-            Next — my week
+            {mode === 'byor' ? 'Next — my numbers' : 'Next — my week'}
           </Btn>
           {(goalChip === null || goalStatement.trim().length < 4) && (
             <p className="mt-2 text-center text-[11.5px] text-ink-faint">Pick a goal AND write it in your own words.</p>
@@ -332,8 +367,8 @@ export function Onboarding() {
             </div>
             <p className="text-[11px] text-ink-faint">Weeks start Mondays — your pick snaps to {formatShort(mondayOf(pickedStart))} → first week runs through {formatShort(addDaysISO(mondayOf(pickedStart), 6))}.</p>
           </div>
-          <Btn className="mt-6 w-full py-4" onClick={next}>
-            Generate my booklet
+          <Btn className="mt-6 w-full py-4" onClick={() => (mode === 'byor' ? enterBuilder() : next())}>
+            {mode === 'byor' ? 'Next — build my week' : 'Generate my booklet'}
           </Btn>
         </div>
       )}
@@ -378,17 +413,142 @@ export function Onboarding() {
             every movement with photo demos and muscle maps · a coach that keeps receipts.
           </p>
 
-          <Btn className="mt-5 w-full py-4 text-[16px]" onClick={() => commit(false)}>
+          <Btn className="mt-5 w-full py-4 text-[16px]" onClick={() => commitPlan(preview.plan, preview.proteinTargetG)}>
             Start Week 1 — let's work
+          </Btn>
+          <Btn
+            kind="subtle"
+            className="mt-3 w-full py-3.5"
+            onClick={() => {
+              if (!tuneDraft) setTuneDraft(structuredClone(preview.plan))
+              setTuneProblems([])
+              setStep(10)
+            }}
+          >
+            Fine-tune it first — swap moves, sets, days
           </Btn>
           <button onClick={back} className="mt-3 text-center text-[12px] font-semibold text-ink-faint underline">
             change my answers
           </button>
         </div>
       )}
+
+      {step === 8 && byorDraft && (
+        <div className="flex flex-1 flex-col">
+          <h2 className="text-[26px] font-black tracking-tight">Build your week</h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
+            Lay out the routine you already run — pick your training days, name them, load each one with exercises,
+            sets, and reps.
+          </p>
+          {byorProblems.length > 0 && (
+            <div className="mt-3 rounded-xl border border-danger/40 bg-danger/10 px-3.5 py-2.5">
+              {byorProblems.map((p) => (
+                <div key={p} className="text-[12px] font-semibold text-danger">• {p}</div>
+              ))}
+            </div>
+          )}
+          <div className="mt-4">
+            <BookletEditor
+              draft={byorDraft}
+              showMeta={false}
+              onDraft={(d) => {
+                setByorDraft(d)
+                setByorProblems([])
+              }}
+            />
+          </div>
+          <Btn
+            className="mt-6 w-full py-4"
+            onClick={() => {
+              const errs = validateBooklet(byorDraft)
+              if (errs.length) setByorProblems(errs)
+              else setStep(9)
+            }}
+          >
+            Done — give me the notes
+          </Btn>
+        </div>
+      )}
+
+      {step === 9 && byorDraft && (
+        <div className="flex flex-1 flex-col">
+          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">The read on your routine</div>
+          <h2 className="mt-1 text-[26px] font-black tracking-tight">Straight notes, no fluff</h2>
+          <div className="mt-4 space-y-2">
+            {byorNotes.map((n) => (
+              <div key={n.id} className={`rounded-xl border px-3.5 py-2.5 ${NOTE_TONE[n.tone]}`}>
+                <div className="text-[10px] font-black uppercase tracking-[0.14em]">{NOTE_LABEL[n.tone]}</div>
+                <div className="mt-0.5 text-[13px] font-semibold leading-snug text-ink">{n.text}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[12px] leading-relaxed text-ink-dim">
+            These land in your coach feed too, and refresh whenever you edit the booklet. Your routine, your call —
+            the app tracks it exactly as you built it.
+          </p>
+          <Btn
+            className="mt-5 w-full py-4 text-[16px]"
+            onClick={() =>
+              commitPlan(
+                normalizeBooklet(byorDraft),
+                buildNutrition(goal, weight).proteinTargetG,
+                byorNotes.filter((n) => n.tone !== 'info'),
+              )
+            }
+          >
+            Start Week 1 — let's work
+          </Btn>
+          <button onClick={back} className="mt-3 text-center text-[12px] font-semibold text-ink-faint underline">
+            keep editing
+          </button>
+        </div>
+      )}
+
+      {step === 10 && tuneDraft && (
+        <div className="flex flex-1 flex-col">
+          <h2 className="text-[26px] font-black tracking-tight">Fine-tune your booklet</h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
+            Swap exercises, change sets and reps, rename days, move the week around. Blocks, deloads, and busy-week
+            tiers rebuild themselves around your edits.
+          </p>
+          {tuneProblems.length > 0 && (
+            <div className="mt-3 rounded-xl border border-danger/40 bg-danger/10 px-3.5 py-2.5">
+              {tuneProblems.map((p) => (
+                <div key={p} className="text-[12px] font-semibold text-danger">• {p}</div>
+              ))}
+            </div>
+          )}
+          <div className="mt-4">
+            <BookletEditor
+              draft={tuneDraft}
+              onDraft={(d) => {
+                setTuneDraft(d)
+                setTuneProblems([])
+              }}
+            />
+          </div>
+          <Btn
+            className="mt-6 w-full py-4 text-[16px]"
+            onClick={() => {
+              const errs = validateBooklet(tuneDraft)
+              if (errs.length) return setTuneProblems(errs)
+              commitPlan(normalizeBooklet(tuneDraft), buildNutrition(goal, weight).proteinTargetG)
+            }}
+          >
+            Lock it in — start Week 1
+          </Btn>
+        </div>
+      )}
     </div>
   )
 }
+
+const NOTE_TONE: Record<RoutineNote['tone'], string> = {
+  warn: 'border-danger/40 bg-danger/10 text-danger',
+  good: 'border-lime/40 bg-lime/10 text-lime',
+  info: 'border-cyan/30 bg-cyan/10 text-cyan',
+}
+const NOTE_LABEL: Record<RoutineNote['tone'], string> = { warn: 'Fix this', good: 'Solid', info: 'Heads up' }
 
 /** Mirrors the generator's protein formula for the preview card. */
 function proteinPreview(weightLb: number): number {

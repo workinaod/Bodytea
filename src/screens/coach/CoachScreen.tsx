@@ -14,6 +14,7 @@ import { ExerciseGuideSheet } from '../today/ExerciseGuideSheet'
 import { SettingsSheet } from './SettingsSheet'
 import { DataTransferSheet } from './DataTransferSheet'
 import { ExcuseLedger } from './ExcuseLedger'
+import { BookletScreen } from '../booklet/BookletScreen'
 import type { DebriefData } from '../../types'
 
 export function CoachScreen() {
@@ -24,6 +25,7 @@ export function CoachScreen() {
   const [guideOpen, setGuideOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dataOpen, setDataOpen] = useState(false)
+  const [bookletOpen, setBookletOpen] = useState(false)
   const [debrief, setDebrief] = useState<DebriefData | null>(null)
   const [guideExercise, setGuideExercise] = useState<string | null>(null)
   const [feedCount, setFeedCount] = useState(20)
@@ -88,6 +90,18 @@ export function CoachScreen() {
           <div className="mt-0.5 text-[11px] text-ink-faint">Rules, why it works, exercise library</div>
         </Card>
       </div>
+
+      <Card onClick={() => setBookletOpen(true)} className="!p-3.5">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[13.5px] font-extrabold">📓 My Booklet — {data.plan.name}</div>
+            <div className="mt-0.5 text-[11px] text-ink-faint">
+              {data.plan.daysPerWeek} day{data.plan.daysPerWeek === 1 ? '' : 's'} a week · fine-tune days, exercises, sets & reps
+            </div>
+          </div>
+          <span className="text-[16px] text-ink-faint">›</span>
+        </div>
+      </Card>
 
       {/* Feed */}
       <SectionTitle>The record</SectionTitle>
@@ -169,6 +183,7 @@ export function CoachScreen() {
 
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <DataTransferSheet open={dataOpen} onClose={() => setDataOpen(false)} />
+      {bookletOpen && <BookletScreen onClose={() => setBookletOpen(false)} />}
       <DebriefSheet debrief={debrief} onClose={() => setDebrief(null)} />
       <ExerciseGuideSheet exerciseId={guideExercise} onClose={() => setGuideExercise(null)} />
     </div>
