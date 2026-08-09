@@ -143,16 +143,21 @@ describe('exercise demo data', () => {
     expect(demoFor('not-a-real-exercise').frames.length).toBeGreaterThanOrEqual(2)
   })
 
-  it('photo demos map to real exercises and vendored files that exist', async () => {
+  it('photo sequences cover the movement with captions bound to real files', async () => {
     const { DEMO_PHOTOS } = await import('./demoPhotos')
     const { existsSync } = await import('node:fs')
     const { join } = await import('node:path')
     expect(Object.keys(DEMO_PHOTOS).length).toBeGreaterThanOrEqual(40)
-    for (const [id, pair] of Object.entries(DEMO_PHOTOS)) {
+    for (const [id, seq] of Object.entries(DEMO_PHOTOS)) {
       expect(EXERCISES[id], `orphan photo mapping ${id}`).toBeDefined()
-      expect(pair.length, `${id} needs a start+end pair`).toBe(2)
-      for (const f of pair) {
-        expect(existsSync(join(process.cwd(), 'public/demo', f)), `${id}: missing public/demo/${f}`).toBe(true)
+      expect(seq.frames.length, `${id} needs at least start+end stages`).toBeGreaterThanOrEqual(2)
+      expect(seq.frames.length, `${id} sequence too long`).toBeLessThanOrEqual(5)
+      const files = new Set<string>()
+      for (const f of seq.frames) {
+        expect(existsSync(join(process.cwd(), 'public/demo', f.file)), `${id}: missing public/demo/${f.file}`).toBe(true)
+        expect(f.caption.trim().length, `${id}: frame ${f.file} needs a real caption`).toBeGreaterThanOrEqual(8)
+        expect(files.has(f.file), `${id}: duplicate frame ${f.file}`).toBe(false)
+        files.add(f.file)
       }
     }
   })

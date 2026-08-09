@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { DemoPhotoSeq } from '../plan/demoPhotos'
 
 // ============================================================
 // Animated exercise demo: a stick figure performing the actual
@@ -132,9 +133,10 @@ function ease(t: number, kind: DemoEase): number {
 const poly = (pts: Pt[]) => pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')
 
 /**
- * Animated movement demo. When a real photo pair exists (start/end position,
- * see plan/demoPhotos.ts) it plays those as a crossfade loop with the coaching
- * captions; otherwise it falls back to the drawn figure animation.
+ * Animated movement demo. When a real photo sequence exists (see
+ * plan/demoPhotos.ts) it plays the ordered stage photos with each caption
+ * bound to the frame it describes; otherwise it falls back to the drawn
+ * figure animation.
  */
 export function ExerciseDemo({
   spec,
@@ -143,62 +145,67 @@ export function ExerciseDemo({
   className = '',
 }: {
   spec: DemoSpec
-  photos?: [string, string] | null
+  photos?: DemoPhotoSeq | null
   compact?: boolean
   className?: string
 }) {
   const [photoBroken, setPhotoBroken] = useState(false)
-  if (photos && !photoBroken) {
-    return <PhotoDemo photos={photos} spec={spec} compact={compact} className={className} onBroken={() => setPhotoBroken(true)} />
+  if (photos && photos.frames.length >= 2 && !photoBroken) {
+    return <PhotoDemo photos={photos} compact={compact} className={className} onBroken={() => setPhotoBroken(true)} />
   }
   return <FigureDemo spec={spec} compact={compact} className={className} />
 }
 
-/** Real-photo demo: start/end position crossfade with cycling captions. */
+/** Real-photo demo: ordered stage frames, caption locked to the visible frame. */
 function PhotoDemo({
   photos,
-  spec,
   compact,
   className,
   onBroken,
 }: {
-  photos: [string, string]
-  spec: DemoSpec
+  photos: DemoPhotoSeq
   compact: boolean
   className: string
   onBroken: () => void
 }) {
-  const labels = useMemo(() => {
-    const ls = spec.frames.map((f) => f.label).filter((l): l is string => !!l)
-    return ls.length ? ls : []
-  }, [spec])
-  const [phase, setPhase] = useState(0)
+  const frames = photos.frames
+  const [idx, setIdx] = useState(0)
 
   useEffect(() => {
-    setPhase(0)
+    setIdx(0)
     const reduced =
       typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const id = setInterval(() => setPhase((p) => p + 1), reduced ? 2400 : 1500)
-    return () => clearInterval(id)
-  }, [photos])
+    const base = reduced ? 2400 : 1600
+    let i = 0
+    let timer: ReturnType<typeof setTimeout>
+    const next = () => {
+      // dwell longer on the final stage of a 3+ frame sequence before looping
+      const dwell = frames.length > 2 && i === frames.length - 1 ? base * 1.6 : base
+      timer = setTimeout(() => {
+        i = (i + 1) % frames.length
+        setIdx(i)
+        next()
+      }, dwell)
+    }
+    next()
+    return () => clearTimeout(timer)
+  }, [photos, frames.length])
 
-  const active = phase % 2
   const base = `${import.meta.env.BASE_URL}demo/`
-  const label = labels.length ? labels[phase % labels.length] : null
 
   return (
     <div className={className}>
       <div className="mx-auto w-full" style={{ maxWidth: compact ? undefined : 330 }}>
         <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-surface-2">
-          {([0, 1] as const).map((i) => (
+          {frames.map((f, i) => (
             <img
-              key={i}
-              src={base + photos[i]}
-              alt={i === 0 ? 'Start position' : 'End position'}
+              key={f.file + i}
+              src={base + f.file}
+              alt={f.caption}
               draggable={false}
               onError={onBroken}
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
-                active === i ? 'opacity-100' : 'opacity-0'
+                idx === i ? 'opacity-100' : 'opacity-0'
               }`}
             />
           ))}
@@ -206,15 +213,13 @@ function PhotoDemo({
       </div>
       <div className={compact ? 'mt-1' : 'mt-1.5'}>
         <div className="flex items-center justify-center gap-1">
-          {[0, 1].map((i) => (
-            <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i === active ? 'w-4 bg-accent' : 'w-1 bg-surface-2'}`} />
+          {frames.map((_, i) => (
+            <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i === idx ? 'w-4 bg-accent' : 'w-1 bg-surface-2'}`} />
           ))}
         </div>
-        {label && (
-          <div className={`mx-auto mt-1 max-w-[280px] text-center font-bold leading-snug text-accent-soft ${compact ? 'text-[10.5px]' : 'text-[12px]'}`}>
-            {label}
-          </div>
-        )}
+        <div className={`mx-auto mt-1 max-w-[280px] text-center font-bold leading-snug text-accent-soft ${compact ? 'text-[10.5px]' : 'text-[12px]'}`}>
+          {frames[idx]?.caption}
+        </div>
       </div>
     </div>
   )
