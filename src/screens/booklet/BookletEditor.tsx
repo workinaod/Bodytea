@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { DayTemplate, PlanConfig, RoutineGoal, TemplateEntry, Weekday } from '../../types'
 import { EXERCISES, getExercise } from '../../plan/exercises'
 import { EXERCISE_MUSCLES } from '../../plan/muscles'
+import { athleticFor, QUALITY_LABELS, type AthleticQuality } from '../../plan/athletic'
 import { ROUTINE_GOAL_LABELS } from '../../plan/bookletOps'
 import { photosFor } from '../../plan/demoPhotos'
 import { Btn, Card, Chip, Stepper } from '../../components/ui'
@@ -307,6 +308,30 @@ const FAMILY_ORDER: [string, (id: string) => boolean][] = [
   ['Mobility', (id) => EXERCISES[id].kind === 'mobility'],
 ]
 
+/** Athletic-quality browse groups (curated order: control → force → elastic → complexity). */
+const QUALITY_FILTERS: { label: string; qualities: AthleticQuality[] }[] = [
+  { label: '⚡ Acceleration', qualities: ['acceleration', 'sprint-mechanics'] },
+  { label: '💨 Max speed', qualities: ['max-velocity'] },
+  { label: '🦘 Vertical', qualities: ['vertical-power'] },
+  { label: '➡️ Horizontal', qualities: ['horizontal-power'] },
+  { label: '🔄 Lateral & COD', qualities: ['lateral-power', 'cod', 'reactive-agility'] },
+  { label: '🪀 Elastic', qualities: ['elastic-reactive', 'ankle-stiffness'] },
+  { label: '🛬 Landing', qualities: ['force-absorption', 'deceleration'] },
+  { label: '🧘 Balance', qualities: ['balance-stability', 'coordination'] },
+  { label: '🏋️ Power', qualities: ['explosive-strength', 'rotational-power', 'athletic-strength'] },
+]
+
+const LEVEL_BADGE: Record<string, string> = {
+  foundation: 'F',
+  intermediate: 'I',
+  advanced: 'A',
+}
+const LEVEL_TONE: Record<string, string> = {
+  foundation: 'bg-lime/15 text-lime',
+  intermediate: 'bg-cyan/15 text-cyan',
+  advanced: 'bg-accent/15 text-accent',
+}
+
 function ExercisePicker({
   onPick,
   onClose,
@@ -317,24 +342,46 @@ function ExercisePicker({
   exclude: Set<string>
 }) {
   const [q, setQ] = useState('')
+  const [qualityFilter, setQualityFilter] = useState<number | null>(null)
 
   const groups = useMemo(() => {
     const query = q.trim().toLowerCase()
     const all = Object.keys(EXERCISES).filter((id) => !exclude.has(id))
-    const matches = query
+    let matches = query
       ? all.filter((id) => {
           const def = EXERCISES[id]
           const muscles = (EXERCISE_MUSCLES[id]?.primary ?? []).join(' ')
-          return `${def.name} ${muscles} ${def.targets.qualities.join(' ')}`.toLowerCase().includes(query)
+          const meta = athleticFor(id)
+          const athletic = meta ? `${meta.qualities.join(' ')} ${meta.level} ${meta.direction} ${meta.laterality}` : ''
+          return `${def.name} ${muscles} ${def.targets.qualities.join(' ')} ${athletic}`.toLowerCase().includes(query)
         })
       : all
+
+    // Athletic-quality browsing: group by quality, ordered foundation → advanced
+    if (qualityFilter !== null) {
+      const filter = QUALITY_FILTERS[qualityFilter]
+      const rank = { foundation: 0, intermediate: 1, advanced: 2 }
+      matches = matches.filter((id) => {
+        const meta = athleticFor(id)
+        return meta && meta.qualities.some((qq) => filter.qualities.includes(qq))
+      })
+      return filter.qualities
+        .map((qq) => ({
+          label: QUALITY_LABELS[qq],
+          ids: matches
+            .filter((id) => athleticFor(id)!.qualities[0] === qq || (athleticFor(id)!.qualities.includes(qq) && !filter.qualities.includes(athleticFor(id)!.qualities[0])))
+            .sort((a, b) => rank[athleticFor(a)!.level] - rank[athleticFor(b)!.level]),
+        }))
+        .filter((g) => g.ids.length > 0)
+    }
+
     const used = new Set<string>()
     return FAMILY_ORDER.map(([label, test]) => {
       const ids = matches.filter((id) => !used.has(id) && test(id))
       ids.forEach((id) => used.add(id))
       return { label, ids }
     }).filter((g) => g.ids.length > 0)
-  }, [q, exclude])
+  }, [q, exclude, qualityFilter])
 
   return (
     <Sheet open onClose={onClose} title="Pick an exercise">
@@ -342,12 +389,26 @@ function ExercisePicker({
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search by name or muscle…"
-          className="mb-3 w-full rounded-xl border border-edge bg-surface px-3.5 py-3 text-[14px] font-semibold outline-none focus:border-accent/60"
+          placeholder="Search name, muscle, or quality (e.g. acceleration)…"
+          className="mb-2.5 w-full rounded-xl border border-edge bg-surface px-3.5 py-3 text-[14px] font-semibold outline-none focus:border-accent/60"
         />
+        <div className="no-scrollbar -mx-1 mb-2.5 overflow-x-auto px-1">
+          <div className="flex w-max gap-1.5">
+            {QUALITY_FILTERS.map((f, i) => (
+              <Chip
+                key={f.label}
+                tone={qualityFilter === i ? 'accent' : 'default'}
+                onClick={() => setQualityFilter(qualityFilter === i ? null : i)}
+              >
+                {f.label}
+              </Chip>
+            ))}
+          </div>
+        </div>
         <p className="mb-3 text-[11px] leading-snug text-ink-faint">
-          Every exercise here ships with a full guide, photo demo, and muscle map. Can't find yours? Pick the closest
-          movement — same muscles, same job.
+          Every exercise ships with a full guide, demo, and muscle map. Athletic drills carry a level —{' '}
+          <b className="text-lime">F</b>oundation · <b className="text-cyan">I</b>ntermediate ·{' '}
+          <b className="text-accent">A</b>dvanced. Progress control → force → elasticity → complexity.
         </p>
         {groups.map((g) => (
           <div key={g.label} className="mb-4">
@@ -372,12 +433,21 @@ function ExercisePicker({
                     ) : (
                       <span className="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-[16px]">🏃</span>
                     )}
-                    <span className="min-w-0">
+                    <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13.5px] font-bold">{def.name}</span>
                       <span className="block truncate text-[11px] text-ink-dim">
-                        {(EXERCISE_MUSCLES[id]?.primary ?? []).join(' · ') || def.kind}
+                        {athleticFor(id)
+                          ? athleticFor(id)!.qualities.map((qq) => QUALITY_LABELS[qq]).join(' · ')
+                          : (EXERCISE_MUSCLES[id]?.primary ?? []).join(' · ') || def.kind}
                       </span>
                     </span>
+                    {athleticFor(id) && (
+                      <span
+                        className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-black ${LEVEL_TONE[athleticFor(id)!.level]}`}
+                      >
+                        {LEVEL_BADGE[athleticFor(id)!.level]}
+                      </span>
+                    )}
                   </button>
                 )
               })}

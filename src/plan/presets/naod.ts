@@ -38,7 +38,7 @@ export function buildNaodPreset(): PlanConfig {
   const rationale = Object.fromEntries(Object.values(EXERCISES).map((e) => [e.id, e.why]))
   return {
     planVersion: 1,
-    name: 'NAOD V3',
+    name: 'NAOD V4',
     goal: 'vertical',
     goalStatement: 'Consistent dunks, elite speed, and a build that shows it.',
     customTargets: [],

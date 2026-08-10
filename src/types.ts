@@ -146,6 +146,14 @@ export type EquipTag =
   | 'hill-stairs'
   | 'court'
   | 'treadmill'
+  | 'cones'
+  | 'band'
+  | 'hurdle'
+  | 'med-ball'
+  | 'kettlebell'
+  | 'trap-bar'
+  | 'sled'
+  | 'partner'
 
 /** A user-stated measurable target ("vert 24 → 30 in"). */
 export interface CustomTarget {
@@ -529,7 +537,7 @@ export interface AppData {
   cardio: Record<ISODate, CardioEntry[]>
 }
 
-export const SCHEMA_VERSION = 6
+export const SCHEMA_VERSION = 7
 
 export interface Envelope {
   schemaVersion: number

@@ -78,11 +78,14 @@ describe('block math', () => {
 })
 
 describe('slot resolution + A/B + dedupe', () => {
-  it('block 1 Monday matches the PDF day table', () => {
+  it('block 1 Monday matches the V4 day table', () => {
     const exs = buildFromTemplate(getTemplate('monday'), 1, 'A', PLAN)
     expect(ids(exs)).toEqual([
+      'dynamic-warmup',
+      'snap-down-stick',
       'falling-start-sprint',
-      'box-jump',
+      'countermovement-jump',
+      'broad-jump-stick',
       'goblet-squat',
       'romanian-deadlift',
       'bulgarian-split-squat',
@@ -153,7 +156,8 @@ describe('deload transform', () => {
   it('halves lift sets, halves rep-only explosive reps, leaves mobility alone', () => {
     const mon = applyDeload(buildFromTemplate(getTemplate('monday'), 1, 'A', PLAN))
     const byId = Object.fromEntries(mon.map((e) => [e.exerciseId, e]))
-    expect(byId['box-jump'].sets).toBe(2) // 4 → 2
+    expect(byId['countermovement-jump'].sets).toBe(2) // 3 → 2
+    expect(byId['snap-down-stick'].sets).toBe(1) // 2 → 1
     expect(byId['falling-start-sprint'].repsNum).toBe(3) // 5 → 3
     expect(byId['goblet-squat'].sets).toBe(2) // 4 → 2
     expect(byId['romanian-deadlift'].sets).toBe(2) // 3 → 2
@@ -168,7 +172,7 @@ describe('readiness downgrade', () => {
   it('cuts explosive volume by a third and lights the lifts', () => {
     const mon = applyReadinessDowngrade(buildFromTemplate(getTemplate('monday'), 1, 'A', PLAN))
     const byId = Object.fromEntries(mon.map((e) => [e.exerciseId, e]))
-    expect(byId['box-jump'].sets).toBe(3) // round(4 * 2/3)
+    expect(byId['countermovement-jump'].sets).toBe(2) // round(3 * 2/3)
     expect(byId['falling-start-sprint'].repsNum).toBe(3) // round(5 * 2/3)
     expect(byId['goblet-squat'].lightMode).toBe(true)
   })
@@ -177,7 +181,7 @@ describe('readiness downgrade', () => {
     const deloaded = applyDeload(buildFromTemplate(getTemplate('monday'), 1, 'A', PLAN))
     const both = applyReadinessDowngrade(deloaded)
     const byId = Object.fromEntries(both.map((e) => [e.exerciseId, e]))
-    expect(byId['box-jump'].sets).toBe(1) // 4 → 2 → round(4/3)=1
+    expect(byId['countermovement-jump'].sets).toBe(1) // 3 → 2 → round(2*2/3)=1
     expect(byId['falling-start-sprint'].repsNum).toBe(2) // 5 → 3 → 2
   })
 })
@@ -198,7 +202,7 @@ describe('resolveDay integration', () => {
     const day = resolveDay(addDaysISO(START, 21), data) // Monday week 4
     expect(day.isDeload).toBe(true)
     expect(day.banners.some((b) => b.id === 'deload')).toBe(true)
-    expect(day.exercises.find((e) => e.exerciseId === 'box-jump')!.sets).toBe(2)
+    expect(day.exercises.find((e) => e.exerciseId === 'countermovement-jump')!.sets).toBe(2)
   })
 
   it('tier 2: default placement Mon=lower, Wed=upper, Sat=explosive; Tue=rest', () => {
@@ -254,7 +258,7 @@ describe('resolveDay integration', () => {
     const prevMonday = mondayOf(addDaysISO(START, -7))
     data.weeks[prevMonday] = { ...defaultWeekState(prevMonday), events: { shift: [0] } }
     const day = resolveDay('2026-08-10', data)
-    expect(day.exercises.find((e) => e.exerciseId === 'box-jump')!.sets).toBe(3)
+    expect(day.exercises.find((e) => e.exerciseId === 'countermovement-jump')!.sets).toBe(2) // 3 − 1, pre-fatigued
   })
 
   it('late-night event: warn banner on the day, aftermath note the morning after', () => {
@@ -320,7 +324,7 @@ describe('resolveDay integration', () => {
       exercises: [],
     }
     const day = resolveDay('2026-08-10', data)
-    expect(day.exercises.find((e) => e.exerciseId === 'box-jump')!.sets).toBe(3)
+    expect(day.exercises.find((e) => e.exerciseId === 'countermovement-jump')!.sets).toBe(2)
     expect(day.banners.some((b) => b.id === 'readiness')).toBe(true)
   })
 

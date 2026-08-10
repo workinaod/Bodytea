@@ -8,13 +8,16 @@ import type { CardioOption, DayTemplate, Weekday, TierDayRole } from '../types'
 export const TEMPLATES: Record<string, DayTemplate> = {
   monday: {
     id: 'monday',
-    title: 'Two-Foot Power + First Step',
-    tagline: 'Force-from-a-stop day. Explosive work FRESH, then lifts.',
+    title: 'Acceleration + Two-Foot Power + Lower',
+    tagline: 'Catch force, then produce it: land → accelerate → jump, then lifts.',
     kind: 'session',
     cns: true,
     entries: [
+      { entry: 'fixed', exerciseId: 'dynamic-warmup', sets: 1, repText: '6-8 min' },
+      { entry: 'fixed', exerciseId: 'snap-down-stick', sets: 2, repText: '3', repsNum: 3 },
       { entry: 'fixed', exerciseId: 'falling-start-sprint', sets: 1, repText: '5', repsNum: 5 },
-      { entry: 'fixed', exerciseId: 'box-jump', sets: 4, repText: '3', repsNum: 3 },
+      { entry: 'fixed', exerciseId: 'countermovement-jump', sets: 3, repText: '3', repsNum: 3 },
+      { entry: 'fixed', exerciseId: 'broad-jump-stick', sets: 2, repText: '3', repsNum: 3 },
       { entry: 'slot', slot: 'squatVariation', sets: 4, repText: '6-8' },
       { entry: 'fixed', exerciseId: 'romanian-deadlift', sets: 3, repText: '8', repsNum: 8 },
       { entry: 'slot', slot: 'lowerAccessory', sets: 3, repText: '10 / leg', repsNum: 10 },
@@ -25,10 +28,10 @@ export const TEMPLATES: Record<string, DayTemplate> = {
       label: '10-minute spark',
       items: [
         { exerciseId: 'falling-start-sprint', sets: 1, repText: '3', repsNum: 3 },
-        { exerciseId: 'box-jump', sets: 2, repText: '3', repsNum: 3 },
+        { exerciseId: 'countermovement-jump', sets: 2, repText: '3', repsNum: 3 },
       ],
     },
-    note: 'First step lives here. The lifts are MODERATE and explosive, NOT a grind — leave 2-3 reps in the tank. Your heavy leg day is Wednesday; today just backs up the speed work without frying you. Full recovery between every explosive rep.',
+    note: 'V4 order is deliberate: catch force first (snap-downs), then produce it — starts, max jumps, broad jumps — all FRESH with full recovery. The lifts stay MODERATE and explosive, 2-3 reps in the tank; Wednesday is the heavy leg day. Stop any explosive drill the moment height or speed drops.',
   },
 
   tuesday: {
@@ -134,17 +137,19 @@ export const TEMPLATES: Record<string, DayTemplate> = {
 
   saturday: {
     id: 'saturday',
-    title: 'Max Speed + One-Foot Reactive',
-    tagline: 'Speed/elastic day. Sprints FIRST while fresh, true max effort.',
+    title: 'Max Speed + One-Foot + Multidirectional',
+    tagline: 'Top speed, springs, cuts, and the money jump — all max intent, all fresh.',
     kind: 'session',
     cns: true,
     entries: [
       { entry: 'fixed', exerciseId: 'dynamic-warmup', sets: 1, repText: '8-10 min' },
-      { entry: 'fixed', exerciseId: 'max-velocity-sprint', sets: 1, repText: '5', repsNum: 5 },
+      { entry: 'fixed', exerciseId: 'max-velocity-sprint', sets: 1, repText: '4', repsNum: 4 },
       { entry: 'fixed', exerciseId: 'flying-sprint', sets: 1, repText: '3', repsNum: 3 },
-      { entry: 'fixed', exerciseId: 'pogo-hop', sets: 4, repText: '12', repsNum: 12 },
-      { entry: 'fixed', exerciseId: 'approach-jump', sets: 1, repText: '8', repsNum: 8 },
-      { entry: 'fixed', exerciseId: 'dunk-attempt', sets: 1, repText: '8', repsNum: 8 },
+      { entry: 'fixed', exerciseId: 'pogo-hop', sets: 3, repText: '12', repsNum: 12 },
+      { entry: 'fixed', exerciseId: 'lateral-bound-stick', sets: 2, repText: '3 / side', repsNum: 3 },
+      { entry: 'fixed', exerciseId: 'shuttle-5-10-5', sets: 1, repText: '3', repsNum: 3 },
+      { entry: 'fixed', exerciseId: 'penultimate-approach-jump', sets: 1, repText: '5', repsNum: 5 },
+      { entry: 'fixed', exerciseId: 'dunk-attempt', sets: 1, repText: '6', repsNum: 6 },
       { entry: 'slot', slot: 'curl', sets: 4, repText: '10', repsNum: 10 },
       { entry: 'fixed', exerciseId: 'lateral-raise', sets: 4, repText: '20', repsNum: 20 },
     ],
@@ -153,10 +158,10 @@ export const TEMPLATES: Record<string, DayTemplate> = {
       items: [
         { exerciseId: 'dynamic-warmup', sets: 1, repText: '5 min' },
         { exerciseId: 'max-velocity-sprint', sets: 1, repText: '3', repsNum: 3 },
-        { exerciseId: 'approach-jump', sets: 1, repText: '4', repsNum: 4 },
+        { exerciseId: 'penultimate-approach-jump', sets: 1, repText: '4', repsNum: 4 },
       ],
     },
-    note: 'Sprints TRUE max effort, full recovery (walk back + 60 sec), never tired. Stop any drill the moment height or speed drops.',
+    note: 'Sprints TRUE max effort, full recovery — walk back plus 60-90 sec, never tired. New in V4: lateral bounds and the 5-10-5 make Saturday multidirectional, and the penultimate-step approach converts your speed into height. Stop any drill the moment speed, height, or crispness drops.',
   },
 
   sunday: {

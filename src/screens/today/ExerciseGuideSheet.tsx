@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Sheet } from '../../components/Sheet'
 import { Chip } from '../../components/ui'
 import { MuscleMap } from '../../components/MuscleMap'
@@ -7,7 +8,14 @@ import { getExercise } from '../../plan/exercises'
 import { musclesFor } from '../../plan/muscles'
 import { demoFor } from '../../plan/demos'
 import { photosFor } from '../../plan/demoPhotos'
+import { athleticFor, LEVEL_LABELS, programLine, progressionChain, QUALITY_LABELS } from '../../plan/athletic'
 import { useAppStore } from '../../store/appStore'
+
+const LEVEL_TONE = {
+  foundation: 'lime',
+  intermediate: 'cyan',
+  advanced: 'accent',
+} as const
 
 /** The full "how / what / why / don't" guide for one exercise. */
 export function ExerciseGuideSheet({
@@ -17,20 +25,31 @@ export function ExerciseGuideSheet({
   exerciseId: string | null
   onClose: () => void
 }) {
-  const rationale = useAppStore((s) => (exerciseId ? s.data.plan.rationale[exerciseId] : undefined))
-  if (!exerciseId) return null
-  const def = getExercise(exerciseId)
-  const muscles = musclesFor(exerciseId)
+  // Progression-chain taps navigate within the sheet
+  const [viewId, setViewId] = useState<string | null>(exerciseId)
+  useEffect(() => setViewId(exerciseId), [exerciseId])
+  const id = viewId ?? exerciseId
+  const rationale = useAppStore((s) => (id ? s.data.plan.rationale[id] : undefined))
+  if (!id || !exerciseId) return null
+  const def = getExercise(id)
+  const muscles = musclesFor(id)
   const why = rationale ?? def.why
+  const meta = athleticFor(id)
+  const chain = meta ? progressionChain(id) : []
   return (
     <Sheet open onClose={onClose} title={def.name}>
       <div className="space-y-5 pb-6">
         <div className="flex flex-wrap gap-1.5">
+          {meta && <Chip tone={LEVEL_TONE[meta.level]}>{LEVEL_LABELS[meta.level]}</Chip>}
+          {meta
+            ? meta.qualities.map((q) => (
+                <Chip key={q} tone="cyan">{QUALITY_LABELS[q]}</Chip>
+              ))
+            : def.targets.qualities.map((q) => (
+                <Chip key={q} tone="cyan">{q}</Chip>
+              ))}
           {def.targets.muscles.map((m) => (
             <Chip key={m} tone="accent">{m}</Chip>
-          ))}
-          {def.targets.qualities.map((q) => (
-            <Chip key={q} tone="cyan">{q}</Chip>
           ))}
         </div>
 
@@ -38,7 +57,7 @@ export function ExerciseGuideSheet({
           <h4 className="mb-1 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
             The movement
           </h4>
-          <ExerciseDemo spec={demoFor(exerciseId)} photos={photosFor(exerciseId)} />
+          <ExerciseDemo spec={demoFor(id)} photos={photosFor(id)} />
         </section>
 
         <section className="rounded-2xl border border-edge bg-surface p-4">
@@ -51,6 +70,18 @@ export function ExerciseGuideSheet({
         {def.cue && (
           <div className="rounded-xl border border-gold/30 bg-gold/8 px-3.5 py-3 text-[13px] font-semibold leading-snug text-gold">
             {def.cue}
+          </div>
+        )}
+
+        {meta && (
+          <div className="rounded-xl border border-edge bg-surface px-3.5 py-3">
+            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-ink-faint">
+              How to program it (defaults, not law)
+            </div>
+            <div className="mt-1 text-[12.5px] font-semibold text-ink">{programLine(meta)}</div>
+            {meta.warning && (
+              <p className="mt-1.5 text-[11.5px] font-semibold leading-snug text-danger">⚠ {meta.warning}</p>
+            )}
           </div>
         )}
 
@@ -90,6 +121,36 @@ export function ExerciseGuideSheet({
             ))}
           </ul>
         </section>
+
+        {chain.length > 1 && (
+          <section>
+            <h4 className="mb-2 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
+              Progression ladder
+            </h4>
+            <div className="space-y-1.5">
+              {chain.map((cid, i) => (
+                <button
+                  key={cid}
+                  onClick={() => cid !== id && setViewId(cid)}
+                  className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left ${
+                    cid === id ? 'border-accent/50 bg-accent/10' : 'border-edge bg-surface active:border-accent/40'
+                  }`}
+                >
+                  <span className="w-4 text-[11px] font-black text-ink-faint">{i + 1}</span>
+                  <span className={`min-w-0 flex-1 truncate text-[13px] font-bold ${cid === id ? 'text-accent-soft' : ''}`}>
+                    {getExercise(cid).name}
+                  </span>
+                  {athleticFor(cid) && (
+                    <Chip tone={LEVEL_TONE[athleticFor(cid)!.level]}>{LEVEL_LABELS[athleticFor(cid)!.level]}</Chip>
+                  )}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[10.5px] leading-snug text-ink-faint">
+              Earn each rung: control → force → elasticity → complexity. Tap any step to read its guide.
+            </p>
+          </section>
+        )}
 
         <section>
           <h4 className="mb-2 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">

@@ -49,7 +49,7 @@ function summarize(data: AppData): unknown[] {
   return out
 }
 
-describe('golden: NAOD V3 resolved plan is frozen', () => {
+describe('golden: NAOD V4 resolved plan is frozen', () => {
   it('tier 1 — full 16-week phase', () => {
     expect(summarize(dataAtTier(1))).toMatchSnapshot()
   })

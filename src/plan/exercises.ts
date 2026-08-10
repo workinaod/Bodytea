@@ -1,4 +1,5 @@
 import type { ExerciseDef } from '../types'
+import { ATHLETIC_EXERCISES } from './athleticExercises'
 
 // ============================================================
 // Full exercise guides. `cue` lines and several `why`/`mistakes`
@@ -1959,6 +1960,8 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       videoQuery: 'dumbbell romanian deadlift form',
       restSec: 150,
     }),
+    // ---- Athletic Performance Library (organized by athletic quality) ----
+    ...ATHLETIC_EXERCISES,
   ].map((e) => [e.id, e]),
 )
 

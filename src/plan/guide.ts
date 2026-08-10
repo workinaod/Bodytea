@@ -28,12 +28,12 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       'Five training days, two true rest days. Power and jumps come early in the week on fresh legs. Strength and hypertrophy come later. This protects your recovery so your vertical goes up, not down — and it survives a DJ gig or a long shift on your feet.',
     ],
     bullets: [
-      'Monday — Two-Foot Power + First Step, then lower lifts',
+      'Monday — Acceleration + Two-Foot Power, then lower lifts',
       'Tuesday — Push (Chest / Shoulders / Triceps) + Shoulder Health',
       'Wednesday — Lower Strength + Hypertrophy',
       'Thursday — Mobility + Active Recovery OR Cardio Backup',
       'Friday — Pull (Back / Biceps / Rear Delts) + Grip + Shoulder Health',
-      'Saturday — Max Speed + One-Foot Reactive, then arms',
+      'Saturday — Max Speed + One-Foot + Multidirectional, then arms',
       'Sunday — Rest',
     ],
   },
@@ -42,8 +42,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: 'Speed + Jump Development',
     paragraphs: [
       'Four explosive qualities matter for you: first step, top sprint speed, two-foot jump, and one-foot jump. They split cleanly into two groups, so they live on two different days. The rule that makes it all work: every explosive thing gets done FRESH, before you tire your legs out. Speed and jump work always come first in the session, lifts and arms after.',
-      'Monday — force from a stop. First step and two-foot jumping are the same kind of quality: max force from a dead stop. The first step is about projecting forward low and hard, not popping up. Falling starts train your body to fire fast from stillness, and your squat/RDL/hip thrust strength feeds it. This is your natural strength — you are just sharpening it.',
-      'Saturday — speed and elastic. Top sprint speed and one-foot jumping are both speed/elastic qualities. Max-velocity and flying sprints build the back half of your sprint — the part after you are already moving. They have to be TRUE max effort with full recovery, never done tired, which is exactly why they go first on the day. The one-foot jump runs on the same elastic spring: pogos build tendon stiffness, and you convert running speed into vertical through one fast plant.',
+      'Monday — catch force, then produce it. V4 starts with snap-downs to stick (landing is a skill, and it protects everything else), then falling starts, max countermovement jumps, and broad jumps to stick — acceleration and two-foot power on completely fresh legs. Your squat/RDL/hip thrust strength feeds all of it. This is your natural strength — you are just sharpening it and learning to catch it.',
+      'Saturday — speed, springs, and cuts. Max-velocity and flying sprints build the back half of your sprint — TRUE max effort, full recovery, never tired, which is why they go first. V4 adds the multidirectional layer: lateral bounds to stick and the 5-10-5 shuttle train the sideways force and braking that games actually run on. Then the money jump — the penultimate-step approach converts your speed into height through one long-low, short-quick plant.',
     ],
   },
   {
@@ -66,7 +66,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: 'blocks',
     title: '4-Week Block Rotation',
     paragraphs: [
-      'Run each block for 4 weeks, then swap. CORE movers stay fixed the whole year so you can progressively overload them and watch the numbers climb: squat pattern, Romanian deadlift, hip thrust, max-velocity sprints, falling-start sprints, box jumps, approach jumps, pull-ups, overhead press, incline press.',
+      'Run each block for 4 weeks, then swap. CORE movers stay fixed the whole year so you can progressively overload them and watch the numbers climb: squat pattern, Romanian deadlift, hip thrust, max-velocity sprints, falling-start sprints, countermovement jumps, approach jumps, pull-ups, overhead press, incline press.',
       'Only the accessories and variations rotate, which keeps things fresh and spreads stress across slightly different angles so the same joints are not grinding the identical groove all year. After Block 3 it loops back to Block 1.',
       'Rotation is for variety and joint health, not for cutting fatigue. Fatigue is handled by the trimmed volume on each day. Do not add the old exercises back in — the trim is the point.',
     ],

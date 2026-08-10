@@ -14,6 +14,7 @@ import type { EquipTag } from '../types'
 const ALL_TAGS: EquipTag[] = [
   'dumbbell', 'barbell', 'bench', 'incline-bench', 'rack', 'pullup-bar',
   'box', 'plate', 'machine', 'open-space', 'hill-stairs', 'court', 'treadmill',
+  'cones', 'band', 'hurdle', 'med-ball', 'kettlebell', 'trap-bar', 'sled', 'partner',
 ]
 
 /** Labels for the routine-goal chips, shared by onboarding + the editor. */

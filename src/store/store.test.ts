@@ -101,7 +101,7 @@ describe('migrations', () => {
     expect(parsed.data.weeks['2026-08-10'].cnsSwapDates).toEqual([])
   })
 
-  it('upgrades a v3 backup to v4: NAOD preset injected, history untouched (owner continuity)', () => {
+  it('upgrades a v3 backup through the chain: NAOD V4 preset injected, history untouched (owner continuity)', () => {
     const env = JSON.parse(serializeState(fixtureData())) as {
       schemaVersion: number
       data: Record<string, unknown> & { settings: Record<string, unknown> }
@@ -114,7 +114,7 @@ describe('migrations', () => {
     delete env.data.settings.units
     const parsed = parseEnvelope(JSON.stringify(env))
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION)
-    expect(parsed.data.plan.name).toBe('NAOD V3')
+    expect(parsed.data.plan.name).toBe('NAOD V4') // v7 upgrades the owner's preset
     expect(parsed.data.plan.goal).toBe('vertical')
     expect(parsed.data.plan.lifeRules).toEqual({ djWeekend: true, longShiftMonday: true })
     expect(Object.keys(parsed.data.plan.templates).length).toBeGreaterThanOrEqual(11)

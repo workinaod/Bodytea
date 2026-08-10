@@ -372,6 +372,16 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     return env
   },
+  // v6 → v7: the owner's plan upgrades NAOD V3 → NAOD V4 (research-backed
+  // athletic Monday + Saturday). Only the canonical preset is replaced —
+  // generated and BYOR plans pass through untouched.
+  6: (env) => {
+    const e = env as { data?: { plan?: { name?: string } } }
+    if (e.data?.plan?.name === 'NAOD V3') {
+      e.data.plan = buildNaodPreset() as unknown as { name?: string }
+    }
+    return env
+  },
 }
 
 export function migrate(env: unknown): Envelope {

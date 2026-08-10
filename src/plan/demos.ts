@@ -748,6 +748,146 @@ export const EXERCISE_DEMOS: Record<string, DemoSpec> = {
   ),
 }
 
+
+// ============================================================
+// Athletic Performance Library demos: hand-tuned signatures for
+// the new movement archetypes + closest-rig mappings for drills
+// that share a visual pattern (every id gets a real animation).
+// ============================================================
+
+const SNAP_TALL = P({ hy: 55.5, armF: 178, foreF: 182, armB: 172, foreB: 176, footF: 8, footB: 8 })
+const SNAP_CATCH = P({ hy: 66, torso: 18, thighF: 52, shinF: -48, footF: 4, thighB: 44, shinB: -42, footB: 4, armF: -28, foreF: -20, armB: -34, foreB: -26 })
+
+const SNAPDOWN_SPEC = spec([
+  F(SNAP_TALL, 700, 'Tall on your toes — arms overhead', { hold: 260 }),
+  F(SNAP_CATCH, 220, 'SNAP down — rip the arms, drop the hips', { hold: 700, ease: 'in' }),
+  F(P(), 600, 'Stand tall and reset', { hold: 220 }),
+])
+
+const SNAPDOWN_STICK_SPEC = spec([
+  F(P({ hy: 62, thighF: 30, shinF: -26, armF: -24, armB: -30 }), 420, 'Small dip…', { hold: 90 }),
+  F(P({ hy: 47, thighF: 6, shinF: 2, footF: 34, footB: 34, armF: 150, foreF: 160, armB: 145, foreB: 150 }), 300, 'Hop UP', { ease: 'out' }),
+  F(SNAP_CATCH, 260, 'Catch it — freeze, dead quiet', { hold: 900, ease: 'in' }),
+  F(P(), 600, null, { hold: 200 }),
+])
+
+const CMJ_SPEC = spec([
+  F(P(), 520, 'Stand tall', { hold: 140 }),
+  F(P({ hy: 66.5, torso: 22, thighF: 56, shinF: -52, footF: 4, thighB: 50, shinB: -48, footB: 4, armF: -46, foreF: -30, armB: -52, foreB: -36 }), 300, 'Dip FAST — arms rip back', { ease: 'in' }),
+  F(P({ hy: 34, torso: 2, thighF: 6, shinF: 2, footF: 40, thighB: -4, shinB: 4, footB: 40, armF: 168, foreF: 175, armB: 160, foreB: 168 }), 340, 'EXPLODE — everything up at once', { ease: 'out' }),
+  F(P({ hy: 63, torso: 14, thighF: 42, shinF: -40, footF: 6, thighB: 38, shinB: -36, footB: 6, armF: 6, foreF: 10, armB: -4, foreB: 2 }), 380, 'Land soft — absorb quietly', { hold: 460, ease: 'in' }),
+])
+
+const BROAD_SPEC = spec([
+  F(P({ hx: 26 }), 480, 'Behind the line', { hold: 120 }),
+  F(P({ hx: 25, hy: 66, torso: 26, thighF: 56, shinF: -52, footF: 4, thighB: 50, shinB: -46, footB: 4, armF: -50, foreF: -34, armB: -55, foreB: -40 }), 300, 'Dip — arms ripped back', { ease: 'in' }),
+  F(P({ hx: 48, hy: 42, torso: 10, thighF: 34, shinF: -18, footF: 16, thighB: 20, shinB: -8, footB: 16, armF: 120, foreF: 130, armB: 112, foreB: 122 }), 380, 'Launch OUT at 45°', { ease: 'out' }),
+  F(P({ hx: 70, hy: 64, torso: 16, thighF: 48, shinF: -44, footF: 4, thighB: 42, shinB: -40, footB: 4, armF: -10, foreF: -4, armB: -18, foreB: -10 }), 340, 'Stick the landing — frozen', { hold: 800, ease: 'in' }),
+])
+
+const LATBOUND_SPEC = spec([
+  F(P({ hx: 30, hy: 61, torso: 14, thighF: 40, shinF: -36, footF: 6, thighB: 8, shinB: -50, footB: 12, armF: -20, armB: -26 }), 480, 'Load the outside leg', { hold: 140, ease: 'in' }),
+  F(P({ hx: 52, hy: 46, torso: 6, thighF: 26, shinF: -12, footF: 18, thighB: -10, shinB: -20, footB: 18, armF: 110, foreF: 120, armB: 100, foreB: 110 }), 360, 'Fly sideways', { ease: 'out' }),
+  F(P({ hx: 72, hy: 62, torso: 14, thighF: 44, shinF: -40, footF: 4, thighB: 10, shinB: -55, footB: 14, armF: -8, armB: -16 }), 320, 'One-leg catch — STICK it', { hold: 850, ease: 'in' }),
+])
+
+const CONE_SCENE: SceneItem[] = [seg(16, 86, 20, 90, 2.5, 'accent'), seg(20, 90, 24, 86, 2.5, 'accent'), seg(76, 86, 80, 90, 2.5, 'accent'), seg(80, 90, 84, 86, 2.5, 'accent')]
+const SHUTTLE_SPEC = spec([
+  F(P({ hx: 50 }), 380, 'Start centered', { hold: 120 }),
+  F(P({ hx: 74, hy: 59, torso: 24, thighF: 48, shinF: -20, footF: 0, thighB: -28, shinB: -30, footB: 24, armF: -30, foreF: -20, armB: 34, foreB: 40 }), 420, 'Sprint — touch the line', { ease: 'inout' }),
+  F(P({ hx: 76, hy: 66, torso: 30, thighF: 55, shinF: -50, footF: 2, thighB: 40, shinB: -38, footB: 4, armF: -20, armB: -28 }), 260, 'Brake LOW — plant', { hold: 160, ease: 'in' }),
+  F(P({ hx: 30, hy: 59, torso: -24, thighF: -28, shinF: -30, footF: 24, thighB: 48, shinB: -20, footB: 0, armF: 34, foreF: 40, armB: -30, foreB: -20 }), 520, 'Explode back the other way', { ease: 'out' }),
+  F(P({ hx: 50 }), 380, null, { hold: 160 }),
+], { kind: 'none' }, CONE_SCENE)
+
+const KB_SWING_SPEC = spec([
+  F(P({ hy: 61, torso: 52, thighF: 30, shinF: -18, footF: 4, thighB: 26, shinB: -14, footB: 4, armF: 62, foreF: 64, armB: 58, foreB: 60 }), 420, 'Hike it back — flat back hinge', { hold: 120, ease: 'in' }),
+  F(P({ hy: 57.5, torso: 4, thighF: 4, shinF: 0, footF: 8, thighB: -4, shinB: 2, footB: 8, armF: 88, foreF: 90, armB: 84, foreB: 86 }), 340, 'SNAP the hips — bell floats', { hold: 220, ease: 'out' }),
+  F(P({ hy: 61, torso: 52, thighF: 30, shinF: -18, footF: 4, thighB: 26, shinB: -14, footB: 4, armF: 62, foreF: 64, armB: 58, foreB: 60 }), 420, 'Ride it back into the hinge', { ease: 'in' }),
+], { kind: 'db', at: 'wristMid' })
+
+const THROW_SPEC = spec([
+  F(P({ hy: 64, torso: 34, thighF: 44, shinF: -38, footF: 4, thighB: 40, shinB: -34, footB: 4, armF: 40, foreF: 44, armB: 36, foreB: 40 }), 460, 'Load low — ball at the hips', { hold: 140, ease: 'in' }),
+  F(P({ hy: 52, torso: -6, thighF: 2, shinF: 2, footF: 30, thighB: -6, shinB: 4, footB: 30, armF: 172, foreF: 180, armB: 165, foreB: 172 }), 380, 'EXTEND everything — launch it', { hold: 320, ease: 'out' }),
+  F(P(), 500, null, { hold: 200 }),
+], { kind: 'plate', at: 'chest' })
+
+Object.assign(EXERCISE_DEMOS, {
+  // hand-tuned signatures
+  'snap-down': SNAPDOWN_SPEC,
+  'snap-down-stick': SNAPDOWN_STICK_SPEC,
+  'snap-down-rebound': SNAPDOWN_STICK_SPEC,
+  'countermovement-jump': CMJ_SPEC,
+  'standing-vertical-jump': CMJ_SPEC,
+  'squat-jump': CMJ_SPEC,
+  'repeated-cmj': CMJ_SPEC,
+  'broad-jump': BROAD_SPEC,
+  'broad-jump-stick': BROAD_SPEC,
+  'repeated-broad-jump': BROAD_SPEC,
+  'single-leg-broad-jump': BROAD_SPEC,
+  'lateral-bound': LATBOUND_SPEC,
+  'lateral-bound-stick': LATBOUND_SPEC,
+  'skater-bound': LATBOUND_SPEC,
+  'crossover-bound': LATBOUND_SPEC,
+  'power-bound': LATBOUND_SPEC,
+  'single-leg-bound': LATBOUND_SPEC,
+  'shuttle-5-10-5': SHUTTLE_SPEC,
+  'l-drill': SHUTTLE_SPEC,
+  'plant-and-go': SHUTTLE_SPEC,
+  'turn-180': SHUTTLE_SPEC,
+  'reactive-shuttle': SHUTTLE_SPEC,
+  'kb-swing': KB_SWING_SPEC,
+  'mb-scoop-toss': THROW_SPEC,
+  'mb-overhead-throw': THROW_SPEC,
+  'mb-rotational-throw': THROW_SPEC,
+  // closest-rig mappings (same movement archetype)
+  'two-point-start': EXERCISE_DEMOS['falling-start-sprint'],
+  'three-point-start': EXERCISE_DEMOS['falling-start-sprint'],
+  'push-up-start': EXERCISE_DEMOS['falling-start-sprint'],
+  'resisted-start': EXERCISE_DEMOS['falling-start-sprint'],
+  'sled-sprint': EXERCISE_DEMOS['falling-start-sprint'],
+  'accel-20': EXERCISE_DEMOS['falling-start-sprint'],
+  'wall-drive': EXERCISE_DEMOS['falling-start-sprint'],
+  'a-march': EXERCISE_DEMOS['max-velocity-sprint'],
+  'a-skip': EXERCISE_DEMOS['max-velocity-sprint'],
+  'dribble-run': EXERCISE_DEMOS['max-velocity-sprint'],
+  'build-up-sprint': EXERCISE_DEMOS['max-velocity-sprint'],
+  'wicket-run': EXERCISE_DEMOS['max-velocity-sprint'],
+  'flying-20': EXERCISE_DEMOS['flying-sprint'],
+  'curved-sprint': EXERCISE_DEMOS['max-velocity-sprint'],
+  'crossover-run': EXERCISE_DEMOS['max-velocity-sprint'],
+  'shuffle-to-sprint': EXERCISE_DEMOS['falling-start-sprint'],
+  'lateral-shuffle': EXERCISE_DEMOS['falling-start-sprint'],
+  'mirror-drill': EXERCISE_DEMOS['falling-start-sprint'],
+  'cut-45': EXERCISE_DEMOS['falling-start-sprint'],
+  'cut-90': EXERCISE_DEMOS['falling-start-sprint'],
+  'decel-stick': EXERCISE_DEMOS['falling-start-sprint'],
+  'one-foot-jump': EXERCISE_DEMOS['approach-jump'],
+  'penultimate-drill': EXERCISE_DEMOS['approach-jump'],
+  'penultimate-approach-jump': EXERCISE_DEMOS['approach-jump'],
+  'low-box-approach-jump': EXERCISE_DEMOS['box-jump'],
+  'depth-drop': EXERCISE_DEMOS['box-jump'],
+  'depth-jump': EXERCISE_DEMOS['box-jump'],
+  'drop-landing': EXERCISE_DEMOS['box-jump'],
+  'ankle-hop': EXERCISE_DEMOS['pogo-hop'],
+  'alternating-pogo': EXERCISE_DEMOS['pogo-hop'],
+  'single-leg-pogo': EXERCISE_DEMOS['pogo-hop'],
+  'line-hop': EXERCISE_DEMOS['pogo-hop'],
+  'lateral-line-hop': EXERCISE_DEMOS['pogo-hop'],
+  'rudiment-hop': EXERCISE_DEMOS['pogo-hop'],
+  'low-hurdle-hop': EXERCISE_DEMOS['pogo-hop'],
+  'single-leg-landing': SNAPDOWN_STICK_SPEC,
+  'balance-to-jump': CMJ_SPEC,
+  'step-down': EXERCISE_DEMOS['step-up'],
+  'lateral-lunge': EXERCISE_DEMOS['reverse-lunge'],
+  'single-leg-squat-box': EXERCISE_DEMOS['bulgarian-split-squat'],
+  'trap-bar-jump': CMJ_SPEC,
+  'jump-squat': CMJ_SPEC,
+  'sled-push': EXERCISE_DEMOS['falling-start-sprint'],
+  'nordic-curl': EXERCISE_DEMOS['slider-leg-curl'],
+  'tibialis-raise': EXERCISE_DEMOS['single-leg-calf-raise'],
+})
+
 /** Demo for an exercise, with a safe standing fallback. */
 export function demoFor(id: string): DemoSpec {
   return (
