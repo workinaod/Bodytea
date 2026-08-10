@@ -224,6 +224,8 @@ export interface ResolvedExercise extends PrescriptionBase {
   fromSlot?: SlotId
   /** Readiness/gig downgrade: keep it light, leave 3 in the tank. */
   lightMode?: boolean
+  /** Set when a per-date swap replaced this exercise (original id). */
+  swappedFrom?: string
 }
 
 export interface DayBanner {
@@ -535,9 +537,15 @@ export interface AppData {
   grocery: string[]
   /** Daily cardio / sport log, keyed by local ISO date. */
   cardio: Record<ISODate, CardioEntry[]>
+  /**
+   * Per-date exercise swaps (🔄 on a Today row): original exercise id →
+   * replacement id. Applied during day resolution; sets/reps keep the
+   * slot's prescription so the day's intent survives the swap.
+   */
+  swaps: Record<ISODate, Record<string, string>>
 }
 
-export const SCHEMA_VERSION = 7
+export const SCHEMA_VERSION = 8
 
 export interface Envelope {
   schemaVersion: number
@@ -602,6 +610,7 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, pla
     coach: { feed: [], shownMessageIds: [], surfacedInsights: {} },
     grocery: [],
     cardio: {},
+    swaps: {},
   }
 }
 

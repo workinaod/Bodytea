@@ -25,16 +25,42 @@ const GOAL_CHIPS: { label: string; goal: Goal }[] = [
   { label: '🎯 All-around athlete', goal: 'general' },
 ]
 
-const EXTRA_EQUIP: { tag: EquipTag; label: string }[] = [
-  { tag: 'pullup-bar', label: 'Pull-up bar' },
-  { tag: 'barbell', label: 'Barbell + plates' },
-  { tag: 'bench', label: 'Bench' },
-  { tag: 'incline-bench', label: 'Incline bench' },
-  { tag: 'box', label: 'Box to jump on' },
-  { tag: 'court', label: 'Hoop / court' },
-  { tag: 'treadmill', label: 'Treadmill' },
-  { tag: 'hill-stairs', label: 'Hill or stairs' },
+/** Home-gym checklist: nothing is assumed — each item grants its tags. */
+const HOME_CHECKLIST: { tags: EquipTag[]; label: string }[] = [
+  { tags: ['dumbbell'], label: 'Dumbbells' },
+  { tags: ['barbell', 'plate'], label: 'Barbell + plates' },
+  { tags: ['rack'], label: 'Squat rack' },
+  { tags: ['bench'], label: 'Flat bench' },
+  { tags: ['incline-bench'], label: 'Incline bench' },
+  { tags: ['pullup-bar'], label: 'Pull-up bar' },
+  { tags: ['box'], label: 'Plyo box' },
+  { tags: ['kettlebell'], label: 'Kettlebell' },
+  { tags: ['trap-bar'], label: 'Trap bar' },
+  { tags: ['med-ball'], label: 'Med ball' },
+  { tags: ['band'], label: 'Bands' },
+  { tags: ['machine'], label: 'Machines / cables' },
+  { tags: ['treadmill'], label: 'Treadmill' },
+  { tags: ['sled'], label: 'Sled' },
+  { tags: ['cones'], label: 'Cones' },
+  { tags: ['hurdle'], label: 'Mini hurdles' },
 ]
+
+/** Environment access, asked per profile on top of the gear itself. */
+const ENV_EXTRAS: Record<'gym' | 'home-db' | 'minimal', { tags: EquipTag[]; label: string }[]> = {
+  gym: [
+    { tags: ['court'], label: 'Hoop / court' },
+  ],
+  'home-db': [
+    { tags: ['court'], label: 'Hoop / court' },
+    { tags: ['hill-stairs'], label: 'Hill or stairs' },
+  ],
+  minimal: [
+    { tags: ['pullup-bar'], label: 'Park pull-up bar' },
+    { tags: ['box'], label: 'Box / ledge to jump on' },
+    { tags: ['court'], label: 'Hoop / court' },
+    { tags: ['hill-stairs'], label: 'Hill or stairs' },
+  ],
+}
 
 const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -54,7 +80,7 @@ export function Onboarding() {
   const [goalStatement, setGoalStatement] = useState('')
   const [target1, setTarget1] = useState<{ label: string; target: string; unit: string }>({ label: '', target: '', unit: '' })
   const [days, setDays] = useState<3 | 4 | 5 | 6>(4)
-  const [profile, setProfile] = useState<'gym' | 'home-db' | 'minimal'>('home-db')
+  const [profile, setProfile] = useState<'gym' | 'home-db' | 'minimal'>('gym')
   const [extras, setExtras] = useState<Set<EquipTag>>(new Set())
   const [experience, setExperience] = useState<'new' | 'returning' | 'trained'>('returning')
   const [weight, setWeight] = useState(180)
@@ -82,13 +108,26 @@ export function Onboarding() {
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
-  function toggleExtra(tag: EquipTag) {
+  function toggleItem(tags: EquipTag[]) {
     setExtras((prev) => {
       const next = new Set(prev)
-      if (next.has(tag)) next.delete(tag)
-      else next.add(tag)
+      const on = tags.every((t) => next.has(t))
+      for (const t of tags) {
+        if (on) next.delete(t)
+        else next.add(t)
+      }
       return next
     })
+  }
+
+  /** Switching profile drops selections that aren't offered under the new one. */
+  function pickProfile(p: 'gym' | 'home-db' | 'minimal') {
+    setProfile(p)
+    const visible = new Set<EquipTag>([
+      ...(p === 'home-db' ? HOME_CHECKLIST.flatMap((i) => i.tags) : []),
+      ...ENV_EXTRAS[p].flatMap((i) => i.tags),
+    ])
+    setExtras((prev) => new Set([...prev].filter((t) => visible.has(t))))
   }
 
   function commitPlan(plan: PlanConfig, proteinTargetG: number, notes: RoutineNote[] = []) {
@@ -329,16 +368,16 @@ export function Onboarding() {
 
       {step === 4 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">What gear do you have?</h2>
+          <h2 className="text-[26px] font-black tracking-tight">Where do you train?</h2>
           <div className="mt-4 space-y-2">
             {(
               [
-                ['gym', 'Full gym', 'Racks, machines, cables — everything.'],
-                ['home-db', 'Home setup', 'Dumbbells, a bench, maybe a pull-up bar.'],
-                ['minimal', 'Almost nothing', 'Bodyweight + somewhere to move.'],
+                ['gym', 'Full gym', 'Racks, machines, cables — the works.'],
+                ['home-db', 'Home gym', "You'll check off exactly what you've got."],
+                ['minimal', 'No weights', 'Bodyweight + somewhere to move.'],
               ] as const
             ).map(([id, title, sub]) => (
-              <Card key={id} onClick={() => setProfile(id)} className={profile === id ? '!border-accent/60' : ''}>
+              <Card key={id} onClick={() => pickProfile(id)} className={profile === id ? '!border-accent/60' : ''}>
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-[15px] font-black">{title}</div>
@@ -349,18 +388,40 @@ export function Onboarding() {
               </Card>
             ))}
           </div>
-          {profile !== 'gym' && (
+          {profile === 'home-db' && (
             <>
-              <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Also have…</p>
+              <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">
+                Check everything you have
+              </p>
+              <p className="mt-1 text-[11.5px] leading-snug text-ink-faint">
+                Nothing is assumed — the plan only prescribes gear you check. Check nothing and you get a
+                bodyweight plan.
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {EXTRA_EQUIP.map((e) => (
-                  <Chip key={e.tag} tone={extras.has(e.tag) ? 'accent' : 'default'} onClick={() => toggleExtra(e.tag)}>
+                {HOME_CHECKLIST.map((e) => (
+                  <Chip
+                    key={e.label}
+                    tone={e.tags.every((t) => extras.has(t)) ? 'accent' : 'default'}
+                    onClick={() => toggleItem(e.tags)}
+                  >
                     {e.label}
                   </Chip>
                 ))}
               </div>
             </>
           )}
+          <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Also have access to…</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {ENV_EXTRAS[profile].map((e) => (
+              <Chip
+                key={e.label}
+                tone={e.tags.every((t) => extras.has(t)) ? 'accent' : 'default'}
+                onClick={() => toggleItem(e.tags)}
+              >
+                {e.label}
+              </Chip>
+            ))}
+          </div>
           <Btn className="mt-6 w-full py-4" onClick={next}>
             Next — experience
           </Btn>

@@ -559,3 +559,35 @@ describe('weekday sanity', () => {
     expect(weekdayOf('2026-08-16')).toBe(0) // Sunday
   })
 })
+
+describe('per-date exercise swaps (🔄)', () => {
+  it('replaces the exercise but keeps the prescription, and remembers the original', () => {
+    const data = makeData({ swaps: { [START]: { 'countermovement-jump': 'squat-jump' } } })
+    const day = resolveDay(START, data)
+    expect(ids(day.exercises)).not.toContain('countermovement-jump')
+    const row = day.exercises.find((e) => e.exerciseId === 'squat-jump')!
+    expect(row.sets).toBe(3)
+    expect(row.repText).toBe('3')
+    expect(row.swappedFrom).toBe('countermovement-jump')
+  })
+
+  it('ignores swaps pointing at unknown exercises', () => {
+    const data = makeData({ swaps: { [START]: { 'countermovement-jump': 'not-real' } } })
+    expect(ids(resolveDay(START, data).exercises)).toContain('countermovement-jump')
+  })
+
+  it('applies only on its own date — next week is untouched', () => {
+    const data = makeData({ swaps: { [START]: { 'countermovement-jump': 'squat-jump' } } })
+    const nextMonday = addDaysISO(START, 7)
+    const nextIds = ids(resolveDay(nextMonday, data).exercises)
+    expect(nextIds).toContain('countermovement-jump')
+    expect(nextIds).not.toContain('squat-jump')
+  })
+
+  it('volume transforms operate on the swapped exercise (deload halves it)', () => {
+    const deloadMonday = addDaysISO(START, 21) // week 4 Monday
+    const data = makeData({ swaps: { [deloadMonday]: { 'countermovement-jump': 'squat-jump' } } })
+    const row = resolveDay(deloadMonday, data).exercises.find((e) => e.exerciseId === 'squat-jump')!
+    expect(row.sets).toBe(2)
+  })
+})

@@ -260,6 +260,7 @@ const appDataSchema = z.object({
       }),
     ),
   ),
+  swaps: z.record(z.string(), z.record(z.string(), z.string())),
 })
 
 export const envelopeSchema = z.object({
@@ -380,6 +381,12 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     if (e.data?.plan?.name === 'NAOD V3') {
       e.data.plan = buildNaodPreset() as unknown as { name?: string }
     }
+    return env
+  },
+  // v7 → v8: per-date exercise swaps (🔄 on a Today row)
+  7: (env) => {
+    const e = env as { data?: Record<string, unknown> }
+    if (e.data) e.data.swaps ??= {}
     return env
   },
 }

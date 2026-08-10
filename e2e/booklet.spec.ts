@@ -65,6 +65,14 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await expect(page.getByText(/Week 1/).first()).toBeVisible()
   await expect(page.getByText('Full Body A').first()).toBeVisible()
 
+  // 🔄 can't do goblet squats today → one tap swaps in an equivalent,
+  // and the swap sticks for the date across reloads
+  await page.getByRole('button', { name: 'Swap Goblet Squat' }).click()
+  await expect(page.getByText('Split Squat')).toBeVisible()
+  await expect(page.getByText('swapped')).toBeVisible()
+  await page.reload()
+  await expect(page.getByText('Split Squat')).toBeVisible()
+
   // Notes + their on-record claim landed in the coach feed
   await page.getByRole('button', { name: 'Coach', exact: true }).click()
   await expect(page.getByText(/Routine notes:/).first()).toBeVisible()

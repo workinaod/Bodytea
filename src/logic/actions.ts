@@ -15,6 +15,7 @@ import { isIntenseSport } from '../plan/cardio'
 import { flushPersist, uid, useAppStore } from '../store/appStore'
 import { downscalePhoto, PhotoStore } from '../store/storage'
 import { planTemplate, resolveDay } from '../engine/resolveDay'
+import { swapCandidatesFor } from '../plan/subs'
 import { applyReadinessDowngrade, minimumViableFor } from '../engine/transforms'
 import {
   busyButMealsLogged,
@@ -62,6 +63,41 @@ export function pushCoachMessage(
     d.coach.shownMessageIds = pushShown(d.coach.shownMessageIds, msg.shownId)
   })
   return msg.text
+}
+
+// ---------- Exercise swaps (🔄 on a Today row) ----------
+
+/**
+ * Cycle an exercise through its slot-intent-preserving substitutes for
+ * one date: original → sub 1 → sub 2 → … → back to the original.
+ * `originalId` is the exercise as the plan wrote it (swappedFrom when a
+ * swap is already active). Returns the id now occupying the row.
+ */
+export function swapExercise(date: ISODate, originalId: string): string {
+  const data = store().data
+  const day = resolveDay(date, data)
+  const othersInDay = day.exercises
+    .map((e) => e.swappedFrom ?? e.exerciseId)
+    .filter((id) => id !== originalId)
+    .flatMap((id) => [id, data.swaps[date]?.[id] ?? id])
+  const candidates = swapCandidatesFor(originalId, data.plan, othersInDay)
+  if (candidates.length === 0) return originalId
+
+  const cycle = [originalId, ...candidates]
+  const current = data.swaps[date]?.[originalId] ?? originalId
+  const next = cycle[(cycle.indexOf(current) + 1) % cycle.length]
+
+  store().update((d) => {
+    if (next === originalId) {
+      if (d.swaps[date]) {
+        delete d.swaps[date][originalId]
+        if (Object.keys(d.swaps[date]).length === 0) delete d.swaps[date]
+      }
+    } else {
+      ;(d.swaps[date] ??= {})[originalId] = next
+    }
+  })
+  return next
 }
 
 // ---------- Session lifecycle ----------

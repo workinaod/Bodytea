@@ -11,7 +11,8 @@ import { getExercise } from '../../plan/exercises'
 import { CARDIO_GROUP_INFO } from '../../plan/templates'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
-import { chooseCardio, finishSession, startSession, toggleCnsSwap } from '../../logic/actions'
+import { chooseCardio, finishSession, startSession, swapExercise, toggleCnsSwap } from '../../logic/actions'
+import { swapCandidatesFor } from '../../plan/subs'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
 import { ReadinessSheet } from './ReadinessSheet'
@@ -293,12 +294,15 @@ export function TodayScreen() {
           <div className="space-y-2">
             {day.exercises.map((r) => {
               const def = getExercise(r.exerciseId)
+              const swapBase = r.swappedFrom ?? r.exerciseId
+              const canSwap = swapCandidatesFor(swapBase, data.plan).length > 0
               return (
-                <Card key={r.exerciseId} className="flex items-center justify-between !py-3">
+                <Card key={swapBase} className="flex items-center justify-between !py-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="truncate text-[14.5px] font-bold">{def.name}</span>
-                      {r.fromSlot && <Chip tone="cyan">rotates</Chip>}
+                      {r.swappedFrom && <Chip tone="gold">swapped</Chip>}
+                      {r.fromSlot && !r.swappedFrom && <Chip tone="cyan">rotates</Chip>}
                       {r.lightMode && <Chip tone="gold">light</Chip>}
                     </div>
                     <div className="text-[12px] font-semibold text-ink-dim">
@@ -306,12 +310,23 @@ export function TodayScreen() {
                       <span className="text-ink-faint"> · {def.equipment}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setGuideId(r.exerciseId)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-[13px] font-black text-cyan"
-                  >
-                    ?
-                  </button>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {canSwap && (
+                      <button
+                        aria-label={`Swap ${def.name}`}
+                        onClick={() => swapExercise(date, swapBase)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-[13px] font-black text-gold"
+                      >
+                        🔄
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setGuideId(r.exerciseId)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-[13px] font-black text-cyan"
+                    >
+                      ?
+                    </button>
+                  </div>
                 </Card>
               )
             })}

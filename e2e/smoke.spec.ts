@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 // One serial journey through the core loop — each step depends on the last.
 test.describe.configure({ mode: 'serial' })
 
-/** Walk the generator onboarding: vertical goal, 6 days, home-db gear. */
+/** Walk the generator onboarding: vertical goal, 6 days, a home gym with DBs + bench + bar. */
 async function onboardGenerated(page: Page) {
   await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: 'Next — the goal' }).click()
@@ -12,6 +12,12 @@ async function onboardGenerated(page: Page) {
   await page.getByRole('button', { name: 'Next — my week' }).click()
   await page.getByRole('button', { name: '6 days' }).click()
   await page.getByRole('button', { name: 'Next — my gear' }).click()
+  // Home gym assumes nothing — the checklist is the source of truth
+  await page.getByText('Home gym').click()
+  await expect(page.getByText('Check everything you have')).toBeVisible()
+  await page.getByText('Dumbbells', { exact: true }).click()
+  await page.getByText('Flat bench').click()
+  await page.getByText('Pull-up bar', { exact: true }).click()
   await page.getByRole('button', { name: 'Next — experience' }).click()
   await page.getByRole('button', { name: 'Next — numbers' }).click()
   await page.getByRole('button', { name: 'Generate my booklet' }).click()

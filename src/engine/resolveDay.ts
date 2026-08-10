@@ -20,7 +20,7 @@ import {
   buildFromTemplate,
   lighterCombinedPull,
 } from './transforms'
-import { getExercise } from '../plan/exercises'
+import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
 
 // ============================================================
@@ -274,6 +274,27 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
       id: 'sat-combined',
       text: 'Lighter combined day: Friday’s pull is appended after the speed work (reduced sets).',
       tone: 'info',
+    })
+  }
+
+  // --- Per-date swaps (🔄 on a Today row) — applied before the volume
+  //     transforms so deload/readiness/life-event math operates on what
+  //     the user will actually do. Prescription (sets/reps) stays: the
+  //     substitute fills the same training slot. ---
+  const daySwaps = data.swaps[dateISO]
+  if (daySwaps) {
+    exercises = exercises.map((e) => {
+      const to = daySwaps[e.exerciseId]
+      if (!to || !EXERCISES[to]) return e
+      const def = getExercise(to)
+      return {
+        ...e,
+        exerciseId: def.id,
+        name: def.name,
+        kind: def.kind,
+        restSec: def.restSec,
+        swappedFrom: e.exerciseId,
+      }
     })
   }
 

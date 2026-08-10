@@ -35,11 +35,16 @@ export interface OnboardingAnswers {
 // ---------- Equipment profiles ----------
 
 const PROFILE_TAGS: Record<OnboardingAnswers['equipProfile'], EquipTag[]> = {
+  // Full gym: everything except environment access (court/hill are asked
+  // separately) and a training partner.
   gym: [
     'dumbbell', 'barbell', 'bench', 'incline-bench', 'rack', 'pullup-bar',
     'box', 'plate', 'machine', 'open-space', 'treadmill', 'hill-stairs',
+    'kettlebell', 'med-ball', 'band', 'trap-bar', 'cones', 'hurdle', 'sled',
   ],
-  'home-db': ['dumbbell', 'bench', 'pullup-bar', 'plate', 'open-space'],
+  // Home gym: nothing assumed — the onboarding checklist is the source of
+  // truth for what's actually in the garage. Open space is always free.
+  'home-db': ['open-space'],
   minimal: ['open-space'],
 }
 

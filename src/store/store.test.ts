@@ -112,9 +112,11 @@ describe('migrations', () => {
     delete env.data.profile
     delete env.data.grocery
     delete env.data.settings.units
+    delete env.data.swaps
     const parsed = parseEnvelope(JSON.stringify(env))
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION)
     expect(parsed.data.plan.name).toBe('NAOD V4') // v7 upgrades the owner's preset
+    expect(parsed.data.swaps).toEqual({}) // v8 seeds the swap map
     expect(parsed.data.plan.goal).toBe('vertical')
     expect(parsed.data.plan.lifeRules).toEqual({ djWeekend: true, longShiftMonday: true })
     expect(Object.keys(parsed.data.plan.templates).length).toBeGreaterThanOrEqual(11)
@@ -131,9 +133,10 @@ describe('migrations', () => {
         weeks: Record<string, Record<string, unknown>>
       }
     }
-    // Reconstruct a faithful v4 envelope: gigFlags model, no lifeEvents/cardio.
+    // Reconstruct a faithful v4 envelope: gigFlags model, no lifeEvents/cardio/swaps.
     env.schemaVersion = 4
     delete env.data.cardio
+    delete env.data.swaps
     delete env.data.plan.lifeEvents
     env.data.weeks['2026-08-10'] = {
       mondayISO: '2026-08-10',
