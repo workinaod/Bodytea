@@ -77,7 +77,7 @@ describe('migrations', () => {
     const parsed = parseEnvelope(JSON.stringify(env))
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION)
     expect(parsed.data.settings.remindersEnabled).toBe(false)
-    expect(parsed.data.settings.reminderTimes).toEqual(['11:30', '17:30', '20:30'])
+    expect(parsed.data.settings.reminderTimes).toEqual(['11:30', '20:30']) // v6 trims to two a day
   })
 
   it('upgrades a v2 backup (weeks without ball fields) to v3', () => {

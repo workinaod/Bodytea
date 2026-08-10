@@ -529,7 +529,7 @@ export interface AppData {
   cardio: Record<ISODate, CardioEntry[]>
 }
 
-export const SCHEMA_VERSION = 5
+export const SCHEMA_VERSION = 6
 
 export interface Envelope {
   schemaVersion: number
@@ -560,7 +560,7 @@ export function defaultSettings(phaseStartDate: ISODate, installedAt: ISODate = 
     lastExportAt: null,
     onboarded: false,
     remindersEnabled: false,
-    reminderTimes: ['11:30', '17:30', '20:30'],
+    reminderTimes: ['11:30', '18:30'], // max two nudges a day
     units: 'imperial',
   }
 }

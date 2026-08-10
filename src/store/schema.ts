@@ -363,6 +363,15 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     return env
   },
+  // v5 → v6: reminders capped at two a day (keep the first + last times)
+  5: (env) => {
+    const e = env as { data?: { settings?: { reminderTimes?: string[] } } }
+    const t = e.data?.settings?.reminderTimes
+    if (t && t.length > 2 && e.data?.settings) {
+      e.data.settings.reminderTimes = [t[0], t[t.length - 1]]
+    }
+    return env
+  },
 }
 
 export function migrate(env: unknown): Envelope {

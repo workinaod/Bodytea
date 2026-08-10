@@ -34,7 +34,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
               }
             }}
             label="Training reminders"
-            sub="Nudges on unfinished training days, plus a badge on the app icon until the session is done."
+            sub="Max two nudges a day, only on training days with an unfinished session — plus a badge on the app icon until it's done."
           />
           {notifDenied && (
             <p className="mt-1.5 text-[11.5px] font-semibold text-danger">
@@ -43,7 +43,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           )}
           {settings.remindersEnabled && (
             <div className="mt-2.5">
-              <div className="mb-1 text-[12px] font-bold text-ink-dim">Remind me around</div>
+              <div className="mb-1 text-[12px] font-bold text-ink-dim">Remind me around (two a day, max)</div>
               <div className="grid grid-cols-3 gap-1.5">
                 {settings.reminderTimes.map((t, i) => (
                   <input

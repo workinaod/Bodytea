@@ -5,6 +5,7 @@ import { lifeEventsOn, resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatDayLabel, mondayOf, todayISO } from '../../engine/calendar'
 import { lateNightGraceDate } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
+import { enableReminders, notificationSupport } from '../../logic/reminders'
 import { BannerRow, Btn, Card, Chip, EmptyNote } from '../../components/ui'
 import { getExercise } from '../../plan/exercises'
 import { CARDIO_GROUP_INFO } from '../../plan/templates'
@@ -31,6 +32,14 @@ export function TodayScreen() {
   const [guideId, setGuideId] = useState<string | null>(null)
   const [debrief, setDebrief] = useState<{ data: DebriefData; coachLine?: string } | null>(null)
   const [cardioOpen, setCardioOpen] = useState(false)
+  const [remindNudgeGone, setRemindNudgeGone] = useState(() => {
+    try {
+      return localStorage.getItem('bodytea.remnudge') === '1'
+    } catch {
+      return true
+    }
+  })
+  const [remindBusy, setRemindBusy] = useState(false)
 
   // Just after midnight, an unfinished session keeps the live view on
   // yesterday so it logs under the day actually trained.
@@ -112,6 +121,56 @@ export function TodayScreen() {
       {day.banners.map((b) => (
         <BannerRow key={b.id} banner={b} />
       ))}
+
+      {/* One-time reminder opt-in — free push, hard-capped at two a day */}
+      {today &&
+        !data.settings.remindersEnabled &&
+        !remindNudgeGone &&
+        !['unsupported', 'denied'].includes(notificationSupport()) && (
+          <Card className="border-cyan/25 !py-3.5">
+            <div className="text-[13.5px] font-extrabold">🔔 Want workout reminders?</div>
+            <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
+              Max two a day, and only on training days with an unfinished session. Free, on this phone — no texts, no
+              spam.
+            </p>
+            <div className="mt-2.5 flex gap-2">
+              <Btn
+                className="flex-1 py-2.5"
+                disabled={remindBusy}
+                onClick={() => {
+                  setRemindBusy(true)
+                  void enableReminders().then((ok) => {
+                    setRemindBusy(false)
+                    if (!ok) {
+                      try {
+                        localStorage.setItem('bodytea.remnudge', '1')
+                      } catch {
+                        /* ignore */
+                      }
+                      setRemindNudgeGone(true)
+                    }
+                  })
+                }}
+              >
+                Turn them on
+              </Btn>
+              <Btn
+                kind="ghost"
+                className="flex-1 py-2.5"
+                onClick={() => {
+                  try {
+                    localStorage.setItem('bodytea.remnudge', '1')
+                  } catch {
+                    /* ignore */
+                  }
+                  setRemindNudgeGone(true)
+                }}
+              >
+                No thanks
+              </Btn>
+            </div>
+          </Card>
+        )}
 
       {/* Same-day reality: ball is a day-of decision, not a weekly plan */}
       {date <= realToday && !finished && (
