@@ -37,6 +37,8 @@ export function WeekScreen() {
   )
   const thisWeek = weekStart === mondayOf(today)
   const needsPick = thisWeek && !week?.tierPickedAt
+  const ball = data.plan.sportMode === 'ball'
+  const condPerWeek = { lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 }[data.plan.goal]
 
   function statusFor(d: ResolvedDay): { dot: string; label: string } {
     const s = data.sessions[d.date]
@@ -56,7 +58,7 @@ export function WeekScreen() {
   function markersFor(d: ResolvedDay): string[] {
     const out: string[] = []
     const wd = weekdayOf(d.date)
-    if (week?.ballDates.includes(d.date)) out.push('🏀 played')
+    if (week?.ballDates.includes(d.date)) out.push(ball ? '🏀 played' : '🏃 conditioned')
     for (const ev of data.plan.lifeEvents) {
       if ((week?.events[ev.id] ?? []).includes(wd)) out.push(ev.kind === 'late-night' ? '🌙 late night' : '🦵 on feet')
     }
@@ -293,12 +295,18 @@ export function WeekScreen() {
       </div>
 
       {/* Cardio planner */}
-      <SectionTitle>Sport / cardio backup</SectionTitle>
+      <SectionTitle>{ball ? 'Sport / cardio backup' : 'Conditioning'}</SectionTitle>
       <Card className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[13.5px] font-bold">Expecting ball this week?</div>
-            <div className="text-[10.5px] text-ink-faint">Log what actually happens day-of — Today tab, 🏃 cardio button.</div>
+            <div className="text-[13.5px] font-bold">
+              {ball ? 'Expecting ball this week?' : 'Playing a sport this week?'}
+            </div>
+            <div className="text-[10.5px] text-ink-faint">
+              {ball
+                ? 'Log what actually happens day-of — Today tab, cardio button.'
+                : 'Games and hard sessions count as conditioning. Log day-of — Today tab, cardio button.'}
+            </div>
           </div>
           <div className="flex gap-1.5">
             {[true, false].map((v) => (
@@ -317,7 +325,7 @@ export function WeekScreen() {
 
         {(week?.ballDates.length ?? 0) > 0 ? (
           <p className="rounded-xl border border-lime/30 bg-lime/8 px-3 py-2 text-[12px] font-bold text-lime">
-            🏀 Covered — ball logged {week!.ballDates.map((d) => WD_LABEL[weekdayOf(d)]).join(', ')}. No
+            {ball ? '🏀' : '🏃'} Covered — conditioning logged {week!.ballDates.map((d) => WD_LABEL[weekdayOf(d)]).join(', ')}. No
             backup owed.
           </p>
         ) : (
@@ -329,9 +337,13 @@ export function WeekScreen() {
             }`}>
               {cardioRequiredForWeek(data, addDaysISO(weekStart, 3))
                 ? week?.cardio
-                  ? 'Backup scheduled ✓ — it replaces ball, never stacks on top.'
-                  : 'REQUIRED: no ball logged → one backup session this week. Thursday holds the slot until you pick.'
-                : 'If the ball doesn\'t happen, one backup session is the rule. It replaces ball, never stacks on top.'}
+                  ? 'Scheduled ✓ — it counts as the week\'s conditioning, never extra on top.'
+                  : ball
+                    ? 'REQUIRED: no ball logged → one backup session this week. Thursday holds the slot until you pick.'
+                    : 'REQUIRED: no conditioning yet → at least one session this week. Pick below.'
+                : ball
+                  ? 'If the ball doesn\'t happen, one backup session is the rule. It replaces ball, never stacks on top.'
+                  : `Every plan carries cardio — ${condPerWeek} session${condPerWeek > 1 ? 's' : ''} a week for your goal. Sport counts; so do tracked runs and rides.`}
             </p>
             {(['A', 'B', 'circuit'] as const).map((g) => (
               <div key={g}>

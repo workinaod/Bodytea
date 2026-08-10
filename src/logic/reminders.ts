@@ -32,6 +32,10 @@ export async function syncReminderMeta(): Promise<void> {
   const t = todayState()
   const prev = await MetaStore.get().catch(() => null)
   const ready = reviewReady(data, todayISO())
+  const today = todayISO()
+  const checkinDueToday =
+    new Date().getDay() === settings.checkinWeekday &&
+    !data.measurements.some((m) => m.date === today)
   const meta: ReminderMeta = {
     enabled: settings.remindersEnabled,
     times: settings.reminderTimes,
@@ -44,6 +48,8 @@ export async function syncReminderMeta(): Promise<void> {
     reviewReadyMark: ready?.id ?? null,
     reviewReadyLabel: ready?.label ?? '',
     reviewNotifiedMark: prev?.reviewNotifiedMark ?? null,
+    checkinDueToday,
+    checkinNotifiedDate: prev?.checkinNotifiedDate ?? null,
   }
   await MetaStore.set(meta).catch(() => {})
 

@@ -20,6 +20,7 @@ import { buildMilestoneReview, REVIEW_MARKS, reviewReady, unlockedMarks, type Mi
 import { daysBetween } from '../../engine/calendar'
 import { MilestoneReviewSheet } from './MilestoneReview'
 import { BodyFatEstimator } from './BodyFatEstimator'
+import { WeeklyRecap } from './WeeklyRecap'
 import { avgMph, fmtDuration, fmtPace, weeklyMiles } from '../../engine/runs'
 import { RouteMap } from '../../components/RouteMap'
 import type { RunLog } from '../../types'
@@ -61,6 +62,7 @@ export function ProgressScreen() {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [review, setReview] = useState<MilestoneReview | null>(null)
   const [openRun, setOpenRun] = useState<RunLog | null>(null)
+  const [recapOpen, setRecapOpen] = useState(false)
   const [metric, setMetric] = useState<(typeof METRICS)[number]['key']>('waistIn')
   const [lift, setLift] = useState(data.plan.trackedLifts[0]?.exerciseId ?? 'front-squat')
 
@@ -105,7 +107,7 @@ export function ProgressScreen() {
   // NAOD preset keeps its original captions.
   const captionFor = (key: string, fallback: string): string => {
     const plan = data.plan
-    if (plan.name === 'NAOD V3') return fallback
+    if (plan.name.startsWith('NAOD')) return fallback
     const hint = key === 'vertIn' ? 'vert' : key === 'armsIn' ? 'arm' : key === 'waistIn' ? 'waist' : key === 'weightLb' ? 'weight' : key === 'bodyFatPct' ? 'fat' : '␀'
     const t = plan.customTargets.find((c) => c.label.toLowerCase().includes(hint))
     if (t) return `Target: ${t.target}${t.unit} — “${plan.goalStatement}”`
@@ -117,7 +119,7 @@ export function ProgressScreen() {
 
   return (
     <div className="space-y-3 pb-6">
-      <h1 className="text-[24px] font-black tracking-tight">Progress</h1>
+      <h1 className="text-[30px] font-bold tracking-tight">Progress</h1>
 
       {checkinDue && (
         <Card className="border-accent/40">
@@ -173,7 +175,15 @@ export function ProgressScreen() {
       </div>
 
       {/* Adherence heatmap */}
-      <SectionTitle>Last 12 weeks</SectionTitle>
+      <SectionTitle
+        right={
+          <button onClick={() => setRecapOpen(true)} className="text-[11px] font-bold text-accent underline">
+            ▶ replay my week
+          </button>
+        }
+      >
+        Last 12 weeks
+      </SectionTitle>
       <Card>
         <Heatmap days={heat} />
       </Card>
@@ -308,7 +318,8 @@ export function ProgressScreen() {
         })}
       </div>
 
-      <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} last={lastCheckin} />
+      <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} onSaved={() => setRecapOpen(true)} last={lastCheckin} />
+      {recapOpen && <WeeklyRecap data={data} today={today} onClose={() => setRecapOpen(false)} />}
       {review && <MilestoneReviewSheet review={review} onClose={() => setReview(null)} />}
       <Sheet
         open={!!openRun}
@@ -351,7 +362,7 @@ export function ProgressScreen() {
 
 // ---------- Check-in sheet ----------
 
-function CheckinSheet({ open, onClose, last }: { open: boolean; onClose: () => void; last?: Measurement }) {
+function CheckinSheet({ open, onClose, onSaved, last }: { open: boolean; onClose: () => void; onSaved?: () => void; last?: Measurement }) {
   const fresh = (): Measurement => ({
     date: todayISO(),
     photoIds: {},
@@ -471,6 +482,7 @@ function CheckinSheet({ open, onClose, last }: { open: boolean; onClose: () => v
           onClick={() => {
             saveMeasurement(m)
             onClose()
+            onSaved?.()
           }}
         >
           Save check-in

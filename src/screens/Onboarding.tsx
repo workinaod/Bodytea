@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CustomTarget, EquipTag, Goal, PlanConfig, RoutineGoal, Weekday } from '../types'
 import { mondayOf, todayISO, formatShort, addDaysISO } from '../engine/calendar'
 import { useAppStore, uid } from '../store/appStore'
@@ -8,6 +8,7 @@ import { byorNutrition, makeEmptyByorPlan, normalizeBooklet, validateBooklet, RO
 import { analyzeRoutine, type RoutineNote } from '../plan/analyze'
 import { BookletEditor } from './booklet/BookletEditor'
 import { Btn, Card, Chip, Stepper } from '../components/ui'
+import { enableReminders } from '../logic/reminders'
 
 // ============================================================
 // Onboarding v2: a goal-driven wizard that generates the user's
@@ -16,13 +17,18 @@ import { Btn, Card, Chip, Stepper } from '../components/ui'
 // ============================================================
 
 const GOAL_CHIPS: { label: string; goal: Goal }[] = [
-  { label: '🏀 Dunk a basketball', goal: 'vertical' },
-  { label: '⬆️ Jump higher', goal: 'vertical' },
-  { label: '⚡ Get faster', goal: 'speed' },
   { label: '💪 Build muscle', goal: 'muscle' },
+  { label: '🔥 Lose weight', goal: 'lean' },
   { label: '🏋️ Get strong', goal: 'strength' },
-  { label: '🔥 Lean out', goal: 'lean' },
+  { label: '✂️ Get lean & defined', goal: 'lean' },
+  { label: '🫀 Health & energy', goal: 'general' },
+  { label: '🧍 Get moving again', goal: 'general' },
+  { label: '⚡ Get faster', goal: 'speed' },
+  { label: '🏅 Dominate my sport', goal: 'speed' },
+  { label: '🏃 Endurance / go further', goal: 'general' },
   { label: '🎯 All-around athlete', goal: 'general' },
+  { label: '⬆️ Jump higher', goal: 'vertical' },
+  { label: '🏀 Dunk a basketball', goal: 'vertical' },
 ]
 
 /** Home-gym checklist: nothing is assumed — each item grants its tags. */
@@ -480,6 +486,9 @@ export function Onboarding() {
             </div>
             <p className="text-[11px] text-ink-faint">Weeks start Mondays — your pick snaps to {formatShort(mondayOf(pickedStart))} → first week runs through {formatShort(addDaysISO(mondayOf(pickedStart), 6))}.</p>
           </div>
+
+          <PermissionsBlock />
+
           <Btn className="mt-6 w-full py-4" onClick={() => (mode === 'byor' ? enterBuilder() : next())}>
             {mode === 'byor' ? 'Next — build my week' : 'Generate my booklet'}
           </Btn>
@@ -509,6 +518,12 @@ export function Onboarding() {
               })}
             </div>
           </Card>
+
+          <p className="mt-2 border-l-2 border-cyan/60 py-1 pl-3 text-[11.5px] leading-snug text-cyan/90">
+            Plus conditioning: at least {({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 } as const)[preview.plan.goal]}{' '}
+            cardio session{({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 } as const)[preview.plan.goal] > 1 ? 's' : ''} a week —
+            scheduled in the Week tab. Sport, runs, and rides all count; the plan enforces the minimum.
+          </p>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Card className="!p-3 text-center">
@@ -702,4 +717,73 @@ const NOTE_LABEL: Record<RoutineNote['tone'], string> = { warn: 'Fix this', good
 /** Mirrors the generator's protein formula for the preview card. */
 function proteinPreview(weightLb: number): number {
   return Math.min(260, Math.max(120, Math.round(Math.min(330, Math.max(90, weightLb || 175)))))
+}
+
+/** Ask for what the app needs, in context, before the plan starts. */
+function PermissionsBlock() {
+  const [notif, setNotif] = useState<NotificationPermission | 'unsupported'>(() =>
+    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
+  )
+  const [geo, setGeo] = useState<'granted' | 'denied' | 'prompt' | 'unsupported'>('prompt')
+
+  useEffect(() => {
+    if (!('geolocation' in navigator)) {
+      setGeo('unsupported')
+      return
+    }
+    navigator.permissions
+      ?.query({ name: 'geolocation' })
+      .then((st) => setGeo(st.state as 'granted' | 'denied' | 'prompt'))
+      .catch(() => {})
+  }, [])
+
+  const row = 'flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left'
+  return (
+    <div className="mt-5 space-y-2">
+      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-ink-faint">
+        Set up now, never think about it again
+      </p>
+      <button
+        disabled={notif === 'granted' || notif === 'unsupported'}
+        onClick={() => {
+          void enableReminders().then(() =>
+            setNotif(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission),
+          )
+        }}
+        className={`${row} ${notif === 'granted' ? 'border-lime/40 bg-lime/8' : 'border-edge bg-surface-2'}`}
+      >
+        <span>
+          <span className={`block text-[13.5px] font-bold ${notif === 'granted' ? 'text-lime' : 'text-ink'}`}>
+            {notif === 'granted' ? '✓ Notifications on' : 'Turn on notifications'}
+          </span>
+          <span className="mt-0.5 block text-[11px] leading-snug text-ink-faint">
+            Two workout nudges a day max, weekly check-in day, milestone reviews. Never spam.
+          </span>
+        </span>
+      </button>
+      <button
+        disabled={geo === 'granted' || geo === 'unsupported'}
+        onClick={() =>
+          navigator.geolocation.getCurrentPosition(
+            () => setGeo('granted'),
+            () => setGeo('denied'),
+            { timeout: 10000 },
+          )
+        }
+        className={`${row} ${geo === 'granted' ? 'border-lime/40 bg-lime/8' : 'border-edge bg-surface-2'}`}
+      >
+        <span>
+          <span className={`block text-[13.5px] font-bold ${geo === 'granted' ? 'text-lime' : 'text-ink'}`}>
+            {geo === 'granted' ? '✓ Location on' : 'Allow location'}
+          </span>
+          <span className="mt-0.5 block text-[11px] leading-snug text-ink-faint">
+            Only for the GPS run/ride tracker — maps your route, measures distance and pace.
+          </span>
+        </span>
+      </button>
+      <p className="text-[10.5px] leading-snug text-ink-faint">
+        Both optional — you can do this later in Settings. Nothing leaves your phone.
+      </p>
+    </div>
+  )
 }

@@ -90,6 +90,7 @@ export const planConfigSchema = z.object({
   ),
   rationale: z.record(z.string(), z.string()),
   nutrition: z.object({ kcalTraining: z.number().positive(), kcalRest: z.number().positive() }),
+  sportMode: z.enum(['ball', 'generic']).optional(),
   mealPlan: z.object({
     templates: z.array(
       z.object({
@@ -508,6 +509,15 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
           w.cardio = { exerciseId: w.cardio.exerciseId, weekdays: [w.cardio.weekday as number] }
         }
       }
+    }
+    return env
+  },
+  // v13 → v14: the basketball-first voice becomes owner-only. NAOD plans
+  // keep 'ball'; everyone else reads sport-neutral conditioning copy.
+  13: (env) => {
+    const e = env as { data?: { plan?: { name?: string; sportMode?: string } } }
+    if (e.data?.plan && !e.data.plan.sportMode) {
+      e.data.plan.sportMode = e.data.plan.name?.startsWith('NAOD') ? 'ball' : 'generic'
     }
     return env
   },

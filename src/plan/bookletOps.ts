@@ -95,6 +95,7 @@ export function makeEmptyByorPlan(args: {
       rationale: {},
       nutrition: { kcalTraining: n.kcalTraining, kcalRest: n.kcalRest },
       mealPlan: buildMealPlan(goal, n.proteinTargetG, n),
+      sportMode: 'generic',
     },
   }
 }

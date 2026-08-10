@@ -313,3 +313,24 @@ describe('v12 → v13: multi-day cardio backups + GPS runs', () => {
     expect(parsed.data.weeks['2026-08-10'].cardio).toEqual({ exerciseId: 'easy-jog', weekdays: [4] })
   })
 })
+
+describe('v13 → v14: the basketball voice becomes owner-only', () => {
+  it('NAOD plans keep ball; everything else goes generic', () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { plan: Record<string, unknown> }
+    }
+    env.schemaVersion = 13
+    delete env.data.plan.sportMode
+    expect(parseEnvelope(JSON.stringify(env)).data.plan.sportMode).toBe('ball')
+
+    const env2 = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { plan: Record<string, unknown> }
+    }
+    env2.schemaVersion = 13
+    env2.data.plan.name = 'Muscle Builder — 4-Day'
+    delete env2.data.plan.sportMode
+    expect(parseEnvelope(JSON.stringify(env2)).data.plan.sportMode).toBe('generic')
+  })
+})

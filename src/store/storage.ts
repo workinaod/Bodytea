@@ -84,6 +84,9 @@ export interface ReminderMeta {
   reviewReadyLabel?: string
   /** The last mark we pushed a notification for — fires once per mark, ever. */
   reviewNotifiedMark?: string | null
+  /** Today is the weekly check-in day and no measurement is logged yet. */
+  checkinDueToday?: boolean
+  checkinNotifiedDate?: string | null
 }
 
 export const MetaStore = {

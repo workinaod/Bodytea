@@ -290,7 +290,7 @@ export function TodayScreen() {
             </Card>
           ))}
           <p className="px-1 text-[11.5px] leading-snug text-ink-faint">
-            Pick one — it becomes today's session. Logged a run instead? Tap the 🏀 chip above and
+            Pick one — it becomes today's session. Logged a run instead? Tap the cardio chip above and
             this requirement clears itself.
           </p>
         </div>

@@ -207,6 +207,12 @@ export interface PlanConfig {
   nutrition: { kcalTraining: number; kcalRest: number }
   /** The eating side of the booklet — per-user, editable (v10+). */
   mealPlan: MealPlanConfig
+  /**
+   * 'ball' keeps the owner's basketball-first voice; absent/'generic'
+   * speaks in sport-neutral conditioning terms. Every generated and
+   * BYOR plan is generic — most people don't hoop.
+   */
+  sportMode?: 'ball' | 'generic'
 }
 
 export interface Profile {
@@ -623,7 +629,7 @@ export interface AppData {
   runs: RunLog[]
 }
 
-export const SCHEMA_VERSION = 13
+export const SCHEMA_VERSION = 14
 
 export interface Envelope {
   schemaVersion: number

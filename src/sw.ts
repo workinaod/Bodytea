@@ -33,6 +33,8 @@ interface ReminderMeta {
   reviewReadyMark?: string | null
   reviewReadyLabel?: string
   reviewNotifiedMark?: string | null
+  checkinDueToday?: boolean
+  checkinNotifiedDate?: string | null
 }
 
 function readMeta(): Promise<ReminderMeta | null> {
@@ -99,6 +101,19 @@ async function maybeNotify(): Promise<void> {
     )
     await writeMeta(meta, { reviewNotifiedMark: meta.reviewReadyMark })
     meta.reviewNotifiedMark = meta.reviewReadyMark
+  }
+
+  const now0 = new Date()
+  const today0 = `${now0.getFullYear()}-${String(now0.getMonth() + 1).padStart(2, '0')}-${String(now0.getDate()).padStart(2, '0')}`
+  if (meta.checkinDueToday && now0.getHours() >= 8 && meta.checkinNotifiedDate !== today0 && meta.todayDate === today0) {
+    await self.registration.showNotification('Bodytea — Weekly check-in day', {
+      body: 'Two minutes with the scale and the tape. The trends only work if you feed them.',
+      tag: 'naod-checkin',
+      icon: 'icons/pwa-192.png',
+      badge: 'icons/pwa-192.png',
+    })
+    await writeMeta(meta, { checkinNotifiedDate: today0 })
+    meta.checkinNotifiedDate = today0
   }
 
   if (!meta.todayScheduled) return

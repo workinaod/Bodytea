@@ -67,5 +67,6 @@ export function buildNaodPreset(): PlanConfig {
     rationale,
     nutrition: { kcalTraining: 2800, kcalRest: 2500 },
     mealPlan: buildNaodMealPlan(),
+    sportMode: 'ball',
   }
 }

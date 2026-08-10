@@ -112,6 +112,10 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.getByRole('button', { name: /Use 17.5% in this check-in/ }).click()
   await page.getByRole('button', { name: 'Save check-in' }).click()
 
+  // Saving rolls the Wrapped-style weekly recap — tap out of the story
+  await expect(page.getByText('This week', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '✕' }).click()
+
   // Milestones section exists with locked marks counting down
   await expect(page.getByText('3-Month Review')).toBeVisible()
   await expect(page.getByText(/unlocks in \d+ days/).first()).toBeVisible()
