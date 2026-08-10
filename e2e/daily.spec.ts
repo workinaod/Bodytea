@@ -23,7 +23,7 @@ test('daily cardio: run outdoors with miles; game day marks played', async ({ pa
   await quickOnboard(page)
 
   // Log an outdoor run — only the run's questions appear
-  await page.getByText('🏃 Cardio / sport today?').click()
+  await page.getByText('Cardio / sport today?').click()
   await page.getByRole('button', { name: /^🏃\s*Run$/ }).click()
   await expect(page.getByText('Indoor or outdoor?')).toBeVisible()
   await page.getByText('🌤 Outdoor').click()

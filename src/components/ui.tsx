@@ -26,8 +26,11 @@ export function Card({
 
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
-    <div className="mb-2 mt-5 flex items-end justify-between px-1">
-      <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">{children}</h2>
+    <div className="mb-2 mt-6 flex items-center gap-3 px-1">
+      <h2 className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">
+        {children}
+      </h2>
+      <div className="h-px flex-1 bg-edge/60" />
       {right}
     </div>
   )
@@ -95,13 +98,14 @@ export function Btn({
 }
 
 export function BannerRow({ banner }: { banner: DayBanner }) {
+  // A note in the margin, not another box: tone lives in the rule.
   const tones = {
-    info: 'border-cyan/25 bg-cyan/8 text-cyan',
-    warn: 'border-gold/30 bg-gold/8 text-gold',
-    success: 'border-lime/30 bg-lime/8 text-lime',
+    info: 'border-cyan/70 text-cyan/90',
+    warn: 'border-gold/70 text-gold/95',
+    success: 'border-lime/70 text-lime/90',
   }
   return (
-    <div className={`rounded-xl border px-3 py-2.5 text-[12.5px] leading-snug ${tones[banner.tone]}`}>
+    <div className={`border-l-2 py-1 pl-3 pr-1 text-[12.5px] leading-snug ${tones[banner.tone]}`}>
       {banner.text}
     </div>
   )

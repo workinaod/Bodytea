@@ -89,34 +89,38 @@ export function TodayScreen() {
     <div className="space-y-3">
       {/* Date header */}
       <div className="flex items-center justify-between">
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(date, -1))}>
+        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(date, -1))}>
           ‹
         </button>
         <button className="text-center" onClick={() => setSelected(null)}>
-          <div className="text-[17px] font-black tracking-tight">
+          <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-ink-dim">
             {today ? 'Today' : formatDayLabel(date)}
           </div>
           {!today && <div className="text-[10px] font-bold text-accent">tap to jump to today</div>}
         </button>
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(date, 1))}>
+        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(date, 1))}>
           ›
         </button>
       </div>
 
       {graceDate && date === graceDate && (
-        <div className="rounded-xl border border-cyan/25 bg-cyan/8 px-3 py-2.5 text-[12.5px] leading-snug text-cyan">
+        <div className="border-l-2 border-cyan/60 py-1 pl-3 text-[12.5px] leading-snug text-cyan/90">
           After midnight — still finishing yesterday's session. It logs under {formatDayLabel(graceDate)}.
         </div>
       )}
 
-      {/* Context chips */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Chip tone="accent">Week {day.weekIndex}</Chip>
-        <Chip>Block {day.blockIndex}</Chip>
-        <Chip>Week {day.abWeek}</Chip>
-        <Chip tone={day.tier === 1 ? 'default' : 'gold'}>Tier {day.tier}</Chip>
-        {day.isDeload && <Chip tone="lime">DELOAD</Chip>}
-        {day.cns && <Chip tone="cyan">CNS day</Chip>}
+      {/* The hero: what today IS, with its context whispered above it */}
+      <div className="pt-1">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+            Week {day.weekIndex} · Block {day.blockIndex} · {day.abWeek}
+            {day.tier !== 1 && ` · Tier ${day.tier}`}
+          </span>
+          {day.isDeload && <Chip tone="lime">deload</Chip>}
+          {day.cns && <Chip tone="accent">CNS day</Chip>}
+        </div>
+        <h1 className="mt-1.5 text-[30px] font-bold leading-[1.06] tracking-tight">{day.title}</h1>
+        <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">{day.tagline}</p>
       </div>
 
       {day.banners.map((b) => (
@@ -139,7 +143,7 @@ export function TodayScreen() {
         !remindNudgeGone &&
         !['unsupported', 'denied'].includes(notificationSupport()) && (
           <Card className="border-cyan/25 !py-3.5">
-            <div className="text-[13.5px] font-extrabold">🔔 Want workout reminders?</div>
+            <div className="text-[13.5px] font-extrabold">Want workout reminders?</div>
             <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
               Max two a day, and only on training days with an unfinished session. Free, on this phone — no texts, no
               spam.
@@ -189,7 +193,7 @@ export function TodayScreen() {
           <Chip tone={cardioEntries.length > 0 ? 'lime' : 'default'} onClick={() => setCardioOpen(true)}>
             {cardioEntries.length > 0
               ? `${cardioActivity(cardioEntries[0].activityId).emoji} Cardio logged ✓ (${cardioEntries.length})`
-              : '🏃 Cardio / sport today?'}
+              : 'Cardio / sport today?'}
           </Chip>
           {canSwapCns && !session && (
             <Chip tone={cnsSwapped ? 'gold' : 'cyan'} onClick={() => toggleCnsSwap(date)}>
@@ -198,12 +202,6 @@ export function TodayScreen() {
           )}
         </div>
       )}
-
-      {/* Title */}
-      <div>
-        <h1 className="text-[24px] font-black leading-tight tracking-tight">{day.title}</h1>
-        <p className="mt-1 text-[13px] leading-snug text-ink-dim">{day.tagline}</p>
-      </div>
 
       {/* Body states */}
       {day.kind === 'rest' && (
@@ -301,33 +299,42 @@ export function TodayScreen() {
       {/* Preview (not started yet) */}
       {!session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
         <>
-          <div className="space-y-2">
-            {day.exercises.map((r) => {
+          <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+            {day.exercises.map((r, i) => {
               const def = getExercise(r.exerciseId)
               const swapBase = r.swappedFrom ?? r.exerciseId
               const canSwap = swapCandidatesFor(swapBase, data.plan).length > 0
               return (
-                <Card key={swapBase} className="flex items-center justify-between !py-3">
+                <div
+                  key={swapBase}
+                  className={`flex items-center justify-between gap-3 px-4 py-3 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+                >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-baseline gap-2">
                       <span className="truncate text-[14.5px] font-bold">{def.name}</span>
-                      {r.swappedFrom && <Chip tone="gold">swapped</Chip>}
-                      {r.fromSlot && !r.swappedFrom && <Chip tone="cyan">rotates</Chip>}
-                      {r.lightMode && <Chip tone="gold">light</Chip>}
+                      {r.swappedFrom && (
+                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-gold">swapped</span>
+                      )}
+                      {r.fromSlot && !r.swappedFrom && (
+                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-cyan">rotates</span>
+                      )}
+                      {r.lightMode && (
+                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-gold">light</span>
+                      )}
                     </div>
-                    <div className="text-[12px] font-semibold text-ink-dim">
+                    <div className="mt-0.5 text-[12px] font-semibold text-ink-dim">
                       {r.sets > 1 ? `${r.sets} × ${r.repText}` : `${r.repText}${r.repsNum ? ' reps' : ''}`}
-                      <span className="text-ink-faint"> · {def.equipment}</span>
+                      <span className="font-normal text-ink-faint"> · {def.equipment}</span>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  <div className="flex shrink-0 items-center">
                     {canSwap && (
                       <button
                         aria-label={`Swap ${def.name}`}
                         onClick={() => swapExercise(date, swapBase)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-accent"
+                        className="p-2 text-ink-faint active:text-accent"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 2v6h-6" />
                           <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
                           <path d="M3 22v-6h6" />
@@ -337,12 +344,12 @@ export function TodayScreen() {
                     )}
                     <button
                       onClick={() => setGuideId(r.exerciseId)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-[13px] font-black text-cyan"
+                      className="p-2 text-[14px] font-black text-ink-faint active:text-cyan"
                     >
                       ?
                     </button>
                   </div>
-                </Card>
+                </div>
               )
             })}
             {day.exercises.length === 0 && <EmptyNote>Nothing scheduled.</EmptyNote>}

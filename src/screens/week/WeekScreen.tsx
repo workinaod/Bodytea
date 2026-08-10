@@ -87,18 +87,18 @@ export function WeekScreen() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(weekStart, -7))}>
+        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(weekStart, -7))}>
           ‹
         </button>
         <button onClick={() => setSelected(null)} className="text-center">
-          <div className="text-[17px] font-black tracking-tight">
+          <div className="text-[20px] font-bold tracking-tight">
             Week of {formatShort(weekStart)}
           </div>
-          <div className="text-[11px] font-semibold text-ink-faint">
-            Week {days[0].weekIndex} · Block {days[0].blockIndex} · {days[0].isDeload ? 'DELOAD' : `Week ${days[0].abWeek}`}
+          <div className="mt-0.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+            Week {days[0].weekIndex} · Block {days[0].blockIndex} · {days[0].isDeload ? 'Deload' : days[0].abWeek}
           </div>
         </button>
-        <button className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-bold text-ink-dim" onClick={() => setSelected(addDaysISO(weekStart, 7))}>
+        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(weekStart, 7))}>
           ›
         </button>
       </div>
@@ -106,26 +106,30 @@ export function WeekScreen() {
       {/* Tier picker */}
       <SectionTitle>This week's tier {needsPick && <span className="text-danger">— pick it now</span>}</SectionTitle>
       {needsPick && (
-        <div className="rounded-xl border border-gold/30 bg-gold/8 px-3.5 py-2.5 text-[12.5px] font-semibold text-gold">
+        <div className="border-l-2 border-gold/70 py-1 pl-3 text-[12.5px] font-semibold leading-snug text-gold/95">
           Pick the tier at the START of the week based on what you honestly have. Don't decide day by day.
         </div>
       )}
-      <div className="space-y-2">
-        {( [1, 2, 3] as Tier[]).map((t) => (
+      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+        {( [1, 2, 3] as Tier[]).map((t, i) => (
           <button
             key={t}
             onClick={() => handleTierTap(t)}
-            className={`w-full rounded-2xl border p-4 text-left transition-colors ${
-              tier === t ? 'border-accent/50 bg-accent/10' : 'border-edge bg-surface'
-            }`}
+            className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
+              i > 0 ? 'border-t border-edge/50' : ''
+            } ${tier === t ? 'bg-accent/8' : ''}`}
           >
-            <div className="flex items-center justify-between">
-              <span className={`text-[14.5px] font-extrabold ${tier === t ? 'text-accent-soft' : 'text-ink'}`}>
+            <span
+              className={`h-4 w-4 shrink-0 rounded-full border-2 ${
+                tier === t ? 'border-accent bg-accent' : 'border-edge'
+              }`}
+            />
+            <span className="min-w-0 flex-1">
+              <span className={`block text-[14px] font-extrabold ${tier === t ? 'text-accent-soft' : 'text-ink'}`}>
                 {TIER_INFO[t].name}
               </span>
-              {tier === t && <Chip tone="accent">active</Chip>}
-            </div>
-            <p className="mt-1 text-[12px] leading-snug text-ink-faint">{TIER_INFO[t].blurb}</p>
+              <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-faint">{TIER_INFO[t].blurb}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -170,35 +174,35 @@ export function WeekScreen() {
 
       {/* 7-day strip */}
       <SectionTitle>The days</SectionTitle>
-      <div className="space-y-2">
-        {days.map((d) => {
+      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+        {days.map((d, i) => {
           const st = statusFor(d)
           return (
-            <Card key={d.date} onClick={() => setPreview(d)} className="!py-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 text-center">
-                  <div className={`text-[11px] font-black ${d.date === today ? 'text-accent' : 'text-ink-faint'}`}>
-                    {WD_LABEL[weekdayOf(d.date)]}
-                  </div>
-                  <div className="text-[10px] text-ink-faint">{formatShort(d.date).split(' ')[1]}</div>
+            <div
+              key={d.date}
+              onClick={() => setPreview(d)}
+              className={`flex cursor-pointer items-center gap-3 px-4 py-3 active:bg-surface-2 ${
+                i > 0 ? 'border-t border-edge/50' : ''
+              }`}
+            >
+              <div className="w-9 text-center">
+                <div className={`text-[11px] font-black ${d.date === today ? 'text-accent' : 'text-ink-faint'}`}>
+                  {WD_LABEL[weekdayOf(d.date)]}
                 </div>
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${st.dot}`} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13.5px] font-bold">{d.title}</div>
-                  <div className="text-[11px] font-semibold text-ink-faint">{st.label}</div>
-                  {markersFor(d).length > 0 && (
-                    <div className="mt-0.5 flex flex-wrap gap-1">
-                      {markersFor(d).map((m) => (
-                        <span key={m} className="rounded-full border border-gold/30 bg-gold/8 px-1.5 py-px text-[9.5px] font-bold text-gold">
-                          {m}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <span className="text-ink-faint">▸</span>
+                <div className="text-[10px] text-ink-faint">{formatShort(d.date).split(' ')[1]}</div>
               </div>
-            </Card>
+              <span className={`h-2 w-2 shrink-0 rounded-full ${st.dot}`} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[13.5px] font-bold">{d.title}</div>
+                <div className="text-[11px] font-medium text-ink-faint">
+                  {st.label}
+                  {markersFor(d).map((m) => (
+                    <span key={m} className="text-gold"> · {m}</span>
+                  ))}
+                </div>
+              </div>
+              <span className="text-[13px] text-ink-faint">›</span>
+            </div>
           )
         })}
       </div>
