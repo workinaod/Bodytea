@@ -457,6 +457,20 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     return env
   },
+  // v11 → v12: reminders move to 5 AM / 5 PM. Only the shipped defaults
+  // are replaced — times someone set by hand in Settings are theirs.
+  11: (env) => {
+    const e = env as { data?: { settings?: { reminderTimes?: string[] } } }
+    const t = e.data?.settings?.reminderTimes
+    const wasDefault =
+      !!t &&
+      (JSON.stringify(t) === JSON.stringify(['11:30', '18:30']) ||
+        JSON.stringify(t) === JSON.stringify(['11:30', '20:30']))
+    if (e.data?.settings && (wasDefault || !t)) {
+      e.data.settings.reminderTimes = ['05:00', '17:00']
+    }
+    return env
+  },
 }
 
 export function migrate(env: unknown): Envelope {

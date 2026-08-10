@@ -593,7 +593,7 @@ export interface AppData {
   dayLoad: Record<ISODate, 'trimmed'>
 }
 
-export const SCHEMA_VERSION = 11
+export const SCHEMA_VERSION = 12
 
 export interface Envelope {
   schemaVersion: number
@@ -624,7 +624,7 @@ export function defaultSettings(phaseStartDate: ISODate, installedAt: ISODate = 
     lastExportAt: null,
     onboarded: false,
     remindersEnabled: false,
-    reminderTimes: ['11:30', '18:30'], // max two nudges a day
+    reminderTimes: ['05:00', '17:00'], // max two nudges a day
     units: 'imperial',
   }
 }

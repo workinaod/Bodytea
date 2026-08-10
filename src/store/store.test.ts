@@ -77,7 +77,7 @@ describe('migrations', () => {
     const parsed = parseEnvelope(JSON.stringify(env))
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION)
     expect(parsed.data.settings.remindersEnabled).toBe(false)
-    expect(parsed.data.settings.reminderTimes).toEqual(['11:30', '20:30']) // v6 trims to two a day
+    expect(parsed.data.settings.reminderTimes).toEqual(['05:00', '17:00']) // v6 trims to two, v12 moves to 5/5
   })
 
   it('upgrades a v2 backup (weeks without ball fields) to v3', () => {
@@ -265,5 +265,25 @@ describe('v10 → v11: sub-10% body fat joins the owner’s goal', () => {
     const targets = parsed.data.plan.customTargets.filter((t) => t.label === 'Body fat')
     expect(targets).toHaveLength(1)
     expect(parsed.data.measurements.every((m) => m.bodyFatPct === undefined)).toBe(true)
+  })
+})
+
+describe('v11 → v12: reminders move to 5 AM / 5 PM', () => {
+  it('replaces shipped defaults but keeps hand-set times', () => {
+    const def = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { settings: { reminderTimes: string[] } }
+    }
+    def.schemaVersion = 11
+    def.data.settings.reminderTimes = ['11:30', '18:30']
+    expect(parseEnvelope(JSON.stringify(def)).data.settings.reminderTimes).toEqual(['05:00', '17:00'])
+
+    const custom = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { settings: { reminderTimes: string[] } }
+    }
+    custom.schemaVersion = 11
+    custom.data.settings.reminderTimes = ['06:15', '19:00']
+    expect(parseEnvelope(JSON.stringify(custom)).data.settings.reminderTimes).toEqual(['06:15', '19:00'])
   })
 })
