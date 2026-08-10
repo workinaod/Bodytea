@@ -213,6 +213,10 @@ export interface Profile {
   displayName?: string
   /** Cached leaderboard username (set when an account exists). */
   username?: string
+  /** For the tape-measure body-fat estimate (US Navy method). */
+  heightIn?: number
+  /** Which Navy formula fits their body — asked once in the estimator. */
+  bfFormula?: 'male' | 'female'
 }
 
 // ---------- Resolved day (engine output) ----------
@@ -443,6 +447,9 @@ export interface Measurement {
   weightLb?: number
   /** Estimated body fat % — consistency of method beats accuracy. */
   bodyFatPct?: number
+  /** Tape sites for the Navy estimate (stored so trends stay honest). */
+  neckIn?: number
+  hipIn?: number
   waistIn?: number
   chestIn?: number
   armsIn?: number
@@ -556,6 +563,8 @@ export interface Settings {
   reminderTimes: string[]
   /** Display units (storage stays imperial internally). */
   units: 'imperial' | 'metric'
+  /** Milestone reviews already opened ('3mo' | '6mo' | '1yr'). */
+  reviewsSeen?: string[]
 }
 
 export interface AppData {

@@ -100,6 +100,22 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.getByRole('button', { name: 'Progress', exact: true }).click()
   await expect(page.getByText('Last 12 weeks')).toBeVisible()
 
+  // ---- Guided body-fat estimate: tape numbers → Navy formula → check-in ----
+  await page.getByText('+ log measurements').click()
+  await page.getByText(/Estimate with a tape/).click()
+  await page.getByText('Male formula (neck + waist)').click() // height stays at the 70" default
+  await page.getByRole('button', { name: 'Next — first measurement' }).click()
+  await expect(page.getByText(/below the Adam’s apple/i)).toBeVisible() // step-by-step guidance
+  await page.getByRole('button', { name: 'Next site' }).click() // neck 15" default
+  await page.getByRole('button', { name: 'Calculate' }).click() // waist 34" default
+  await expect(page.getByText('17.5%', { exact: true })).toBeVisible() // published-formula result
+  await page.getByRole('button', { name: /Use 17.5% in this check-in/ }).click()
+  await page.getByRole('button', { name: 'Save check-in' }).click()
+
+  // Milestones section exists with locked marks counting down
+  await expect(page.getByText('3-Month Review')).toBeVisible()
+  await expect(page.getByText(/unlocks in \d+ days/).first()).toBeVisible()
+
   // ---- Coach: export downloads a backup file ----
   await page.getByRole('button', { name: 'Coach', exact: true }).click()
   await page.getByRole('button', { name: '⇅ data' }).click()

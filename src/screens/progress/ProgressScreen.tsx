@@ -16,6 +16,10 @@ import { Sheet } from '../../components/Sheet'
 import { Heatmap, SimpleLine } from '../../components/charts'
 import { PhotoStore } from '../../store/storage'
 import { saveMeasurement, savePhotoFile } from '../../logic/actions'
+import { buildMilestoneReview, REVIEW_MARKS, reviewReady, unlockedMarks, type MilestoneReview } from '../../engine/review'
+import { daysBetween } from '../../engine/calendar'
+import { MilestoneReviewSheet } from './MilestoneReview'
+import { BodyFatEstimator } from './BodyFatEstimator'
 
 function usePhotoUrl(id: string | undefined): string | null {
   const [url, setUrl] = useState<string | null>(null)
@@ -50,7 +54,9 @@ const METRICS = [
 
 export function ProgressScreen() {
   const data = useAppStore((s) => s.data)
+  const update = useAppStore((s) => s.update)
   const [checkinOpen, setCheckinOpen] = useState(false)
+  const [review, setReview] = useState<MilestoneReview | null>(null)
   const [metric, setMetric] = useState<(typeof METRICS)[number]['key']>('waistIn')
   const [lift, setLift] = useState(data.plan.trackedLifts[0]?.exerciseId ?? 'front-squat')
 
@@ -120,6 +126,31 @@ export function ProgressScreen() {
           </Btn>
         </Card>
       )}
+
+      {/* Milestone review, when one has unlocked and hasn't been opened */}
+      {(() => {
+        const ready = reviewReady(data, today)
+        if (!ready) return null
+        return (
+          <Card className="border-accent/40">
+            <p className="text-[13.5px] font-bold text-accent-soft">Your {ready.label.toLowerCase()} is ready</p>
+            <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
+              {ready.days} days on the books. Deltas, before/after, and an honest read on gains vs effort.
+            </p>
+            <Btn
+              className="mt-2.5 w-full"
+              onClick={() => {
+                setReview(buildMilestoneReview(data, ready.id, today))
+                update((d) => {
+                  d.settings.reviewsSeen = [...(d.settings.reviewsSeen ?? []), ready.id]
+                })
+              }}
+            >
+              Open the review
+            </Btn>
+          </Card>
+        )
+      })()}
 
       {/* Records strip */}
       <div className="grid grid-cols-3 gap-2">
@@ -209,7 +240,42 @@ export function ProgressScreen() {
       <SectionTitle>Progress photos</SectionTitle>
       <PhotoCompare measurements={data.measurements} />
 
+      {/* Milestones */}
+      <SectionTitle>Milestones</SectionTitle>
+      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+        {REVIEW_MARKS.map((mark, i) => {
+          const unlocked = unlockedMarks(data, today).some((m) => m.id === mark.id)
+          const daysIn = daysBetween(data.settings.phaseStartDate, today)
+          return (
+            <div
+              key={mark.id}
+              onClick={
+                unlocked
+                  ? () => {
+                      setReview(buildMilestoneReview(data, mark.id, today))
+                      update((d) => {
+                        if (!(d.settings.reviewsSeen ?? []).includes(mark.id)) {
+                          d.settings.reviewsSeen = [...(d.settings.reviewsSeen ?? []), mark.id]
+                        }
+                      })
+                    }
+                  : undefined
+              }
+              className={`flex items-center justify-between px-4 py-3 ${i > 0 ? 'border-t border-edge/50' : ''} ${
+                unlocked ? 'cursor-pointer active:bg-surface-2' : 'opacity-50'
+              }`}
+            >
+              <span className="text-[13px] font-bold">{mark.label}</span>
+              <span className="text-[11.5px] font-semibold text-ink-faint">
+                {unlocked ? 'open →' : `unlocks in ${mark.days - daysIn} days`}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} last={lastCheckin} />
+      {review && <MilestoneReviewSheet review={review} onClose={() => setReview(null)} />}
     </div>
   )
 }
@@ -230,6 +296,7 @@ function CheckinSheet({ open, onClose, last }: { open: boolean; onClose: () => v
   })
   const [m, setM] = useState<Measurement>(fresh)
   const [busy, setBusy] = useState<string | null>(null)
+  const [estimating, setEstimating] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const angleRef = useRef<'front' | 'side' | 'back'>('front')
 
@@ -257,17 +324,37 @@ function CheckinSheet({ open, onClose, last }: { open: boolean; onClose: () => v
           Same morning each week, same conditions. Prefilled with last week — adjust what changed.
         </p>
         {fields.map((f) => (
-          <div key={f.key} className="flex items-center justify-between">
-            <span className="text-[13.5px] font-bold">{f.label}</span>
-            <Stepper
-              value={m[f.key]}
-              onChange={(v) => setM({ ...m, [f.key]: v })}
-              step={f.step}
-              suffix={f.unit}
-              width="w-20"
-            />
+          <div key={f.key}>
+            <div className="flex items-center justify-between">
+              <span className="text-[13.5px] font-bold">{f.label}</span>
+              <Stepper
+                value={m[f.key]}
+                onChange={(v) => setM({ ...m, [f.key]: v })}
+                step={f.step}
+                suffix={f.unit}
+                width="w-20"
+              />
+            </div>
+            {f.key === 'bodyFatPct' && (
+              <button
+                onClick={() => setEstimating(true)}
+                className="mt-0.5 text-[11.5px] font-bold text-cyan underline"
+              >
+                Don't know it? Estimate with a tape measure →
+              </button>
+            )}
           </div>
         ))}
+        {estimating && (
+          <BodyFatEstimator
+            initialWaist={m.waistIn}
+            onClose={() => setEstimating(false)}
+            onDone={(r) => {
+              setM({ ...m, bodyFatPct: r.bodyFatPct, neckIn: r.neckIn, waistIn: r.waistIn, hipIn: r.hipIn })
+              setEstimating(false)
+            }}
+          />
+        )}
 
         <div className="pt-1">
           <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">

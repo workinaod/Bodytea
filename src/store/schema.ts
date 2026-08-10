@@ -24,6 +24,7 @@ const settingsSchema = z.object({
   remindersEnabled: z.boolean(),
   reminderTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/)).max(3),
   units: z.enum(['imperial', 'metric']),
+  reviewsSeen: z.array(z.string()).optional(),
 })
 
 // ---------- Plan config (the booklet) ----------
@@ -199,6 +200,8 @@ const measurementSchema = z.object({
   date: isoDate,
   weightLb: z.number().optional(),
   bodyFatPct: z.number().optional(),
+  neckIn: z.number().optional(),
+  hipIn: z.number().optional(),
   waistIn: z.number().optional(),
   chestIn: z.number().optional(),
   armsIn: z.number().optional(),
@@ -250,7 +253,12 @@ const coachSchema = z.object({
 const appDataSchema = z.object({
   settings: settingsSchema,
   plan: planConfigSchema,
-  profile: z.object({ displayName: z.string().optional(), username: z.string().optional() }),
+  profile: z.object({
+    displayName: z.string().optional(),
+    username: z.string().optional(),
+    heightIn: z.number().optional(),
+    bfFormula: z.enum(['male', 'female']).optional(),
+  }),
   weeks: z.record(z.string(), weekSchema),
   sessions: z.record(z.string(), sessionSchema),
   excuses: z.array(excuseSchema),
