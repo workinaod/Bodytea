@@ -1,6 +1,7 @@
 import { z } from 'zod'
-import { SCHEMA_VERSION, type Envelope } from '../types'
+import { SCHEMA_VERSION, type Envelope, type Goal } from '../types'
 import { buildNaodPreset } from '../plan/presets/naod'
+import { buildMealPlan, buildNaodMealPlan } from '../plan/foods'
 import { addDaysISO } from '../engine/calendar'
 
 // ============================================================
@@ -88,6 +89,24 @@ export const planConfigSchema = z.object({
   ),
   rationale: z.record(z.string(), z.string()),
   nutrition: z.object({ kcalTraining: z.number().positive(), kcalRest: z.number().positive() }),
+  mealPlan: z.object({
+    templates: z.array(
+      z.object({
+        id: z.string(),
+        dayType: z.enum(['training', 'rest']),
+        slot: z.string(),
+        name: z.string().min(1),
+        detail: z.string(),
+        proteinG: z.number().min(0),
+        kcal: z.number().min(0),
+      }),
+    ),
+    grocery: z.array(z.object({ category: z.string(), items: z.array(z.string()) })),
+    supplements: z.array(
+      z.object({ id: z.string(), name: z.string().min(1), dose: z.string(), when: z.string() }),
+    ),
+    lateNight: z.object({ yes: z.array(z.string()), no: z.array(z.string()) }),
+  }),
 })
 
 const setLogSchema = z.object({
@@ -172,12 +191,7 @@ const mealDaySchema = z.object({
       servings: z.number().positive(),
     }),
   ),
-  supplements: z.object({
-    creatine: z.boolean(),
-    fishOil: z.boolean(),
-    vitD3: z.boolean(),
-    electrolytes: z.boolean(),
-  }),
+  supplements: z.record(z.string(), z.boolean()),
   dayTypeOverride: z.enum(['training', 'rest']).optional(),
 })
 
@@ -394,6 +408,33 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
   8: (env) => {
     const e = env as { data?: Record<string, unknown> }
     if (e.data) e.data.dayLoad ??= {}
+    return env
+  },
+  // v9 → v10: the meal plan becomes per-user booklet data. The owner's
+  // preset keeps his PDF meals verbatim; every other plan gets templates
+  // scaled to its own goal and calorie budget.
+  9: (env) => {
+    const e = env as {
+      data?: {
+        plan?: {
+          name?: string
+          goal?: string
+          nutrition?: { kcalTraining: number; kcalRest: number }
+          mealPlan?: unknown
+        }
+        settings?: { proteinTargetG?: number }
+      }
+    }
+    const plan = e.data?.plan
+    if (plan && !plan.mealPlan) {
+      plan.mealPlan = plan.name?.startsWith('NAOD')
+        ? buildNaodMealPlan()
+        : buildMealPlan(
+            (plan.goal ?? 'general') as Goal,
+            e.data?.settings?.proteinTargetG ?? 180,
+            plan.nutrition ?? { kcalTraining: 2600, kcalRest: 2300 },
+          )
+    }
     return env
   },
 }

@@ -122,3 +122,35 @@ describe('generator invariants (6 goals × 4 day-counts × 3 equip profiles)', (
     }
   }
 })
+
+describe('generated meal plans (v10)', () => {
+  const GOALS = ['vertical', 'speed', 'muscle', 'strength', 'lean', 'general'] as const
+  for (const goal of GOALS) {
+    it(`${goal}: templates sum to the user's own targets`, () => {
+      const { plan, proteinTargetG } = generatePlan({
+        goal,
+        goalStatement: 'test',
+        customTargets: [],
+        daysPerWeek: 4,
+        equipProfile: 'gym',
+        extraEquip: [],
+        experience: 'returning',
+        bodyweightLb: 180,
+      })
+      const mp = plan.mealPlan
+      for (const dt of ['training', 'rest'] as const) {
+        const day = mp.templates.filter((t) => t.dayType === dt)
+        expect(day.length).toBeGreaterThanOrEqual(4)
+        const p = day.reduce((s, t) => s + t.proteinG, 0)
+        const k = day.reduce((s, t) => s + t.kcal, 0)
+        const kcalTarget = dt === 'training' ? plan.nutrition.kcalTraining : plan.nutrition.kcalRest
+        expect(Math.abs(p - proteinTargetG)).toBeLessThanOrEqual(12)
+        expect(Math.abs(k - kcalTarget)).toBeLessThanOrEqual(60)
+      }
+      expect(mp.templates.some((t) => t.slot === 'Breakfast')).toBe(true)
+      expect(mp.grocery.length).toBeGreaterThanOrEqual(3)
+      expect(mp.supplements.length).toBeGreaterThanOrEqual(1)
+      expect(new Set(mp.templates.map((t) => t.id)).size).toBe(mp.templates.length)
+    })
+  }
+})

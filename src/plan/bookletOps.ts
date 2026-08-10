@@ -2,6 +2,7 @@ import type { CustomTarget, DayTemplate, Goal, PlanConfig, RoutineGoal, Template
 import { getExercise, EXERCISES } from './exercises'
 import { equipFor } from './equip'
 import { pickCardio, rationaleFor } from './generator'
+import { buildMealPlan } from './foods'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -93,6 +94,7 @@ export function makeEmptyByorPlan(args: {
       lifeEvents: [],
       rationale: {},
       nutrition: { kcalTraining: n.kcalTraining, kcalRest: n.kcalRest },
+      mealPlan: buildMealPlan(goal, n.proteinTargetG, n),
     },
   }
 }

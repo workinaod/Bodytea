@@ -10,6 +10,7 @@ import type {
 } from '../types'
 import { getExercise } from './exercises'
 import { canDo, equipFor, resolveForEquipment } from './equip'
+import { buildMealPlan } from './foods'
 
 // ============================================================
 // The booklet generator: OnboardingAnswers → PlanConfig.
@@ -532,6 +533,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     lifeEvents: [],
     rationale: buildRationale(a.goal, a.goalStatement, [...referenced]),
     nutrition: { kcalTraining: nutrition.kcalTraining, kcalRest: nutrition.kcalRest },
+    mealPlan: buildMealPlan(a.goal, nutrition.proteinTargetG, nutrition),
   }
   return { plan, proteinTargetG: nutrition.proteinTargetG }
 }

@@ -185,3 +185,39 @@ describe('import validation', () => {
     expect(() => parseEnvelope(JSON.stringify(env))).toThrow(/sessions/)
   })
 })
+
+describe('v9 → v10: meal plan becomes per-user booklet data', () => {
+  it("injects the owner's PDF meals for NAOD plans", () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { plan: Record<string, unknown> }
+    }
+    env.schemaVersion = 9
+    delete env.data.plan.mealPlan
+    const parsed = parseEnvelope(JSON.stringify(env))
+    const mp = parsed.data.plan.mealPlan
+    expect(mp.templates.some((t) => t.id === 't-breakfast')).toBe(true) // PDF meals verbatim
+    expect(mp.supplements.map((s) => s.id)).toContain('creatine')
+    expect(mp.grocery.some((g) => g.category === 'Protein')).toBe(true)
+  })
+
+  it('scales generic templates to a non-NAOD plan’s own targets', () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: {
+        plan: Record<string, unknown> & { nutrition: { kcalTraining: number; kcalRest: number } }
+        settings: Record<string, unknown>
+      }
+    }
+    env.schemaVersion = 9
+    env.data.plan.name = 'Vertical Project — 6-Day'
+    env.data.plan.nutrition = { kcalTraining: 2900, kcalRest: 2600 }
+    env.data.settings.proteinTargetG = 175
+    delete env.data.plan.mealPlan
+    const parsed = parseEnvelope(JSON.stringify(env))
+    const mp = parsed.data.plan.mealPlan
+    const trainP = mp.templates.filter((t) => t.dayType === 'training').reduce((s, t) => s + t.proteinG, 0)
+    expect(Math.abs(trainP - 175)).toBeLessThanOrEqual(12)
+    expect(mp.templates.some((t) => t.id === 't-breakfast')).toBe(false) // not the owner's meals
+  })
+})

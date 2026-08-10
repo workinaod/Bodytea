@@ -8,6 +8,7 @@ import {
 } from '../templates'
 import { BLOCK_SLOTS, CORE_MOVERS, SLOT_REPTEXT_OVERRIDES, TRACKED_LIFTS } from '../blocks'
 import { EXERCISES } from '../exercises'
+import { buildNaodMealPlan } from '../foods'
 
 // ============================================================
 // The owner's booklet: NAOD V3 as a PlanConfig. Assembled from
@@ -65,5 +66,6 @@ export function buildNaodPreset(): PlanConfig {
     ],
     rationale,
     nutrition: { kcalTraining: 2800, kcalRest: 2500 },
+    mealPlan: buildNaodMealPlan(),
   }
 }

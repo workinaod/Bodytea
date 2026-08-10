@@ -85,6 +85,17 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   // Generated plan @180 lb → protein target 180 g (1 g/lb)
   await expect(page.locator('text=/4[05] ?\\/ 180/').first()).toBeVisible({ timeout: 5000 })
 
+  // ---- My meals: the templates are the user's own data ----
+  await page.getByText('edit my meals').click()
+  await page.getByRole('button', { name: '+ New meal' }).click()
+  await page.getByPlaceholder('Meal name').fill('Chipotle bowl')
+  await page.getByPlaceholder('Protein (g)').fill('50')
+  await page.getByPlaceholder('Calories').fill('800')
+  await page.getByRole('button', { name: 'Save meal' }).click()
+  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByText('Meal — Chipotle bowl').click() // one tap logs THEIR meal
+  await expect(page.locator('text=/9[05] ?\\/ 180/').first()).toBeVisible()
+
   // ---- Progress renders ----
   await page.getByRole('button', { name: 'Progress', exact: true }).click()
   await expect(page.getByText('Last 12 weeks')).toBeVisible()

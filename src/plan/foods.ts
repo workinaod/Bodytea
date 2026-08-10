@@ -1,4 +1,4 @@
-import type { SupplementId } from '../types'
+import type { Goal, MealPlanConfig, MealTemplateDef, SupplementDef, SupplementId } from '../types'
 
 // ============================================================
 // Nutrition data from the NAOD V3 PDF. Protein numbers are the
@@ -55,6 +55,52 @@ export const FOODS: FoodDef[] = [
   { id: 'jerky', name: 'Beef jerky', serving: '1 oz', proteinG: 10, kcal: 80, carbsG: 3, fatG: 1, category: 'snack' },
   { id: 'protein-bar', name: 'Protein bar', serving: '1 bar', proteinG: 20, kcal: 220, carbsG: 22, fatG: 8, category: 'snack' },
   { id: 'berries', name: 'Mixed berries', serving: '1 cup', proteinG: 1, kcal: 70, carbsG: 17, fatG: 0, category: 'snack' },
+
+  // ---- Library expansion (v10): enough breadth that anyone's real
+  //      diet — vegetarian, budget, takeout-heavy — is loggable in taps.
+  // More proteins
+  { id: 'shrimp', name: 'Shrimp', serving: '6 oz', proteinG: 34, kcal: 180, carbsG: 0, fatG: 3, category: 'protein' },
+  { id: 'tilapia', name: 'Tilapia / cod', serving: '8 oz', proteinG: 45, kcal: 220, carbsG: 0, fatG: 4, category: 'protein' },
+  { id: 'pork-chop', name: 'Pork chop (lean)', serving: '6 oz', proteinG: 40, kcal: 330, carbsG: 0, fatG: 14, category: 'protein' },
+  { id: 'ground-chicken', name: 'Ground chicken / turkey', serving: '6 oz', proteinG: 38, kcal: 300, carbsG: 0, fatG: 12, category: 'protein' },
+  { id: 'deli-turkey', name: 'Deli turkey / ham', serving: '4 oz', proteinG: 22, kcal: 120, carbsG: 3, fatG: 2, category: 'protein' },
+  { id: 'rotisserie', name: 'Rotisserie chicken', serving: '1/4 bird', proteinG: 36, kcal: 300, carbsG: 0, fatG: 14, category: 'protein' },
+  { id: 'egg-whites', name: 'Egg whites', serving: '1 cup', proteinG: 26, kcal: 120, carbsG: 2, fatG: 0, category: 'protein' },
+  { id: 'skyr', name: 'Skyr / kefir', serving: '1 cup', proteinG: 20, kcal: 140, carbsG: 10, fatG: 2, category: 'protein' },
+  { id: 'milk', name: 'Milk (2%)', serving: '2 cups', proteinG: 16, kcal: 240, carbsG: 24, fatG: 10, category: 'protein' },
+  { id: 'tofu', name: 'Tofu (firm)', serving: '8 oz', proteinG: 22, kcal: 190, carbsG: 5, fatG: 11, category: 'protein' },
+  { id: 'tempeh', name: 'Tempeh', serving: '6 oz', proteinG: 31, kcal: 320, carbsG: 16, fatG: 18, category: 'protein' },
+  { id: 'lentils', name: 'Lentils', serving: '1 cup cooked', proteinG: 18, kcal: 230, carbsG: 40, fatG: 1, category: 'protein' },
+  { id: 'black-beans', name: 'Black beans / chickpeas', serving: '1 cup', proteinG: 15, kcal: 240, carbsG: 41, fatG: 1, category: 'protein' },
+  { id: 'edamame', name: 'Edamame', serving: '1 cup', proteinG: 18, kcal: 190, carbsG: 14, fatG: 8, category: 'protein' },
+  { id: 'protein-pasta', name: 'Protein pasta', serving: '2 oz dry', proteinG: 20, kcal: 200, carbsG: 34, fatG: 2, category: 'protein' },
+
+  // More carbs
+  { id: 'quinoa', name: 'Quinoa', serving: '1 cup cooked', proteinG: 8, kcal: 220, carbsG: 39, fatG: 4, category: 'carb' },
+  { id: 'tortillas', name: 'Tortillas', serving: '2 medium', proteinG: 6, kcal: 220, carbsG: 36, fatG: 6, category: 'carb' },
+  { id: 'bagel', name: 'Bagel', serving: '1', proteinG: 10, kcal: 280, carbsG: 55, fatG: 2, category: 'carb' },
+  { id: 'cereal', name: 'Cereal + milk', serving: '1 bowl', proteinG: 10, kcal: 300, carbsG: 50, fatG: 5, category: 'carb' },
+  { id: 'couscous', name: 'Couscous / farro', serving: '1 cup cooked', proteinG: 6, kcal: 210, carbsG: 42, fatG: 1, category: 'carb' },
+  { id: 'apple', name: 'Apple / orange', serving: '1', proteinG: 0, kcal: 90, carbsG: 23, fatG: 0, category: 'carb' },
+  { id: 'grapes', name: 'Grapes / melon', serving: '1 cup', proteinG: 1, kcal: 90, carbsG: 23, fatG: 0, category: 'carb' },
+  { id: 'honey', name: 'Honey / jam', serving: '1 tbsp', proteinG: 0, kcal: 60, carbsG: 17, fatG: 0, category: 'carb' },
+
+  // More fats
+  { id: 'almonds', name: 'Almonds / walnuts', serving: '1 oz', proteinG: 6, kcal: 170, carbsG: 6, fatG: 15, category: 'fat' },
+  { id: 'seeds', name: 'Chia / pumpkin seeds', serving: '2 tbsp', proteinG: 5, kcal: 110, carbsG: 5, fatG: 8, category: 'fat' },
+  { id: 'butter', name: 'Butter / ghee', serving: '1 tbsp', proteinG: 0, kcal: 100, carbsG: 0, fatG: 11, category: 'fat' },
+  { id: 'dark-chocolate', name: 'Dark chocolate', serving: '1 oz', proteinG: 2, kcal: 170, carbsG: 13, fatG: 12, category: 'fat' },
+  { id: 'coconut', name: 'Coconut milk (canned)', serving: '1/4 cup', proteinG: 1, kcal: 110, carbsG: 2, fatG: 12, category: 'fat' },
+
+  // More snacks & veg
+  { id: 'hummus', name: 'Hummus + veg / pita', serving: '1/4 cup', proteinG: 5, kcal: 150, carbsG: 14, fatG: 9, category: 'snack' },
+  { id: 'rice-cakes', name: 'Rice cakes + PB', serving: '2 + 1 tbsp', proteinG: 5, kcal: 170, carbsG: 18, fatG: 8, category: 'snack' },
+  { id: 'popcorn', name: 'Popcorn (air-popped)', serving: '3 cups', proteinG: 3, kcal: 95, carbsG: 19, fatG: 1, category: 'snack' },
+  { id: 'granola', name: 'Granola', serving: '1/2 cup', proteinG: 5, kcal: 220, carbsG: 32, fatG: 8, category: 'snack' },
+  { id: 'string-cheese', name: 'String cheese', serving: '2 sticks', proteinG: 14, kcal: 160, carbsG: 2, fatG: 11, category: 'snack' },
+  { id: 'protein-shake-rtd', name: 'Ready-to-drink shake', serving: '1 bottle', proteinG: 30, kcal: 160, carbsG: 5, fatG: 3, category: 'snack' },
+  { id: 'salad-bag', name: 'Big salad (dressed)', serving: '1 bowl', proteinG: 3, kcal: 150, carbsG: 12, fatG: 10, category: 'veg' },
+  { id: 'stir-fry-veg', name: 'Stir-fry vegetables', serving: '2 cups', proteinG: 4, kcal: 90, carbsG: 16, fatG: 2, category: 'veg' },
 ]
 
 export function getFood(id: string): FoodDef {
@@ -138,4 +184,83 @@ export const GROCERY_LIST: { category: string; items: string[] }[] = [
 export const LATE_NIGHT = {
   yes: ['Casein shake', 'Cottage cheese', 'Protein pudding', 'Greek yogurt'],
   no: ['Fast food', 'Pizza', 'Chips', 'Big portions', 'Heavy desserts'],
+}
+
+// ---------- Per-user meal plans (v10) ----------
+
+/** Wider stack users can add from; the default stack is a subset. */
+export const SUPPLEMENT_CATALOG: SupplementDef[] = [
+  { id: 'creatine', name: 'Creatine monohydrate', dose: '5 g', when: 'Daily, any time' },
+  { id: 'fishOil', name: 'Fish oil', dose: '1-2 g', when: 'With a meal' },
+  { id: 'vitD3', name: 'Vitamin D3', dose: '2000-4000 IU', when: 'Morning, with fat' },
+  { id: 'electrolytes', name: 'Electrolytes', dose: '1 serving', when: 'Around training / hot days' },
+  { id: 'magnesium', name: 'Magnesium glycinate', dose: '200-400 mg', when: 'Evening' },
+  { id: 'multivitamin', name: 'Multivitamin', dose: '1 serving', when: 'With breakfast' },
+  { id: 'caffeine', name: 'Caffeine / pre-workout', dose: '100-200 mg', when: '30-45 min pre-session' },
+  { id: 'collagen', name: 'Collagen + vitamin C', dose: '10-15 g', when: '30-60 min before jumps/sprints' },
+  { id: 'zinc', name: 'Zinc', dose: '15-25 mg', when: 'Evening, not with calcium' },
+]
+
+/** The owner's booklet keeps his PDF meal plan verbatim. */
+export function buildNaodMealPlan(): MealPlanConfig {
+  return {
+    templates: MEAL_TEMPLATES.map((t) => ({ ...t })),
+    grocery: GROCERY_LIST.map((g) => ({ category: g.category, items: [...g.items] })),
+    supplements: SUPPLEMENTS.map((s) => ({ ...s })),
+    lateNight: { yes: [...LATE_NIGHT.yes], no: [...LATE_NIGHT.no] },
+  }
+}
+
+const r5 = (n: number) => Math.max(5, Math.round(n / 5) * 5)
+const r25 = (n: number) => Math.max(100, Math.round(n / 25) * 25)
+
+/**
+ * A generated day of eating scaled to THIS user's protein target and
+ * calorie budget — meal names stay generic ("any combo that hits the
+ * number") so the templates describe a structure, not one man's fridge.
+ * Protein split: 25 / 30 / 15 / 30. Kcal split: 24 / 28 / 16 / 32.
+ */
+export function buildMealPlan(
+  goal: Goal,
+  proteinTargetG: number,
+  nutrition: { kcalTraining: number; kcalRest: number },
+): MealPlanConfig {
+  const p = Math.max(100, proteinTargetG || 160)
+  const lean = goal === 'lean'
+  const mk = (
+    id: string,
+    dayType: 'training' | 'rest',
+    slot: string,
+    name: string,
+    detail: string,
+    pPct: number,
+    kcalDay: number,
+    kPct: number,
+  ): MealTemplateDef => ({
+    id, dayType, slot, name, detail,
+    proteinG: r5(p * pPct),
+    kcal: r25(kcalDay * kPct),
+  })
+  const kt = nutrition.kcalTraining
+  const kr = nutrition.kcalRest
+  return {
+    templates: [
+      mk('g-t-breakfast', 'training', 'Breakfast', 'High-protein start', 'Eggs + toast, Greek yogurt bowl, or protein oatmeal — anything that hits the number.', 0.25, kt, 0.24),
+      mk('g-t-lunch', 'training', 'Lunch', 'Protein + carbs plate', 'A palm-and-a-half of protein, a big scoop of rice/potatoes/pasta, veg on the side.', 0.3, kt, 0.28),
+      mk('g-t-shake', 'training', 'Pre / Post', 'Training-window fuel', 'Shake + fruit around the session. Cheapest protein of the day.', 0.15, kt, 0.16),
+      mk('g-t-dinner', 'training', 'Dinner', 'The anchor meal', 'Meat/fish/tofu + starch + vegetables. Eat like it matters — it does.', 0.3, kt, 0.32),
+      mk('g-r-breakfast', 'rest', 'Breakfast', 'High-protein start', lean ? 'Egg whites + fruit, yogurt bowl — lighter on rest days.' : 'Eggs, yogurt bowl, or oats + scoop.', 0.25, kr, 0.24),
+      mk('g-r-lunch', 'rest', 'Lunch', 'Protein-forward plate', 'Protein first, smaller starch than training days, plenty of veg.', 0.3, kr, 0.28),
+      mk('g-r-snack', 'rest', 'Snack', 'Protein snack', 'Cottage cheese, jerky, shake, or skyr — keep the number moving.', 0.15, kr, 0.16),
+      mk('g-r-dinner', 'rest', 'Dinner', 'The anchor meal', 'Same anchor, lighter starch. Protein never drops on rest days.', 0.3, kr, 0.32),
+    ],
+    grocery: [
+      { category: 'Protein', items: ['Your 2-3 staple proteins (chicken, beef, fish, tofu…)', 'Eggs', 'Greek yogurt or skyr', 'Whey or plant protein', 'Cottage cheese'] },
+      { category: 'Carbs', items: ['Rice or potatoes (big bag)', 'Oats', 'Bread or tortillas', 'Fruit for the week', 'Pasta or quinoa'] },
+      { category: 'Fats', items: ['Olive oil', 'Nut butter', 'Nuts or seeds', 'Avocados'] },
+      { category: 'Veg', items: ['2-3 vegetables you will actually eat', 'Salad bag', 'Frozen veg backup'] },
+    ],
+    supplements: SUPPLEMENT_CATALOG.slice(0, 3).map((s) => ({ ...s })),
+    lateNight: { yes: [...LATE_NIGHT.yes], no: [...LATE_NIGHT.no] },
+  }
 }

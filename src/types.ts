@@ -205,6 +205,8 @@ export interface PlanConfig {
   /** exerciseId → goal-specific "why it's in YOUR plan" (falls back to def.why). */
   rationale: Record<string, string>
   nutrition: { kcalTraining: number; kcalRest: number }
+  /** The eating side of the booklet — per-user, editable (v10+). */
+  mealPlan: MealPlanConfig
 }
 
 export interface Profile {
@@ -388,13 +390,50 @@ export interface MealEntry {
   servings: number
 }
 
-export type SupplementId = 'creatine' | 'fishOil' | 'vitD3' | 'electrolytes'
+/** Free string since v10 — users build their own supplement stacks. */
+export type SupplementId = string
 
 export interface MealDay {
   date: ISODate
   entries: MealEntry[]
   supplements: Record<SupplementId, boolean>
   dayTypeOverride?: 'training' | 'rest'
+}
+
+// ---------- Per-user meal plan (lives in PlanConfig.mealPlan) ----------
+
+export interface MealTemplateDef {
+  id: string
+  dayType: 'training' | 'rest'
+  slot: string
+  name: string
+  detail: string
+  proteinG: number
+  kcal: number
+}
+
+export interface SupplementDef {
+  id: SupplementId
+  name: string
+  dose: string
+  when: string
+}
+
+export interface GroceryCategory {
+  category: string
+  items: string[]
+}
+
+/**
+ * The eating side of a booklet: one-tap meal templates, the weekly
+ * grocery list, the supplement stack, and late-night rules — all
+ * per-user data, editable like the training side.
+ */
+export interface MealPlanConfig {
+  templates: MealTemplateDef[]
+  grocery: GroceryCategory[]
+  supplements: SupplementDef[]
+  lateNight: { yes: string[]; no: string[] }
 }
 
 // ---------- Measurements & photos ----------
@@ -552,7 +591,7 @@ export interface AppData {
   dayLoad: Record<ISODate, 'trimmed'>
 }
 
-export const SCHEMA_VERSION = 9
+export const SCHEMA_VERSION = 10
 
 export interface Envelope {
   schemaVersion: number
