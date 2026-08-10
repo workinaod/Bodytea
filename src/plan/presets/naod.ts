@@ -59,6 +59,10 @@ export function buildNaodPreset(): PlanConfig {
     coreMovers: [...CORE_MOVERS],
     anchors: { conditioningWeekday: 4, cnsWeekdays: [1, 6] },
     lifeRules: { djWeekend: true, longShiftMonday: true },
+    lifeEvents: [
+      { id: 'dj', label: 'DJ set / late night', kind: 'late-night' },
+      { id: 'shift', label: 'Long shift on your feet', kind: 'on-feet' },
+    ],
     rationale,
     nutrition: { kcalTraining: 2800, kcalRest: 2500 },
   }

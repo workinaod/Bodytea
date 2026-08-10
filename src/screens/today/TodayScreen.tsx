@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { DebriefData } from '../../types'
 import { useAppStore } from '../../store/appStore'
-import { resolveDay } from '../../engine/resolveDay'
-import { addDaysISO, formatDayLabel, mondayOf, todayISO, weekdayOf } from '../../engine/calendar'
+import { lifeEventsOn, resolveDay } from '../../engine/resolveDay'
+import { addDaysISO, formatDayLabel, mondayOf, todayISO } from '../../engine/calendar'
 import { lateNightGraceDate } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
 import { BannerRow, Btn, Card, Chip, EmptyNote } from '../../components/ui'
@@ -10,13 +10,15 @@ import { getExercise } from '../../plan/exercises'
 import { CARDIO_GROUP_INFO } from '../../plan/templates'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
-import { chooseCardio, finishSession, startSession, toggleBallToday, toggleCnsSwap } from '../../logic/actions'
+import { chooseCardio, finishSession, startSession, toggleCnsSwap } from '../../logic/actions'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
 import { ReadinessSheet } from './ReadinessSheet'
 import { SkipFlow } from './SkipFlow'
 import { DebriefSheet } from './DebriefSheet'
 import { ExerciseGuideSheet } from './ExerciseGuideSheet'
+import { CardioSheet } from './CardioSheet'
+import { cardioActivity } from '../../plan/cardio'
 
 export function TodayScreen() {
   const data = useAppStore((s) => s.data)
@@ -28,6 +30,7 @@ export function TodayScreen() {
   const [viewMode, setViewMode] = useState<'focus' | 'list'>('focus')
   const [guideId, setGuideId] = useState<string | null>(null)
   const [debrief, setDebrief] = useState<{ data: DebriefData; coachLine?: string } | null>(null)
+  const [cardioOpen, setCardioOpen] = useState(false)
 
   // Just after midnight, an unfinished session keeps the live view on
   // yesterday so it logs under the day actually trained.
@@ -38,12 +41,12 @@ export function TodayScreen() {
   const day = useMemo(() => resolveDay(date, data), [date, data])
   const session = data.sessions[date]
   const week = data.weeks[mondayOf(date)]
-  const ballToday = week?.ballDates.includes(date) ?? false
   const yesterday = addDaysISO(date, -1)
   const ballYesterday = data.weeks[mondayOf(yesterday)]?.ballDates.includes(yesterday) ?? false
   const cnsSwapped = week?.cnsSwapDates.includes(date) ?? false
+  const cardioEntries = data.cardio[date] ?? []
   const canSwapCns =
-    day.cns && (ballYesterday || (weekdayOf(date) === 6 && week?.gigFlags.djSatNight))
+    day.cns && (ballYesterday || lifeEventsOn(data, date, 'late-night').length > 0)
   const inProgress = session && session.status === 'partial' && !session.endedAt
   const finished = session && (session.endedAt || session.status === 'completed' || session.status === 'downgraded-completed')
   const skipped = session?.status === 'skipped'
@@ -113,8 +116,10 @@ export function TodayScreen() {
       {/* Same-day reality: ball is a day-of decision, not a weekly plan */}
       {date <= realToday && !finished && (
         <div className="flex flex-wrap gap-1.5">
-          <Chip tone={ballToday ? 'lime' : 'default'} onClick={() => toggleBallToday(date)}>
-            🏀 {ballToday ? 'Ball logged ✓ (tap to undo)' : 'Played ball today?'}
+          <Chip tone={cardioEntries.length > 0 ? 'lime' : 'default'} onClick={() => setCardioOpen(true)}>
+            {cardioEntries.length > 0
+              ? `${cardioActivity(cardioEntries[0].activityId).emoji} Cardio logged ✓ (${cardioEntries.length})`
+              : '🏃 Cardio / sport today?'}
           </Chip>
           {canSwapCns && !session && (
             <Chip tone={cnsSwapped ? 'gold' : 'cyan'} onClick={() => toggleCnsSwap(date)}>
@@ -295,6 +300,7 @@ export function TodayScreen() {
         />
       )}
       <DebriefSheet debrief={debrief?.data ?? null} coachLine={debrief?.coachLine} onClose={() => setDebrief(null)} />
+      <CardioSheet date={date} hasSession={day.kind === 'session'} open={cardioOpen} onClose={() => setCardioOpen(false)} />
       <ExerciseGuideSheet exerciseId={guideId} onClose={() => setGuideId(null)} />
     </div>
   )

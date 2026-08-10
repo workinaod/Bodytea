@@ -76,6 +76,8 @@ export interface ReminderMeta {
   todayScheduled: boolean
   todayDone: boolean
   todayTitle: string
+  /** Any cardio/sport entry logged today (drives the post-session nudge). */
+  cardioLoggedToday: boolean
   lastNotifiedAt: string | null
 }
 

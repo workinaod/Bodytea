@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { SCHEMA_VERSION, type Envelope } from '../types'
 import { buildNaodPreset } from '../plan/presets/naod'
+import { addDaysISO } from '../engine/calendar'
 
 // ============================================================
 // Import/load validation + migrations. Anything read from disk
@@ -82,6 +83,9 @@ export const planConfigSchema = z.object({
   coreMovers: z.array(z.string()),
   anchors: z.object({ conditioningWeekday: weekday, cnsWeekdays: z.array(weekday) }),
   lifeRules: z.object({ djWeekend: z.boolean(), longShiftMonday: z.boolean() }),
+  lifeEvents: z.array(
+    z.object({ id: z.string(), label: z.string().min(1), kind: z.enum(['late-night', 'on-feet']) }),
+  ),
   rationale: z.record(z.string(), z.string()),
   nutrition: z.object({ kcalTraining: z.number().positive(), kcalRest: z.number().positive() }),
 })
@@ -135,12 +139,8 @@ const weekSchema = z.object({
   ballDates: z.array(isoDate),
   cnsSwapDates: z.array(isoDate),
   cardio: z.object({ exerciseId: z.string(), weekday }).nullable().optional(),
-  gigFlags: z.object({
-    djFriNight: z.boolean().optional(),
-    djSatNight: z.boolean().optional(),
-    longShiftBeforeMon: z.boolean().optional(),
-    friPushedToSat: z.boolean().optional(),
-  }),
+  events: z.record(z.string(), z.array(weekday)),
+  friPushedToSat: z.boolean().optional(),
   badSleepDates: z.array(isoDate),
 })
 
@@ -244,6 +244,22 @@ const appDataSchema = z.object({
   photos: z.array(photoMetaSchema),
   coach: coachSchema,
   grocery: z.array(z.string()),
+  cardio: z.record(
+    z.string(),
+    z.array(
+      z.object({
+        id: z.string(),
+        at: z.string(),
+        activityId: z.string(),
+        label: z.string(),
+        when: z.enum(['pre', 'post', 'solo']),
+        where: z.enum(['indoor', 'outdoor']).optional(),
+        miles: z.number().optional(),
+        minutes: z.number().optional(),
+        mode: z.string().optional(),
+      }),
+    ),
+  ),
 })
 
 export const envelopeSchema = z.object({
@@ -287,6 +303,63 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
       e.data.grocery ??= []
       const s = e.data.settings as Record<string, unknown> | undefined
       if (s) s.units ??= 'imperial'
+    }
+    return env
+  },
+  // v4 → v5: custom life events (day-pickable, per person) replace the
+  // hardcoded gig toggles; daily cardio/sport log added.
+  4: (env) => {
+    const e = env as {
+      data?: {
+        plan?: Record<string, unknown>
+        weeks?: Record<string, Record<string, unknown>>
+        cardio?: unknown
+      }
+    }
+    if (!e.data) return env
+    e.data.cardio ??= {}
+    const plan = e.data.plan
+    if (plan && plan.lifeEvents === undefined) {
+      const rules = (plan.lifeRules ?? {}) as { djWeekend?: boolean; longShiftMonday?: boolean }
+      const events: { id: string; label: string; kind: string }[] = []
+      if (rules.djWeekend) events.push({ id: 'dj', label: 'DJ set / late night', kind: 'late-night' })
+      if (rules.longShiftMonday) events.push({ id: 'shift', label: 'Long shift on your feet', kind: 'on-feet' })
+      plan.lifeEvents = events
+    }
+    const weeks = e.data.weeks ?? {}
+    const shiftSundays: string[] = [] // weeks whose flag means "Sunday BEFORE my Monday"
+    for (const w of Object.values(weeks)) {
+      const gf = (w.gigFlags ?? {}) as {
+        djFriNight?: boolean
+        djSatNight?: boolean
+        longShiftBeforeMon?: boolean
+        friPushedToSat?: boolean
+      }
+      const events: Record<string, number[]> = {}
+      const djDays = [...(gf.djFriNight ? [5] : []), ...(gf.djSatNight ? [6] : [])]
+      if (djDays.length) events.dj = djDays
+      w.events = { ...(w.events as Record<string, number[]> | undefined), ...events }
+      if (gf.friPushedToSat) w.friPushedToSat = true
+      if (gf.longShiftBeforeMon) shiftSundays.push(String(w.mondayISO))
+      delete w.gigFlags
+    }
+    // "Long shift before Monday" = the Sunday that ENDS the previous week.
+    for (const mondayISO of shiftSundays) {
+      const prevMonday = addDaysISO(mondayISO, -7)
+      const prev = (weeks[prevMonday] ??= {
+        mondayISO: prevMonday,
+        tier: 1,
+        tierPickedAt: null,
+        tierChanges: [],
+        ballThisWeek: null,
+        ballDates: [],
+        cnsSwapDates: [],
+        cardio: null,
+        events: {},
+        badSleepDates: [],
+      })
+      const ev = ((prev.events as Record<string, number[]>) ??= {})
+      ev.shift = [...new Set([...(ev.shift ?? []), 0])]
     }
     return env
   },

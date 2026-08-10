@@ -6,6 +6,7 @@ import type {
   ISODate,
   SessionLog,
   WeekState,
+  Weekday,
 } from '../types'
 import { MESSAGE_POOLS } from '../plan/messages'
 import { addDaysISO, daysBetween, formatShort, mondayOf, weekdayOf } from './calendar'
@@ -183,41 +184,47 @@ export function busyButMealsLogged(data: AppData, date: ISODate): boolean {
 // ---------- Excuse acceptance (the rules that make proof real) ----------
 
 /**
- * A gig claim is auto-accepted only when the matching gig flag was already
- * set on that week in the Week tab — a conflict declared in advance is a
- * fact the app can verify from its own state.
+ * A gig claim is auto-accepted only when a life event was already marked
+ * on that day (or the day before — the morning after a late night / a
+ * shift is equally wrecked) in the Week tab. A conflict declared in
+ * advance is a fact the app can verify from its own state.
  */
-export function gigSanctioned(week: WeekState | undefined, date: ISODate): boolean {
-  if (!week) return false
+export function gigSanctioned(
+  week: WeekState | undefined,
+  date: ISODate,
+  prevWeek?: WeekState,
+): boolean {
   const wd = weekdayOf(date)
-  if (wd === 5) return !!week.gigFlags.djFriNight
-  if (wd === 6) return !!week.gigFlags.djSatNight
-  if (wd === 1) return !!week.gigFlags.longShiftBeforeMon
-  return false
+  const prevWd = ((wd + 6) % 7) as Weekday
+  // yesterday lives in prevWeek only when today is Monday (weeks run Mon–Sun)
+  const yWeek = wd === 1 ? prevWeek : week
+  const hit = (w: WeekState | undefined, d: Weekday) =>
+    !!w && Object.values(w.events).some((days) => days?.includes(d))
+  return hit(week, wd) || hit(yWeek, prevWd)
 }
 
 export function anyGigFlag(week: WeekState | undefined): boolean {
-  return !!(
-    week &&
-    (week.gigFlags.djFriNight || week.gigFlags.djSatNight || week.gigFlags.longShiftBeforeMon)
-  )
+  return !!week && Object.values(week.events).some((days) => (days?.length ?? 0) > 0)
 }
 
 /**
  * Single acceptance rule used by every excuse writer: proof (already
  * freshness-validated at capture) accepts; a gig claim accepts only when
- * the week's gig flags corroborate it. Nothing else auto-accepts.
+ * the week's marked life events corroborate it. Nothing else auto-accepts.
  */
 export function excuseAccepted(opts: {
   reason: ExcuseReason
   proofPhotoId?: string
   week: WeekState | undefined
+  prevWeek?: WeekState
   date: ISODate
   scope: 'day' | 'week'
 }): boolean {
   if (opts.proofPhotoId) return true
   if (opts.reason === 'gig') {
-    return opts.scope === 'week' ? anyGigFlag(opts.week) : gigSanctioned(opts.week, opts.date)
+    return opts.scope === 'week'
+      ? anyGigFlag(opts.week)
+      : gigSanctioned(opts.week, opts.date, opts.prevWeek)
   }
   return false
 }

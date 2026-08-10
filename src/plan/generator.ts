@@ -524,6 +524,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     coreMovers,
     anchors: { conditioningWeekday, cnsWeekdays },
     lifeRules: { djWeekend: false, longShiftMonday: false },
+    lifeEvents: [],
     rationale: buildRationale(a.goal, a.goalStatement, [...referenced]),
     nutrition: { kcalTraining: nutrition.kcalTraining, kcalRest: nutrition.kcalRest },
   }

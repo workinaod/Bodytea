@@ -27,6 +27,8 @@ interface ReminderMeta {
   todayScheduled: boolean
   todayDone: boolean
   todayTitle: string
+  /** Absent in mirrors written by older app versions — treat as "no nudge". */
+  cardioLoggedToday?: boolean
   lastNotifiedAt: string | null
 }
 
@@ -78,7 +80,8 @@ const NUDGES = [
 
 async function maybeNotify(): Promise<void> {
   const meta = await readMeta()
-  if (!meta?.enabled || !meta.todayScheduled || meta.todayDone) return
+  if (!meta?.enabled || !meta.todayScheduled) return
+  if (meta.todayDone && meta.cardioLoggedToday !== false) return // nothing left to nudge
 
   const now = new Date()
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
@@ -95,13 +98,19 @@ async function maybeNotify(): Promise<void> {
   // at most one background notification every 3 hours
   if (meta.lastNotifiedAt && Date.now() - new Date(meta.lastNotifiedAt).getTime() < 3 * 3600_000) return
 
-  const body = NUDGES[now.getDate() % NUDGES.length]
-  await self.registration.showNotification(`Bodytea — ${meta.todayTitle}`, {
-    body,
-    tag: 'naod-train-reminder',
-    icon: 'icons/pwa-192.png',
-    badge: 'icons/pwa-192.png',
-  })
+  const cardioNudge = meta.todayDone && meta.cardioLoggedToday === false
+  const body = cardioNudge
+    ? 'Session done ✓ — was there cardio today? Pre or post, run or game: log what happened.'
+    : NUDGES[now.getDate() % NUDGES.length]
+  await self.registration.showNotification(
+    cardioNudge ? 'Bodytea — Cardio check' : `Bodytea — ${meta.todayTitle}`,
+    {
+      body,
+      tag: cardioNudge ? 'naod-cardio-nudge' : 'naod-train-reminder',
+      icon: 'icons/pwa-192.png',
+      badge: 'icons/pwa-192.png',
+    },
+  )
   await writeMetaNotified(meta)
 }
 

@@ -21,6 +21,7 @@ import {
   lighterCombinedPull,
 } from './transforms'
 import { getExercise } from '../plan/exercises'
+import { cardioActivity } from '../plan/cardio'
 
 // ============================================================
 // The pipeline: (date, state) → ResolvedDay.
@@ -65,6 +66,31 @@ function twoConsecutiveBadNightsBefore(week: WeekState, dateISO: ISODate): boole
   return all.has(d1) && all.has(d2)
 }
 
+// ---------- Custom life events (defs in plan, days per week) ----------
+
+/** Life events of `kind` hitting `dateISO` (reads the week that owns the date). */
+export function lifeEventsOn(
+  data: AppData,
+  dateISO: ISODate,
+  kind?: 'late-night' | 'on-feet',
+): { id: string; label: string; kind: 'late-night' | 'on-feet' }[] {
+  const week = weekStateFor(data, dateISO)
+  const wd = weekdayOf(dateISO)
+  return data.plan.lifeEvents.filter(
+    (ev) => (!kind || ev.kind === kind) && (week.events[ev.id] ?? []).includes(wd),
+  )
+}
+
+/** Conditioning-type cardio logged inside the week containing `dateISO`. */
+function conditioningLoggedThisWeek(data: AppData, dateISO: ISODate): boolean {
+  const monday = mondayOf(dateISO)
+  for (let i = 0; i < 7; i++) {
+    const entries = data.cardio[addDaysISO(monday, i)] ?? []
+    if (entries.some((e) => cardioActivity(e.activityId).conditioning)) return true
+  }
+  return false
+}
+
 /**
  * The "at least ONE cardio session" rule, made mandatory. Required on a
  * Tier-1 week when no ball has been logged AND either the forecast says
@@ -75,6 +101,7 @@ export function cardioRequiredForWeek(data: AppData, dateISO: ISODate): boolean 
   const week = weekStateFor(data, dateISO)
   if (week.tier !== 1) return false // Tier 2/3: "skip the formal cardio"
   if (week.ballDates.length > 0) return false
+  if (conditioningLoggedThisWeek(data, dateISO)) return false // a logged run/ride/swim covers it
   const wd = weekdayOf(dateISO)
   const lateWeek = wd >= data.plan.anchors.conditioningWeekday || wd === 0
   if (week.ballThisWeek !== false && !lateWeek) return false
@@ -220,7 +247,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   const template = planTemplate(plan, templateId)
 
   // --- DJ Friday: pull pushed to Saturday (owner life-rule) ---
-  if (plan.lifeRules.djWeekend && week.gigFlags.friPushedToSat) {
+  if (plan.lifeRules.djWeekend && week.friPushedToSat) {
     if (weekday === 5 && templateId === 'friday') {
       banners.push({
         id: 'fri-pushed',
@@ -241,7 +268,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
 
   let exercises = buildFromTemplate(template, blockIndex, abWeek, plan)
 
-  if (plan.lifeRules.djWeekend && weekday === 6 && week.gigFlags.friPushedToSat && templateId === 'saturday') {
+  if (plan.lifeRules.djWeekend && weekday === 6 && week.friPushedToSat && templateId === 'saturday') {
     exercises = [...exercises, ...lighterCombinedPull()]
     banners.push({
       id: 'sat-combined',
@@ -260,28 +287,41 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     })
   }
 
-  // --- Gig flags (owner life-rules; generated plans switch these off) ---
-  if (plan.lifeRules.djWeekend && weekday === 5 && week.gigFlags.djFriNight && !week.gigFlags.friPushedToSat) {
+  // --- Custom life events: tonight's, and yesterday's aftermath ---
+  for (const ev of lifeEventsOn(data, dateISO, 'late-night')) {
+    if (weekday === 5 && week.friPushedToSat) break // the push already emptied Friday
     banners.push({
-      id: 'dj-fri',
-      text: 'DJ gig tonight: train this MORNING, or push the session to Saturday from the Week tab. Never lift heavy on 4 hours of sleep.',
+      id: `late-night-${ev.id}`,
+      text: (template.cns ?? false)
+        ? `🌙 ${ev.label} tonight: do the sprints/jumps EARLY today. If your legs are already dead from standing, skipping the jumps is plan-sanctioned — jumping fatigued teaches bad mechanics.`
+        : `🌙 ${ev.label} tonight: train this MORNING. Never lift heavy on 4 hours of sleep${plan.lifeRules.djWeekend && weekday === 5 ? ' — or push the session to Saturday from the Week tab' : ''}.`,
       tone: 'warn',
     })
+    break // one banner even if several late nights collide
   }
-  if (plan.lifeRules.djWeekend && weekday === 6 && week.gigFlags.djSatNight) {
+  if (lifeEventsOn(data, yesterdayISO, 'late-night').length > 0 && !lifeEventsOn(data, dateISO, 'late-night').length) {
     banners.push({
-      id: 'dj-sat',
-      text: 'DJ gig tonight: do sprints/jumps EARLY today. If your legs are already dead from standing, skipping the jumps is plan-sanctioned — jumping fatigued teaches bad mechanics.',
-      tone: 'warn',
+      id: 'late-night-after',
+      text: '🌙 Late one last night. If sleep landed under 6 h, flag it in the Week tab — quality beats volume today either way.',
+      tone: 'info',
     })
   }
-  if (plan.lifeRules.longShiftMonday && weekday === 1 && week.gigFlags.longShiftBeforeMon) {
+  const onFeetYesterday = lifeEventsOn(data, yesterdayISO, 'on-feet')
+  if (onFeetYesterday.length > 0) {
     exercises = applyLongShiftMonday(exercises)
     banners.push({
-      id: 'long-shift',
-      text: 'Long shift yesterday: a jump set dropped — the legs are pre-fatigued. Quality over volume today.',
+      id: 'pre-fatigued',
+      text: `${onFeetYesterday[0].label} yesterday: a jump set dropped — the legs are pre-fatigued. Quality over volume today.`,
       tone: 'warn',
     })
+  }
+  for (const ev of lifeEventsOn(data, dateISO, 'on-feet')) {
+    banners.push({
+      id: `on-feet-${ev.id}`,
+      text: `🦵 ${ev.label} today — get the session in EARLY if you can. The hours on your feet count as your steps; don't stack extra cardio on top.`,
+      tone: 'info',
+    })
+    break
   }
 
   // --- Same-day ball rules (PDF: never speed work pre-fatigued) ---

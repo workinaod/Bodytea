@@ -1,5 +1,5 @@
-import type { AppData, ISODate, Insight, InsightArea } from '../types'
-import { addDaysISO, daysBetween, mondayOf, weekIndexFor } from './calendar'
+import type { AppData, ISODate, Insight, InsightArea, Weekday } from '../types'
+import { addDaysISO, daysBetween, mondayOf, weekdayOf, weekIndexFor } from './calendar'
 import {
   currentStreak,
   kcalBumpSuggestion,
@@ -380,11 +380,12 @@ const RULES: RuleDef[] = [
         const monday = mondayOf(s.date)
         const week = data.weeks[monday]
         if (!week) continue
-        const gigNight =
-          (week.gigFlags.djFriNight && s.date === addDaysISO(monday, 5)) ||
-          (week.gigFlags.djSatNight && s.date === addDaysISO(monday, 6)) ||
-          (week.gigFlags.longShiftBeforeMon && s.date === monday)
-        if (gigNight) gigDowngrades++
+        const wd = weekdayOf(s.date)
+        const prevWd = ((wd + 6) % 7) as Weekday
+        const prevWeek = wd === 1 ? data.weeks[mondayOf(addDaysISO(s.date, -1))] : week
+        const hit = (w: typeof week, d: Weekday) =>
+          !!w && Object.values(w.events).some((days) => days?.includes(d))
+        if (hit(week, wd) || hit(prevWeek, prevWd)) gigDowngrades++
       }
       if (gigDowngrades >= 2) return { count: gigDowngrades }
       return null

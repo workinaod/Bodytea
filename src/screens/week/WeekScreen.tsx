@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import type { ResolvedDay, Tier, TierDayRole, Weekday } from '../../types'
-import { useAppStore } from '../../store/appStore'
+import type { LifeEventKind, ResolvedDay, Tier, TierDayRole, Weekday } from '../../types'
+import { uid, useAppStore } from '../../store/appStore'
 import { cardioRequiredForWeek, resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatShort, mondayOf, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
@@ -21,6 +21,7 @@ const TIER_INFO: Record<Tier, { name: string; blurb: string }> = {
 
 export function WeekScreen() {
   const data = useAppStore((s) => s.data)
+  const update = useAppStore((s) => s.update)
   const updateWeek = useAppStore((s) => s.updateWeek)
   const today = useToday()
   const [selected, setSelected] = useState<string | null>(null)
@@ -55,9 +56,11 @@ export function WeekScreen() {
   function markersFor(d: ResolvedDay): string[] {
     const out: string[] = []
     const wd = weekdayOf(d.date)
-    if (week?.ballDates.includes(d.date)) out.push('🏀 ball')
-    if ((wd === 5 && week?.gigFlags.djFriNight) || (wd === 6 && week?.gigFlags.djSatNight)) out.push('🎧 gig')
-    if (wd === 1 && week?.gigFlags.longShiftBeforeMon) out.push('⚡ −1 jump set')
+    if (week?.ballDates.includes(d.date)) out.push('🏀 played')
+    for (const ev of data.plan.lifeEvents) {
+      if ((week?.events[ev.id] ?? []).includes(wd)) out.push(ev.kind === 'late-night' ? '🌙 late night' : '🦵 on feet')
+    }
+    if (d.banners.some((b) => b.id === 'pre-fatigued')) out.push('⚡ −1 jump set')
     if (week?.cnsSwapDates.includes(d.date)) out.push('⇄ lifts only')
     if (d.banners.some((b) => b.id === 'bad-sleep')) out.push('😴 −⅓ vol')
     if (d.isDeload && d.kind === 'session') out.push('deload ½')
@@ -200,35 +203,78 @@ export function WeekScreen() {
         })}
       </div>
 
-      {/* Gig flags */}
-      <SectionTitle>Gigs & real life</SectionTitle>
+      {/* Life this week: custom events, day-pickable */}
+      <SectionTitle>Life this week</SectionTitle>
       <div className="space-y-2">
-        <Toggle
-          on={!!week?.gigFlags.djFriNight}
-          onChange={(v) => updateWeek(weekStart, (w) => { w.gigFlags.djFriNight = v; if (!v) w.gigFlags.friPushedToSat = false })}
-          label="DJ gig / late shift Friday night"
-          sub="Train Friday morning, or push pull day to Saturday."
-        />
-        {week?.gigFlags.djFriNight && (
-          <Toggle
-            on={!!week?.gigFlags.friPushedToSat}
-            onChange={(v) => updateWeek(weekStart, (w) => { w.gigFlags.friPushedToSat = v })}
-            label="→ Push Friday's pull to Saturday"
-            sub="Saturday becomes speed + lighter combined pull."
-          />
+        {data.plan.lifeEvents.length === 0 && (
+          <Card className="!py-3.5">
+            <p className="text-[12.5px] leading-relaxed text-ink-dim">
+              Add the real-life stuff that hits your training — a DJ set, a night shift, a closing shift on your feet.
+              Then each week just tap the days it happens and the plan bends around it.
+            </p>
+          </Card>
         )}
-        <Toggle
-          on={!!week?.gigFlags.djSatNight}
-          onChange={(v) => updateWeek(weekStart, (w) => { w.gigFlags.djSatNight = v })}
-          label="DJ gig / late shift Saturday night"
-          sub="Sprints early; skipping jumps on dead legs is plan-sanctioned."
-        />
-        <Toggle
-          on={!!week?.gigFlags.longShiftBeforeMon}
-          onChange={(v) => updateWeek(weekStart, (w) => { w.gigFlags.longShiftBeforeMon = v })}
-          label="Long shift on your feet Sunday"
-          sub="Monday drops a jump set — legs arrive pre-fatigued."
-        />
+        {data.plan.lifeEvents.map((ev) => {
+          const days = week?.events[ev.id] ?? []
+          return (
+            <Card key={ev.id} className="!py-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate text-[14px] font-bold">
+                    {ev.kind === 'late-night' ? '🌙' : '🦵'} {ev.label}
+                  </div>
+                  <div className="text-[10.5px] text-ink-faint">
+                    {ev.kind === 'late-night'
+                      ? 'Train that morning · next day starts short on sleep'
+                      : 'Next day drops a jump set — legs arrive pre-fatigued'}
+                  </div>
+                </div>
+                <button
+                  onClick={() =>
+                    update((d) => {
+                      d.plan.lifeEvents = d.plan.lifeEvents.filter((x) => x.id !== ev.id)
+                    })
+                  }
+                  className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-bold text-ink-faint"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="mt-2.5 flex items-center justify-between gap-1">
+                <span className="text-[11px] font-black uppercase tracking-wider text-ink-faint">Which days?</span>
+                <div className="flex gap-1">
+                  {([1, 2, 3, 4, 5, 6, 0] as Weekday[]).map((d) => (
+                    <button
+                      key={d}
+                      onClick={() =>
+                        updateWeek(weekStart, (w) => {
+                          const cur = w.events[ev.id] ?? []
+                          w.events[ev.id] = cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]
+                        })
+                      }
+                      className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
+                        days.includes(d) ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
+                      }`}
+                    >
+                      {WD_LABEL[d]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {data.plan.lifeRules.djWeekend && ev.id === 'dj' && days.includes(5) && (
+                <div className="mt-2">
+                  <Toggle
+                    on={!!week?.friPushedToSat}
+                    onChange={(v) => updateWeek(weekStart, (w) => { w.friPushedToSat = v })}
+                    label="→ Push Friday's pull to Saturday"
+                    sub="Saturday becomes speed + lighter combined pull."
+                  />
+                </div>
+              )}
+            </Card>
+          )
+        })}
+        <AddLifeEvent onAdd={(label, kind) => update((d) => { d.plan.lifeEvents.push({ id: uid(), label, kind }) })} />
         <Toggle
           on={(week?.badSleepDates ?? []).includes(addDaysISO(today, -1))}
           onChange={(v) =>
@@ -243,12 +289,12 @@ export function WeekScreen() {
       </div>
 
       {/* Cardio planner */}
-      <SectionTitle>Basketball / cardio</SectionTitle>
+      <SectionTitle>Sport / cardio backup</SectionTitle>
       <Card className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[13.5px] font-bold">Expecting ball this week?</div>
-            <div className="text-[10.5px] text-ink-faint">Log actual runs on the day — Today tab, 🏀 chip.</div>
+            <div className="text-[10.5px] text-ink-faint">Log what actually happens day-of — Today tab, 🏃 cardio button.</div>
           </div>
           <div className="flex gap-1.5">
             {[true, false].map((v) => (
@@ -356,5 +402,67 @@ export function WeekScreen() {
         />
       )}
     </div>
+  )
+}
+
+/** Inline creator for a custom life event (label + effect kind). */
+function AddLifeEvent({ onAdd }: { onAdd: (label: string, kind: LifeEventKind) => void }) {
+  const [open, setOpen] = useState(false)
+  const [label, setLabel] = useState('')
+  const [kind, setKind] = useState<LifeEventKind>('late-night')
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full rounded-xl border border-dashed border-edge py-3 text-[12.5px] font-bold text-ink-faint"
+      >
+        + Add a life event (gig, shift, whatever's real)
+      </button>
+    )
+  }
+  return (
+    <Card className="space-y-3 !py-3.5">
+      <input
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        placeholder='Name it — "DJ set", "night shift", "closing shift"'
+        className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:border-accent/60"
+      />
+      <div className="flex gap-1.5">
+        {(
+          [
+            ['late-night', '🌙 Late night'],
+            ['on-feet', '🦵 On my feet all day'],
+          ] as const
+        ).map(([id, l]) => (
+          <Chip key={id} tone={kind === id ? 'accent' : 'default'} onClick={() => setKind(id)}>
+            {l}
+          </Chip>
+        ))}
+      </div>
+      <p className="text-[10.5px] leading-snug text-ink-faint">
+        {kind === 'late-night'
+          ? 'Late night → train that morning; the next day gets a short-sleep heads-up.'
+          : 'All day standing → the NEXT day drops a jump set (legs arrive pre-fatigued).'}
+      </p>
+      <div className="flex gap-2">
+        <button onClick={() => setOpen(false)} className="flex-1 rounded-xl bg-surface-2 py-2.5 text-[12.5px] font-bold text-ink-dim">
+          Cancel
+        </button>
+        <button
+          onClick={() => {
+            if (!label.trim()) return
+            onAdd(label.trim(), kind)
+            setLabel('')
+            setOpen(false)
+          }}
+          className="flex-1 rounded-xl bg-accent py-2.5 text-[12.5px] font-black text-black disabled:opacity-40"
+          disabled={!label.trim()}
+        >
+          Add it
+        </button>
+      </div>
+    </Card>
   )
 }

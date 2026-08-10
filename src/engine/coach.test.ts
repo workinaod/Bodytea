@@ -164,22 +164,28 @@ describe('proof acceptance rules', () => {
     expect(validateProofFile({ type: 'image/jpeg' }).ok).toBe(true)
   })
 
-  it('gig claims verify against the week flags declared in advance', () => {
-    const week = { ...defaultWeekState('2026-08-10'), gigFlags: { djFriNight: true } }
-    expect(gigSanctioned(week, '2026-08-14')).toBe(true) // Friday, flagged
-    expect(gigSanctioned(week, '2026-08-15')).toBe(false) // Saturday, not flagged
+  it('gig claims verify against life events marked in advance (day + day after)', () => {
+    const week = { ...defaultWeekState('2026-08-10'), events: { dj: [5 as const] } }
+    expect(gigSanctioned(week, '2026-08-14')).toBe(true) // Friday, event day
+    expect(gigSanctioned(week, '2026-08-15')).toBe(true) // Saturday morning after — sanctioned too
+    expect(gigSanctioned(week, '2026-08-12')).toBe(false) // Wednesday, nothing marked
     expect(gigSanctioned(undefined, '2026-08-14')).toBe(false)
     expect(anyGigFlag(week)).toBe(true)
     expect(anyGigFlag(defaultWeekState('2026-08-10'))).toBe(false)
+
+    // Monday's "day after" lives in the PREVIOUS week (Sunday shift)
+    const prevWeek = { ...defaultWeekState('2026-08-03'), events: { shift: [0 as const] } }
+    expect(gigSanctioned(defaultWeekState('2026-08-10'), '2026-08-10', prevWeek)).toBe(true)
+    expect(gigSanctioned(defaultWeekState('2026-08-10'), '2026-08-10')).toBe(false)
   })
 
-  it('excuseAccepted: proof accepts; gig only with matching flags; nothing else auto-accepts', () => {
-    const week = { ...defaultWeekState('2026-08-10'), gigFlags: { djSatNight: true } }
+  it('excuseAccepted: proof accepts; gig only with matching events; nothing else auto-accepts', () => {
+    const week = { ...defaultWeekState('2026-08-10'), events: { dj: [6 as const] } }
     expect(excuseAccepted({ reason: 'busy', proofPhotoId: 'p1', week, date: '2026-08-12', scope: 'day' })).toBe(true)
     expect(excuseAccepted({ reason: 'busy', week, date: '2026-08-12', scope: 'day' })).toBe(false)
-    expect(excuseAccepted({ reason: 'gig', week, date: '2026-08-15', scope: 'day' })).toBe(true) // Sat, flagged
-    expect(excuseAccepted({ reason: 'gig', week, date: '2026-08-14', scope: 'day' })).toBe(false) // Fri, not flagged
-    expect(excuseAccepted({ reason: 'gig', week, date: '2026-08-10', scope: 'week' })).toBe(true) // any flag covers the week scope
+    expect(excuseAccepted({ reason: 'gig', week, date: '2026-08-15', scope: 'day' })).toBe(true) // Sat, marked
+    expect(excuseAccepted({ reason: 'gig', week, date: '2026-08-12', scope: 'day' })).toBe(false) // Wed, not marked
+    expect(excuseAccepted({ reason: 'gig', week, date: '2026-08-10', scope: 'week' })).toBe(true) // any event covers the week scope
     // travel/sick no longer auto-accept without proof
     expect(excuseAccepted({ reason: 'travel', week, date: '2026-08-10', scope: 'week' })).toBe(false)
     expect(excuseAccepted({ reason: 'sick', week, date: '2026-08-12', scope: 'day' })).toBe(false)

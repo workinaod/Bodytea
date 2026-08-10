@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, defaultWeekState, type AppData, type SessionLog } from '../types'
 import { addDaysISO, daysBetween, mondayOf, weekdayOf, weekIndexFor } from './calendar'
-import { blockMathFor, nutritionDayType, resolveDay } from './resolveDay'
+import { blockMathFor, cardioRequiredForWeek, nutritionDayType, resolveDay } from './resolveDay'
+import { isIntenseSport } from '../plan/cardio'
 import { currentStreak, detectPRs, e1RM, kcalBumpSuggestion, proteinFor } from './stats'
 import { applyDeload, applyReadinessDowngrade, buildFromTemplate, minimumViableFor } from './transforms'
 import { getTemplate } from '../plan/templates'
@@ -237,7 +238,8 @@ describe('resolveDay integration', () => {
     const monday = mondayOf(START)
     data.weeks[monday] = {
       ...defaultWeekState(monday),
-      gigFlags: { djFriNight: true, friPushedToSat: true },
+      events: { dj: [5] },
+      friPushedToSat: true,
     }
     const fri = resolveDay('2026-08-14', data)
     expect(fri.kind).toBe('rest')
@@ -247,12 +249,53 @@ describe('resolveDay integration', () => {
     expect(ids(sat.exercises)).toContain('max-velocity-sprint')
   })
 
-  it('long shift before Monday drops a jump set', () => {
+  it('on-feet event on Sunday drops a jump set from Monday', () => {
     const data = makeData()
-    const monday = mondayOf(START)
-    data.weeks[monday] = { ...defaultWeekState(monday), gigFlags: { longShiftBeforeMon: true } }
+    const prevMonday = mondayOf(addDaysISO(START, -7))
+    data.weeks[prevMonday] = { ...defaultWeekState(prevMonday), events: { shift: [0] } }
     const day = resolveDay('2026-08-10', data)
     expect(day.exercises.find((e) => e.exerciseId === 'box-jump')!.sets).toBe(3)
+  })
+
+  it('late-night event: warn banner on the day, aftermath note the morning after', () => {
+    const data = makeData()
+    const monday = mondayOf(START)
+    data.weeks[monday] = { ...defaultWeekState(monday), events: { dj: [5] } }
+    const fri = resolveDay('2026-08-14', data)
+    expect(fri.banners.some((b) => b.id === 'late-night-dj' && b.tone === 'warn')).toBe(true)
+    const sat = resolveDay('2026-08-15', data)
+    expect(sat.banners.some((b) => b.id === 'late-night-after')).toBe(true)
+  })
+
+  it('a CUSTOM on-feet event pre-fatigues the following day, wherever it lands', () => {
+    const data = makeData()
+    const monday = mondayOf(START)
+    data.plan.lifeEvents = [...data.plan.lifeEvents, { id: 'close', label: 'Closing shift', kind: 'on-feet' }]
+    data.weeks[monday] = { ...defaultWeekState(monday), events: { close: [1] } }
+    const tue = resolveDay('2026-08-11', data)
+    expect(tue.banners.some((b) => b.id === 'pre-fatigued' && b.text.includes('Closing shift'))).toBe(true)
+  })
+
+  it('logged conditioning cardio satisfies the weekly rule; shooting around does not', () => {
+    const data = makeData()
+    const monday = mondayOf(START)
+    data.weeks[monday] = { ...defaultWeekState(monday), ballThisWeek: false }
+    expect(cardioRequiredForWeek(data, '2026-08-13')).toBe(true)
+    data.cardio['2026-08-11'] = [{ id: 'x', at: 'x', activityId: 'run', label: 'Run', when: 'solo', miles: 2 }]
+    expect(cardioRequiredForWeek(data, '2026-08-13')).toBe(false)
+    data.cardio['2026-08-11'] = [
+      { id: 'x', at: 'x', activityId: 'basketball', label: 'Basketball', when: 'solo', mode: 'shooting' },
+    ]
+    expect(cardioRequiredForWeek(data, '2026-08-13')).toBe(true)
+  })
+
+  it('intense sport modes mark a played day; casual modes and steady cardio do not', () => {
+    expect(isIntenseSport('basketball', 'games')).toBe(true)
+    expect(isIntenseSport('basketball', 'shooting')).toBe(false)
+    expect(isIntenseSport('soccer', 'match')).toBe(true)
+    expect(isIntenseSport('tennis', 'rally')).toBe(false)
+    expect(isIntenseSport('run')).toBe(false)
+    expect(isIntenseSport('swim')).toBe(false)
   })
 
   it('two consecutive bad-sleep nights cut volume by a third', () => {

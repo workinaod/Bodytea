@@ -1,6 +1,6 @@
 import { MetaStore, type ReminderMeta } from '../store/storage'
 import { useAppStore } from '../store/appStore'
-import { resolveDay } from '../engine/resolveDay'
+import { resolveDay, weekStateFor } from '../engine/resolveDay'
 import { todayISO } from '../engine/calendar'
 
 // ============================================================
@@ -20,7 +20,8 @@ function todayState() {
   const scheduled = resolved.kind === 'session' || resolved.kind === 'cardio-backup'
   const log = data.sessions[date]
   const done = !!log && (log.status === 'completed' || log.status === 'downgraded-completed' || log.status === 'skipped' || !!log.endedAt)
-  return { date, scheduled, done, title: resolved.title }
+  const cardioLogged = (data.cardio[date]?.length ?? 0) > 0 || weekStateFor(data, date).ballDates.includes(date)
+  return { date, scheduled, done, cardioLogged, title: resolved.title }
 }
 
 /** Mirror reminder config + today's status into IDB (SW reads it) + badge. */
@@ -35,6 +36,7 @@ export async function syncReminderMeta(): Promise<void> {
     todayScheduled: t.scheduled,
     todayDone: t.done,
     todayTitle: t.title,
+    cardioLoggedToday: t.cardioLogged,
     lastNotifiedAt: prev?.todayDate === t.date ? (prev?.lastNotifiedAt ?? null) : null,
   }
   await MetaStore.set(meta).catch(() => {})
@@ -52,12 +54,12 @@ export async function syncReminderMeta(): Promise<void> {
   }
 }
 
-async function showLocalReminder(title: string): Promise<void> {
+async function showLocalReminder(title: string, body: string, tag = 'naod-train-reminder'): Promise<void> {
   if (Notification.permission !== 'granted') return
   const reg = await navigator.serviceWorker.getRegistration()
   await reg?.showNotification(`Bodytea — ${title}`, {
-    body: 'Session still open today. Even the 10-minute minimum counts.',
-    tag: 'naod-train-reminder',
+    body,
+    tag,
     icon: 'icons/pwa-192.png',
     badge: 'icons/pwa-192.png',
   })
@@ -79,7 +81,16 @@ export function armPageTimers(): void {
     pageTimers.push(
       setTimeout(() => {
         const t = todayState()
-        if (t.scheduled && !t.done) void showLocalReminder(t.title)
+        if (t.scheduled && !t.done) {
+          void showLocalReminder(t.title, 'Session still open today. Even the 10-minute minimum counts.')
+        } else if (t.scheduled && t.done && !t.cardioLogged) {
+          // session's in — the daily cardio question is still open
+          void showLocalReminder(
+            'Cardio check',
+            'Session done ✓ — was there cardio today? Pre or post, run or game: log what happened.',
+            'naod-cardio-nudge',
+          )
+        }
       }, delay),
     )
   }

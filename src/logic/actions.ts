@@ -1,4 +1,5 @@
 import type {
+  CardioEntry,
   CoachSituation,
   DebriefData,
   ExcuseReason,
@@ -9,7 +10,8 @@ import type {
   SessionLog,
   Tier,
 } from '../types'
-import { DEFAULT_SUPPLEMENTS } from '../types'
+import { DEFAULT_SUPPLEMENTS, defaultWeekState } from '../types'
+import { isIntenseSport } from '../plan/cardio'
 import { flushPersist, uid, useAppStore } from '../store/appStore'
 import { downscalePhoto, PhotoStore } from '../store/storage'
 import { planTemplate, resolveDay } from '../engine/resolveDay'
@@ -252,6 +254,7 @@ export function resolveSkipFlow(opts: {
     reason,
     proofPhotoId,
     week: data.weeks[mondayOf(date)],
+    prevWeek: data.weeks[mondayOf(addDaysISO(date, -1))],
     date,
     scope: 'day',
   })
@@ -406,6 +409,39 @@ export function toggleBallToday(date: ISODate): void {
   })
 }
 
+/**
+ * Log a cardio/sport entry for a date. Intense sport (running games, a
+ * match) also marks the week's "played" date — same engine semantics as
+ * the original ball log: conditioning covered, next-day speed protected.
+ */
+export function logCardio(
+  date: ISODate,
+  entry: Omit<CardioEntry, 'id' | 'at'>,
+): void {
+  const markPlayed = isIntenseSport(entry.activityId, entry.mode)
+  store().update((d) => {
+    ;(d.cardio[date] ??= []).push({ ...entry, id: uid(), at: new Date().toISOString() })
+    if (markPlayed) {
+      const monday = mondayOf(date)
+      const w = (d.weeks[monday] ??= defaultWeekState(monday))
+      if (!w.ballDates.includes(date)) w.ballDates = [...w.ballDates, date]
+    }
+  })
+}
+
+/** Remove a logged entry; un-marks the played date when no intense sport remains. */
+export function removeCardio(date: ISODate, entryId: string): void {
+  store().update((d) => {
+    d.cardio[date] = (d.cardio[date] ?? []).filter((e) => e.id !== entryId)
+    if (d.cardio[date].length === 0) delete d.cardio[date]
+    const stillPlayed = (d.cardio[date] ?? []).some((e) => isIntenseSport(e.activityId, e.mode))
+    if (!stillPlayed) {
+      const w = d.weeks[mondayOf(date)]
+      if (w) w.ballDates = w.ballDates.filter((x) => x !== date)
+    }
+  })
+}
+
 /** Swap a CNS day's speed work out (plan-sanctioned after a hard run). */
 export function toggleCnsSwap(date: ISODate): void {
   store().updateWeek(date, (w) => {
@@ -442,6 +478,7 @@ export function resolveMissWithReason(date: ISODate, reason: ExcuseReason, proof
     reason,
     proofPhotoId,
     week: store().data.weeks[mondayOf(date)],
+    prevWeek: store().data.weeks[mondayOf(addDaysISO(date, -1))],
     date,
     scope: 'day',
   })

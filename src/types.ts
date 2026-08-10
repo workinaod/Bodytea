@@ -114,6 +114,19 @@ export type Goal = 'vertical' | 'speed' | 'muscle' | 'strength' | 'lean' | 'gene
 /** What a bring-your-own routine is chasing — multi-select. */
 export type RoutineGoal = 'muscle' | 'lose-weight' | 'maintain' | 'athletic'
 
+/**
+ * A recurring real-life event that hits training, custom per person
+ * (a DJ set, a night shift, a closing shift on your feet). The kind
+ * decides the effect: late-night → train that morning + short-sleep
+ * caution; on-feet → the NEXT day drops a jump set (pre-fatigued legs).
+ */
+export type LifeEventKind = 'late-night' | 'on-feet'
+export interface LifeEventDef {
+  id: string
+  label: string
+  kind: LifeEventKind
+}
+
 /** Which voice the coach copy uses. */
 export type CopyFlavor = 'explosive' | 'physique' | 'general'
 
@@ -179,6 +192,8 @@ export interface PlanConfig {
   anchors: { conditioningWeekday: Weekday; cnsWeekdays: Weekday[] }
   /** Owner-specific life accommodations; generated plans turn these off. */
   lifeRules: { djWeekend: boolean; longShiftMonday: boolean }
+  /** Custom recurring life events (each week you just tap the days they hit). */
+  lifeEvents: LifeEventDef[]
   /** exerciseId → goal-specific "why it's in YOUR plan" (falls back to def.why). */
   rationale: Record<string, string>
   nutrition: { kcalTraining: number; kcalRest: number }
@@ -323,14 +338,29 @@ export interface WeekState {
   cnsSwapDates: ISODate[]
   /** Scheduled cardio backup (replaces ball on no-ball weeks). */
   cardio?: { exerciseId: string; weekday: Weekday } | null
-  gigFlags: {
-    djFriNight?: boolean
-    djSatNight?: boolean
-    longShiftBeforeMon?: boolean
-    /** Fri pull moved to Sat morning as a lighter combined day. */
-    friPushedToSat?: boolean
-  }
+  /** Life-event id → weekdays it hits THIS week (defs live in plan.lifeEvents). */
+  events: Partial<Record<string, Weekday[]>>
+  /** Owner special: Friday's pull moved to Saturday as a lighter combined day. */
+  friPushedToSat?: boolean
   badSleepDates: ISODate[]
+}
+
+// ---------- Daily cardio / sport log ----------
+
+export type CardioWhen = 'pre' | 'post' | 'solo'
+
+export interface CardioEntry {
+  id: string
+  at: string
+  /** Catalog id from plan/cardio.ts ('custom' carries its own label). */
+  activityId: string
+  label: string
+  when: CardioWhen
+  where?: 'indoor' | 'outdoor'
+  miles?: number
+  minutes?: number
+  /** Activity-specific mode, e.g. basketball 'games' vs 'shooting'. */
+  mode?: string
 }
 
 // ---------- Meals ----------
@@ -495,9 +525,11 @@ export interface AppData {
   coach: CoachLogState
   /** Checked-off grocery item ids (absorbed the old naod.grocery key). */
   grocery: string[]
+  /** Daily cardio / sport log, keyed by local ISO date. */
+  cardio: Record<ISODate, CardioEntry[]>
 }
 
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5
 
 export interface Envelope {
   schemaVersion: number
@@ -543,7 +575,7 @@ export function defaultWeekState(mondayISO: ISODate): WeekState {
     ballDates: [],
     cnsSwapDates: [],
     cardio: null,
-    gigFlags: {},
+    events: {},
     badSleepDates: [],
   }
 }
@@ -561,6 +593,7 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, pla
     photos: [],
     coach: { feed: [], shownMessageIds: [], surfacedInsights: {} },
     grocery: [],
+    cardio: {},
   }
 }
 

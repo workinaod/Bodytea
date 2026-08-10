@@ -67,7 +67,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
     await page.getByRole('button', { name: /Finish session/ }).click()
     await expect(page.getByText('Session debrief')).toBeVisible()
     await expect(page.getByText('Eat now')).toBeVisible()
-    await expect(page.getByText('Sleep')).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Sleep/ })).toBeVisible()
     await page.getByRole('button', { name: 'Done', exact: true }).click()
   }
 

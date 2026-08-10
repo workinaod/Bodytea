@@ -89,6 +89,7 @@ export function makeEmptyByorPlan(args: {
       coreMovers: [],
       anchors: { conditioningWeekday: 4, cnsWeekdays: [] },
       lifeRules: { djWeekend: false, longShiftMonday: false },
+      lifeEvents: [],
       rationale: {},
       nutrition: { kcalTraining: n.kcalTraining, kcalRest: n.kcalRest },
     },

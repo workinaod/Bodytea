@@ -122,6 +122,42 @@ describe('migrations', () => {
     expect(parsed.data.grocery).toEqual([])
     expect(parsed.data.settings.units).toBe('imperial')
   })
+
+  it('upgrades a v4 backup to v5: gig toggles become day-marked life events', () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: Record<string, unknown> & {
+        plan: Record<string, unknown>
+        weeks: Record<string, Record<string, unknown>>
+      }
+    }
+    // Reconstruct a faithful v4 envelope: gigFlags model, no lifeEvents/cardio.
+    env.schemaVersion = 4
+    delete env.data.cardio
+    delete env.data.plan.lifeEvents
+    env.data.weeks['2026-08-10'] = {
+      mondayISO: '2026-08-10',
+      tier: 1,
+      tierPickedAt: null,
+      tierChanges: [],
+      ballThisWeek: null,
+      ballDates: [],
+      cnsSwapDates: [],
+      gigFlags: { djFriNight: true, djSatNight: true, longShiftBeforeMon: true, friPushedToSat: true },
+      badSleepDates: [],
+    }
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION)
+    // Owner's defs seeded from his lifeRules
+    expect(parsed.data.plan.lifeEvents.map((e) => e.id).sort()).toEqual(['dj', 'shift'])
+    const w = parsed.data.weeks['2026-08-10']
+    expect(w.events.dj).toEqual([5, 6])
+    expect(w.friPushedToSat).toBe(true)
+    expect('gigFlags' in w).toBe(false)
+    // "Long shift before Monday" = Sunday that ENDS the previous week
+    expect(parsed.data.weeks['2026-08-03']?.events.shift).toEqual([0])
+    expect(parsed.data.cardio).toEqual({})
+  })
 })
 
 describe('import validation', () => {
