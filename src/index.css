@@ -1,24 +1,25 @@
 @import 'tailwindcss';
 
-/* Bodytea look: warm charcoal with an olive undertone, one volt
-   brand accent (Nike-Volt-on-asphalt energy), mint + amber support.
-   Space Grotesk (bundled, offline) carries every heading. */
+/* Bodytea look: pure neutral blacks — zero color cast on any
+   surface — with two hot accents used sparingly: heat orange-red
+   for brand/action, volt for commit CTAs. Nike-on-asphalt, not a
+   theme. Space Grotesk (bundled, offline) carries every heading. */
 @theme {
-  --color-bg: #0b0c09;
-  --color-surface: #131510;
-  --color-surface-2: #1b1e15;
-  --color-edge: #2b2f21;
-  --color-ink: #f4f6ed;
-  --color-ink-dim: #a9ae9b;
-  --color-ink-faint: #6f7462;
-  --color-accent: #c8f04b;
-  --color-accent-soft: #dcf787;
-  --color-accent-deep: #a2cf27;
-  --color-lime: #c8f04b;
-  --color-cyan: #6ad9b6;
-  --color-gold: #eec257;
-  --color-danger: #f2606c;
-  --color-good: #7ce08a;
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-surface-2: #1e1e1e;
+  --color-edge: #2d2d2d;
+  --color-ink: #f6f6f4;
+  --color-ink-dim: #a6a6a2;
+  --color-ink-faint: #6e6e6a;
+  --color-accent: #ff4f30;
+  --color-accent-soft: #ff8261;
+  --color-accent-deep: #e03a1c;
+  --color-lime: #c6f24e;
+  --color-cyan: #6fb2e8;
+  --color-gold: #f2c14e;
+  --color-danger: #ff4d5e;
+  --color-good: #62d97e;
   --font-display: 'Space Grotesk', system-ui, sans-serif;
 }
 
@@ -43,10 +44,9 @@ html {
 }
 
 body {
-  /* Asphalt field, one volt floodlight up top, faint mint from the side */
+  /* Pure black field, one neutral floodlight up top — no color cast */
   background:
-    radial-gradient(1100px 480px at 50% -12%, rgba(200, 240, 75, 0.055), transparent 62%),
-    radial-gradient(800px 380px at 108% -4%, rgba(106, 217, 182, 0.04), transparent 58%),
+    radial-gradient(1100px 480px at 50% -12%, rgba(255, 255, 255, 0.045), transparent 62%),
     var(--color-bg);
   background-attachment: fixed;
   color: var(--color-ink);
@@ -69,11 +69,11 @@ h3 {
 }
 
 ::selection {
-  background: rgba(200, 240, 75, 0.3);
+  background: rgba(255, 79, 48, 0.35);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(200, 240, 75, 0.55);
+  outline: 2px solid rgba(255, 79, 48, 0.55);
   outline-offset: 2px;
   border-radius: 6px;
 }
