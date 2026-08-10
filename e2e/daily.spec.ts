@@ -97,3 +97,23 @@ test('custom life events: add one, pick its days, engine reacts next day', async
   await page.getByRole('button', { name: 'Today', exact: true }).click()
   await expect(page.getByText(/DJ set tonight/)).toBeVisible()
 })
+
+test('same-day trim: work ran long → volume cut today, restorable', async ({ page }) => {
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) }) // Monday
+  await page.goto('./')
+  await quickOnboard(page)
+
+  // The Can't-train flow leads with the trim — still training, just less
+  await page.getByRole('button', { name: "Can't train" }).click()
+  await page.getByRole('button', { name: /Trim today's load/ }).click()
+  await page.getByRole('button', { name: 'Work / busy' }).click()
+  await page.getByRole('button', { name: 'Trim it — still training' }).click()
+
+  // The day resolves trimmed, with the escape hatch offered
+  await expect(page.getByText(/You called a trimmed day/)).toBeVisible()
+  await expect(page.getByText(/Restore the full session/)).toBeVisible()
+
+  // Meeting cancelled — full session comes back
+  await page.getByText(/Restore the full session/).click()
+  await expect(page.getByText(/You called a trimmed day/)).not.toBeVisible()
+})

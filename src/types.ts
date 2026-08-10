@@ -543,9 +543,16 @@ export interface AppData {
    * slot's prescription so the day's intent survives the swap.
    */
   swaps: Record<ISODate, Record<string, string>>
+  /**
+   * Same-day load cuts ("work ran long"): 'trimmed' applies the
+   * readiness-style downgrade to that date only — explosive volume
+   * −1/3, lifts light. Cleared automatically by moving on; the full
+   * plan returns tomorrow.
+   */
+  dayLoad: Record<ISODate, 'trimmed'>
 }
 
-export const SCHEMA_VERSION = 8
+export const SCHEMA_VERSION = 9
 
 export interface Envelope {
   schemaVersion: number
@@ -611,6 +618,7 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, pla
     grocery: [],
     cardio: {},
     swaps: {},
+    dayLoad: {},
   }
 }
 

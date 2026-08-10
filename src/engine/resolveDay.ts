@@ -372,13 +372,21 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     })
   }
 
-  // --- Readiness (already materialized on a started session) ---
+  // --- Readiness downgrade / same-day trim (one cut, never stacked) ---
   const session = data.sessions[dateISO]
+  const trimmedToday = data.dayLoad[dateISO] === 'trimmed' && template.kind === 'session'
   if (session?.readiness?.downgraded) {
     exercises = applyReadinessDowngrade(exercises)
     banners.push({
       id: 'readiness',
       text: 'Readiness downgrade active: explosive volume −1/3, lifts light. Fast and fresh beats tired and grinding.',
+      tone: 'warn',
+    })
+  } else if (trimmedToday) {
+    exercises = applyReadinessDowngrade(exercises)
+    banners.push({
+      id: 'day-trimmed',
+      text: '📉 You called a trimmed day: explosive volume −1/3, lifts light. Showing up short beats skipping — full plan returns tomorrow.',
       tone: 'warn',
     })
   }

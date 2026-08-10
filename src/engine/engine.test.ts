@@ -591,3 +591,31 @@ describe('per-date exercise swaps (🔄)', () => {
     expect(row.sets).toBe(2)
   })
 })
+
+describe('same-day load trim (work ran long)', () => {
+  it('cuts explosive volume and lightens lifts for that date only', () => {
+    const data = makeData({ dayLoad: { [START]: 'trimmed' } })
+    const day = resolveDay(START, data)
+    expect(day.banners.some((b) => b.id === 'day-trimmed')).toBe(true)
+    expect(day.exercises.find((e) => e.exerciseId === 'countermovement-jump')!.sets).toBe(2)
+    expect(day.exercises.find((e) => e.exerciseId === 'goblet-squat')!.lightMode).toBe(true)
+    // next Monday is back to the full plan
+    const next = resolveDay(addDaysISO(START, 7), data)
+    expect(next.exercises.find((e) => e.exerciseId === 'countermovement-jump')!.sets).toBe(3)
+    expect(next.banners.some((b) => b.id === 'day-trimmed')).toBe(false)
+  })
+
+  it('never stacks with a readiness downgrade — one cut, not two', () => {
+    const session: SessionLog = {
+      date: START,
+      templateId: 'monday',
+      status: 'partial',
+      readiness: { flags: [true, true, false, false], downgraded: true },
+      exercises: [],
+    }
+    const data = makeData({ dayLoad: { [START]: 'trimmed' }, sessions: { [START]: session } })
+    const day = resolveDay(START, data)
+    expect(day.exercises.find((e) => e.exerciseId === 'countermovement-jump')!.sets).toBe(2)
+    expect(day.banners.filter((b) => b.id === 'readiness' || b.id === 'day-trimmed')).toHaveLength(1)
+  })
+})

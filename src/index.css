@@ -1,22 +1,40 @@
 @import 'tailwindcss';
 
+/* Bodytea look: warm charcoal with an olive undertone, one volt
+   brand accent (Nike-Volt-on-asphalt energy), mint + amber support.
+   Space Grotesk (bundled, offline) carries every heading. */
 @theme {
-  --color-bg: #07070d;
-  --color-surface: #10101c;
-  --color-surface-2: #1a1a2a;
-  --color-edge: #28283d;
-  --color-ink: #f4f4fa;
-  --color-ink-dim: #9d9db4;
-  --color-ink-faint: #64647e;
-  --color-accent: #ff5c1f;
-  --color-accent-soft: #ff8c5c;
-  --color-accent-deep: #e8490f;
-  --color-lime: #b8f542;
-  --color-cyan: #3fd9e0;
-  --color-gold: #f5c542;
-  --color-danger: #ff4d5e;
-  --color-good: #4ade80;
-  --font-display: 'Archivo Black', 'Arial Black', system-ui, sans-serif;
+  --color-bg: #0b0c09;
+  --color-surface: #131510;
+  --color-surface-2: #1b1e15;
+  --color-edge: #2b2f21;
+  --color-ink: #f4f6ed;
+  --color-ink-dim: #a9ae9b;
+  --color-ink-faint: #6f7462;
+  --color-accent: #c8f04b;
+  --color-accent-soft: #dcf787;
+  --color-accent-deep: #a2cf27;
+  --color-lime: #c8f04b;
+  --color-cyan: #6ad9b6;
+  --color-gold: #eec257;
+  --color-danger: #f2606c;
+  --color-good: #7ce08a;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/Bodytea/fonts/space-grotesk-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/Bodytea/fonts/space-grotesk-700.woff2') format('woff2');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
 }
 
 html {
@@ -25,10 +43,10 @@ html {
 }
 
 body {
-  /* Deep field with a faint arena-light bloom up top */
+  /* Asphalt field, one volt floodlight up top, faint mint from the side */
   background:
-    radial-gradient(1100px 480px at 50% -12%, rgba(255, 92, 31, 0.075), transparent 62%),
-    radial-gradient(800px 380px at 108% -4%, rgba(63, 217, 224, 0.05), transparent 58%),
+    radial-gradient(1100px 480px at 50% -12%, rgba(200, 240, 75, 0.055), transparent 62%),
+    radial-gradient(800px 380px at 108% -4%, rgba(106, 217, 182, 0.04), transparent 58%),
     var(--color-bg);
   background-attachment: fixed;
   color: var(--color-ink);
@@ -42,12 +60,20 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Headings speak in the brand voice; data stays in the system face. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
 ::selection {
-  background: rgba(255, 92, 31, 0.35);
+  background: rgba(200, 240, 75, 0.3);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(255, 92, 31, 0.6);
+  outline: 2px solid rgba(200, 240, 75, 0.55);
   outline-offset: 2px;
   border-radius: 6px;
 }

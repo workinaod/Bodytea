@@ -11,7 +11,7 @@ import { getExercise } from '../../plan/exercises'
 import { CARDIO_GROUP_INFO } from '../../plan/templates'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
-import { chooseCardio, finishSession, startSession, swapExercise, toggleCnsSwap } from '../../logic/actions'
+import { chooseCardio, finishSession, restoreToday, startSession, swapExercise, toggleCnsSwap } from '../../logic/actions'
 import { swapCandidatesFor } from '../../plan/subs'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
@@ -122,6 +122,16 @@ export function TodayScreen() {
       {day.banners.map((b) => (
         <BannerRow key={b.id} banner={b} />
       ))}
+
+      {/* Trimmed-day escape hatch: the meeting got cancelled after all */}
+      {!session && data.dayLoad[date] === 'trimmed' && (
+        <button
+          onClick={() => restoreToday(date)}
+          className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-2.5 text-[12.5px] font-bold text-ink-dim"
+        >
+          ↩ Day freed up? Restore the full session
+        </button>
+      )}
 
       {/* One-time reminder opt-in — free push, hard-capped at two a day */}
       {today &&
@@ -315,9 +325,14 @@ export function TodayScreen() {
                       <button
                         aria-label={`Swap ${def.name}`}
                         onClick={() => swapExercise(date, swapBase)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-[13px] font-black text-gold"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-accent"
                       >
-                        🔄
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 2v6h-6" />
+                          <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                          <path d="M3 22v-6h6" />
+                          <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                        </svg>
                       </button>
                     )}
                     <button

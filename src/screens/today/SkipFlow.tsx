@@ -8,7 +8,7 @@ import { planTemplate } from '../../engine/resolveDay'
 import { todayISO } from '../../engine/calendar'
 import { useAppStore } from '../../store/appStore'
 import { validateProofFile } from '../../store/storage'
-import { pushCoachMessage, resolveSkipFlow, savePhotoFile } from '../../logic/actions'
+import { pushCoachMessage, resolveSkipFlow, savePhotoFile, trimToday } from '../../logic/actions'
 
 const REASONS: { id: ExcuseReason; label: string }[] = [
   { id: 'busy', label: 'Work / busy' },
@@ -35,7 +35,7 @@ export function SkipFlow({
   const excuses = useAppStore((s) => s.data.excuses)
   const level = escalationLevel(excuses, todayISO())
   const [step, setStep] = useState<0 | 1 | 2>(0)
-  const [mode, setMode] = useState<'skip' | 'lighten'>('skip')
+  const [mode, setMode] = useState<'skip' | 'lighten' | 'trim'>('trim')
   const [reason, setReason] = useState<ExcuseReason | null>(null)
   const [claimText, setClaimText] = useState('')
   const [proofId, setProofId] = useState<string | undefined>()
@@ -93,6 +93,7 @@ export function SkipFlow({
   }
 
   function finish(takeMinimum: boolean) {
+    if (mode === 'trim') return // trim never reaches the skip machinery
     const { message } = resolveSkipFlow({
       date: day.date,
       mode,
@@ -115,20 +116,29 @@ export function SkipFlow({
 
       {step === 0 && (
         <div className="space-y-4 pb-5">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
             <button
-              onClick={() => setMode('skip')}
-              className={`rounded-xl border p-3.5 text-left ${mode === 'skip' ? 'border-danger/40 bg-danger/10' : 'border-edge bg-surface-2'}`}
+              onClick={() => setMode('trim')}
+              className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'trim' ? 'border-lime/40 bg-lime/10' : 'border-edge bg-surface-2'}`}
             >
-              <div className="text-[14px] font-bold">Skip the day</div>
-              <div className="mt-0.5 text-[11.5px] text-ink-faint">Zero. Nothing. Gone.</div>
+              <div className="text-[14px] font-bold">Trim today's load</div>
+              <div className="mt-0.5 text-[11.5px] text-ink-faint">
+                Full session, volume cut — explosive −1/3, lifts light. Still counts as training.
+              </div>
             </button>
             <button
               onClick={() => setMode('lighten')}
-              className={`rounded-xl border p-3.5 text-left ${mode === 'lighten' ? 'border-gold/40 bg-gold/10' : 'border-edge bg-surface-2'}`}
+              className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'lighten' ? 'border-gold/40 bg-gold/10' : 'border-edge bg-surface-2'}`}
             >
-              <div className="text-[14px] font-bold">Lighten it</div>
-              <div className="mt-0.5 text-[11.5px] text-ink-faint">Do the short version instead.</div>
+              <div className="text-[14px] font-bold">Bare minimum</div>
+              <div className="mt-0.5 text-[11.5px] text-ink-faint">The ~10-minute version. Habit survives.</div>
+            </button>
+            <button
+              onClick={() => setMode('skip')}
+              className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'skip' ? 'border-danger/40 bg-danger/10' : 'border-edge bg-surface-2'}`}
+            >
+              <div className="text-[14px] font-bold">Skip the day</div>
+              <div className="mt-0.5 text-[11.5px] text-ink-faint">Zero. Nothing. Goes on the record.</div>
             </button>
           </div>
 
@@ -161,9 +171,23 @@ export function SkipFlow({
             <Btn kind="ghost" className="flex-1" onClick={onCancel}>
               Never mind — I'll train
             </Btn>
-            <Btn className="flex-1" disabled={!reason} onClick={() => setStep(1)}>
-              Continue
-            </Btn>
+            {mode === 'trim' ? (
+              <Btn
+                kind="lime"
+                className="flex-1"
+                disabled={!reason}
+                onClick={() => {
+                  trimToday(day.date, reason!, claimText || undefined)
+                  onCancel()
+                }}
+              >
+                Trim it — still training
+              </Btn>
+            ) : (
+              <Btn className="flex-1" disabled={!reason} onClick={() => setStep(1)}>
+                Continue
+              </Btn>
+            )}
           </div>
         </div>
       )}

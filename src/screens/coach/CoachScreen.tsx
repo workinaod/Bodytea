@@ -149,11 +149,27 @@ export function CoachScreen() {
         )}
       </div>
 
-      {/* Push sheet */}
+      {/* Push sheet — the line IS the sheet; everything else is a footnote */}
       <Sheet open={pushOpen} onClose={() => setPushOpen(false)} title="Alright. Listen.">
         <div className="space-y-3 pb-6">
-          <div className="rounded-2xl border border-accent/30 bg-accent/10 p-4 text-[14.5px] font-bold leading-relaxed text-accent-soft">
-            {pushLine}
+          <div className="relative overflow-hidden rounded-3xl border border-accent/25 bg-gradient-to-b from-surface-2 to-surface px-5 pb-5 pt-6">
+            <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-accent/14 blur-3xl" />
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-accent">
+              The Sergeant · read it twice
+            </div>
+            <p className="mt-3 font-display text-[24px] font-bold leading-[1.18] tracking-tight text-ink">
+              {pushLine}
+            </p>
+            {data.plan.goalStatement && (
+              <div className="mt-4 border-l-2 border-accent/60 pl-3">
+                <div className="text-[9.5px] font-black uppercase tracking-[0.18em] text-ink-faint">
+                  What this is all for — your words
+                </div>
+                <div className="mt-0.5 text-[13.5px] font-semibold italic text-accent-soft">
+                  “{data.plan.goalStatement}”
+                </div>
+              </div>
+            )}
           </div>
           <SectionTitle>Fuel (videos)</SectionTitle>
           <div className="space-y-2">
@@ -170,7 +186,7 @@ export function CoachScreen() {
               </a>
             ))}
           </div>
-          <Btn kind="lime" className="w-full" onClick={() => setPushOpen(false)}>
+          <Btn kind="lime" className="w-full py-4 text-[15px]" onClick={() => setPushOpen(false)}>
             Fine. I'm going.
           </Btn>
         </div>

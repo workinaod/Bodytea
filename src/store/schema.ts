@@ -261,6 +261,7 @@ const appDataSchema = z.object({
     ),
   ),
   swaps: z.record(z.string(), z.record(z.string(), z.string())),
+  dayLoad: z.record(z.string(), z.literal('trimmed')),
 })
 
 export const envelopeSchema = z.object({
@@ -387,6 +388,12 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
   7: (env) => {
     const e = env as { data?: Record<string, unknown> }
     if (e.data) e.data.swaps ??= {}
+    return env
+  },
+  // v8 → v9: same-day load cuts ("work ran long — trim today")
+  8: (env) => {
+    const e = env as { data?: Record<string, unknown> }
+    if (e.data) e.data.dayLoad ??= {}
     return env
   },
 }

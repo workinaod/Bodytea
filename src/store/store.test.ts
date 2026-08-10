@@ -113,10 +113,12 @@ describe('migrations', () => {
     delete env.data.grocery
     delete env.data.settings.units
     delete env.data.swaps
+    delete env.data.dayLoad
     const parsed = parseEnvelope(JSON.stringify(env))
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION)
     expect(parsed.data.plan.name).toBe('NAOD V4') // v7 upgrades the owner's preset
     expect(parsed.data.swaps).toEqual({}) // v8 seeds the swap map
+    expect(parsed.data.dayLoad).toEqual({}) // v9 seeds the day-trim map
     expect(parsed.data.plan.goal).toBe('vertical')
     expect(parsed.data.plan.lifeRules).toEqual({ djWeekend: true, longShiftMonday: true })
     expect(Object.keys(parsed.data.plan.templates).length).toBeGreaterThanOrEqual(11)

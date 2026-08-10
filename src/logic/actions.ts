@@ -100,6 +100,43 @@ export function swapExercise(date: ISODate, originalId: string): string {
   return next
 }
 
+// ---------- Same-day load trim ("work ran long") ----------
+
+const TRIM_REASON_LABEL: Record<ExcuseReason, string> = {
+  busy: 'work ran long',
+  tired: 'running on empty',
+  sick: 'body says easy',
+  gig: 'gig / shift day',
+  travel: 'on the road',
+  other: 'life happened',
+  none: 'life happened',
+}
+
+/**
+ * Cut TODAY's load without dropping the week's tier: readiness-style
+ * trim (explosive −1/3, lifts light) for one date. Not an excuse — the
+ * session still happens — but it goes in the coach feed so patterns
+ * are visible.
+ */
+export function trimToday(date: ISODate, reason: ExcuseReason, claimText?: string): void {
+  store().update((d) => {
+    d.dayLoad[date] = 'trimmed'
+    d.coach.feed.unshift({
+      id: uid(),
+      at: new Date().toISOString(),
+      kind: 'insight',
+      text: `📉 Trimmed ${date.slice(5)} — ${TRIM_REASON_LABEL[reason]}${claimText?.trim() ? ` (“${claimText.trim()}”)` : ''}. Still training. That's the difference.`,
+    })
+  })
+}
+
+/** Meeting got cancelled after all — put the full session back. */
+export function restoreToday(date: ISODate): void {
+  store().update((d) => {
+    delete d.dayLoad[date]
+  })
+}
+
 // ---------- Session lifecycle ----------
 
 function prefillFor(date: ISODate, exerciseId: string): { weightLb?: number; reps?: number } {
