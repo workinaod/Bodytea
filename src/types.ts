@@ -441,6 +441,8 @@ export interface MealPlanConfig {
 export interface Measurement {
   date: ISODate
   weightLb?: number
+  /** Estimated body fat % — consistency of method beats accuracy. */
+  bodyFatPct?: number
   waistIn?: number
   chestIn?: number
   armsIn?: number
@@ -591,7 +593,7 @@ export interface AppData {
   dayLoad: Record<ISODate, 'trimmed'>
 }
 
-export const SCHEMA_VERSION = 10
+export const SCHEMA_VERSION = 11
 
 export interface Envelope {
   schemaVersion: number

@@ -41,8 +41,8 @@ export function buildNaodPreset(): PlanConfig {
     planVersion: 1,
     name: 'NAOD V4',
     goal: 'vertical',
-    goalStatement: 'Consistent dunks, elite speed, and a build that shows it.',
-    customTargets: [],
+    goalStatement: 'Consistent dunks, elite speed, and sub-10% body fat — a build that shows it.',
+    customTargets: [{ label: 'Body fat', target: 10, unit: '%' }],
     copyFlavor: 'explosive',
     daysPerWeek: 6,
     equipment: [

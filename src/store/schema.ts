@@ -198,6 +198,7 @@ const mealDaySchema = z.object({
 const measurementSchema = z.object({
   date: isoDate,
   weightLb: z.number().optional(),
+  bodyFatPct: z.number().optional(),
   waistIn: z.number().optional(),
   chestIn: z.number().optional(),
   armsIn: z.number().optional(),
@@ -434,6 +435,25 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
             e.data?.settings?.proteinTargetG ?? 180,
             plan.nutrition ?? { kcalTraining: 2600, kcalRest: 2300 },
           )
+    }
+    return env
+  },
+  // v10 → v11: the owner set a body-composition goal — sub-10% body fat.
+  // His plan's goal statement and targets pick it up; body fat becomes a
+  // check-in metric for everyone (optional field, no data change needed).
+  10: (env) => {
+    const e = env as {
+      data?: {
+        plan?: { name?: string; goalStatement?: string; customTargets?: { label: string; target: number; unit: string }[] }
+      }
+    }
+    const plan = e.data?.plan
+    if (plan?.name?.startsWith('NAOD')) {
+      plan.goalStatement = 'Consistent dunks, elite speed, and sub-10% body fat — a build that shows it.'
+      plan.customTargets ??= []
+      if (!plan.customTargets.some((t) => t.label.toLowerCase().includes('fat'))) {
+        plan.customTargets.push({ label: 'Body fat', target: 10, unit: '%' })
+      }
     }
     return env
   },

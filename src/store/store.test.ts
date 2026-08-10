@@ -221,3 +221,49 @@ describe('v9 → v10: meal plan becomes per-user booklet data', () => {
     expect(mp.templates.some((t) => t.id === 't-breakfast')).toBe(false) // not the owner's meals
   })
 })
+
+describe('v10 → v11: sub-10% body fat joins the owner’s goal', () => {
+  it("writes the target into NAOD plans and leaves others alone", () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { plan: Record<string, unknown> & { customTargets: unknown[] } }
+    }
+    env.schemaVersion = 10
+    env.data.plan.goalStatement = 'Consistent dunks, elite speed, and a build that shows it.'
+    env.data.plan.customTargets = []
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.data.plan.goalStatement).toContain('sub-10% body fat')
+    expect(parsed.data.plan.customTargets).toEqual([{ label: 'Body fat', target: 10, unit: '%' }])
+
+    // A generated plan keeps its own words and targets
+    const env2 = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { plan: Record<string, unknown> & { customTargets: unknown[] } }
+    }
+    env2.schemaVersion = 10
+    env2.data.plan.name = 'Vertical Project — 6-Day'
+    env2.data.plan.goalStatement = 'dunk by June'
+    env2.data.plan.customTargets = []
+    const parsed2 = parseEnvelope(JSON.stringify(env2))
+    expect(parsed2.data.plan.goalStatement).toBe('dunk by June')
+    expect(parsed2.data.plan.customTargets).toEqual([])
+  })
+
+  it('does not duplicate the target when the chain runs from older versions', () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: Record<string, unknown> & { settings: Record<string, unknown> }
+    }
+    env.schemaVersion = 3
+    delete env.data.plan
+    delete env.data.profile
+    delete env.data.grocery
+    delete env.data.settings.units
+    delete env.data.swaps
+    delete env.data.dayLoad
+    const parsed = parseEnvelope(JSON.stringify(env))
+    const targets = parsed.data.plan.customTargets.filter((t) => t.label === 'Body fat')
+    expect(targets).toHaveLength(1)
+    expect(parsed.data.measurements.every((m) => m.bodyFatPct === undefined)).toBe(true)
+  })
+})

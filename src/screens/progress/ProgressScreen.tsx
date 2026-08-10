@@ -40,6 +40,7 @@ function usePhotoUrl(id: string | undefined): string | null {
 
 const METRICS = [
   { key: 'weightLb', label: 'Weight', unit: ' lb', caption: 'Will barely move — that\'s the design. Recomp, not a cut.' },
+  { key: 'bodyFatPct', label: 'Body fat', unit: '%', caption: 'Target: 10% or less. Same method, same morning — the trend is the truth, not any single reading.' },
   { key: 'waistIn', label: 'Waist', unit: '"', caption: 'THE metric. This line falling is the whole recomp.' },
   { key: 'chestIn', label: 'Chest', unit: '"', caption: '' },
   { key: 'armsIn', label: 'Arms', unit: '"', caption: 'Target: 16"' },
@@ -95,7 +96,7 @@ export function ProgressScreen() {
   const captionFor = (key: string, fallback: string): string => {
     const plan = data.plan
     if (plan.name === 'NAOD V3') return fallback
-    const hint = key === 'vertIn' ? 'vert' : key === 'armsIn' ? 'arm' : key === 'waistIn' ? 'waist' : key === 'weightLb' ? 'weight' : '␀'
+    const hint = key === 'vertIn' ? 'vert' : key === 'armsIn' ? 'arm' : key === 'waistIn' ? 'waist' : key === 'weightLb' ? 'weight' : key === 'bodyFatPct' ? 'fat' : '␀'
     const t = plan.customTargets.find((c) => c.label.toLowerCase().includes(hint))
     if (t) return `Target: ${t.target}${t.unit} — “${plan.goalStatement}”`
     if (key === 'vertIn' && (plan.goal === 'vertical' || plan.goal === 'speed')) return `“${plan.goalStatement}” — track the same touch point every time.`
@@ -220,6 +221,7 @@ function CheckinSheet({ open, onClose, last }: { open: boolean; onClose: () => v
     date: todayISO(),
     photoIds: {},
     weightLb: last?.weightLb,
+    bodyFatPct: last?.bodyFatPct,
     waistIn: last?.waistIn,
     chestIn: last?.chestIn,
     armsIn: last?.armsIn,
@@ -240,6 +242,7 @@ function CheckinSheet({ open, onClose, last }: { open: boolean; onClose: () => v
 
   const fields = [
     { key: 'weightLb', label: 'Weight', step: 0.5, unit: 'lb' },
+    { key: 'bodyFatPct', label: 'Body fat', step: 0.5, unit: '%' },
     { key: 'waistIn', label: 'Waist', step: 0.25, unit: 'in' },
     { key: 'chestIn', label: 'Chest', step: 0.25, unit: 'in' },
     { key: 'armsIn', label: 'Arms', step: 0.25, unit: 'in' },
