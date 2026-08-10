@@ -30,6 +30,9 @@ interface ReminderMeta {
   /** Absent in mirrors written by older app versions — treat as "no nudge". */
   cardioLoggedToday?: boolean
   lastNotifiedAt: string | null
+  reviewReadyMark?: string | null
+  reviewReadyLabel?: string
+  reviewNotifiedMark?: string | null
 }
 
 function readMeta(): Promise<ReminderMeta | null> {
@@ -53,14 +56,14 @@ function readMeta(): Promise<ReminderMeta | null> {
   })
 }
 
-function writeMetaNotified(meta: ReminderMeta): Promise<void> {
+function writeMeta(meta: ReminderMeta, patch: Partial<ReminderMeta>): Promise<void> {
   return new Promise((resolve) => {
     const open = indexedDB.open('naod-photos', 2)
     open.onerror = () => resolve()
     open.onsuccess = () => {
       try {
         const tx = open.result.transaction('meta', 'readwrite')
-        tx.objectStore('meta').put({ ...meta, lastNotifiedAt: new Date().toISOString() }, 'reminders')
+        tx.objectStore('meta').put({ ...meta, ...patch }, 'reminders')
         tx.oncomplete = () => resolve()
         tx.onerror = () => resolve()
       } catch {
@@ -80,7 +83,25 @@ const NUDGES = [
 
 async function maybeNotify(): Promise<void> {
   const meta = await readMeta()
-  if (!meta?.enabled || !meta.todayScheduled) return
+  if (!meta?.enabled) return
+
+  // Milestone review unlocked → one push per mark, ever. Fires outside
+  // the daily throttle: three of these a year is not spam.
+  if (meta.reviewReadyMark && meta.reviewNotifiedMark !== meta.reviewReadyMark) {
+    await self.registration.showNotification(
+      `Bodytea — ${meta.reviewReadyLabel || 'Milestone review'} is ready`,
+      {
+        body: 'Deltas, before/after, and the honest read on gains vs effort. Two minutes — you earned the look.',
+        tag: 'naod-review-ready',
+        icon: 'icons/pwa-192.png',
+        badge: 'icons/pwa-192.png',
+      },
+    )
+    await writeMeta(meta, { reviewNotifiedMark: meta.reviewReadyMark })
+    meta.reviewNotifiedMark = meta.reviewReadyMark
+  }
+
+  if (!meta.todayScheduled) return
   if (meta.todayDone && meta.cardioLoggedToday !== false) return // nothing left to nudge
 
   const now = new Date()
@@ -111,7 +132,7 @@ async function maybeNotify(): Promise<void> {
       badge: 'icons/pwa-192.png',
     },
   )
-  await writeMetaNotified(meta)
+  await writeMeta(meta, { lastNotifiedAt: new Date().toISOString() })
 }
 
 self.addEventListener('periodicsync', (event) => {

@@ -79,6 +79,11 @@ export interface ReminderMeta {
   /** Any cardio/sport entry logged today (drives the post-session nudge). */
   cardioLoggedToday: boolean
   lastNotifiedAt: string | null
+  /** An unlocked, unopened milestone review ('3mo' | '6mo' | '1yr'). */
+  reviewReadyMark?: string | null
+  reviewReadyLabel?: string
+  /** The last mark we pushed a notification for — fires once per mark, ever. */
+  reviewNotifiedMark?: string | null
 }
 
 export const MetaStore = {

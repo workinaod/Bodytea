@@ -1,6 +1,7 @@
 import { MetaStore, type ReminderMeta } from '../store/storage'
 import { useAppStore } from '../store/appStore'
 import { resolveDay, weekStateFor } from '../engine/resolveDay'
+import { reviewReady } from '../engine/review'
 import { todayISO } from '../engine/calendar'
 
 // ============================================================
@@ -26,9 +27,11 @@ function todayState() {
 
 /** Mirror reminder config + today's status into IDB (SW reads it) + badge. */
 export async function syncReminderMeta(): Promise<void> {
-  const { settings } = useAppStore.getState().data
+  const data = useAppStore.getState().data
+  const { settings } = data
   const t = todayState()
   const prev = await MetaStore.get().catch(() => null)
+  const ready = reviewReady(data, todayISO())
   const meta: ReminderMeta = {
     enabled: settings.remindersEnabled,
     times: settings.reminderTimes,
@@ -38,8 +41,28 @@ export async function syncReminderMeta(): Promise<void> {
     todayTitle: t.title,
     cardioLoggedToday: t.cardioLogged,
     lastNotifiedAt: prev?.todayDate === t.date ? (prev?.lastNotifiedAt ?? null) : null,
+    reviewReadyMark: ready?.id ?? null,
+    reviewReadyLabel: ready?.label ?? '',
+    reviewNotifiedMark: prev?.reviewNotifiedMark ?? null,
   }
   await MetaStore.set(meta).catch(() => {})
+
+  // Milestone-review push, page-side (covers platforms without periodic
+  // sync). Once per mark, ever — three notifications a year, tops.
+  if (
+    settings.remindersEnabled &&
+    ready &&
+    meta.reviewNotifiedMark !== ready.id &&
+    typeof Notification !== 'undefined' &&
+    Notification.permission === 'granted'
+  ) {
+    await showLocalReminder(
+      `${ready.label} is ready`,
+      'Deltas, before/after, and the honest read on gains vs effort. Two minutes — you earned the look.',
+      'naod-review-ready',
+    ).catch(() => {})
+    await MetaStore.set({ ...meta, reviewNotifiedMark: ready.id }).catch(() => {})
+  }
 
   // App badge: a quiet, iOS-friendly "you still owe a session" signal
   try {
