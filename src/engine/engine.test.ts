@@ -334,7 +334,7 @@ describe('resolveDay integration', () => {
     data.weeks[monday] = {
       ...defaultWeekState(monday),
       ballThisWeek: false,
-      cardio: { exerciseId: 'hill-sprint', weekday: 4 },
+      cardio: { exerciseId: 'hill-sprint', weekdays: [4] },
     }
     const thu = resolveDay('2026-08-13', data)
     expect(thu.kind).toBe('cardio-backup')
@@ -389,7 +389,7 @@ describe('same-day ball + mandatory cardio', () => {
       ...defaultWeekState(monday),
       ballThisWeek: false,
       ballDates: ['2026-08-11'],
-      cardio: { exerciseId: 'hill-sprint', weekday: 4 },
+      cardio: { exerciseId: 'hill-sprint', weekdays: [4] },
     }
     const thu = resolveDay('2026-08-13', data)
     expect(thu.kind).toBe('mobility') // back to normal Thursday

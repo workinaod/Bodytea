@@ -7,6 +7,7 @@ import type {
   MealEntry,
   Measurement,
   PhotoMeta,
+  RunLog,
   SessionLog,
   Tier,
 } from '../types'
@@ -515,6 +516,24 @@ export function removeCardio(date: ISODate, entryId: string): void {
   })
 }
 
+/**
+ * Save a GPS-tracked run/ride AND log its cardio entry in one shot —
+ * the tracker feeds the same conditioning machinery as a manual log.
+ */
+export function saveRun(run: RunLog): void {
+  store().update((d) => {
+    d.runs.push(run)
+  })
+  logCardio(run.date, {
+    activityId: run.activity,
+    label: run.activity === 'run' ? 'Run' : 'Bike',
+    when: 'solo',
+    where: 'outdoor',
+    miles: run.distanceMi,
+    minutes: Math.round(run.durationSec / 60),
+  })
+}
+
 /** Swap a CNS day's speed work out (plan-sanctioned after a hard run). */
 export function toggleCnsSwap(date: ISODate): void {
   store().updateWeek(date, (w) => {
@@ -527,7 +546,7 @@ export function toggleCnsSwap(date: ISODate): void {
 /** Pick the required cardio option for a day (from the Today chooser). */
 export function chooseCardio(date: ISODate, exerciseId: string): void {
   store().updateWeek(date, (w) => {
-    w.cardio = { exerciseId, weekday: weekdayOf(date) }
+    w.cardio = { exerciseId, weekdays: [weekdayOf(date)] }
   })
 }
 

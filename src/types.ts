@@ -352,13 +352,32 @@ export interface WeekState {
   ballDates: ISODate[]
   /** CNS days whose speed work was swapped out (plan-sanctioned after a hard run). */
   cnsSwapDates: ISODate[]
-  /** Scheduled cardio backup (replaces ball on no-ball weeks). */
-  cardio?: { exerciseId: string; weekday: Weekday } | null
+  /** Scheduled cardio backup (replaces ball on no-ball weeks) — any number of days. */
+  cardio?: { exerciseId: string; weekdays: Weekday[] } | null
   /** Life-event id → weekdays it hits THIS week (defs live in plan.lifeEvents). */
   events: Partial<Record<string, Weekday[]>>
   /** Owner special: Friday's pull moved to Saturday as a lighter combined day. */
   friPushedToSat?: boolean
   badSleepDates: ISODate[]
+}
+
+// ---------- GPS-tracked runs & rides ----------
+
+/** [lat, lng, elapsedSec] — compact enough to live in the envelope. */
+export type RunPoint = [number, number, number]
+
+export interface RunLog {
+  id: string
+  activity: 'run' | 'bike'
+  date: ISODate
+  startedAt: string
+  durationSec: number
+  distanceMi: number
+  /** Average pace in seconds per mile (running) / speed derives for rides. */
+  avgPaceSec: number
+  /** Per-mile split times in seconds. */
+  splits: number[]
+  points: RunPoint[]
 }
 
 // ---------- Daily cardio / sport log ----------
@@ -600,9 +619,11 @@ export interface AppData {
    * plan returns tomorrow.
    */
   dayLoad: Record<ISODate, 'trimmed'>
+  /** GPS-tracked runs & rides, newest last. */
+  runs: RunLog[]
 }
 
-export const SCHEMA_VERSION = 12
+export const SCHEMA_VERSION = 13
 
 export interface Envelope {
   schemaVersion: number
@@ -669,6 +690,7 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, pla
     cardio: {},
     swaps: {},
     dayLoad: {},
+    runs: [],
   }
 }
 

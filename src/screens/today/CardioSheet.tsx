@@ -5,6 +5,7 @@ import { CARDIO_ACTIVITIES, cardioActivity } from '../../plan/cardio'
 import { logCardio, removeCardio } from '../../logic/actions'
 import { Btn, Chip, Stepper } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
+import { RunTrackerSheet } from './RunTrackerSheet'
 
 // ============================================================
 // Daily cardio: pick what YOU did — run, ride, swim, a game —
@@ -28,6 +29,7 @@ export function CardioSheet({
 }) {
   const entries = useAppStore((s) => s.data.cardio[date]) ?? NO_ENTRIES
   const [picked, setPicked] = useState<string | null>(null)
+  const [tracking, setTracking] = useState<'run' | 'bike' | null>(null)
   const [when, setWhen] = useState<CardioWhen>(hasSession ? 'post' : 'solo')
   const [where, setWhere] = useState<'indoor' | 'outdoor'>('outdoor')
   const [miles, setMiles] = useState(2)
@@ -118,6 +120,24 @@ export function CardioSheet({
               </button>
             </div>
 
+            {(def.id === 'run' || def.id === 'bike') && (
+              <button
+                onClick={() => setTracking(def.id as 'run' | 'bike')}
+                className="flex w-full items-center justify-between rounded-2xl border border-accent/35 bg-accent/8 px-4 py-3 text-left active:bg-accent/15"
+              >
+                <span>
+                  <span className="block text-[13.5px] font-extrabold text-accent-soft">
+                    Track it live with GPS
+                  </span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-ink-faint">
+                    Map, time, distance, {def.id === 'bike' ? 'speed' : 'pace'} + mile splits — logs itself
+                    when you finish.
+                  </span>
+                </span>
+                <span className="text-[18px]">🛰</span>
+              </button>
+            )}
+
             {def.id === 'custom' && (
               <input
                 value={customLabel}
@@ -193,6 +213,16 @@ export function CardioSheet({
           </div>
         )}
       </div>
+      {tracking && (
+        <RunTrackerSheet
+          activity={tracking}
+          date={date}
+          onClose={() => {
+            setTracking(null)
+            reset()
+          }}
+        />
+      )}
     </Sheet>
   )
 }

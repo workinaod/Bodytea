@@ -167,7 +167,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
 
   // --- Scheduled cardio backup lands on its chosen weekday ---
   // (dissolves if ball actually got played — backups replace ball, never stack)
-  if (week.cardio && week.cardio.weekday === weekday && week.ballDates.length === 0) {
+  if (week.cardio && week.cardio.weekdays.includes(weekday) && week.ballDates.length === 0) {
     const opt = plan.cardioOptions.find((c) => c.exerciseId === week.cardio!.exerciseId)
     const def = getExercise(week.cardio.exerciseId)
     if (weekday === plan.anchors.conditioningWeekday) {

@@ -20,6 +20,9 @@ import { buildMilestoneReview, REVIEW_MARKS, reviewReady, unlockedMarks, type Mi
 import { daysBetween } from '../../engine/calendar'
 import { MilestoneReviewSheet } from './MilestoneReview'
 import { BodyFatEstimator } from './BodyFatEstimator'
+import { avgMph, fmtDuration, fmtPace, weeklyMiles } from '../../engine/runs'
+import { RouteMap } from '../../components/RouteMap'
+import type { RunLog } from '../../types'
 
 function usePhotoUrl(id: string | undefined): string | null {
   const [url, setUrl] = useState<string | null>(null)
@@ -57,6 +60,7 @@ export function ProgressScreen() {
   const update = useAppStore((s) => s.update)
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [review, setReview] = useState<MilestoneReview | null>(null)
+  const [openRun, setOpenRun] = useState<RunLog | null>(null)
   const [metric, setMetric] = useState<(typeof METRICS)[number]['key']>('waistIn')
   const [lift, setLift] = useState(data.plan.trackedLifts[0]?.exerciseId ?? 'front-squat')
 
@@ -236,6 +240,36 @@ export function ProgressScreen() {
         />
       </Card>
 
+      {/* Runs & rides */}
+      {data.runs.length > 0 && (
+        <>
+          <SectionTitle>Runs &amp; rides</SectionTitle>
+          <Card>
+            <SimpleLine points={weeklyMiles(data, today)} unit=" mi" color="var(--color-accent)" />
+            <p className="mt-1 text-[11px] font-semibold text-ink-faint">Weekly miles, GPS-tracked.</p>
+          </Card>
+          <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+            {[...data.runs].reverse().slice(0, 8).map((r, i) => (
+              <div
+                key={r.id}
+                onClick={() => setOpenRun(r)}
+                className={`flex cursor-pointer items-center justify-between px-4 py-2.5 active:bg-surface-2 ${
+                  i > 0 ? 'border-t border-edge/50' : ''
+                }`}
+              >
+                <span className="text-[13px] font-bold">
+                  {r.activity === 'bike' ? 'Ride' : 'Run'} · {formatShort(r.date)}
+                </span>
+                <span className="font-mono text-[12px] text-ink-dim">
+                  {r.distanceMi.toFixed(2)} mi · {fmtDuration(r.durationSec)} ·{' '}
+                  {r.activity === 'bike' ? `${avgMph(r.distanceMi, r.durationSec)} mph` : fmtPace(r.avgPaceSec)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* Photos */}
       <SectionTitle>Progress photos</SectionTitle>
       <PhotoCompare measurements={data.measurements} />
@@ -276,6 +310,41 @@ export function ProgressScreen() {
 
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} last={lastCheckin} />
       {review && <MilestoneReviewSheet review={review} onClose={() => setReview(null)} />}
+      <Sheet
+        open={!!openRun}
+        onClose={() => setOpenRun(null)}
+        title={openRun ? `${openRun.activity === 'bike' ? 'Ride' : 'Run'} — ${formatShort(openRun.date)}` : ''}
+      >
+        {openRun && (
+          <div className="space-y-3 pb-8">
+            <div className="text-center">
+              <div className="font-display text-[40px] font-bold leading-none">
+                {openRun.distanceMi.toFixed(2)} <span className="text-[18px] text-ink-dim">mi</span>
+              </div>
+              <div className="mt-1.5 text-[12.5px] font-semibold text-ink-dim">
+                {fmtDuration(openRun.durationSec)} ·{' '}
+                {openRun.activity === 'bike'
+                  ? `${avgMph(openRun.distanceMi, openRun.durationSec)} mph avg`
+                  : fmtPace(openRun.avgPaceSec)}
+              </div>
+            </div>
+            <RouteMap points={openRun.points} height={230} />
+            {openRun.splits.length > 0 && (
+              <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+                {openRun.splits.map((s, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-center justify-between px-4 py-2 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+                  >
+                    <span className="text-[12.5px] font-bold">Mile {i + 1}</span>
+                    <span className="font-mono text-[12px] text-ink-dim">{fmtDuration(s)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Sheet>
     </div>
   )
 }

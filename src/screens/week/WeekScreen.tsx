@@ -346,7 +346,7 @@ export function WeekScreen() {
                       tone={week?.cardio?.exerciseId === c.exerciseId ? 'accent' : 'default'}
                       onClick={() =>
                         updateWeek(weekStart, (w) => {
-                          w.cardio = w.cardio?.exerciseId === c.exerciseId ? null : { exerciseId: c.exerciseId, weekday: 4 }
+                          w.cardio = w.cardio?.exerciseId === c.exerciseId ? null : { exerciseId: c.exerciseId, weekdays: [4] }
                         })
                       }
                     >
@@ -356,24 +356,65 @@ export function WeekScreen() {
                 </div>
               </div>
             ))}
-            {week?.cardio && (
-              <div className="flex items-center justify-between">
-                <span className="text-[12.5px] font-bold">On which day?</span>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-                    <button
-                      key={d}
-                      onClick={() => updateWeek(weekStart, (w) => { if (w.cardio) w.cardio.weekday = d as Weekday })}
-                      className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
-                        week?.cardio?.weekday === d ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
-                      }`}
-                    >
-                      {WD_LABEL[d]}
-                    </button>
-                  ))}
+            {week?.cardio && (() => {
+              // Hard cardio never lands on a max-effort day or the day
+              // before one — the schedule blocks those out itself.
+              const group = data.plan.cardioOptions.find((c) => c.exerciseId === week.cardio!.exerciseId)?.group
+              const intense = group !== 'A'
+              const blocked = new Set<number>()
+              if (intense) {
+                for (const cns of data.plan.anchors.cnsWeekdays) {
+                  blocked.add(cns)
+                  blocked.add((cns + 6) % 7) // the eve of a CNS day
+                }
+              }
+              const picked = week.cardio.weekdays
+              return (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12.5px] font-bold">On which days?</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5, 6, 0].map((d) => {
+                        const isBlocked = blocked.has(d)
+                        const on = picked.includes(d as Weekday)
+                        return (
+                          <button
+                            key={d}
+                            disabled={isBlocked}
+                            onClick={() =>
+                              updateWeek(weekStart, (w) => {
+                                if (!w.cardio) return
+                                const has = w.cardio.weekdays.includes(d as Weekday)
+                                const next = has
+                                  ? w.cardio.weekdays.filter((x) => x !== d)
+                                  : [...w.cardio.weekdays, d as Weekday]
+                                w.cardio.weekdays = next.length ? next : w.cardio.weekdays
+                              })
+                            }
+                            className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
+                              isBlocked
+                                ? 'bg-surface text-ink-faint/40 line-through'
+                                : on
+                                  ? 'bg-accent text-black'
+                                  : 'bg-surface-2 text-ink-faint'
+                            }`}
+                          >
+                            {WD_LABEL[d]}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  {intense && blocked.size > 0 && (
+                    <p className="text-[10.5px] leading-snug text-ink-faint">
+                      Struck-out days are blocked for hard cardio: they're your max-effort days (
+                      {data.plan.anchors.cnsWeekdays.map((d) => WD_LABEL[d]).join(', ')}) or the evening
+                      before one — tired legs can't produce speed. Easy Zone-2 options ignore this rule.
+                    </p>
+                  )}
                 </div>
-              </div>
-            )}
+              )
+            })()}
           </>
         )}
       </Card>

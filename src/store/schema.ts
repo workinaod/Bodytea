@@ -158,7 +158,7 @@ const weekSchema = z.object({
   ballThisWeek: z.boolean().nullable(),
   ballDates: z.array(isoDate),
   cnsSwapDates: z.array(isoDate),
-  cardio: z.object({ exerciseId: z.string(), weekday }).nullable().optional(),
+  cardio: z.object({ exerciseId: z.string(), weekdays: z.array(weekday) }).nullable().optional(),
   events: z.record(z.string(), z.array(weekday)),
   friPushedToSat: z.boolean().optional(),
   badSleepDates: z.array(isoDate),
@@ -285,6 +285,19 @@ const appDataSchema = z.object({
   ),
   swaps: z.record(z.string(), z.record(z.string(), z.string())),
   dayLoad: z.record(z.string(), z.literal('trimmed')),
+  runs: z.array(
+    z.object({
+      id: z.string(),
+      activity: z.enum(['run', 'bike']),
+      date: isoDate,
+      startedAt: z.string(),
+      durationSec: z.number().min(0),
+      distanceMi: z.number().min(0),
+      avgPaceSec: z.number().min(0),
+      splits: z.array(z.number()),
+      points: z.array(z.tuple([z.number(), z.number(), z.number()])),
+    }),
+  ),
 })
 
 export const envelopeSchema = z.object({
@@ -476,6 +489,25 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
         JSON.stringify(t) === JSON.stringify(['11:30', '20:30']))
     if (e.data?.settings && (wasDefault || !t)) {
       e.data.settings.reminderTimes = ['05:00', '17:00']
+    }
+    return env
+  },
+  // v12 → v13: cardio backups schedule any number of days, and
+  // GPS-tracked runs/rides get a home.
+  12: (env) => {
+    const e = env as {
+      data?: {
+        runs?: unknown
+        weeks?: Record<string, { cardio?: { exerciseId: string; weekday?: number; weekdays?: number[] } | null }>
+      }
+    }
+    if (e.data) {
+      e.data.runs ??= []
+      for (const w of Object.values(e.data.weeks ?? {})) {
+        if (w.cardio && w.cardio.weekday !== undefined && !w.cardio.weekdays) {
+          w.cardio = { exerciseId: w.cardio.exerciseId, weekdays: [w.cardio.weekday as number] }
+        }
+      }
     }
     return env
   },

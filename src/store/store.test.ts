@@ -287,3 +287,29 @@ describe('v11 → v12: reminders move to 5 AM / 5 PM', () => {
     expect(parseEnvelope(JSON.stringify(custom)).data.settings.reminderTimes).toEqual(['06:15', '19:00'])
   })
 })
+
+describe('v12 → v13: multi-day cardio backups + GPS runs', () => {
+  it('wraps the old single weekday into an array and seeds runs', () => {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: { runs?: unknown; weeks: Record<string, Record<string, unknown>> }
+    }
+    env.schemaVersion = 12
+    delete env.data.runs
+    env.data.weeks['2026-08-10'] = {
+      mondayISO: '2026-08-10',
+      tier: 1,
+      tierPickedAt: null,
+      tierChanges: [],
+      ballThisWeek: false,
+      ballDates: [],
+      cnsSwapDates: [],
+      cardio: { exerciseId: 'easy-jog', weekday: 4 },
+      events: {},
+      badSleepDates: [],
+    }
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.data.runs).toEqual([])
+    expect(parsed.data.weeks['2026-08-10'].cardio).toEqual({ exerciseId: 'easy-jog', weekdays: [4] })
+  })
+})
