@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { CustomTarget, EquipTag, Goal, LifeEventKind, PlanConfig, RoutineGoal, Weekday } from '../types'
+import type { CustomTarget, DietStyle, EquipTag, Goal, LifeEventKind, PlanConfig, RoutineGoal, Weekday } from '../types'
 
 // The real-life checklist: each pick seeds a life event with a label the
 // engine's notes will use, so the coaching speaks this user's schedule.
@@ -12,7 +12,7 @@ const LIFE_CHIPS: { id: string; chip: string; label: string; kind: LifeEventKind
 import { mondayOf, todayISO, formatShort, addDaysISO } from '../engine/calendar'
 import { useAppStore, uid } from '../store/appStore'
 import { saveMeasurement } from '../logic/actions'
-import { generatePlan, buildNutrition, type OnboardingAnswers } from '../plan/generator'
+import { generatePlan, buildNutrition, FOCUS_LABELS, type FocusArea, type OnboardingAnswers } from '../plan/generator'
 import { byorNutrition, makeEmptyByorPlan, normalizeBooklet, validateBooklet, ROUTINE_GOAL_LABELS } from '../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../plan/analyze'
 import { BookletEditor } from './booklet/BookletEditor'
@@ -102,6 +102,9 @@ export function Onboarding() {
   const [lifePicks, setLifePicks] = useState<Set<string>>(new Set())
   const [customLife, setCustomLife] = useState('')
   const [customLifeKind, setCustomLifeKind] = useState<LifeEventKind>('late-night')
+  const [dietStyle, setDietStyle] = useState<DietStyle>('omnivore')
+  const [skipMeals, setSkipMeals] = useState(false)
+  const [focusAreas, setFocusAreas] = useState<Set<FocusArea>>(new Set())
   const [weight, setWeight] = useState(180)
   const [vert, setVert] = useState(0)
   const [pickedStart, setPickedStart] = useState(mondayOf(todayISO()))
@@ -127,8 +130,11 @@ export function Onboarding() {
         ...LIFE_CHIPS.filter((c) => lifePicks.has(c.id)).map((c) => ({ label: c.label, kind: c.kind })),
         ...(customLife.trim() ? [{ label: customLife.trim(), kind: customLifeKind }] : []),
       ],
+      dietStyle,
+      skipMeals,
+      focusAreas: [...focusAreas],
     }
-  }, [goal, goalStatement, target1, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind])
+  }, [goal, goalStatement, target1, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, skipMeals, focusAreas])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
@@ -208,6 +214,8 @@ export function Onboarding() {
       bodyweightLb: weight,
       mealsPerDay,
       lifeSeeds: answers.lifeSeeds,
+      dietStyle,
+      skipMeals,
     })
     setByorDraft((prev) =>
       prev
@@ -362,6 +370,37 @@ export function Onboarding() {
               className="w-14 rounded-xl border border-edge bg-surface px-3 py-2.5 text-[13px] font-semibold outline-none focus:border-accent/60"
             />
           </div>
+          {mode !== 'byor' && (
+            <>
+              <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">
+                Want extra attention anywhere? <span className="font-semibold normal-case tracking-normal">(pick up to 2)</span>
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {(Object.entries(FOCUS_LABELS) as [FocusArea, string][]).map(([id, label]) => (
+                  <Chip
+                    key={id}
+                    tone={focusAreas.has(id) ? 'accent' : 'default'}
+                    onClick={() =>
+                      setFocusAreas((prev) => {
+                        const n = new Set(prev)
+                        if (n.has(id)) n.delete(id)
+                        else if (n.size < 2) n.add(id)
+                        return n
+                      })
+                    }
+                  >
+                    {label}
+                  </Chip>
+                ))}
+              </div>
+              {focusAreas.size > 0 && (
+                <p className="mt-1 text-[11px] text-ink-faint">
+                  Direct {[...focusAreas].map((f) => FOCUS_LABELS[f].toLowerCase()).join(' + ')} work gets written into the plan every week.
+                </p>
+              )}
+            </>
+          )}
+
           <Btn
             className="mt-6 w-full py-4"
             onClick={() => (mode === 'byor' ? setStep(6) : next())}
@@ -551,26 +590,57 @@ export function Onboarding() {
               <p className="mt-0.5 text-[11px] leading-snug text-ink-faint">
                 Your meal plan is built around this — fewer meals just means bigger ones. Protein stays the same.
               </p>
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
-                {(
-                  [
-                    [2, '2 big meals'],
-                    [3, '3 square meals'],
-                    [4, '3 meals + a snack'],
-                    [5, 'Grazer — 5 small'],
-                  ] as const
-                ).map(([n, label]) => (
-                  <button
-                    key={n}
-                    onClick={() => setMealsPerDay(n)}
-                    className={`rounded-xl border px-3 py-2.5 text-[12.5px] font-bold ${
-                      mealsPerDay === n ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-surface-2 text-ink-dim'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className={skipMeals ? 'opacity-40' : ''}>
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  {(
+                    [
+                      [2, '2 big meals'],
+                      [3, '3 square meals'],
+                      [4, '3 meals + a snack'],
+                      [5, 'Grazer — 5 small'],
+                    ] as const
+                  ).map(([n, label]) => (
+                    <button
+                      key={n}
+                      onClick={() => {
+                        setMealsPerDay(n)
+                        setSkipMeals(false)
+                      }}
+                      className={`rounded-xl border px-3 py-2.5 text-[12.5px] font-bold ${
+                        mealsPerDay === n && !skipMeals ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-surface-2 text-ink-dim'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {(
+                    [
+                      ['omnivore', 'No restrictions'],
+                      ['vegetarian', 'Vegetarian'],
+                      ['vegan', 'Vegan'],
+                    ] as const
+                  ).map(([d, label]) => (
+                    <Chip
+                      key={d}
+                      tone={dietStyle === d && !skipMeals ? 'accent' : 'default'}
+                      onClick={() => {
+                        setDietStyle(d)
+                        setSkipMeals(false)
+                      }}
+                    >
+                      {label}
+                    </Chip>
+                  ))}
+                </div>
               </div>
+              <button
+                className="mt-2 text-[11.5px] font-semibold text-ink-faint underline"
+                onClick={() => setSkipMeals((v) => !v)}
+              >
+                {skipMeals ? '↩ Actually, set my meals up now' : 'Skip meals for now — set them up anytime in the Meals tab'}
+              </button>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[14px] font-bold">Standing reach / vert touch <span className="text-[11px] text-ink-faint">(optional)</span></span>

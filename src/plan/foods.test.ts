@@ -50,3 +50,26 @@ describe('buildMealPlan — coach-led eating styles', () => {
     expect(plan.templates.every((t) => t.detail.includes('ceiling'))).toBe(true)
   })
 })
+
+describe('diet styles in generated meal plans', () => {
+  const MEAT = /chicken|beef|steak|tuna|salmon|turkey|pork|jerky|rotisserie/i
+  const ANIMAL = /egg|yogurt|cheese|milk(?!k)|whey|cottage/i
+
+  it('vegan plans never suggest meat, fish, eggs, or dairy', () => {
+    for (const n of [2, 3, 4, 5] as const) {
+      const plan = buildMealPlan('muscle', 170, NUTRITION, n, 'vegan')
+      for (const t of plan.templates) {
+        expect(t.detail, `${n}-meal ${t.slot}: ${t.detail}`).not.toMatch(MEAT)
+        // soy milk is fine — strip it before the dairy check
+        expect(t.detail.replace(/soy milk/gi, ''), `${n}-meal ${t.slot}: ${t.detail}`).not.toMatch(ANIMAL)
+      }
+      expect(plan.grocery.find((g) => g.category === 'Protein')!.items.join(' ')).toMatch(/tofu/i)
+      expect(plan.supplements.some((s) => /fish|collagen/i.test(s.name))).toBe(false)
+    }
+  })
+
+  it('vegetarian plans never suggest meat or fish', () => {
+    const plan = buildMealPlan('general', 160, NUTRITION, 4, 'vegetarian')
+    for (const t of plan.templates) expect(t.detail, `${t.slot}: ${t.detail}`).not.toMatch(MEAT)
+  })
+})

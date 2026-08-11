@@ -1,4 +1,4 @@
-import type { CustomTarget, DayTemplate, Goal, LifeEventKind, PlanConfig, RoutineGoal, TemplateEntry, Weekday } from '../types'
+import type { CustomTarget, DayTemplate, DietStyle, Goal, LifeEventKind, PlanConfig, RoutineGoal, TemplateEntry, Weekday } from '../types'
 import { getExercise, EXERCISES } from './exercises'
 import { equipFor } from './equip'
 import { pickCardio, rationaleFor } from './generator'
@@ -64,6 +64,8 @@ export function makeEmptyByorPlan(args: {
   bodyweightLb: number
   mealsPerDay?: MealsPerDay
   lifeSeeds?: { label: string; kind: LifeEventKind }[]
+  dietStyle?: DietStyle
+  skipMeals?: boolean
   whyWorks?: string
 }): { plan: PlanConfig; proteinTargetG: number } {
   const owned = new Set<EquipTag>(['none', ...ALL_TAGS])
@@ -96,8 +98,12 @@ export function makeEmptyByorPlan(args: {
       lifeEvents: (args.lifeSeeds ?? []).map((s, i) => ({ id: `life-${i + 1}`, label: s.label, kind: s.kind })),
       rationale: {},
       nutrition: { kcalTraining: n.kcalTraining, kcalRest: n.kcalRest },
-      mealPlan: buildMealPlan(goal, n.proteinTargetG, n, args.mealsPerDay ?? 4),
+      mealPlan: (() => {
+        const mp = buildMealPlan(goal, n.proteinTargetG, n, args.mealsPerDay ?? 4, args.dietStyle ?? 'omnivore')
+        return args.skipMeals ? { ...mp, templates: [] } : mp
+      })(),
       sportMode: 'generic',
+      dietStyle: args.dietStyle ?? 'omnivore',
     },
   }
 }

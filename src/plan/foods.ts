@@ -1,4 +1,4 @@
-import type { Goal, MealPlanConfig, MealTemplateDef, SupplementDef, SupplementId } from '../types'
+import type { DietStyle, Goal, MealPlanConfig, MealTemplateDef, SupplementDef, SupplementId } from '../types'
 import { mealAlternatives } from './mealAlts'
 
 // ============================================================
@@ -247,8 +247,8 @@ const MEAL_SPLITS: Record<
 }
 
 /** A concrete "here's what that looks like" line from common groceries. */
-function suggestDetail(proteinG: number, kcal: number, slot: string): string {
-  const alt = mealAlternatives({ proteinG, kcal, slot }, 1)[0]
+function suggestDetail(proteinG: number, kcal: number, slot: string, diet: DietStyle): string {
+  const alt = mealAlternatives({ proteinG, kcal, slot, diet }, 1)[0]
   if (!alt) return 'Any combo that hits the number.'
   const gap = kcal - alt.kcal
   const pad =
@@ -267,6 +267,7 @@ export function buildMealPlan(
   proteinTargetG: number,
   nutrition: { kcalTraining: number; kcalRest: number },
   mealsPerDay: MealsPerDay = 4,
+  dietStyle: DietStyle = 'omnivore',
 ): MealPlanConfig {
   const p = Math.max(100, proteinTargetG || 160)
   const tail = goal === 'lean' ? ' Protein first — the calorie number is a ceiling, not a target to beat.' : ''
@@ -283,7 +284,7 @@ export function buildMealPlan(
         dayType,
         slot,
         name: s.name,
-        detail: suggestDetail(proteinG, kcal, slot) + tail,
+        detail: suggestDetail(proteinG, kcal, slot, dietStyle) + tail,
         proteinG,
         kcal,
       })
@@ -292,12 +293,24 @@ export function buildMealPlan(
   return {
     templates,
     grocery: [
-      { category: 'Protein', items: ['Your 2-3 staple proteins (chicken, beef, fish, tofu…)', 'Eggs', 'Greek yogurt or skyr', 'Whey or plant protein', 'Cottage cheese'] },
+      {
+        category: 'Protein',
+        items:
+          dietStyle === 'vegan'
+            ? ['Firm tofu + tempeh', 'Canned beans + lentils (stock up)', 'Plant protein powder', 'Soy milk', 'Edamame']
+            : dietStyle === 'vegetarian'
+              ? ['Eggs', 'Greek yogurt or skyr', 'Cottage cheese', 'Tofu + canned beans', 'Whey or plant protein']
+              : ['Your 2-3 staple proteins (chicken, beef, fish, tofu…)', 'Eggs', 'Greek yogurt or skyr', 'Whey or plant protein', 'Cottage cheese'],
+      },
       { category: 'Carbs', items: ['Rice or potatoes (big bag)', 'Oats', 'Bread or tortillas', 'Fruit for the week', 'Pasta or quinoa'] },
       { category: 'Fats', items: ['Olive oil', 'Nut butter', 'Nuts or seeds', 'Avocados'] },
       { category: 'Veg', items: ['2-3 vegetables you will actually eat', 'Salad bag', 'Frozen veg backup'] },
     ],
-    supplements: SUPPLEMENT_CATALOG.slice(0, 3).map((s) => ({ ...s })),
+    supplements: SUPPLEMENT_CATALOG.filter(
+      (s) => dietStyle !== 'vegan' || !['fishOil', 'collagen'].includes(s.id),
+    )
+      .slice(0, 3)
+      .map((s) => ({ ...s })),
     lateNight: { yes: [...LATE_NIGHT.yes], no: [...LATE_NIGHT.no] },
   }
 }

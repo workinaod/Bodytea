@@ -69,3 +69,29 @@ describe('mealAlternatives', () => {
     expect(a.map((x) => x.id)).toEqual(b.map((x) => x.id))
   })
 })
+
+describe('diet-aware alternatives', () => {
+  it('vegan targets get only vegan meals, even after slot-pool widening', () => {
+    for (const slot of ['Breakfast', 'Dinner', 'Late night', 'Snack']) {
+      const alts = mealAlternatives({ proteinG: 35, kcal: 550, slot, diet: 'vegan' })
+      expect(alts.length).toBeGreaterThan(0)
+      for (const a of alts) expect(a.diet, `${slot}: ${a.name}`).toBe('vegan')
+    }
+  })
+
+  it('vegetarian excludes meat/fish but keeps eggs and dairy', () => {
+    const alts = mealAlternatives({ proteinG: 40, kcal: 550, slot: 'Dinner', diet: 'vegetarian' })
+    expect(alts.length).toBeGreaterThan(0)
+    for (const a of alts) expect(a.diet).not.toBe('omni')
+  })
+
+  it('omnivore (and no diet) searches everything', () => {
+    const a = mealAlternatives({ proteinG: 45, kcal: 550, slot: 'Dinner', diet: 'omnivore' })
+    const b = mealAlternatives({ proteinG: 45, kcal: 550, slot: 'Dinner' })
+    expect(a.map((x) => x.id)).toEqual(b.map((x) => x.id))
+  })
+
+  it('the library carries real vegan coverage for mains', () => {
+    expect(COMMON_MEALS.filter((m) => m.diet === 'vegan' && (m.slots.includes('dinner') || m.slots.includes('lunch'))).length).toBeGreaterThanOrEqual(5)
+  })
+})

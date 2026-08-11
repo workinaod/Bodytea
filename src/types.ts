@@ -120,6 +120,8 @@ export type RoutineGoal = 'muscle' | 'lose-weight' | 'maintain' | 'athletic'
  * decides the effect: late-night → train that morning + short-sleep
  * caution; on-feet → the NEXT day drops a jump set (pre-fatigued legs).
  */
+export type DietStyle = 'omnivore' | 'vegetarian' | 'vegan'
+
 export type LifeEventKind = 'late-night' | 'on-feet'
 export interface LifeEventDef {
   id: string
@@ -213,6 +215,8 @@ export interface PlanConfig {
    * BYOR plan is generic — most people don't hoop.
    */
   sportMode?: 'ball' | 'generic'
+  /** How this user eats — filters generated meals + swap suggestions. */
+  dietStyle?: DietStyle
 }
 
 export interface Profile {

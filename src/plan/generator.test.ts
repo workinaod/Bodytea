@@ -154,3 +154,42 @@ describe('generated meal plans (v10)', () => {
     })
   }
 })
+
+describe('focus areas + diet + skippable meals', () => {
+  const base: Omit<OnboardingAnswers, 'goal'> = {
+    goalStatement: 'test',
+    customTargets: [],
+    daysPerWeek: 4,
+    equipProfile: 'gym',
+    extraEquip: [],
+    experience: 'returning',
+    bodyweightLb: 180,
+  }
+
+  it('picked focus areas get direct accessory work with a personal rationale', () => {
+    const { plan } = generatePlan({ ...base, goal: 'muscle', focusAreas: ['arms', 'glutes'] })
+    const fixedIds = Object.values(plan.templates)
+      .flatMap((t) => t.entries)
+      .map((e) => ('exerciseId' in e ? e.exerciseId : ''))
+    expect(['ez-bar-curl', 'hammer-curl', 'incline-db-curl', 'chin-up'].some((id) => fixedIds.includes(id))).toBe(true)
+    expect(['hip-thrust', 'glute-bridge'].some((id) => fixedIds.includes(id))).toBe(true)
+    const personal = Object.values(plan.rationale).filter((r) => r.includes('you asked for direct'))
+    expect(personal.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('focus work never lands on a max-effort day', () => {
+    const { plan } = generatePlan({ ...base, goal: 'vertical', focusAreas: ['arms'] })
+    for (const t of Object.values(plan.templates)) {
+      if (!t.cns) continue
+      const ids = t.entries.map((e) => ('exerciseId' in e ? e.exerciseId : ''))
+      expect(['ez-bar-curl', 'hammer-curl', 'incline-db-curl'].some((id) => ids.includes(id))).toBe(false)
+    }
+  })
+
+  it('vegan diet + skipped meals flow into the plan', () => {
+    const { plan } = generatePlan({ ...base, goal: 'muscle', dietStyle: 'vegan', skipMeals: true })
+    expect(plan.dietStyle).toBe('vegan')
+    expect(plan.mealPlan.templates).toEqual([])
+    expect(plan.mealPlan.grocery.find((g) => g.category === 'Protein')!.items.join(' ')).toMatch(/tofu/i)
+  })
+})

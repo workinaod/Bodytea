@@ -2,6 +2,7 @@ import type {
   CardioOption,
   CustomTarget,
   DayTemplate,
+  DietStyle,
   EquipTag,
   Goal,
   LifeEventKind,
@@ -37,6 +38,38 @@ export interface OnboardingAnswers {
   /** Their real week (shifts, gigs, kids) — seeded as life events so the
    *  coach's notes speak THEIR schedule from day one. */
   lifeSeeds?: { label: string; kind: LifeEventKind }[]
+  /** How they eat — meals, swaps, and grocery lists respect it. */
+  dietStyle?: DietStyle
+  /** Skip meal-plan generation; the Meals tab offers setup later. */
+  skipMeals?: boolean
+  /** Up to two body areas that get guaranteed direct weekly work. */
+  focusAreas?: FocusArea[]
+}
+
+// ---------- Focus areas: direct work the user explicitly asked for ----------
+
+export type FocusArea = 'arms' | 'chest' | 'back' | 'shoulders' | 'glutes' | 'legs' | 'core'
+
+export const FOCUS_LABELS: Record<FocusArea, string> = {
+  arms: 'Arms',
+  chest: 'Chest',
+  back: 'Back',
+  shoulders: 'Shoulders',
+  glutes: 'Glutes',
+  legs: 'Legs',
+  core: 'Core',
+}
+
+// Ordered candidates per area — the first equipment-legal, not-already-
+// programmed pick gets appended as accessory volume (3 × 10-15).
+const FOCUS_ACCESSORIES: Record<FocusArea, string[]> = {
+  arms: ['ez-bar-curl', 'hammer-curl', 'incline-db-curl', 'chin-up'],
+  chest: ['incline-db-press', 'flat-db-press', 'floor-press'],
+  back: ['one-arm-db-row', 'chest-supported-row', 'lat-pulldown', 'inverted-row'],
+  shoulders: ['lateral-raise', 'db-shoulder-press', 'rear-delt-raise'],
+  glutes: ['hip-thrust', 'glute-bridge'],
+  legs: ['leg-press', 'slider-leg-curl', 'single-leg-calf-raise'],
+  core: ['hanging-leg-raise', 'dead-bug', 'plank-side-plank'],
 }
 
 // ---------- Equipment profiles ----------
@@ -470,6 +503,32 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     .filter(([, r]) => r === 'power' || r === 'speed')
     .map(([wd]) => Number(wd) as Weekday)
 
+  // Focus areas: append direct accessory volume to the day that fits —
+  // never a max-effort day; the exercise must be equipment-legal and not
+  // already programmed there.
+  const focusPicks: { area: FocusArea; exerciseId: string }[] = []
+  const tier1Sessions = [...new Set(Object.values(tier1ByWeekday).filter((t): t is string => !!t))]
+    .map((tid) => templates[tid])
+    .filter((t) => t.kind === 'session')
+  for (const area of (a.focusAreas ?? []).slice(0, 2)) {
+    const wantLower = area === 'glutes' || area === 'legs'
+    const host =
+      tier1Sessions.find(
+        (t) => !t.cns && (wantLower ? /lower|leg/i.test(t.id + t.title) : /upper|push|pull|full/i.test(t.id + t.title)),
+      ) ??
+      tier1Sessions.find((t) => !t.cns) ??
+      tier1Sessions[tier1Sessions.length - 1]
+    if (!host) continue
+    const pick = FOCUS_ACCESSORIES[area]
+      .map((id) => resolveForEquipment(id, owned))
+      .find(
+        (id): id is string => !!id && !host.entries.some((e) => e.entry === 'fixed' && e.exerciseId === id),
+      )
+    if (!pick) continue
+    host.entries = [...host.entries, { entry: 'fixed', exerciseId: pick, sets: 3, repText: '10-15', repsNum: 12 }]
+    focusPicks.push({ area, exerciseId: pick })
+  }
+
   const slots = pickSlots(a.goal, owned)
   const cardioOptions = pickCardio(owned)
 
@@ -516,6 +575,20 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
 
   const nutrition = buildNutrition(a.goal, a.bodyweightLb)
 
+  const rationale = buildRationale(a.goal, a.goalStatement, [...referenced])
+  for (const f of focusPicks) {
+    rationale[f.exerciseId] =
+      `${getExercise(f.exerciseId).name} is here because you asked for direct ${FOCUS_LABELS[f.area].toLowerCase()} work — the plan guarantees it every week.`
+  }
+
+  const mealPlanFull = buildMealPlan(
+    a.goal,
+    nutrition.proteinTargetG,
+    nutrition,
+    a.mealsPerDay ?? 4,
+    a.dietStyle ?? 'omnivore',
+  )
+
   const plan: PlanConfig = {
     planVersion: 1,
     name: `${GOAL_LABEL[a.goal]} — ${a.daysPerWeek}-Day`,
@@ -537,10 +610,11 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     anchors: { conditioningWeekday, cnsWeekdays },
     lifeRules: { djWeekend: false, longShiftMonday: false },
     lifeEvents: (a.lifeSeeds ?? []).map((s, i) => ({ id: `life-${i + 1}`, label: s.label, kind: s.kind })),
-    rationale: buildRationale(a.goal, a.goalStatement, [...referenced]),
+    rationale,
     nutrition: { kcalTraining: nutrition.kcalTraining, kcalRest: nutrition.kcalRest },
-    mealPlan: buildMealPlan(a.goal, nutrition.proteinTargetG, nutrition, a.mealsPerDay ?? 4),
+    mealPlan: a.skipMeals ? { ...mealPlanFull, templates: [] } : mealPlanFull,
     sportMode: 'generic',
+    dietStyle: a.dietStyle ?? 'omnivore',
   }
   return { plan, proteinTargetG: nutrition.proteinTargetG }
 }

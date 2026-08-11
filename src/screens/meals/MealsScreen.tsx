@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
-import type { MealTemplateDef, SupplementDef } from '../../types'
+import type { DietStyle, MealTemplateDef, SupplementDef } from '../../types'
 import { uid, useAppStore } from '../../store/appStore'
 import { addDaysISO, formatDayLabel } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { kcalTargetFor, nutritionDayType } from '../../engine/resolveDay'
 import { kcalBumpSuggestion, kcalFor, proteinFor, proteinStreak } from '../../engine/stats'
-import { FOODS, SUPPLEMENT_CATALOG } from '../../plan/foods'
+import { buildMealPlan, FOODS, SUPPLEMENT_CATALOG, type MealsPerDay } from '../../plan/foods'
 import { mealAlternatives } from '../../plan/mealAlts'
 import { Btn, Card, Chip, Ring, SectionTitle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
@@ -37,6 +37,7 @@ export function MealsScreen() {
   const [view, setView] = useState<MealsView>('today')
   const [logOpen, setLogOpen] = useState(false)
   const [stackOpen, setStackOpen] = useState(false)
+  const [setupOpen, setSetupOpen] = useState(false)
 
   const day = data.meals[date]
   const mealPlan = data.plan.mealPlan
@@ -118,6 +119,22 @@ export function MealsScreen() {
             </Card>
           )}
 
+          {/* Skipped meal setup during onboarding? Do it here, anytime. */}
+          {mealPlan.templates.length === 0 && (
+            <button
+              onClick={() => setSetupOpen(true)}
+              className="w-full rounded-2xl border border-accent/35 bg-accent/8 px-4 py-3.5 text-left active:bg-accent/15"
+            >
+              <span className="block text-[13.5px] font-extrabold text-accent-soft">
+                No meal plan yet — build one in 20 seconds
+              </span>
+              <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-dim">
+                How many meals a day, how you eat (vegetarian and vegan covered) — the coach does the math.
+                Or skip it and just log; the rings work either way.
+              </span>
+            </button>
+          )}
+
           {/* THE action on this screen */}
           <Btn className="w-full py-4 text-[15px]" onClick={() => setLogOpen(true)}>
             + Log food
@@ -185,11 +202,12 @@ export function MealsScreen() {
         </>
       )}
 
-      {view === 'plan' && <PlanView onEditStack={() => setStackOpen(true)} />}
+      {view === 'plan' && <PlanView onEditStack={() => setStackOpen(true)} onSetup={() => setSetupOpen(true)} />}
       {view === 'grocery' && <GroceryList />}
 
       {logOpen && <LogSheet date={date} dayType={dayType} onClose={() => setLogOpen(false)} />}
       {stackOpen && <SupplementStackSheet onClose={() => setStackOpen(false)} />}
+      {setupOpen && <MealPlanSetupSheet onClose={() => setSetupOpen(false)} />}
     </div>
   )
 }
@@ -390,8 +408,9 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
 // own plan by clearing the starter meals and adding yours.
 // ============================================================
 
-function PlanView({ onEditStack }: { onEditStack: () => void }) {
+function PlanView({ onEditStack, onSetup }: { onEditStack: () => void; onSetup: () => void }) {
   const plan = useAppStore((s) => s.data.plan.mealPlan)
+  const diet = useAppStore((s) => s.data.plan.dietStyle)
   const update = useAppStore((s) => s.update)
   const [dt, setDt] = useState<'training' | 'rest'>('training')
   const [openMeal, setOpenMeal] = useState<MealTemplateDef | null>(null)
@@ -466,7 +485,14 @@ function PlanView({ onEditStack }: { onEditStack: () => void }) {
         </p>
       )}
 
+      {plan.templates.length === 0 && (
+        <Btn className="w-full" onClick={onSetup}>
+          Build my meal plan (20 seconds)
+        </Btn>
+      )}
+
       <Btn
+        kind={plan.templates.length === 0 ? 'subtle' : 'primary'}
         className="w-full"
         onClick={() =>
           setEditing({ id: uid(), dayType: dt, slot: 'Meal', name: '', detail: '', proteinG: 40, kcal: 500 })
@@ -528,6 +554,7 @@ function PlanView({ onEditStack }: { onEditStack: () => void }) {
 
       {openMeal && !editing && (
         <MealDetailSheet
+          diet={diet}
           meal={openMeal}
           onEdit={() => setEditing({ ...openMeal })}
           onReplace={(alt) =>
@@ -565,23 +592,100 @@ function PlanView({ onEditStack }: { onEditStack: () => void }) {
   )
 }
 
+/**
+ * Meal-plan setup, doable any time — the same two questions onboarding
+ * asks, for people who skipped them (or want a rebuild).
+ */
+function MealPlanSetupSheet({ onClose }: { onClose: () => void }) {
+  const update = useAppStore((s) => s.update)
+  const proteinTarget = useAppStore((s) => s.data.settings.proteinTargetG)
+  const [count, setCount] = useState<MealsPerDay>(4)
+  const [diet, setDiet] = useState<DietStyle>('omnivore')
+
+  return (
+    <Sheet open onClose={onClose} title="Build my meal plan">
+      <div className="space-y-4 pb-8">
+        <div>
+          <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
+            How do you actually eat?
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {(
+              [
+                [2, '2 big meals'],
+                [3, '3 square meals'],
+                [4, '3 meals + a snack'],
+                [5, 'Grazer — 5 small'],
+              ] as const
+            ).map(([n, label]) => (
+              <button
+                key={n}
+                onClick={() => setCount(n)}
+                className={`rounded-xl border px-3 py-2.5 text-[12.5px] font-bold ${
+                  count === n ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-surface-2 text-ink-dim'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">Any restrictions?</div>
+          <div className="flex flex-wrap gap-1.5">
+            {(
+              [
+                ['omnivore', 'No restrictions'],
+                ['vegetarian', 'Vegetarian'],
+                ['vegan', 'Vegan'],
+              ] as const
+            ).map(([d, label]) => (
+              <Chip key={d} tone={diet === d ? 'accent' : 'default'} onClick={() => setDiet(d)}>
+                {label}
+              </Chip>
+            ))}
+          </div>
+        </div>
+        <Btn
+          className="w-full py-3.5"
+          onClick={() => {
+            update((d) => {
+              d.plan.mealPlan = buildMealPlan(d.plan.goal, proteinTarget, d.plan.nutrition, count, diet)
+              d.plan.dietStyle = diet
+            })
+            onClose()
+          }}
+        >
+          Build it — sized to my {proteinTarget}g protein target
+        </Btn>
+        <p className="text-[11px] leading-snug text-ink-faint">
+          Every meal comes with a concrete common-grocery example and swap options. Edit or replace any of
+          them after — it's your plan.
+        </p>
+      </div>
+    </Sheet>
+  )
+}
+
 /** One meal up close: its numbers, edit access, and grocery-store swaps. */
 function MealDetailSheet({
   meal,
+  diet,
   onEdit,
   onReplace,
   onAddAlt,
   onClose,
 }: {
   meal: MealTemplateDef
+  diet: DietStyle | undefined
   onEdit: () => void
   onReplace: (alt: { name: string; ingredients: string[]; proteinG: number; kcal: number }) => void
   onAddAlt: (alt: { name: string; ingredients: string[]; proteinG: number; kcal: number }) => void
   onClose: () => void
 }) {
   const alts = useMemo(
-    () => mealAlternatives({ proteinG: meal.proteinG, kcal: meal.kcal, slot: meal.slot, excludeName: meal.name }),
-    [meal],
+    () => mealAlternatives({ proteinG: meal.proteinG, kcal: meal.kcal, slot: meal.slot, excludeName: meal.name, diet }),
+    [meal, diet],
   )
 
   return (
