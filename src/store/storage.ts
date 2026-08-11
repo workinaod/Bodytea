@@ -92,6 +92,12 @@ export interface ReminderMeta {
   /** Rest day + a workout missed this week → the make-up push has a name. */
   makeupTitle?: string | null
   makeupNotifiedDate?: string | null
+  /**
+   * How many notifications have been SHOWN and not yet read. This is the
+   * app-icon badge, and it may only ever be raised by actually delivering
+   * one. Opening the app reads them all and sets it back to zero.
+   */
+  badgeCount?: number
 }
 
 export const MetaStore = {

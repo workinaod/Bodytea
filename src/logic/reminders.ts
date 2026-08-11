@@ -4,13 +4,23 @@ import { resolveDay, weekStateFor } from '../engine/resolveDay'
 import { makeupCandidate } from '../engine/reconcile'
 import { reviewReady } from '../engine/review'
 import { todayISO } from '../engine/calendar'
+import {
+  clearBadge,
+  notificationSupport,
+  requestNotificationPermission,
+  setBadge,
+  showNotification,
+} from '../platform/notifications'
 
 // ============================================================
-// Training reminders, serverless edition, layered best effort:
-//  1. In-page timers while the app is open/backgrounded (everywhere)
+// Training reminders, layered best effort:
+//  1. In-page timers while the app is open (everywhere)
 //  2. Periodic Background Sync via the SW (Android/Chromium installs)
-//  3. App icon badge while today's session is unfinished (iOS + Android)
 // The page mirrors state into IndexedDB so the SW can decide alone.
+//
+// The badge is NOT a third layer. It counts notifications that were
+// actually shown, and opening the app clears it, because opening the
+// app is reading them. See platform/notifications.ts for why.
 // ============================================================
 
 let pageTimers: ReturnType<typeof setTimeout>[] = []
@@ -57,48 +67,53 @@ export async function syncReminderMeta(): Promise<void> {
     missNotifiedDate: prev?.missNotifiedDate ?? null,
     makeupTitle: t.makeupTitle,
     makeupNotifiedDate: prev?.makeupNotifiedDate ?? null,
+    badgeCount: prev?.badgeCount ?? 0,
   }
   await MetaStore.set(meta).catch(() => {})
 
   // Milestone-review push, page-side (covers platforms without periodic
   // sync). Once per mark, ever, three notifications a year, tops.
-  if (
-    settings.remindersEnabled &&
-    ready &&
-    meta.reviewNotifiedMark !== ready.id &&
-    typeof Notification !== 'undefined' &&
-    Notification.permission === 'granted'
-  ) {
-    await showLocalReminder(
+  if (settings.remindersEnabled && ready && meta.reviewNotifiedMark !== ready.id) {
+    const shown = await showLocalReminder(
       `${ready.label} is ready`,
       'Deltas, before/after, and the honest read on gains vs effort. Two minutes. You earned the look.',
       'naod-review-ready',
-    ).catch(() => {})
-    await MetaStore.set({ ...meta, reviewNotifiedMark: ready.id }).catch(() => {})
-  }
-
-  // App badge: a quiet, iOS-friendly "you still owe a session" signal
-  try {
-    const nav = navigator as Navigator & {
-      setAppBadge?: (n?: number) => Promise<void>
-      clearAppBadge?: () => Promise<void>
-    }
-    if (t.scheduled && !t.done && settings.remindersEnabled) await nav.setAppBadge?.(1)
-    else await nav.clearAppBadge?.()
-  } catch {
-    /* unsupported */
+    )
+    if (shown) await MetaStore.set({ ...meta, reviewNotifiedMark: ready.id }).catch(() => {})
   }
 }
 
-async function showLocalReminder(title: string, body: string, tag = 'naod-train-reminder'): Promise<void> {
-  if (Notification.permission !== 'granted') return
-  const reg = await navigator.serviceWorker.getRegistration()
-  await reg?.showNotification(`Bodytea · ${title}`, {
-    body,
-    tag,
-    icon: 'icons/pwa-192.png',
-    badge: 'icons/pwa-192.png',
-  })
+/**
+ * Show a reminder and count it on the badge.
+ *
+ * The badge is only ever raised here, on a delivery that actually
+ * happened, so it can never outlive a message the user can read.
+ */
+async function showLocalReminder(
+  title: string,
+  body: string,
+  tag = 'naod-train-reminder',
+): Promise<boolean> {
+  const shown = await showNotification(title, body, tag)
+  if (!shown) return false
+  const meta = await MetaStore.get().catch(() => null)
+  const count = (meta?.badgeCount ?? 0) + 1
+  if (meta) await MetaStore.set({ ...meta, badgeCount: count }).catch(() => {})
+  await setBadge(count)
+  return true
+}
+
+/**
+ * The app is open, so every notification behind the badge has been read.
+ * This is the only thing that clears it, and it runs on every open, so a
+ * badge can never survive a visit.
+ */
+export async function markNotificationsRead(): Promise<void> {
+  await clearBadge()
+  const meta = await MetaStore.get().catch(() => null)
+  if (meta && (meta.badgeCount ?? 0) !== 0) {
+    await MetaStore.set({ ...meta, badgeCount: 0 }).catch(() => {})
+  }
 }
 
 /** (Re)arm in-page timers for today's remaining reminder times. */
@@ -106,7 +121,7 @@ export function armPageTimers(): void {
   for (const t of pageTimers) clearTimeout(t)
   pageTimers = []
   const { settings } = useAppStore.getState().data
-  if (!settings.remindersEnabled || Notification.permission !== 'granted') return
+  if (!settings.remindersEnabled || notificationSupport() !== 'granted') return
 
   const now = new Date()
   for (const hm of settings.reminderTimes) {
@@ -123,7 +138,7 @@ export function armPageTimers(): void {
           // session's in, the daily cardio question is still open
           void showLocalReminder(
             'Cardio check',
-            'Session done ✓. Any cardio today? Run or game, pre or post, log it.',
+            'Session done. Any cardio today? Run or game, pre or post, log it.',
             'naod-cardio-nudge',
           )
         }
@@ -134,10 +149,7 @@ export function armPageTimers(): void {
 
 /** Ask permission + register periodic sync. Returns whether notifications are granted. */
 export async function enableReminders(): Promise<boolean> {
-  if (!('Notification' in window)) return false
-  let permission = Notification.permission
-  if (permission === 'default') permission = await Notification.requestPermission()
-  if (permission !== 'granted') return false
+  if (!(await requestNotificationPermission())) return false
 
   useAppStore.getState().update((d) => {
     d.settings.remindersEnabled = true
@@ -166,16 +178,18 @@ export function disableReminders(): void {
   })
   for (const t of pageTimers) clearTimeout(t)
   pageTimers = []
+  // Turning reminders off must take the badge with it, or a number sits
+  // there forever with nothing left that could ever clear it.
+  void markNotificationsRead()
   void syncReminderMeta()
 }
 
 /** Call on app open / visibility gain / store changes. */
 export function refreshReminders(): void {
+  // Being here means every pending notification has been seen.
+  void markNotificationsRead()
   void syncReminderMeta()
   armPageTimers()
 }
 
-export function notificationSupport(): 'granted' | 'denied' | 'default' | 'unsupported' {
-  if (typeof Notification === 'undefined') return 'unsupported'
-  return Notification.permission
-}
+export { notificationSupport } from '../platform/notifications'

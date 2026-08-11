@@ -9,6 +9,7 @@ import {
   notificationSupport,
   refreshReminders,
 } from '../../logic/reminders'
+import { deliveryCapability, deliveryNote } from '../../platform/notifications'
 
 const WD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -17,6 +18,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
   const update = useAppStore((s) => s.update)
   const [notifDenied, setNotifDenied] = useState(false)
   const support = notificationSupport()
+  const capability = deliveryCapability()
 
   return (
     <Sheet open={open} onClose={onClose} title="Settings">
@@ -34,8 +36,14 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
               }
             }}
             label="Training reminders"
-            sub="Max two nudges a day, only while a training day sits unfinished. Plus an app-icon badge until it's done."
+            sub="Max two nudges a day, only while a training day sits unfinished."
           />
+          {/* What this device can actually do, rather than what the feature
+              wishes it could. A switch that silently does nothing is worse
+              than one that says where its limits are. */}
+          {settings.remindersEnabled && (
+            <p className="mt-1.5 text-label leading-snug text-ink-faint">{deliveryNote(capability)}</p>
+          )}
           {notifDenied && (
             <p className="mt-1.5 text-[11.5px] font-semibold text-danger">
               Notifications are blocked{support === 'unsupported' ? ' (not supported here)' : '. Allow them in your browser/app settings, then flip this again'}.
@@ -63,9 +71,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
                 ))}
               </div>
               <p className="mt-1.5 text-[10.5px] leading-snug text-ink-faint">
-                Reminders only fire on training days with no finished session. Background delivery works
-                best installed on Android; on iPhone you'll get the app-icon badge plus reminders when
-                you open or switch back to the app (no server = no iOS background push).
+                Only on training days with no finished session.
               </p>
             </div>
           )}

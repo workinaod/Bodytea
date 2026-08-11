@@ -38,6 +38,8 @@ interface ReminderMeta {
   missNotifiedDate?: string | null
   makeupTitle?: string | null
   makeupNotifiedDate?: string | null
+  /** Notifications shown and not yet read. Mirrors store/storage.ts. */
+  badgeCount?: number
 }
 
 function readMeta(): Promise<ReminderMeta | null> {
@@ -76,6 +78,25 @@ function writeMeta(meta: ReminderMeta, patch: Partial<ReminderMeta>): Promise<vo
       }
     }
   })
+}
+
+/**
+ * Count one delivered notification on the app icon.
+ *
+ * The badge may only ever be raised alongside a message the user can
+ * actually open. Reading it back from meta rather than tracking it here
+ * keeps the page and the worker on one number.
+ */
+async function bumpBadge(meta: ReminderMeta): Promise<void> {
+  const count = (meta.badgeCount ?? 0) + 1
+  await writeMeta(meta, { badgeCount: count })
+  try {
+    await (navigator as Navigator & { setAppBadge?: (n?: number) => Promise<void> }).setAppBadge?.(
+      count,
+    )
+  } catch {
+    /* unsupported */
+  }
 }
 
 const NUDGES = [
@@ -196,6 +217,7 @@ async function maybeNotify(): Promise<void> {
       badge: 'icons/pwa-192.png',
     },
   )
+  await bumpBadge(meta)
   await writeMeta(meta, { lastNotifiedAt: new Date().toISOString() })
 }
 
@@ -208,6 +230,18 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   event.waitUntil(
     (async () => {
+      // Acting on a notification reads it, so the badge goes with it.
+      // The page clears it again on open; doing it here too means the
+      // icon is clean before the window has even painted.
+      try {
+        await (
+          navigator as Navigator & { clearAppBadge?: () => Promise<void> }
+        ).clearAppBadge?.()
+        const meta = await readMeta()
+        if (meta) await writeMeta(meta, { badgeCount: 0 })
+      } catch {
+        /* badge is optional */
+      }
       const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       const existing = all.find((c) => 'focus' in c)
       if (existing) await (existing as WindowClient).focus()
