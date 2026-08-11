@@ -18,12 +18,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'sprint',
       equipment: 'Field / court',
       steps: [
-        'Stand tall, feet together, arms relaxed.',
-        'Lean forward from the ankles, keep your body in one straight line, until you literally have to catch yourself.',
-        'The instant you tip past the point of no return, fire the catching leg into the ground and GO.',
-        'Stay LOW for the first 5 yards: chest over knees, driving the ground backward behind you with each step.',
-        'Punch your arms hard, they set the rhythm for your legs.',
-        'Walk all the way back and reset completely before the next rep. Full recovery, every rep.',
+        'Stand tall with feet together and arms relaxed, body in one straight line.',
+        'Lean forward from the ankles until you have to catch yourself, then fire that leg down and sprint 5–10 yards low, driving the ground back.',
+        'Stay chest over knees with hard arm punches, don’t pop up early. Walk back and fully recover before every rep.',
       ],
       targets: {
         muscles: ['Glutes', 'Hamstrings', 'Calves', 'Hip flexors'],
@@ -45,12 +42,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'jump',
       equipment: 'Box or bench',
       steps: [
-        'Stand a short step back from the box, feet hip-width.',
-        'Swing your arms back as you dip your hips fast, a quick, shallow quarter squat.',
-        'Explode UP: throw your arms, extend hips, knees, and ankles all at once.',
-        'Pull your knees up and land soft on the middle of the box, both feet flat.',
-        'Stand fully tall on top. STEP down, never jump down.',
-        'Reset your stance and your breath before every jump. Each rep is a max effort.',
+        'Stand a short step back from the box, feet hip-width, arms ready to swing.',
+        'Dip fast with a big arm swing, explode up off both feet, and land soft on the middle of the box, both feet flat. Stand tall on top.',
+        'Every rep is a max effort from a full reset, and always STEP down, never jump down. Stop the set when your height drops.',
       ],
       targets: {
         muscles: ['Glutes', 'Quads', 'Calves'],
@@ -72,12 +66,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbell',
       steps: [
-        'Hold one dumbbell vertically against your chest, elbows tucked under it.',
-        'Feet shoulder-width, toes slightly out. Brace your abs like someone is about to poke you.',
-        'Sit straight down between your knees, chest proud, elbows tracking inside your knees.',
-        'Hit just below parallel (or as deep as you can keep your heels down and back flat).',
-        'Drive the floor away FAST, the lowering is controlled, the standing is explosive.',
-        'Exhale hard through the sticking point. Re-brace before the next rep.',
+        'Hold one dumbbell vertically against your chest, elbows tucked under it. Feet shoulder-width, toes slightly out, abs braced.',
+        'Sit straight down between your knees to just below parallel, chest proud, then drive the floor away FAST to stand.',
+        'Control the lowering, explode up, and exhale hard through the sticking point. Heels stay down, leave 2–3 reps in the tank.',
       ],
       targets: {
         muscles: ['Quads', 'Glutes', 'Core'],
@@ -99,11 +90,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells',
       steps: [
-        'Clean two dumbbells to your shoulders, one end resting on each shoulder, elbows high.',
-        'Feet shoulder-width, toes slightly out. Big breath into your belly, brace.',
-        'Squat straight down, staying as upright as the front-loaded weight forces you to be.',
-        'Just below parallel, then drive up hard through mid-foot.',
-        'Keep elbows up the whole rep, if they drop, the weight pulls you forward.',
+        'Clean two dumbbells to your shoulders, one end resting on each, elbows high. Feet shoulder-width, big breath, brace.',
+        'Squat straight down, staying as upright as the front load demands, to just below parallel, then drive up hard through mid-foot.',
+        'Keep the elbows up the whole rep so the weight can’t pull you forward. Re-breathe and re-brace before every rep.',
       ],
       targets: {
         muscles: ['Quads', 'Glutes', 'Upper back', 'Core'],
@@ -124,11 +113,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbell + plates under heels',
       steps: [
-        'Set your heels on a plate or low board (1–2 inches), forefoot on the floor.',
-        'Hold the dumbbell at your chest like a normal goblet squat.',
-        'Squat DEEP, the heel lift lets your knees travel forward, so ride them forward on purpose.',
-        'Stay upright, sink to full depth, and feel the quads load hard at the bottom.',
-        'Stand explosively. Control down, fast up.',
+        'Set your heels on a 1–2 inch plate or board, forefoot on the floor, and hold a dumbbell at your chest like a goblet squat.',
+        'Squat DEEP, riding the knees forward on purpose, feel the quads load at the bottom, then stand explosively.',
+        'Stay upright and tight, control down and fast up. No bouncing out of the bottom and no knees caving in.',
       ],
       targets: {
         muscles: ['Quads (emphasized)', 'Glutes', 'Core'],
@@ -149,12 +136,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Barbell',
       steps: [
-        'Stand tall holding the bar at your hips, hands just outside your thighs.',
-        'Soft knees, set them slightly bent and keep that angle the whole rep.',
-        'Push your HIPS straight back and let the bar slide down your thighs, back flat, lats tight.',
-        'Go until your hamstrings pull hard (usually just below the knees), not until the bar hits the floor.',
-        'Drive your hips forward to stand, squeezing your glutes at the top. Don’t lean back.',
-        'Keep the bar glued to your legs the entire time.',
+        'Stand tall holding the bar at your hips, hands just outside your thighs, knees slightly bent and fixed at that angle.',
+        'Push your hips back so the bar slides down your thighs until the hamstrings pull hard below the knees, then drive the hips forward to stand.',
+        'Keep the bar glued to your legs and your back flat the whole time. Squeeze the glutes at the top, don’t lean back.',
       ],
       targets: {
         muscles: ['Hamstrings', 'Glutes', 'Lower back', 'Grip'],
@@ -178,11 +162,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Dumbbells + bench',
       perSide: true,
       steps: [
-        'Stand a big step in front of the bench, rear foot laces-down on it.',
-        'Hold a dumbbell in each hand. Most of your weight lives on the FRONT leg.',
-        'Drop your back knee straight down toward the floor, front shin fairly vertical.',
-        'Light touch at the bottom, then drive up through the front heel.',
-        'Finish all reps on one leg, then switch. Front leg does the work, the back leg is a kickstand.',
+        'Stand a big step in front of the bench, rear foot laces-down on it, a dumbbell in each hand. Weight lives on the front leg.',
+        'Drop the back knee straight down toward the floor, front shin fairly vertical, touch lightly, then drive up through the front heel.',
+        'The back leg is just a kickstand, never push off it. Own the balance, finish all reps on one leg, then switch.',
       ],
       targets: {
         muscles: ['Quads', 'Glutes', 'Adductors'],
@@ -206,10 +188,8 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       perSide: true,
       steps: [
         'Stand tall with a dumbbell in each hand at your sides.',
-        'Take a long step forward and drop your back knee toward the floor.',
-        'Front knee tracks over the toes; torso stays tall with a slight forward lean.',
-        'Push HARD off the front heel and step straight through into the next lunge.',
-        'Keep moving, smooth, controlled, no pause between steps.',
+        'Take a long step forward, drop the back knee toward the floor, then push HARD off the front heel straight into the next lunge.',
+        'Torso tall with a slight lean, front knee over the toes. Smooth continuous steps, no slamming the back knee down.',
       ],
       targets: {
         muscles: ['Quads', 'Glutes', 'Hamstrings'],
@@ -231,11 +211,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Dumbbells + bench',
       perSide: true,
       steps: [
-        'Stand facing the bench with a dumbbell in each hand.',
-        'Put one whole foot on the bench, heel included.',
-        'Drive through THAT heel to lift your body up. Don’t bounce off the floor leg.',
-        'Stand fully tall on top, then lower yourself down slowly on the same leg.',
-        'Finish the set on one side, then switch.',
+        'Stand facing the bench with a dumbbell in each hand. Put one whole foot on it, heel included.',
+        'Drive through that heel to lift your body up until you stand fully tall on top, then lower down slowly on the same leg.',
+        'Don’t kick off the bottom leg, the top leg does all the work. Finish the set on one side, then switch.',
       ],
       targets: {
         muscles: ['Glutes', 'Quads'],
@@ -257,11 +235,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: '1 dumbbell',
       perSide: true,
       steps: [
-        'Stand on one foot on a step or plate, ball of the foot on the edge, heel hanging off.',
-        'Hold a dumbbell on the working side; fingertips of the other hand on a wall for balance.',
-        'Lower your heel slowly below the step until you feel a deep calf stretch.',
-        'Pause one second at the bottom, no bouncing.',
-        'Drive up as HIGH as you can onto your big toe. Squeeze hard at the top.',
+        'Stand one foot on a step, ball of the foot on the edge, heel hanging. Dumbbell on the working side, other hand on a wall.',
+        'Lower the heel slowly below the step to a deep stretch, pause one second, then drive up as high as you can onto the big toe.',
+        'No bouncing and no bending the knee to cheat. Full stretch to full squeeze, every rep.',
       ],
       targets: {
         muscles: ['Calves (gastroc + soleus)', 'Foot/ankle stabilizers'],
@@ -283,10 +259,8 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Pull-up bar',
       steps: [
         'Hang from the bar, hands shoulder-width, body still.',
-        'Tilt your pelvis under first, think “tuck your tailbone”.',
-        'Raise your legs (bent knees to start, straight as you get stronger) to hip height or above.',
-        'Lower SLOWLY. 2–3 seconds down, without swinging.',
-        'Kill all momentum between reps. If you swing, the abs stop working.',
+        'Tuck your tailbone under first, then raise your legs (bent knees to start) to hip height or above, and lower over 2–3 slow seconds.',
+        'Kill all swing between reps. If momentum sneaks in, the abs stop working.',
       ],
       targets: {
         muscles: ['Lower abs', 'Hip flexors', 'Grip'],
@@ -309,11 +283,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells + bench',
       steps: [
-        'Set the bench to a 30–45° incline. Sit with the dumbbells on your thighs.',
-        'Kick them up one at a time as you lie back; start pressed over your upper chest.',
-        'Pull your shoulder blades back and down into the bench, they stay pinned all set.',
-        'Lower with CONTROL to the outer chest, elbows about 45° from your body.',
-        'Press up and slightly in, exhaling hard. Touch the dumbbells gently at the top, no clank.',
+        'Set the bench to a 30–45° incline, kick the dumbbells up as you lie back, and pin your shoulder blades back and down into the bench.',
+        'Lower the weights with control to your outer chest, elbows about 45° from your body, then press up and slightly in over your upper chest.',
+        'Exhale hard as you press and keep the blades pinned all set. Shoulders rolling forward is how pressing starts to hurt.',
       ],
       targets: {
         muscles: ['Upper chest', 'Front delts', 'Triceps'],
@@ -336,11 +308,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells + bench',
       steps: [
-        'Lie flat, feet planted on the floor, slight arch, shoulder blades pinned back and down.',
-        'Start with dumbbells over your chest, palms forward or slightly turned in.',
-        'Lower under control until you feel a full chest stretch, elbows ~45° from your sides.',
-        'Press up and slightly together, squeezing the chest at lockout.',
-        'Keep your wrists stacked straight over your elbows the whole rep.',
+        'Lie flat with feet planted, slight arch, shoulder blades pinned back and down. Dumbbells start over your chest, palms forward.',
+        'Lower under control to a full chest stretch, elbows about 45° from your sides, then press up and slightly together to lockout.',
+        'Exhale as you press and squeeze the chest at the top. Wrists stacked over elbows, no bouncing out of the bottom.',
       ],
       targets: {
         muscles: ['Chest', 'Front delts', 'Triceps'],
@@ -361,11 +331,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Barbell',
       steps: [
-        'Lie on the floor under the bar (or roll it over you), knees bent, feet flat.',
-        'Grip just inside shoulder-width. Elbows tucked close to your sides.',
-        'Lower under control until your upper arms rest gently on the floor, pause a beat.',
-        'Press hard from the dead stop, exhaling through the press.',
-        'Lock out with triceps, keeping wrists straight over elbows.',
+        'Lie on the floor under the bar, knees bent, feet flat. Grip just inside shoulder-width, elbows tucked close to your sides.',
+        'Lower under control until your upper arms rest gently on the floor, pause a beat, then press hard from the dead stop to lockout.',
+        'No bouncing off the floor and no bridging the hips. Exhale through the press, wrists straight over elbows.',
       ],
       targets: {
         muscles: ['Triceps', 'Chest', 'Front delts'],
@@ -386,11 +354,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Barbell',
       steps: [
-        'Bar at your collarbones, hands just outside shoulders, elbows slightly in front of the bar.',
-        'Squeeze your glutes and brace your abs HARD, your torso is the platform.',
-        'Press the bar in a straight line, pulling your chin back to let it pass your face.',
-        'As the bar clears your head, push your head “through the window” so the bar stacks over your spine.',
-        'Lock out with biceps by your ears. Lower under control back to the collarbones.',
+        'Bar at your collarbones, hands just outside shoulders, elbows slightly in front of the bar. Squeeze glutes, brace abs HARD.',
+        'Press in a straight line, chin back to let the bar pass, then push your head through so the bar locks out stacked over your spine.',
+        'No lean-back and no leg drive, if you must dip to press it, it’s too heavy. Lower under control and re-brace each rep.',
       ],
       targets: {
         muscles: ['Shoulders', 'Triceps', 'Upper chest', 'Core'],
@@ -412,11 +378,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells',
       steps: [
-        'Stand tall, dumbbells at your sides, slight bend in the elbows.',
-        'Lean forward a hair and raise the weights out to your sides, leading with your ELBOWS.',
-        'Stop at shoulder height, pinkies slightly higher than thumbs, like pouring water.',
-        'Lower slowly. 2–3 seconds down. The lowering is half the set.',
-        'Stay strict. If you have to swing, the weight is too heavy.',
+        'Stand tall, dumbbells at your sides, slight bend in the elbows, leaning forward a hair.',
+        'Raise the weights out to shoulder height, leading with the ELBOWS, pinkies slightly high, then lower over 2–3 slow seconds.',
+        'The slow lowering is half the set. Stay strict, if you have to swing, the weight is too heavy.',
       ],
       targets: {
         muscles: ['Side delts'],
@@ -437,11 +401,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Barbell + bench',
       steps: [
-        'Grip the bar just inside shoulder-width. NOT hands-touching narrow.',
-        'Unrack with wrists stacked straight; elbows stay tucked near your sides.',
-        'Lower to your lower chest under control, forearms staying vertical.',
-        'Press up, finishing the last third with a hard triceps lockout.',
-        'Exhale through the press; re-set your brace between reps.',
+        'Grip the bar just inside shoulder-width, not hands-touching narrow. Unrack with wrists stacked, elbows tucked near your sides.',
+        'Lower under control to your lower chest, forearms staying vertical, then press up to a hard triceps lockout.',
+        'Keep the elbows tucked, flaring turns it back into a chest press. Exhale on the press, never bounce off the chest.',
       ],
       targets: {
         muscles: ['Triceps', 'Chest', 'Front delts'],
@@ -462,11 +424,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: '1 dumbbell or EZ bar',
       steps: [
-        'Stand or sit tall. Hold one dumbbell with both hands cupped under the top plate, overhead.',
-        'Elbows point forward, close to your head, lock them in place.',
-        'Lower the weight slowly behind your head until you feel a deep triceps stretch.',
-        'Extend back to straight arms without moving the upper arms.',
-        'Keep ribs down and abs on so your lower back doesn’t arch.',
+        'Stand or sit tall holding one dumbbell overhead, both hands cupped under the top plate, elbows pointing forward by your head.',
+        'Lower the weight slowly behind your head to a deep triceps stretch, then extend to straight arms without moving the upper arms.',
+        'The bottom stretch is the growth, never cut it short. Ribs down and abs on so the lower back doesn’t arch.',
       ],
       targets: {
         muscles: ['Triceps (long head)'],
@@ -487,11 +447,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Light dumbbells + incline bench',
       steps: [
-        'Lie face down on an incline bench, arms hanging straight down, light dumbbells in hand.',
-        'Turn your thumbs UP toward the ceiling.',
-        'Raise both arms up-and-out into a Y shape, squeezing the lower traps between your shoulder blades.',
-        'Pause at the top for a second.',
-        'Lower slow and controlled. These stay LIGHT. 5s and 10s do the job.',
+        'Lie face down on an incline bench, arms hanging straight down with light dumbbells, thumbs turned UP toward the ceiling.',
+        'Raise both arms up-and-out into a Y, squeezing between the shoulder blades, pause a second, then lower slow and controlled.',
+        'Stay LIGHT, 5s and 10s do the job. If your shoulders shrug toward your ears, go lighter and slower.',
       ],
       targets: {
         muscles: ['Lower traps', 'Rear delts', 'Rotator cuff'],
@@ -515,11 +473,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells or barbell',
       steps: [
-        'Barbell: bar on front delts, fingertips under it, elbows driven HIGH. DBs: one on each shoulder.',
-        'Feet shoulder-width, toes slightly out. Big belly breath, brace hard.',
-        'Squat down keeping your torso as vertical as possible, the front load demands it.',
-        'Below parallel if your heels stay down; drive up through mid-foot.',
-        'Elbows stay high the entire rep. Exhale over the top, re-brace, go again.',
+        'Rack the bar on your front delts, fingertips under it, elbows driven HIGH (dumbbells: one on each shoulder). Big breath, brace hard.',
+        'Squat straight down, torso as vertical as possible, to below parallel with heels down, then drive up through mid-foot.',
+        'Elbows stay high all rep or the weight tips you forward. Exhale over the top, re-brace, and never grind to failure.',
       ],
       targets: {
         muscles: ['Quads', 'Glutes', 'Upper back', 'Core'],
@@ -541,12 +497,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Barbell + bench',
       steps: [
-        'Sit on the floor, upper back against the bench edge (bottom of the shoulder blades).',
-        'Roll the bar over your hips onto a pad or folded towel.',
-        'Feet flat, hip-width, positioned so your shins are VERTICAL at the top.',
-        'Drive through your heels and squeeze your glutes to lift the bar until your body is a flat table.',
-        'Chin tucked, ribs down, do NOT arch the lower back to finish.',
-        'Hold the top squeeze for a full second, lower under control, repeat.',
+        'Upper back on the bench edge, bar padded across your hips, feet flat hip-width so your shins are vertical at the top.',
+        'Drive through the heels and squeeze the glutes until your body is a flat table, hold one full second, then lower under control.',
+        'Chin tucked, ribs down: squeeze the glutes flat, never arch the lower back to finish the rep.',
       ],
       targets: {
         muscles: ['Glutes', 'Hamstrings'],
@@ -570,11 +523,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Dumbbell',
       perSide: true,
       steps: [
-        'Hold a dumbbell in the hand OPPOSITE the standing leg.',
-        'Soft knee on the standing leg. Hinge at the hip, letting the free leg drift straight back.',
-        'Keep hips SQUARE to the floor, imagine headlights on your hip bones pointing down.',
-        'Lower until the hamstring pulls hard (dumbbell near mid-shin), back flat.',
-        'Drive the hips forward to stand, squeezing the glute. All reps one side, then switch.',
+        'Stand on one leg with a soft knee, dumbbell in the OPPOSITE hand.',
+        'Hinge at the hip, free leg drifting straight back, until the hamstring pulls hard near mid-shin, then drive the hips forward to stand.',
+        'Hips stay square to the floor, back flat, range ends where the hamstring ends. Slow is strong, all reps one side then switch.',
       ],
       targets: {
         muscles: ['Hamstrings', 'Glutes', 'Ankle/hip stabilizers'],
@@ -596,11 +547,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Barbell',
       steps: [
-        'Bar on your upper back like a squat, hands squeezing it tight, lats on.',
-        'Feet hip-width, soft knees fixed in place.',
-        'Push your hips straight BACK, folding at the hip until your torso nears 45° (or hamstrings stop you).',
-        'Keep the back table-flat and the bar path over mid-foot.',
-        'Drive hips forward to stand tall. Start LIGHT, this rewards patience.',
+        'Bar on your upper back like a squat, hands squeezing tight. Feet hip-width, soft knees fixed in place.',
+        'Push your hips straight BACK, folding until your torso nears 45° or the hamstrings stop you, then drive the hips forward to stand tall.',
+        'Back stays table-flat and the weight stays light, this lift rewards patience. No extra knee bend creeping in.',
       ],
       targets: {
         muscles: ['Hamstrings', 'Glutes', 'Spinal erectors'],
@@ -621,11 +570,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Floor + towel/sliders',
       steps: [
-        'Lie on your back, heels on towels (hard floor) or sliders, knees bent, hips bridged UP.',
-        'From the bridge, slide your heels away until your legs are nearly straight, hips stay up.',
-        'Drag your heels back toward you with your hamstrings, keeping the bridge tall.',
-        'That drag-back is the rep. Slow out, strong in.',
-        'If it’s too hard, slide out only as far as you can control. Too easy: pause 2s extended.',
+        'Lie on your back, heels on towels or sliders, knees bent, hips bridged UP.',
+        'Slide your heels away until the legs are nearly straight, then drag them back with the hamstrings, hips staying tall the whole time.',
+        'Slow out, strong in, and never let the hips sag. Too hard? Slide out only as far as you can control.',
       ],
       targets: {
         muscles: ['Hamstrings (knee-flexion role)', 'Glutes'],
@@ -647,11 +594,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Dumbbell + bench',
       perSide: true,
       steps: [
-        'Sit on the bench, ball of one foot on a plate or step, dumbbell standing on that knee.',
-        'Let the heel sink to a deep stretch, pause one second.',
-        'Press up onto the ball of the foot as high as it goes, squeezing the calf.',
-        'Slow down, pause, drive up. No bouncing at any point.',
-        'Finish the side, then switch.',
+        'Sit on the bench, ball of one foot on a plate or step, a dumbbell standing on that knee.',
+        'Let the heel sink to a deep stretch, pause one second, then press up onto the ball of the foot as high as it goes and squeeze.',
+        'Slow down, pause, drive up, no bouncing anywhere. Finish the side, then switch.',
       ],
       targets: {
         muscles: ['Soleus (deep calf)'],
@@ -672,11 +617,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells + step',
       steps: [
-        'Stand with both forefeet on a step or plate, heels hanging, a heavy dumbbell in each hand.',
-        'Sink both heels to a deep stretch. One-second pause.',
-        'Drive up as tall as possible onto the big toes, think “jump without leaving the ground”.',
-        'Squeeze the top hard, lower over 2–3 seconds.',
-        'Both legs means more total load, go heavier than the single-leg weeks.',
+        'Stand with both forefeet on a step, heels hanging, a heavy dumbbell in each hand.',
+        'Sink both heels to a deep one-second stretch, then drive up tall onto the big toes, like jumping without leaving the ground.',
+        'Squeeze the top, lower over 2–3 seconds. If the range shrinks to a pulse, the load is too heavy.',
       ],
       targets: {
         muscles: ['Calves (gastroc emphasis)'],
@@ -697,11 +640,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'core',
       equipment: '1 plate or dumbbell',
       steps: [
-        'Lie on your back, knees bent, feet anchored or flat. Hug a plate to your chest.',
-        'Exhale and curl UP one vertebra at a time, chin soft, no neck yanking.',
-        'Come to a tall sit, plate still tight to your chest.',
-        'Lower back down SLOWLY, resisting the whole way. 2–3 seconds.',
-        'Add weight over the weeks like any lift. Abs grow with load, like everything else.',
+        'Lie on your back, knees bent, feet flat or anchored, hugging a plate to your chest.',
+        'Exhale and curl up one vertebra at a time to a tall sit, then lower back down slowly over 2–3 seconds, resisting the whole way.',
+        'No neck yanking and no fast drops. Treat it like a lift: add weight over the weeks, abs grow with load.',
       ],
       targets: {
         muscles: ['Rectus abdominis (the six-pack)', 'Hip flexors'],
@@ -722,11 +663,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'core',
       equipment: 'Floor',
       steps: [
-        'Front plank: forearms down, body one straight line, glutes and abs squeezed HARD.',
-        'Push the floor away so your upper back is full, not sagging between the shoulders.',
-        'Hold with intent, a hard 30 seconds beats a saggy 90.',
-        'Side plank: elbow under shoulder, feet stacked, hips lifted tall; top arm up or on hip.',
-        'Do front + each side. That trio is one set.',
+        'Front plank: forearms down, body one straight line. Side plank: elbow under shoulder, feet stacked, hips lifted tall.',
+        'Squeeze glutes and abs HARD and push the floor away so nothing sags. Hold front, then each side, that trio is one set.',
+        'Breathe shallow and steady behind the brace, never hold your breath. A hard 30 seconds beats a saggy 90.',
       ],
       targets: {
         muscles: ['Deep core', 'Obliques', 'Shoulder stabilizers'],
@@ -750,11 +689,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Floor',
       perSide: true,
       steps: [
-        'Sit with your front leg bent 90° in front of you and back leg bent 90° behind you.',
-        'Sit tall, chest proud, both sit bones trying to stay down.',
-        'Rotate both knees together to the other side, switching front/back legs.',
-        'Pause in each position; lean your chest over the front shin for extra hip stretch.',
-        'Slow, breathing switches. No forcing.',
+        'Sit with your front leg bent 90° in front of you and your back leg bent 90° behind, chest tall, both sit bones down.',
+        'Rotate both knees together over to the other side so the legs swap roles, pausing tall in each position.',
+        'Slow, breathing switches, no forcing or bouncing. Lean your chest over the front shin for extra hip stretch.',
       ],
       targets: {
         muscles: ['Hip rotators', 'Glutes', 'Hip capsule'],
@@ -775,11 +712,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'mobility',
       equipment: 'Bodyweight',
       steps: [
-        'Sink into the deepest squat you can, heels down, feet a bit wider than usual.',
-        'Elbows inside the knees, palms together, gently pry the knees outward.',
-        'Sit tall in the hole; breathe slow and let your hips sink deeper with each exhale.',
-        'Shift weight side to side to open each ankle and hip.',
-        'Hold the prescribed time. Hold onto something in front if balance fights you.',
+        'Sink into your deepest squat, heels down, feet a bit wider than usual, elbows inside the knees, palms together.',
+        'Sit tall in the hole and gently pry the knees outward, shifting side to side to open each ankle and hip.',
+        'Breathe slow, each exhale sinks you deeper. Hold something in front if balance fights you.',
       ],
       targets: {
         muscles: ['Hips', 'Ankles', 'Adductors', 'Lower back (decompression)'],
@@ -801,11 +736,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Wall',
       perSide: true,
       steps: [
-        'Face a wall, toes about a hand-width away from it.',
-        'Keeping the heel GLUED down, drive your knee straight over your toes toward the wall.',
-        'Touch the wall (or get as close as the ankle allows), pause, return.',
-        'Too easy? Slide the foot back an inch. The heel staying down is the only rule.',
-        'Smooth reps, both sides.',
+        'Face a wall with your toes about a hand-width away, heel glued down.',
+        'Drive the knee straight over the toes to touch the wall (or as close as the ankle allows), pause, then return.',
+        'The heel staying down is the only rule, if it peels up the rep counted for nothing. Too easy? Move the foot back an inch.',
       ],
       targets: {
         muscles: ['Ankle joint', 'Calves', 'Achilles'],
@@ -827,11 +760,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Wall / couch',
       perSide: true,
       steps: [
-        'Kneel with your back foot up against a wall or couch, back knee tucked into the corner.',
-        'Front foot flat in front, lunge position.',
-        'Squeeze the back-leg glute and tuck your pelvis, feel the stretch move to the front of the hip.',
-        'Only then raise your torso taller to deepen it. Breathe.',
-        'Long, calm holds. It should feel intense, never sharp.',
+        'Kneel with your back foot up a wall or couch, back knee tucked into the corner, front foot flat in a lunge.',
+        'Squeeze the back glute and tuck your pelvis so the stretch lands on the front of the hip, then raise your torso taller to deepen it.',
+        'Long calm holds with steady breathing, intense but never sharp. Don’t arch the lower back to fake depth.',
       ],
       targets: {
         muscles: ['Hip flexors', 'Quads'],
@@ -854,10 +785,8 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       perSide: true,
       steps: [
         'Lie on your side, knees pulled up to hip height, arms stacked straight in front of you.',
-        'Keeping the knees glued together on the floor, sweep your top arm up and over to the other side.',
-        'Follow your hand with your eyes; let the chest open toward the ceiling.',
-        'Pause and breathe into the twist, then return.',
-        'Smooth reps per side.',
+        'Keeping the knees glued together, sweep the top arm up and over to the other side, chest opening to the ceiling, then return.',
+        'Follow the hand with your eyes and exhale into the twist. No whipping the arm with momentum.',
       ],
       targets: {
         muscles: ['Thoracic spine', 'Chest', 'Shoulders'],
@@ -878,11 +807,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'mobility',
       equipment: 'Pull-up bar',
       steps: [
-        'Grip the bar overhand, shoulder-width, and hang with straight arms.',
-        'Let your shoulders shrug up by your ears, relax and let the spine lengthen.',
-        'Breathe slow; feel the lats, chest, and spine decompress.',
-        'Keep body quiet, no swinging.',
-        'Build toward the full prescribed hold. Grip is being trained for free.',
+        'Grip the bar overhand, shoulder-width, and hang with straight arms, body quiet, no swinging.',
+        'Let the shoulders shrug up by your ears and the spine lengthen, you’re decompressing, not pulling.',
+        'Breathe slow and relax into the hold, a death grip cuts it short. Build toward the full time, grip gets trained for free.',
       ],
       targets: {
         muscles: ['Lats', 'Grip', 'Shoulders', 'Spine (decompression)'],
@@ -903,10 +830,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'Outside',
       steps: [
-        'Head out the door. Conversational pace, you could talk the whole way.',
-        'Arms relaxed, breathe through your nose if you can.',
-        '20–30 minutes. Sunlight is a bonus for sleep tonight.',
-        'This is recovery, not training. Do not turn it into a workout.',
+        'Head out the door with your arms relaxed.',
+        'Walk 20–30 minutes at a conversational pace, you could talk the whole way. Sunlight is a bonus for sleep tonight.',
+        'Breathe through your nose if you can and keep it genuinely easy. This is recovery, not a workout.',
       ],
       targets: {
         muscles: ['Whole body (low intensity)'],
@@ -928,12 +854,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Pull-up bar',
       steps: [
-        'Grip the bar wider than shoulders, palms away. Hang with straight arms.',
-        'Set your shoulders first: pull the blades down and back before the arms bend.',
-        'Drive your ELBOWS down toward your hips, think of pulling the bar to you.',
-        'Chin over the bar (chest toward it if you can), squeeze the lats.',
-        'Lower ALL the way to straight arms, every rep starts from a dead hang.',
-        'Max reps means max honest reps: stop when form breaks, log the number.',
+        'Grip the bar wider than shoulders, palms away, hang at straight arms, and pull the shoulder blades down and back before the arms bend.',
+        'Drive the elbows down toward your hips until your chin clears the bar, then lower all the way back to a dead hang.',
+        'No kipping and no half reps, every rep starts from straight arms. Stop when form breaks and log the honest number.',
       ],
       targets: {
         muscles: ['Lats', 'Upper back', 'Biceps', 'Grip'],
@@ -955,11 +878,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Barbell',
       steps: [
-        'Hinge to about 45° (or lower), bar hanging at arm’s length, back flat, knees soft.',
-        'Brace, then pull the bar to your lower ribs / upper stomach.',
-        'Drive the elbows back, squeezing the shoulder blades together at the top.',
-        'Lower under control to full stretch without dropping the chest.',
-        'Torso stays still, if you heave upright to move it, strip weight.',
+        'Hinge to about 45° or lower, bar hanging at arm’s length, back flat, knees soft, brace on.',
+        'Pull the bar to your lower ribs, elbows driving back and blades squeezing together, then lower under control to a full stretch.',
+        'The torso stays still, if you heave upright to move it, strip weight. Don’t let the chest drop as fatigue builds.',
       ],
       targets: {
         muscles: ['Lats', 'Mid-back', 'Rear delts', 'Biceps', 'Lower back (isometric)'],
@@ -981,11 +902,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbell + bench',
       steps: [
-        'Lie across or along the bench, feet planted. Hold one dumbbell with both hands over your chest.',
-        'Slight fixed bend in the elbows, lock that angle for the whole set.',
-        'Lower the weight in an arc back over your head until you feel a deep lat + chest stretch.',
-        'Pull it back over your chest in the same arc, ribs staying DOWN.',
-        'Slow arc back, strong arc up. The stretch is the growth signal.',
+        'Lie on the bench, feet planted, one dumbbell held in both hands over your chest, elbows slightly bent and locked at that angle.',
+        'Lower the weight in an arc back over your head to a deep lat and chest stretch, then pull it back over your chest in the same arc.',
+        'Ribs stay DOWN, slow arc back, strong arc up. The stretch is the growth signal, don’t go so heavy it gets cut short.',
       ],
       targets: {
         muscles: ['Lats (long stretch)', 'Chest', 'Serratus', 'Triceps (long head)'],
@@ -1007,11 +926,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Dumbbell + bench',
       perSide: true,
       steps: [
-        'Left knee and left hand on the bench, right foot planted wide, back flat like a table.',
-        'Dumbbell hanging in the right hand, shoulder relaxed toward the floor.',
-        'Pull the elbow up and BACK toward your hip, not straight up to the ceiling.',
-        'Touch the dumbbell to your side at the top, squeeze the lat.',
-        'Lower to a full stretch, letting the shoulder blade slide forward at the bottom. Switch sides.',
+        'Left knee and hand on the bench, right foot planted wide, back flat like a table, dumbbell hanging in the right hand.',
+        'Pull the elbow up and BACK toward your hip until the weight touches your side, then lower to a full stretch, blade sliding forward.',
+        'No yanking with rotation, the torso stays square to the floor. Squeeze the lat at the top, then switch sides.',
       ],
       targets: {
         muscles: ['Lats', 'Mid-back', 'Biceps', 'Grip'],
@@ -1032,11 +949,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells + incline bench',
       steps: [
-        'Set the bench to ~30–45° and lie chest-down on it, dumbbells hanging below.',
-        'Let the shoulder blades spread at the bottom, full stretch.',
-        'Row both elbows back toward your hips, squeezing the blades together.',
-        'Pause a beat at the top; the bench stops all cheating.',
-        'Lower slow to the full hang. What moves is exactly what your back can row.',
+        'Set the bench to about 30–45° and lie chest-down on it, dumbbells hanging below at a full stretch.',
+        'Row both elbows back toward your hips, squeezing the blades together with a pause, then lower slow to the full hang.',
+        'Chest stays on the pad the whole set, the bench deletes cheating. Never let the range shrink as it gets hard.',
       ],
       targets: {
         muscles: ['Mid-back', 'Lats', 'Rear delts', 'Biceps'],
@@ -1057,11 +972,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells',
       steps: [
-        'Hinge to near-flat torso, light dumbbells hanging, soft elbows.',
-        'Raise the weights out to your sides, leading with the elbows, thumbs slightly down.',
-        'Stop at shoulder line, feel the back of the shoulder do it, not the traps.',
-        'Lower on a strict 3-SECOND count. The slow lowering is the exercise.',
-        'Stay light. This is precision work.',
+        'Hinge to a near-flat torso, light dumbbells hanging, soft elbows.',
+        'Raise the weights out to shoulder line, leading with the elbows, thumbs slightly down, then lower on a strict 3-second count.',
+        'The slow lowering IS the exercise. Stay light and feel the back of the shoulder work, not the traps.',
       ],
       targets: {
         muscles: ['Rear delts', 'Mid traps'],
@@ -1084,10 +997,8 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'EZ bar',
       steps: [
         'Grip the EZ bar on the angled grips, arms hanging, elbows pinned to your sides.',
-        'Curl the bar up in an arc without the elbows drifting forward or up.',
-        'Squeeze the biceps hard at the top for a beat.',
-        'Lower on a controlled 2–3 count to FULL straight arms.',
-        'No hip bump, no lean-back. Strip weight before you strip form.',
+        'Curl the bar up in an arc, squeeze the biceps at the top, then lower on a 2–3 count all the way to straight arms.',
+        'No hip bump, no lean-back, no elbows drifting forward. Strip weight before you strip form.',
       ],
       targets: {
         muscles: ['Biceps', 'Forearms'],
@@ -1108,11 +1019,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells + incline bench',
       steps: [
-        'Set the bench to ~45–60° and lie back, arms hanging straight DOWN behind your body line.',
-        'Palms forward. Curl both dumbbells up without the elbows creeping forward.',
-        'Squeeze at the top, then lower slowly to that deep hanging stretch.',
-        'The stretch at the bottom is the point, don’t shorten it.',
-        'Lighter than your EZ curl weight. That’s correct, not weak.',
+        'Set the bench to about 45–60° and lie back, arms hanging straight down behind your body line, palms forward.',
+        'Curl both dumbbells up without the elbows creeping forward, squeeze at the top, then lower slowly to that deep hanging stretch.',
+        'The bottom stretch is the point, never shorten it. Go lighter than your EZ curl weight, that’s correct, not weak.',
       ],
       targets: {
         muscles: ['Biceps (long head, stretched)'],
@@ -1133,11 +1042,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells',
       steps: [
-        'Stand tall, dumbbells at your sides, palms facing each other, keep that neutral grip.',
-        'Curl up with elbows pinned, like swinging a hammer.',
-        'Squeeze at the top, lower under control to straight arms.',
-        'Both arms together or alternating, just no swinging.',
-        'This grip is your strongest curl; load it accordingly.',
+        'Stand tall, dumbbells at your sides, palms facing each other, and keep that neutral grip the whole set.',
+        'Curl up with elbows pinned, like swinging a hammer, squeeze at the top, then lower under control to straight arms.',
+        'No rocking the torso and no racing the lowering. This is your strongest curl grip, load it accordingly.',
       ],
       targets: {
         muscles: ['Brachialis', 'Biceps', 'Forearms (brachioradialis)'],
@@ -1158,11 +1065,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'carry',
       equipment: 'Loadable dumbbells',
       steps: [
-        'Deadlift a heavy dumbbell up in each hand, flat back, legs doing the lift.',
-        'Stand TALL: ribs down, shoulders back, crush grip on the handles.',
-        'Walk with short, quick, controlled steps for the prescribed time.',
-        'No leaning, no shuffling collapse, posture is the exercise.',
-        'Set the weights down with a flat back, rest, repeat.',
+        'Deadlift a heavy dumbbell up in each hand with a flat back, then stand TALL: ribs down, shoulders back, crush grip.',
+        'Walk with short, quick, controlled steps for the prescribed time, no leaning, no shuffling collapse.',
+        'Posture is the exercise, breathe steady behind a braced core. Set the weights down with a flat back.',
       ],
       targets: {
         muscles: ['Grip/forearms', 'Traps', 'Core', 'Whole body'],
@@ -1184,10 +1089,8 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Towel + pull-up bar',
       steps: [
         'Drape a towel over the pull-up bar and grab a handful with each hand.',
-        'Hang with straight arms, feet off the floor, body quiet.',
-        'CRUSH the towel, the thick, soft grip makes your hands and forearms scream.',
-        'Hang for max honest time; log the seconds.',
-        'One towel per hand for even more grip if it gets easy.',
+        'Hang with straight arms, feet off the floor, body quiet, and CRUSH the towel for max honest time.',
+        'Breathe steady and fight for the hold instead of regripping, log the seconds. One towel per hand if it gets easy.',
       ],
       targets: {
         muscles: ['Grip (crush + support)', 'Forearms', 'Lats'],
@@ -1210,11 +1113,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'warmup',
       equipment: 'Bodyweight',
       steps: [
-        '2–3 min easy jog or skipping to raise your temperature.',
-        'Leg swings front/back and side/side. 10 each leg.',
-        'Walking lunges with a twist, high knees, butt kicks, about 20 yards each.',
-        'A-skips, then 2–3 build-up runs at 60% → 80% → 90% effort.',
-        'By the end you should feel FAST, loose, and slightly buzzed, not tired.',
+        'Start with 2–3 minutes of easy jogging or skipping to raise your temperature.',
+        'Move through leg swings, walking lunges with a twist, high knees, butt kicks, and A-skips, about 20 yards each.',
+        'Finish with 2–3 build-up runs from 60% up to 90%. End feeling fast, loose, and slightly buzzed, never tired.',
       ],
       targets: {
         muscles: ['Whole body'],
@@ -1235,11 +1136,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'sprint',
       equipment: 'Field / street',
       steps: [
-        'Build up over the first 10–15 yards, smooth acceleration, rising posture.',
-        'Hit TOP SPEED through the middle: tall posture, high knees, loose face and hands.',
-        'Strike the ground under your hips, big backside arm swing, cheeks bouncing loose.',
-        'Ease off gradually at the end, never slam the brakes.',
-        'Walk back fully + extra rest. Every rep at true 100%. Tired sprinting is cancelled sprinting.',
+        'Mark 30–40 yards and build up smoothly over the first 10–15, posture rising as you go.',
+        'Hit TOP SPEED through the middle, tall with high knees, striking under your hips, then ease off gradually, never slam the brakes.',
+        'Stay loose in the face and hands, speed comes from relaxed max effort. Full walk-back rest, stop the moment you feel slower.',
       ],
       targets: {
         muscles: ['Hamstrings', 'Glutes', 'Hip flexors', 'Calves'],
@@ -1262,10 +1161,8 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Field / street',
       steps: [
         'Mark a 10-yard build-in zone and a 20-yard fly zone.',
-        'Accelerate GRADUALLY through the build-in, about 80% by the line.',
-        'The instant you cross into the fly zone: EXPLODE to your absolute fastest running.',
-        'Stay tall and relaxed, jaw loose, hands loose, knees punching.',
-        'Coast down long. Walk back + full rest. These are your fastest strides of the week.',
+        'Accelerate gradually to about 80% by the line, then EXPLODE to your absolute fastest running through the fly zone and coast down long.',
+        'Stay tall and relaxed, jaw and hands loose. Full rest between reps, three great flys beat six mediocre ones.',
       ],
       targets: {
         muscles: ['Hamstrings', 'Glutes', 'Calves'],
@@ -1287,11 +1184,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'jump',
       equipment: 'Floor',
       steps: [
-        'Stand tall, hands relaxed. Legs nearly straight, knees soft but NOT bending for power.',
-        'Bounce off the balls of your feet like a pogo stick, ankles do everything.',
-        'Ground contact as SHORT as possible: think “hot floor”.',
-        'Get height from ankle snap and stiffness, not from squatting.',
-        'Crisp rhythmic reps. If your heels start slapping down, rest.',
+        'Stand tall, hands relaxed, legs nearly straight, knees soft but NOT bending for power.',
+        'Bounce off the balls of your feet like a pogo stick, ankles doing everything, ground contact as short as possible.',
+        'Height comes from ankle snap, not squatting. Crisp rhythm, and if your heels start slapping down, rest.',
       ],
       targets: {
         muscles: ['Calves', 'Achilles tendon', 'Feet'],
@@ -1313,10 +1208,8 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Court / hoop',
       steps: [
         'Take a 3–5 step build-up approach at about 70–80% speed.',
-        'PENULTIMATE step (second-to-last): step LONG and LOW, this drops your hips and loads the plant leg.',
-        'Plant fast: short last step, foot slightly ahead, leg stiff like a pole vault pole.',
-        'Drive the opposite knee and both arms UP violently as you fire off the plant leg.',
-        'Land soft on two feet. Walk back, full reset, practice the rhythm every single time.',
+        'Second-to-last step LONG and LOW to drop your hips, then a short quick last step, plant, and fire up off that leg, knee and arms punching.',
+        'The long-low step is everything, staying upright kills the jump. Land soft on two feet and fully reset each rep.',
       ],
       targets: {
         muscles: ['Plant-leg hamstrings/glutes', 'Calves', 'Hip flexors'],
@@ -1339,11 +1232,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'jump',
       equipment: 'Hoop',
       steps: [
-        'Full approach, full intent, this is game-speed jumping.',
-        'Same rhythm you drilled: penultimate long and low, plant fast, knee up hard.',
-        'Reach for your target: rim grab, ball dunk, or backboard high-point.',
-        'Land soft on two feet, absorbing through the hips.',
-        'Track your best touch height, it’s one of your weekly progress numbers.',
+        'Full approach at game speed, same rhythm you drilled: second-to-last step long and low, last step short and quick.',
+        'Plant fast, drive the knee up hard, and reach for your target: rim grab, dunk, or backboard high-point. Land soft on two feet.',
+        'Fresh jumps only, stop the moment height drops. Track your best touch height, it’s a weekly progress number.',
       ],
       targets: {
         muscles: ['Full lower body', 'Core'],
@@ -1368,10 +1259,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'Outside',
       steps: [
-        'Jog at a conversational pace, you can talk the whole time. That’s the test.',
-        'Land softly, quick light steps.',
-        '25–30 minutes. Nose-breathing pace is about right.',
-        'If your legs are trashed from training, walk instead. Zone 2 is a tool, not a test.',
+        'Head out at a conversational pace, you can talk the whole time. That’s the test.',
+        'Jog 25–30 minutes with soft landings and quick light steps.',
+        'Nose-breathing pace is about right. Legs trashed? Walk instead, zone 2 is a tool, not a test.',
       ],
       targets: {
         muscles: ['Heart', 'Legs (low load)'],
@@ -1391,9 +1281,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'Outside',
       steps: [
-        'Walk with purpose, noticeably faster than a stroll, arms swinging.',
-        '30–45 minutes outside. Clear your head while you’re at it.',
-        'Breathing elevated but easy conversation still possible.',
+        'Head outside and set a purposeful pace, noticeably faster than a stroll.',
+        'Walk 30–45 minutes with your arms swinging. Clear your head while you’re at it.',
+        'Breathing elevated but easy conversation still possible. Move with intent, not a phone-scrolling amble.',
       ],
       targets: {
         muscles: ['Legs', 'Heart (light)'],
@@ -1410,9 +1300,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'Treadmill (if gym access)',
       steps: [
-        'Treadmill at 10–15% incline, 3.0–3.5 mph.',
-        'NO holding the rails, that deletes the work. Pump your arms.',
-        '25–30 min steady. Heart rate up, joints happy.',
+        'Set the treadmill to a 10–15% incline at 3.0–3.5 mph.',
+        'Walk 25–30 minutes steady, pumping your arms.',
+        'NO holding the rails, that deletes the work. If it gets easy, raise the incline, not the speed.',
       ],
       targets: {
         muscles: ['Glutes', 'Calves', 'Heart'],
@@ -1429,10 +1319,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'Steep hill (30–40 yd)',
       steps: [
-        'Find a steep hill, 30–40 yards of runnable slope.',
-        'Sprint UP all-out: big knee drive, big arms, forward lean into the slope.',
-        'Walk down slowly, that’s your full rest.',
-        '6–10 sprints. Stop when your speed visibly drops.',
+        'Find a steep hill with 30–40 yards of runnable slope.',
+        'Sprint UP all-out with big knee drive and big arms, leaning into the slope, then walk down slowly, that walk is your full rest.',
+        'Do 6–10 sprints and stop when your speed visibly drops. Never jog the downhill, recovery is part of the protocol.',
       ],
       targets: {
         muscles: ['Glutes', 'Hamstrings', 'Calves', 'Heart'],
@@ -1452,10 +1341,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'Any open space',
       steps: [
-        '10–15 seconds ALL OUT, true max effort.',
-        'Rest 45–60 seconds (walk it).',
-        'Repeat 6–10 rounds.',
-        'Effort is the variable that matters: if it stops being max, you’re done.',
+        'Find any open stretch of space and mark a start point.',
+        'Sprint 10–15 seconds truly ALL OUT, then walk for 45–60 seconds of rest. Repeat 6–10 rounds.',
+        'Max effort is the whole point, the moment your sprints stop being max, you’re done for the day.',
       ],
       targets: {
         muscles: ['Full lower body', 'Heart'],
@@ -1475,10 +1363,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'Stadium or building stairs',
       steps: [
-        'Run up hard, every step or every other step, arms driving.',
-        'Walk down. That’s the rest.',
-        '8–12 rounds, stopping while quality is still high.',
-        'Stay on the balls of your feet; the calves are supposed to feel it.',
+        'Find stadium or building stairs and start at the bottom, on the balls of your feet.',
+        'Run up hard, every step or every other step, arms driving, then walk down as your rest. 8–12 rounds.',
+        'Stop while quality is still high. No flat-footed stomping, and never race the descent, the walk is the recovery.',
       ],
       targets: {
         muscles: ['Quads', 'Glutes', 'Calves', 'Heart'],
@@ -1495,11 +1382,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'None, indoor',
       steps: [
-        '10 burpees, chest to floor, jump at the top.',
-        '20 jumping jacks, brisk rhythm.',
-        '10 squat jumps, land soft, sink, explode.',
-        'Rest 1 minute. Repeat 4–5 rounds.',
-        'Full-body, high output, push the pace inside each round.',
+        'Clear a little indoor space, no equipment needed.',
+        'One round: 10 burpees chest-to-floor with a jump at the top, 20 brisk jumping jacks, 10 squat jumps landing soft.',
+        'Rest 1 minute, repeat 4–5 rounds. Push the pace inside each round, but quality first, no saggy burpees.',
       ],
       targets: {
         muscles: ['Full body'],
@@ -1519,10 +1404,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'None, indoor',
       steps: [
-        '30 seconds mountain climbers, steady, hips low.',
-        '30 seconds high knees, quick feet, tall chest.',
-        '30 seconds rest.',
-        'Repeat 8–10 rounds at a steady, repeatable pace.',
+        'Clear a little indoor floor space.',
+        'One round: 30 seconds mountain climbers with hips low, 30 seconds high knees with quick feet and tall chest, 30 seconds rest.',
+        'Repeat 8–10 rounds at an even, repeatable pace. Don’t sprint rounds 1–2 and die by round 4.',
       ],
       targets: {
         muscles: ['Core', 'Hip flexors', 'Legs', 'Heart'],
@@ -1543,11 +1427,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Floor',
       steps: [
-        'Hands just outside shoulder-width, fingers spread, body in one straight line from head to heels.',
-        'Squeeze your glutes and brace your abs, the plank is half the exercise.',
-        'Lower your chest to just above the floor, elbows about 45° from your body.',
-        'Press the floor away hard until your arms are straight and your upper back rounds slightly at the top.',
-        'Too easy? Slow the lowering to 3 seconds or elevate your feet. Too hard? Hands on a bench.',
+        'Hands just outside shoulder-width, body one straight line from head to heels, glutes and abs squeezed.',
+        'Lower your chest to just above the floor, elbows about 45° from your body, then press the floor away hard to straight arms.',
+        'The straight line is non-negotiable, no sagging or half reps. Too easy? Slow the lowering to 3 seconds or raise your feet.',
       ],
       targets: {
         muscles: ['Chest', 'Front delts', 'Triceps', 'Core'],
@@ -1568,11 +1450,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Floor',
       steps: [
-        'From a push-up position, walk your feet in and push your hips high, body in an inverted V.',
-        'Hands shoulder-width, head between your arms, heels pressing down.',
-        'Bend your elbows and lower the top of your head toward the floor between your hands.',
-        'Press back up until your arms are straight, keeping the hips high the whole time.',
-        'Feet on a bench raises the difficulty toward a handstand push-up.',
+        'From a push-up position, walk your feet in and push your hips high into an inverted V, head between your arms.',
+        'Bend the elbows to lower the top of your head toward the floor between your hands, then press back up to straight arms.',
+        'Hips stay high the whole time or it turns back into a push-up. Feet on a bench raises it toward a handstand push-up.',
       ],
       targets: {
         muscles: ['Shoulders', 'Triceps', 'Upper chest'],
@@ -1593,11 +1473,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Low bar / sturdy table',
       steps: [
-        'Set a bar (or grip a sturdy table edge) around hip height. Slide underneath, heels on the floor.',
-        'Grab it just outside shoulder-width, body in one straight line, arms fully extended.',
-        'Pull your chest to the bar, driving the elbows back and squeezing the shoulder blades.',
-        'Lower under control to straight arms, full stretch every rep.',
-        'Feet elevated or slower tempo makes it harder; more knee bend makes it easier.',
+        'Set a bar (or grip a sturdy table edge) around hip height and slide underneath, heels down, body one straight line.',
+        'Pull your chest to the bar, driving the elbows back and squeezing the shoulder blades, then lower with control to straight arms.',
+        'Squeeze the glutes so the hips never sag. Feet elevated makes it harder, more knee bend makes it easier.',
       ],
       targets: {
         muscles: ['Lats', 'Mid-back', 'Rear delts', 'Biceps'],
@@ -1618,11 +1496,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Pull-up bar',
       steps: [
-        'Grip the bar shoulder-width, palms facing YOU. Hang with straight arms.',
-        'Set the shoulder blades down and back before the arms bend.',
-        'Pull your elbows down to your sides until your chin clears the bar.',
-        'Squeeze the biceps and lats at the top for a beat.',
-        'Lower all the way to a dead hang, every rep starts from straight arms.',
+        'Grip the bar shoulder-width, palms facing YOU, and hang at straight arms, shoulder blades set down and back.',
+        'Pull your elbows down to your sides until your chin clears the bar, then lower all the way to a dead hang.',
+        'No kipping and no half reps, every rep starts from straight arms. Squeeze the biceps and lats for a beat at the top.',
       ],
       targets: {
         muscles: ['Biceps', 'Lats', 'Upper back', 'Grip'],
@@ -1644,11 +1520,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Bodyweight',
       perSide: true,
       steps: [
-        'Take a long stride stance, one foot forward, one back, both pointing ahead.',
-        'Hands on hips or out for balance. Most of your weight on the FRONT leg.',
-        'Drop the back knee straight down toward the floor, front shin near vertical.',
-        'Light touch at the bottom, then drive up through the front heel.',
-        'All reps one side, then switch. Hold dumbbells to load it when it gets easy.',
+        'Take a long stride stance, one foot forward, one back, both pointing ahead. Most of your weight on the FRONT leg.',
+        'Drop the back knee straight down toward the floor, front shin near vertical, touch lightly, then drive up through the front heel.',
+        'The back foot is a kickstand, not a pusher. All reps one side then switch, and hold dumbbells once it gets easy.',
       ],
       targets: {
         muscles: ['Quads', 'Glutes', 'Adductors'],
@@ -1670,10 +1544,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       equipment: 'Bodyweight',
       perSide: true,
       steps: [
-        'Stand tall, feet hip-width. Step one foot BACKWARD into a long stride.',
-        'Drop the back knee toward the floor, torso tall, front shin vertical.',
-        'Drive through the front heel to stand and bring the back foot home.',
-        'Alternate legs or finish a side at a time. Add dumbbells to progress.',
+        'Stand tall, feet hip-width, hands ready for balance (add dumbbells to progress).',
+        'Step one foot BACKWARD into a long stride, drop the back knee toward the floor, then drive through the front heel to stand.',
+        'Torso tall, front shin vertical, push from the front heel, not the back toes. Slow beats wobbly.',
       ],
       targets: {
         muscles: ['Glutes', 'Quads', 'Hamstrings'],
@@ -1694,11 +1567,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Floor',
       steps: [
-        'Lie on your back, knees bent, feet flat and hip-width, heels close to your butt.',
-        'Arms at your sides. Tuck the pelvis slightly, ribs down.',
-        'Drive through the heels and squeeze the glutes to lift your hips to a straight line.',
-        'Hold the top for one full second, squeeze, don’t arch.',
-        'Lower under control. Progress with a slow tempo, one leg, or a load across the hips.',
+        'Lie on your back, knees bent, feet flat hip-width with heels close to your butt, pelvis slightly tucked.',
+        'Drive through the heels and squeeze the glutes to lift your hips into a straight line, hold one second, then lower under control.',
+        'Squeeze, don’t arch the lower back. Progress with slow tempo, one leg, or a load across the hips.',
       ],
       targets: {
         muscles: ['Glutes', 'Hamstrings'],
@@ -1719,11 +1590,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'core',
       equipment: 'Floor',
       steps: [
-        'Lie on your back. Press your lower back into the floor, it stays glued there the whole time.',
-        'Lift your shoulders and legs a few inches off the floor, arms reaching past your hips.',
-        'Body forms a shallow dish. Breathe shallow and steady behind the brace.',
-        'Harder: arms overhead by the ears. Easier: knees tucked.',
-        'The set ends when the lower back peels off the floor, never hold past that.',
+        'Lie on your back and press your lower back into the floor, it stays glued there the whole time.',
+        'Lift your shoulders and legs a few inches so your body forms a shallow dish, arms reaching past your hips.',
+        'Breathe shallow and steady behind the brace. The set ends the moment your lower back peels off the floor.',
       ],
       targets: {
         muscles: ['Deep abs', 'Hip flexors'],
@@ -1744,11 +1613,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'core',
       equipment: 'Floor',
       steps: [
-        'Lie on your back, arms straight up, knees bent 90° over your hips.',
-        'Press your lower back into the floor and keep it there.',
-        'Lower ONE arm overhead and the OPPOSITE leg toward the floor, slow.',
-        'Stop just above the floor, return, and switch sides.',
-        'Exhale as the limbs travel. If the back arches, shorten the range.',
+        'Lie on your back, arms straight up, knees bent 90° over your hips, lower back pressed into the floor.',
+        'Slowly lower ONE arm overhead and the OPPOSITE leg toward the floor, stop just above it, return, and switch sides.',
+        'Exhale as the limbs travel and keep the back glued down, if it arches, shorten the range. The slowness IS the exercise.',
       ],
       targets: {
         muscles: ['Deep abs', 'Obliques'],
@@ -1769,11 +1636,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells',
       steps: [
-        'Standing or seated tall, bring the dumbbells to your shoulders, palms forward.',
-        'Brace your abs, ribs down, no lower-back arch.',
-        'Press both bells straight up until your biceps are by your ears.',
-        'Touch them gently overhead (no clank), then lower with control back to the shoulders.',
-        'Wrists stacked over elbows the whole rep.',
+        'Standing or seated tall, bring the dumbbells to your shoulders, palms forward, ribs down, abs braced.',
+        'Press both bells straight up until your biceps are by your ears, touch gently overhead, then lower with control to the shoulders.',
+        'No lower-back arch, that turns it into an incline press. Wrists stacked over elbows the whole rep.',
       ],
       targets: {
         muscles: ['Shoulders', 'Triceps', 'Upper chest'],
@@ -1794,11 +1659,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Cable machine',
       steps: [
-        'Grip the bar wider than shoulders, sit with thighs snug under the pads.',
-        'Lean back a few degrees, chest tall. Set the shoulder blades down first.',
-        'Pull the bar to your upper chest, driving the elbows down and back.',
-        'Squeeze the lats for a beat, then let the bar rise ALL the way to stretched arms.',
-        'No leaning back and heaving, the torso stays quiet.',
+        'Grip the bar wider than shoulders, thighs snug under the pads, chest tall with a few degrees of lean-back.',
+        'Pull the bar to your upper chest, driving the elbows down and back, then let it rise ALL the way to stretched arms.',
+        'The torso stays quiet, no rocking to move the stack. Squeeze the lats for a beat at the bottom of each pull.',
       ],
       targets: {
         muscles: ['Lats', 'Upper back', 'Biceps'],
@@ -1819,11 +1682,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Cable machine',
       steps: [
-        'Sit tall, feet braced, knees soft. Grab the handle with both hands.',
-        'Let the weight pull you into a full stretch, shoulder blades sliding forward.',
-        'Pull the handle to your lower ribs, driving the elbows straight back.',
-        'Squeeze the blades together at the back, chest proud.',
-        'Return slow to the full stretch. The torso moves only a few degrees.',
+        'Sit tall, feet braced, knees soft, holding the handle with both hands.',
+        'Let the weight pull you into a full stretch, then pull the handle to your lower ribs, elbows driving straight back. Return slow.',
+        'Squeeze the blades together at the back, chest proud. The torso moves only a few degrees, no rocking chair.',
       ],
       targets: {
         muscles: ['Mid-back', 'Lats', 'Rear delts', 'Biceps'],
@@ -1844,11 +1705,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Leg press machine',
       steps: [
-        'Sit in the machine, feet shoulder-width on the middle of the platform.',
-        'Release the handles. Lower the sled under control until your knees near your chest.',
-        'Stop before your lower back rolls off the pad, that is YOUR depth.',
-        'Press through mid-foot to just short of locked knees.',
-        'Never slam into lockout; keep tension the whole set.',
+        'Sit in the machine, feet shoulder-width on the middle of the platform, then release the handles.',
+        'Lower the sled until your knees near your chest, stopping before your lower back rolls off the pad, then press through mid-foot.',
+        'Stop just short of locked knees and never slam lockout, keep tension the whole set. Don’t let the knees cave.',
       ],
       targets: {
         muscles: ['Quads', 'Glutes'],
@@ -1869,11 +1728,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Leg curl machine',
       steps: [
-        'Set the pad just above your heels. Lie (or sit) with knees aligned to the machine’s pivot.',
-        'Curl your heels toward your glutes in one smooth pull.',
-        'Squeeze hard at the top for a beat.',
-        'Lower on a slow 3-count to a full stretch, no dropping.',
-        'Hips stay glued down the entire set.',
+        'Set the pad just above your heels and line your knees up with the machine’s pivot, hips glued down.',
+        'Curl your heels toward your glutes in one smooth pull, squeeze at the top, then lower on a slow 3-count to a full stretch.',
+        'No hips popping up and no dropping the weight. The slow lowering is where the hamstrings grow.',
       ],
       targets: {
         muscles: ['Hamstrings'],
@@ -1894,10 +1751,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'Bike',
       steps: [
-        'Saddle height: knee slightly bent at the bottom of the stroke.',
-        'Zone 2: a pace where you could talk in full sentences. 25–30 minutes.',
-        'Intervals: 30 seconds hard / 90 seconds easy × 8–10 when you want a harder day.',
-        'Smooth circles, quiet upper body.',
+        'Set saddle height so your knee stays slightly bent at the bottom of the stroke.',
+        'Zone 2: ride 25–30 minutes at a pace where you could talk in full sentences. Harder day: 30 seconds hard, 90 easy, 8–10 rounds.',
+        'Spin smooth circles at 80–95 rpm with a quiet upper body, don’t grind a huge gear.',
       ],
       targets: {
         muscles: ['Quads', 'Heart'],
@@ -1917,10 +1773,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'cardio',
       equipment: 'Rower',
       steps: [
-        'Order every stroke: legs push → hips swing back → arms pull to the ribs.',
-        'Return in reverse: arms away → hips forward → knees bend.',
-        'Drive with the LEGS, the arms only finish the stroke.',
-        'Zone 2: 20–25 minutes conversational. Hard day: 500 m repeats with equal rest.',
+        'Strap in and order every stroke: legs push, then hips swing back, then arms pull to the ribs.',
+        'Return in reverse (arms away, hips forward, knees bend) and keep driving with the LEGS, the arms only finish the stroke.',
+        'Flat back at the catch, no arm-first pulling. Zone 2 is 20–25 conversational minutes, hard days are 500 m repeats with equal rest.',
       ],
       targets: {
         muscles: ['Legs', 'Back', 'Heart'],
@@ -1941,11 +1796,9 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
       kind: 'lift',
       equipment: 'Dumbbells',
       steps: [
-        'Stand tall, a dumbbell in each hand resting on your thighs.',
-        'Soft knees, set the angle and keep it.',
-        'Push your hips straight back; the bells slide down the front of your legs.',
-        'Stop when the hamstrings pull hard (around mid-shin), back flat.',
-        'Drive the hips forward to stand and squeeze the glutes. Bells stay close the whole way.',
+        'Stand tall with a dumbbell in each hand resting on your thighs, knees soft and fixed at that angle.',
+        'Push your hips back so the bells slide down your legs to mid-shin, where the hamstrings pull hard, then drive the hips forward to stand.',
+        'Back flat and bells close the whole way, squeeze the glutes at the top. Hinge back, never squat down.',
       ],
       targets: {
         muscles: ['Hamstrings', 'Glutes', 'Lower back', 'Grip'],
