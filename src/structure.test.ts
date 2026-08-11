@@ -52,7 +52,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   'screens/meals/MealsScreen.tsx': 980,
   'plan/generator.ts': 920,
   'logic/actions.ts': 835,
-  'screens/today/FocusView.tsx': 835,
+  // Was 836 and is now 771 after the how-to reader moved out. The
+  // allowance follows it down: an oversized file that shrinks does not
+  // get to keep the headroom it earned.
+  'screens/today/FocusView.tsx': 775,
   'store/schema.ts': 680,
   'engine/engine.test.ts': 705,
 }
@@ -90,6 +93,9 @@ const RANK: Record<string, number> = {
   store: 1,
   cloud: 2,
   logic: 2,
+  // Platform adapters are effects like logic/, and are what the UI calls
+  // instead of touching a web API directly.
+  platform: 2,
   components: 3,
   screens: 3,
 }
@@ -134,8 +140,6 @@ const PLATFORM_APIS =
  * the native build.
  */
 const PLATFORM_ALLOWED = new Set([
-  // → platform/speech.ts, with the voice overhaul
-  'logic/speech.ts',
   // → platform/notifications.ts, with the push backend
   'logic/reminders.ts',
   'screens/onboarding/Onboarding.tsx',
