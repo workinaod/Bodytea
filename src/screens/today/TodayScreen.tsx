@@ -72,6 +72,18 @@ export function TodayScreen() {
     return data.coach.feed.find((f) => f.kind === 'debrief' && f.debrief?.date === date)?.debrief ?? null
   }, [finished, data.coach.feed, date])
 
+  // Day-aware cardio coaching: the chip stays every day — the line under
+  // it says whether cardio is smart today and WHEN to put it.
+  const cardioTip = useMemo(() => {
+    if (day.kind === 'cardio-backup') return null // the day IS the cardio
+    const tomorrowCns = resolveDay(addDaysISO(date, 1), data).cns
+    if (day.cns) return 'Cardio today? AFTER the session only — max-effort speed work needs fresh legs. Easy stuff in the evening is fine.'
+    if (tomorrowCns) return "Cardio is fine today — keep it EASY (zone 2). Tomorrow is a max-effort day, and tired legs can't produce speed."
+    if (day.kind === 'rest') return 'Rest means rest from lifting — easy cardio is welcome and counts toward the week.'
+    if (day.kind === 'mobility') return 'Good day for conditioning — pair it with the mobility work.'
+    return 'Cardio is fine today — after the lifts beats before them.'
+  }, [day, date, data])
+
   function handleStart() {
     if (day.cns) setReadinessOpen(true)
     else {
@@ -201,18 +213,23 @@ export function TodayScreen() {
 
       {/* Same-day reality: ball is a day-of decision, not a weekly plan */}
       {date <= realToday && !finished && (
-        <div className="flex flex-wrap gap-1.5">
-          <Chip tone={cardioEntries.length > 0 ? 'lime' : 'default'} onClick={() => setCardioOpen(true)}>
-            {cardioEntries.length > 0
-              ? `${cardioActivity(cardioEntries[0].activityId).emoji} Cardio logged ✓ (${cardioEntries.length})`
-              : 'Cardio / sport today?'}
-          </Chip>
-          {canSwapCns && !session && (
-            <Chip tone={cnsSwapped ? 'gold' : 'cyan'} onClick={() => toggleCnsSwap(date)}>
-              {cnsSwapped ? '↩ undo speed-work swap' : '⇄ swap speed work out (sanctioned)'}
+        <>
+          <div className="flex flex-wrap gap-1.5">
+            <Chip tone={cardioEntries.length > 0 ? 'lime' : 'default'} onClick={() => setCardioOpen(true)}>
+              {cardioEntries.length > 0
+                ? `${cardioActivity(cardioEntries[0].activityId).emoji} Cardio logged ✓ (${cardioEntries.length})`
+                : 'Cardio / sport today?'}
             </Chip>
+            {canSwapCns && !session && (
+              <Chip tone={cnsSwapped ? 'gold' : 'cyan'} onClick={() => toggleCnsSwap(date)}>
+                {cnsSwapped ? '↩ undo speed-work swap' : '⇄ swap speed work out (sanctioned)'}
+              </Chip>
+            )}
+          </div>
+          {today && cardioEntries.length === 0 && cardioTip && (
+            <p className="px-1 text-[11px] leading-snug text-ink-faint">{cardioTip}</p>
           )}
-        </div>
+        </>
       )}
 
       {/* Body states */}

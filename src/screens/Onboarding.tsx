@@ -254,9 +254,14 @@ export function Onboarding() {
             No excuses.
           </h1>
           <p className="mt-4 text-[14.5px] leading-relaxed text-ink-dim">
-            Answer a few questions straight and you get a full training booklet built for YOUR goal — workouts with
-            photo demos, meals, deload weeks, and a coach that calls you out when you dodge.
+            Two minutes of straight answers gets you a coach, not another app:
           </p>
+          <div className="mt-3 space-y-2 border-l-2 border-edge pl-3 text-[13px] leading-snug text-ink-dim">
+            <p>A training booklet built around YOUR goal, gear, and week — photo demos and muscle maps on every movement.</p>
+            <p>Meals sized to how you actually eat — 2 big plates or 5 small, with common-grocery swaps.</p>
+            <p>GPS run &amp; ride tracking, PRs, streaks, a global leaderboard, and 3 / 6 / 12-month reviews.</p>
+            <p>A sergeant that bends the plan around real life — and accepts calendar proof, nothing less.</p>
+          </div>
           <Btn className="mt-8 w-full py-4 text-[16px]" onClick={() => { setMode('gen'); next() }}>
             Build my plan
           </Btn>
@@ -288,7 +293,9 @@ export function Onboarding() {
       {step === 2 && (
         <div className="flex flex-1 flex-col">
           <h2 className="text-[26px] font-black tracking-tight">
-            {mode === 'byor' ? 'What is this routine chasing?' : 'What are you chasing?'}
+            {mode === 'byor'
+              ? 'What is this routine chasing?'
+              : `What are you chasing${displayName.trim() ? `, ${displayName.trim().split(/\s+/)[0]}` : ''}?`}
           </h2>
           {mode === 'byor' && (
             <p className="mt-1 text-[13px] text-ink-dim">Pick every one that applies — the notes check your routine against them.</p>
@@ -526,7 +533,9 @@ export function Onboarding() {
 
       {step === 7 && preview && (
         <div className="flex flex-1 flex-col">
-          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">Your booklet</div>
+          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">
+            {displayName.trim() ? `Built for ${displayName.trim()}` : 'Your booklet'}
+          </div>
           <h2 className="mt-1 text-[30px] font-black leading-tight tracking-tight">{preview.plan.name}</h2>
           <p className="mt-1 text-[13.5px] font-semibold italic text-gold">“{preview.plan.goalStatement}”</p>
 

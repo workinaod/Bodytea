@@ -299,8 +299,8 @@ export function WeekScreen() {
       <Card className="space-y-3">
         <p className="border-l-2 border-cyan/60 py-0.5 pl-3 text-[11.5px] leading-snug text-cyan/90">
           {ball
-            ? "This section plans the week's conditioning when ball might not happen. Pick a backup and its days — it's ADDED after that day's workout (the workout stays), and doing it satisfies the weekly cardio rule."
-            : "This section plans the week's cardio. Pick a session and its days — it's ADDED after that day's workout (the workout stays), and doing it satisfies the weekly rule."}
+            ? 'Day-of is the truth — log ball or any run from the Today tab, always. This is the plan-ahead backup for no-ball weeks: a booked session shows up ON that day (after the workout, which stays), hard options keep off your max-effort days, and the weekly rule stops chasing you.'
+            : 'Day-of is the truth — you can always just log cardio from the Today tab. Booking here is the plan-ahead option: the session shows up ON that day (after the workout, which stays), hard options keep off your max-effort days, and the weekly rule stops chasing you.'}
         </p>
         <div className="flex items-center justify-between">
           <div>

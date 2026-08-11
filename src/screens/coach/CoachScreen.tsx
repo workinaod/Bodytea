@@ -46,7 +46,14 @@ export function CoachScreen() {
   return (
     <div className="space-y-3 pb-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-[30px] font-bold tracking-tight">The Sergeant</h1>
+        <div>
+          <h1 className="text-[30px] font-bold tracking-tight">The Sergeant</h1>
+          {data.profile.displayName && (
+            <p className="text-[11.5px] font-semibold text-ink-faint">
+              Keeping {data.profile.displayName.split(/\s+/)[0]} honest.
+            </p>
+          )}
+        </div>
         <div className="flex gap-1.5">
           <button onClick={() => setSettingsOpen(true)} className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] font-bold text-ink-dim">
             ⚙︎
