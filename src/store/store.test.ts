@@ -396,3 +396,56 @@ describe('v14 → v15: un-finish the mis-tapped Aug 11 session', () => {
     expect(parsed.data.sessions['2026-08-11']).toBeDefined()
   })
 })
+
+describe('v15 → v16: repair lands on the right date (Aug 10) + push purge', () => {
+  function v15Env() {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: ReturnType<typeof fixtureData>
+    }
+    env.schemaVersion = 15
+    return env
+  }
+
+  it('un-finishes the Monday Aug 10 phantom and drops its debrief', () => {
+    const env = v15Env()
+    // the mis-tapped finish: ended during exercise 1, nothing logged past it
+    env.data.sessions['2026-08-10'] = {
+      date: '2026-08-10',
+      templateId: 'monday',
+      status: 'partial',
+      startedAt: '2026-08-11T03:20:00.000Z',
+      endedAt: '2026-08-11T03:24:00.000Z',
+      exercises: [
+        { exerciseId: 'box-jump', sets: [{ targetReps: '3', reps: 3, done: true }] },
+        { exerciseId: 'goblet-squat', sets: [{ targetReps: '6-8', reps: 8, done: false }] },
+      ],
+    }
+    env.data.coach.feed.push({
+      id: 'dbf0',
+      at: '2026-08-11T03:24:01.000Z',
+      kind: 'debrief',
+      text: 'Debrief — Monday, Aug 10',
+      debrief: { date: '2026-08-10', title: 'phantom', recap: [], recovery: [], eat: [], sleep: [], tomorrow: '' },
+    })
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.data.sessions['2026-08-10']).toBeUndefined()
+    expect(parsed.data.coach.feed.some((f) => f.kind === 'debrief' && f.debrief?.date === '2026-08-10')).toBe(false)
+    expect(parsed.data.sessions['2026-08-12']).toBeDefined() // neighbors untouched
+  })
+
+  it('keeps a genuinely completed Aug 10 and purges push-me entries', () => {
+    const env = v15Env()
+    env.data.coach.feed.push({
+      id: 'p1',
+      at: '2026-08-11T10:00:00.000Z',
+      kind: 'coach',
+      situation: 'push',
+      text: 'Clock in.',
+    })
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.data.sessions['2026-08-10']).toBeDefined() // fixture Monday is completed — kept
+    expect(parsed.data.coach.feed.some((f) => f.situation === 'push')).toBe(false)
+    expect(parsed.data.coach.feed.some((f) => f.kind === 'coach' && f.situation === 'session-done')).toBe(true) // other coach items stay
+  })
+})

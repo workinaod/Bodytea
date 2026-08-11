@@ -11,7 +11,9 @@ import { getExercise } from '../../plan/exercises'
 import { CARDIO_GROUP_INFO } from '../../plan/templates'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
-import { chooseCardio, finishSession, restoreToday, startSession, swapExercise, toggleCnsSwap } from '../../logic/actions'
+import { chooseCardio, finishSession, reopenSession, restoreToday, startSession, swapExercise, toggleCnsSwap } from '../../logic/actions'
+import { makeupCandidate } from '../../engine/reconcile'
+import { GRADE_LABEL, sessionGrade } from '../../engine/stats'
 import { swapCandidatesFor } from '../../plan/subs'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
@@ -46,12 +48,23 @@ export function TodayScreen() {
 
   // Just after midnight, an unfinished session keeps the live view on
   // yesterday so it logs under the day actually trained.
-  const graceDate = lateNightGraceDate(data.sessions, realToday, new Date())
+  const graceDate = lateNightGraceDate(data, realToday, new Date())
   const homeDate = graceDate ?? realToday
   const date = selected ?? homeDate
 
   const day = useMemo(() => resolveDay(date, data), [date, data])
   const session = data.sessions[date]
+  // A make-up session runs a MISSED day's workout on a rest day — the
+  // views need that day's resolution, not the rest day's empty one.
+  const viewDay = useMemo(
+    () => (session?.makeupFor ? resolveDay(session.makeupFor, data) : day),
+    [session, day, data],
+  )
+  const [makeupTarget, setMakeupTarget] = useState<string | null>(null)
+  const makeupResolved = useMemo(
+    () => (makeupTarget ? resolveDay(makeupTarget, data) : null),
+    [makeupTarget, data],
+  )
   const week = data.weeks[mondayOf(date)]
   const yesterday = addDaysISO(date, -1)
   const ballYesterday = data.weeks[mondayOf(yesterday)]?.ballDates.includes(yesterday) ?? false
@@ -132,7 +145,9 @@ export function TodayScreen() {
 
       {graceDate && date === graceDate && (
         <div className="border-l-2 border-cyan/60 py-1 pl-3 text-[12.5px] leading-snug text-cyan/90">
-          After midnight — still finishing yesterday's session. It logs under {formatDayLabel(graceDate)}.
+          {session
+            ? `After midnight — still finishing yesterday's session. It logs under ${formatDayLabel(graceDate)}.`
+            : `After midnight — ${formatDayLabel(graceDate)}'s session is still open until 3 AM. Start it now and it logs under ${formatDayLabel(graceDate)}.`}
         </div>
       )}
 
@@ -248,11 +263,36 @@ export function TodayScreen() {
       )}
 
       {/* Body states */}
-      {day.kind === 'rest' && (
+      {day.kind === 'rest' && !session && (
         <Card>
           <p className="text-[13.5px] leading-relaxed text-ink-dim">{restCard}</p>
         </Card>
       )}
+
+      {/* Rest-day make-up: a missed workout this week is still winnable */}
+      {today && !session && day.kind === 'rest' && (() => {
+        const makeup = makeupCandidate(data, date)
+        if (!makeup) return null
+        return (
+          <Card className="border-accent/40">
+            <div className="text-[11px] font-black uppercase tracking-wider text-accent">Make-up day</div>
+            <p className="mt-1 text-[13px] leading-snug text-ink-dim">
+              You missed <span className="font-bold text-ink">{makeup.title}</span> this week. Off day, open
+              window — run it now and the week stays whole.
+            </p>
+            <Btn
+              className="mt-2.5 w-full"
+              onClick={() => {
+                setMakeupTarget(makeup.date)
+                if (makeup.cns) setReadinessOpen(true)
+                else setIntensityOpen(true)
+              }}
+            >
+              Make it up today
+            </Btn>
+          </Card>
+        )
+      })()}
 
       {skipped && (
         <Card className="border-danger/30">
@@ -263,25 +303,54 @@ export function TodayScreen() {
         </Card>
       )}
 
-      {finished && !skipped && (
-        <Card className="border-lime/30">
-          <p className="text-[14px] font-bold text-lime">
-            {session!.status === 'downgraded-completed' ? 'Downgraded session completed.' : 'Session complete.'}
-          </p>
-          {pastDebrief && (
-            <button
-              className="mt-2 text-[12.5px] font-semibold text-cyan underline"
-              onClick={() => setDebrief({ data: pastDebrief })}
-            >
-              Re-open the debrief
-            </button>
-          )}
-        </Card>
-      )}
+      {finished && !skipped && (() => {
+        const grade = sessionGrade(session!)
+        const strong = grade === 'full' || grade === 'overtime'
+        const line =
+          grade === 'overtime'
+            ? 'Overtime — more than the plan asked. Logged.'
+            : grade === 'full'
+              ? session!.status === 'downgraded-completed'
+                ? 'Full session on a downgraded day — honestly logged.'
+                : 'Session complete.'
+              : grade === 'half'
+                ? 'Half session logged.'
+                : grade === 'light'
+                  ? 'Light day logged.'
+                  : 'Extremely light — barely on the board, but on it.'
+        return (
+          <Card className={strong ? 'border-lime/30' : 'border-gold/30'}>
+            <p className={`text-[14px] font-bold ${strong ? 'text-lime' : 'text-gold'}`}>{line}</p>
+            {session!.makeupFor && (
+              <p className="mt-0.5 text-[11.5px] text-ink-faint">
+                Make-up for {formatDayLabel(session!.makeupFor)} — the week stays whole.
+              </p>
+            )}
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+              {session!.status === 'partial' && today && (
+                <button
+                  className="text-[12.5px] font-semibold text-cyan underline"
+                  onClick={() => reopenSession(date)}
+                >
+                  ↩ Re-open the session
+                </button>
+              )}
+              {pastDebrief && (
+                <button
+                  className="text-[12.5px] font-semibold text-cyan underline"
+                  onClick={() => setDebrief({ data: pastDebrief })}
+                >
+                  Re-open the debrief
+                </button>
+              )}
+            </div>
+          </Card>
+        )
+      })()}
 
       {inProgress && viewMode === 'focus' && (
         <FocusView
-          day={day}
+          day={viewDay}
           session={session}
           onOpenGuide={setGuideId}
           onFinish={requestFinish}
@@ -298,7 +367,7 @@ export function TodayScreen() {
             ⛶ Back to focus mode
           </button>
           <SessionView
-            day={day}
+            day={viewDay}
             session={session}
             onOpenGuide={setGuideId}
             onFinish={requestFinish}
@@ -314,13 +383,12 @@ export function TodayScreen() {
           <div className="relative w-full max-w-sm rounded-2xl border border-danger/40 bg-bg p-5 shadow-2xl animate-fade-in">
             <h3 className="text-[17px] font-black tracking-tight text-danger">Quit the session?</h3>
             <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">
-              You still have unfinished work —{' '}
               {(() => {
                 const total = session.exercises.reduce((n, e) => n + e.sets.length, 0)
                 const done = session.exercises.reduce((n, e) => n + e.sets.filter((x) => x.done).length, 0)
-                return `${done} of ${total} sets logged`
+                const label = GRADE_LABEL[sessionGrade(session)].toLowerCase()
+                return `${done} of ${total} sets are in. Ending now grades the day ${label} — not a completion.`
               })()}
-              . Ending now closes the day as a partial, not a completion.
             </p>
             <div className="mt-4 flex flex-col gap-2">
               <button
@@ -333,7 +401,7 @@ export function TodayScreen() {
                 className="w-full rounded-xl border border-danger/40 bg-surface-2 py-3 text-[13px] font-bold text-danger active:scale-[0.98]"
                 onClick={handleFinish}
               >
-                Yes, quit — log it as partial
+                Yes, quit — log what's done
               </button>
             </div>
           </div>
@@ -447,19 +515,27 @@ export function TodayScreen() {
       {/* Sheets */}
       <ReadinessSheet
         open={readinessOpen}
-        onClose={() => setReadinessOpen(false)}
+        onClose={() => {
+          setReadinessOpen(false)
+          setMakeupTarget(null)
+        }}
         onStart={(flags, intensity) => {
           setReadinessOpen(false)
-          startSession(date, flags, intensity)
+          startSession(date, flags, intensity, makeupTarget ?? undefined)
+          setMakeupTarget(null)
         }}
       />
       <IntensitySheet
         open={intensityOpen}
-        day={day}
-        onClose={() => setIntensityOpen(false)}
+        day={makeupResolved ?? day}
+        onClose={() => {
+          setIntensityOpen(false)
+          setMakeupTarget(null)
+        }}
         onStart={(intensity) => {
           setIntensityOpen(false)
-          startSession(date, undefined, intensity)
+          startSession(date, undefined, intensity, makeupTarget ?? undefined)
+          setMakeupTarget(null)
         }}
       />
       {skipOpen && (

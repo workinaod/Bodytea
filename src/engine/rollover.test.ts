@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SessionLog } from '../types'
+import { emptyAppData } from '../types'
 import { lateNightGraceDate, msUntilNextMidnight } from './rollover'
 
 describe('msUntilNextMidnight', () => {
@@ -26,6 +27,14 @@ describe('msUntilNextMidnight', () => {
 })
 
 describe('lateNightGraceDate', () => {
+  // Phase starts Mon Aug 3 on the NAOD preset: Sat Aug 8 is a scheduled
+  // speed session, Sun Aug 9 is rest.
+  function makeData(sessions: Record<string, SessionLog> = {}) {
+    const data = emptyAppData('2026-08-03')
+    data.sessions = sessions
+    return data
+  }
+
   const inProgress: SessionLog = {
     date: '2026-08-08',
     templateId: 'saturday',
@@ -35,24 +44,35 @@ describe('lateNightGraceDate', () => {
   }
 
   it("anchors on yesterday at 00:30 when yesterday's session is unfinished", () => {
-    const sessions = { '2026-08-08': inProgress }
-    const grace = lateNightGraceDate(sessions, '2026-08-09', new Date(2026, 7, 9, 0, 30))
+    const grace = lateNightGraceDate(makeData({ '2026-08-08': inProgress }), '2026-08-09', new Date(2026, 7, 9, 0, 30))
     expect(grace).toBe('2026-08-08')
   })
 
-  it('ends at 03:00', () => {
-    const sessions = { '2026-08-08': inProgress }
-    expect(lateNightGraceDate(sessions, '2026-08-09', new Date(2026, 7, 9, 3, 1))).toBeNull()
+  it('anchors on an UNSTARTED scheduled yesterday — the 12–3am workout counts as its day', () => {
+    const grace = lateNightGraceDate(makeData(), '2026-08-09', new Date(2026, 7, 9, 0, 30))
+    expect(grace).toBe('2026-08-08')
   })
 
-  it('does not apply when the session is finished or absent', () => {
+  it('does not anchor on an unstarted REST yesterday', () => {
+    // Sun Aug 9 is rest → Monday 00:30 rolls straight over
+    expect(lateNightGraceDate(makeData(), '2026-08-10', new Date(2026, 7, 10, 0, 30))).toBeNull()
+  })
+
+  it('ends at 03:00', () => {
+    const data = makeData({ '2026-08-08': inProgress })
+    expect(lateNightGraceDate(data, '2026-08-09', new Date(2026, 7, 9, 3, 1))).toBeNull()
+    expect(lateNightGraceDate(makeData(), '2026-08-09', new Date(2026, 7, 9, 3, 1))).toBeNull()
+  })
+
+  it('does not apply when the session is finished or skipped', () => {
     const done = { ...inProgress, status: 'completed' as const, endedAt: '2026-08-09T00:05:00.000Z' }
-    expect(lateNightGraceDate({ '2026-08-08': done }, '2026-08-09', new Date(2026, 7, 9, 0, 30))).toBeNull()
-    expect(lateNightGraceDate({}, '2026-08-09', new Date(2026, 7, 9, 0, 30))).toBeNull()
+    expect(lateNightGraceDate(makeData({ '2026-08-08': done }), '2026-08-09', new Date(2026, 7, 9, 0, 30))).toBeNull()
+    const skipped = { ...inProgress, status: 'skipped' as const }
+    expect(lateNightGraceDate(makeData({ '2026-08-08': skipped }), '2026-08-09', new Date(2026, 7, 9, 0, 30))).toBeNull()
   })
 
   it('refuses to act when today and the wall clock disagree', () => {
-    const sessions = { '2026-08-08': inProgress }
-    expect(lateNightGraceDate(sessions, '2026-08-10', new Date(2026, 7, 9, 0, 30))).toBeNull()
+    const data = makeData({ '2026-08-08': inProgress })
+    expect(lateNightGraceDate(data, '2026-08-10', new Date(2026, 7, 9, 0, 30))).toBeNull()
   })
 })

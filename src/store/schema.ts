@@ -139,6 +139,7 @@ const sessionSchema = z.object({
     })
     .optional(),
   intensity: z.enum(['full', 'lighter', 'minimum']).optional(),
+  makeupFor: isoDate.optional(),
   trimmedFromIndex: z.number().optional(),
   exercises: z.array(
     z.object({
@@ -550,6 +551,32 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
         e.data!.coach!.feed = feed.filter((f) => !(f.kind === 'debrief' && f.debrief?.date === '2026-08-11'))
       }
     }
+    return env
+  },
+  // v15 → v16: the v15 repair keyed the wrong date — the mis-tapped
+  // finish actually lives under Monday 2026-08-10 (its debrief says so).
+  // Re-run the same un-finish for both dates. Also: the Record becomes
+  // facts-only, so historical "push me" pep-talk entries are purged.
+  15: (env) => {
+    const e = env as {
+      data?: {
+        sessions?: Record<string, { endedAt?: string; status?: string; exercises?: { sets?: { done?: boolean }[] }[] }>
+        coach?: { feed?: { kind?: string; situation?: string; debrief?: { date?: string } }[] }
+      }
+    }
+    for (const d of ['2026-08-10', '2026-08-11']) {
+      const s = e.data?.sessions?.[d]
+      const pastFirst = !!s?.exercises?.slice(1).some((ex) => ex.sets?.some((st) => st.done))
+      if (s && s.endedAt && s.status === 'partial' && !pastFirst) {
+        delete e.data!.sessions![d]
+        const feed = e.data?.coach?.feed
+        if (feed) {
+          e.data!.coach!.feed = feed.filter((f) => !(f.kind === 'debrief' && f.debrief?.date === d))
+        }
+      }
+    }
+    const feed = e.data?.coach?.feed
+    if (feed) e.data!.coach!.feed = feed.filter((f) => f.situation !== 'push')
     return env
   },
 }

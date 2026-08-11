@@ -4,7 +4,7 @@ import { addDaysISO, formatDayLabel } from './calendar'
 import { interpolate, pickVariant } from './coach'
 import { generateInsights } from './insights'
 import { kcalTargetFor, nutritionDayType, recoveryPoolKey, resolveDay } from './resolveDay'
-import { detectPRs, kcalFor, proteinFor, sessionSetsDone, sessionTonnage, currentStreak } from './stats'
+import { detectPRs, GRADE_LABEL, kcalFor, proteinFor, sessionGrade, sessionSetsDone, sessionTonnage, currentStreak } from './stats'
 
 // ============================================================
 // Composes the post-session debrief: live recap numbers first,
@@ -25,7 +25,8 @@ export function composeDebrief(
   session: SessionLog,
   today: ISODate,
 ): ComposedDebrief {
-  const resolved = resolveDay(session.date, data)
+  // A make-up session debriefs the workout it ran, not the rest day it ran on
+  const resolved = resolveDay(session.makeupFor ?? session.date, data)
   const shownIds: string[] = []
   const surfacedInsightIds: string[] = []
   let shownAcc = data.coach.shownMessageIds
@@ -40,7 +41,8 @@ export function composeDebrief(
   // ---- Recap ----
   const recap: string[] = []
   const { done, total } = sessionSetsDone(session)
-  if (total > 0) recap.push(`${done}/${total} sets completed.`)
+  if (total > 0) recap.push(`${done}/${total} sets — graded ${GRADE_LABEL[sessionGrade(session)].toLowerCase()}.`)
+  if (session.makeupFor) recap.push(`Make-up for ${session.makeupFor.slice(5)} — the missed day got its work.`)
   const tonnage = sessionTonnage(session)
   if (tonnage > 0) recap.push(`${tonnage.toLocaleString()} lb moved across the session.`)
   const prs = detectPRs(data, session)

@@ -67,6 +67,20 @@ export function pushCoachMessage(
   return msg.text
 }
 
+/**
+ * A coach line WITHOUT a Record entry — for on-demand pep talks. The
+ * Record recounts what happened; asking for a push isn't an event.
+ * Anti-repeat bookkeeping still applies so lines don't recycle.
+ */
+export function coachLineFor(situation: CoachSituation, vars: Record<string, string | number> = {}): string {
+  const data = store().data
+  const msg = coachMessageFor(data, situation, todayISO(), vars)
+  store().update((d) => {
+    d.coach.shownMessageIds = pushShown(d.coach.shownMessageIds, msg.shownId)
+  })
+  return msg.text
+}
+
 // ---------- Exercise swaps (🔄 on a Today row) ----------
 
 /**
@@ -161,9 +175,11 @@ export function startSession(
   date: ISODate,
   readinessFlags?: [boolean, boolean, boolean, boolean],
   intensity: SessionIntensity = 'full',
+  makeupFor?: ISODate,
 ): void {
   const data = store().data
-  const resolved = resolveDay(date, data)
+  // A make-up runs the MISSED day's workout, logged under today
+  const resolved = resolveDay(makeupFor ?? date, data)
   const downgraded = (readinessFlags?.filter(Boolean).length ?? 0) >= 2 || intensity === 'lighter'
   let exercises = downgraded ? applyReadinessDowngrade(resolved.exercises) : resolved.exercises
   if (intensity === 'minimum') {
@@ -182,6 +198,7 @@ export function startSession(
     startedAt: new Date().toISOString(),
     readiness: readinessFlags ? { flags: readinessFlags, downgraded } : undefined,
     intensity: intensity === 'full' ? undefined : intensity,
+    makeupFor,
     exercises: exercises.map((r) => {
       const pre = prefillFor(date, r.exerciseId)
       return {
@@ -210,6 +227,21 @@ export function patchSet(
   store().update((d) => {
     const set = d.sessions[date]?.exercises[exIdx]?.sets[setIdx]
     if (set) Object.assign(set, patch)
+  })
+}
+
+/**
+ * Un-finish an early-ended session: the endedAt stamp and its debrief
+ * come off, and the session resumes in-progress. The self-serve fix
+ * for a mis-tapped finish.
+ */
+export function reopenSession(date: ISODate): void {
+  store().update((d) => {
+    const s = d.sessions[date]
+    if (!s || !s.endedAt) return
+    delete s.endedAt
+    s.status = 'partial'
+    d.coach.feed = d.coach.feed.filter((f) => !(f.kind === 'debrief' && f.debrief?.date === date))
   })
 }
 

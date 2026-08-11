@@ -26,17 +26,21 @@ function isExcused(data: AppData, date: ISODate): boolean {
 
 /**
  * Scheduled days strictly before `today` with no log and no excuse.
- * Looks back at most `maxDays` (and never before phase start).
+ * Looks back at most `maxDays` (and never before phase start). Pass
+ * `now` to honor the late-night window: before 03:00, yesterday is
+ * still in play (startable under grace) and must not be flagged.
  */
 export function findUnexplainedMisses(
   data: AppData,
   today: ISODate,
   maxDays = 60,
+  now?: Date,
 ): MissedDay[] {
   const out: MissedDay[] = []
   const start = data.settings.phaseStartDate
   const installed = data.settings.installedAt
   for (let i = 1; i <= maxDays; i++) {
+    if (i === 1 && now && now.getHours() < 3) continue
     const date = addDaysISO(today, -i)
     if (daysBetween(start, date) < 0) break
     // the app can't interrogate days from before it existed
@@ -55,6 +59,38 @@ export function findUnexplainedMisses(
     })
   }
   return out.reverse() // oldest first
+}
+
+// ---------- Rest-day make-up ----------
+
+export interface MakeupCandidate {
+  date: ISODate
+  templateId: string
+  title: string
+  cns: boolean
+}
+
+/**
+ * The first workout missed THIS week (Monday through yesterday): a
+ * scheduled session/mobility day whose log is absent or skipped. A
+ * week-scope excuse (travel/sick write-off) suppresses the offer; a
+ * day-scope excuse does NOT — the excuse explained the miss, it didn't
+ * do the work.
+ */
+export function makeupCandidate(data: AppData, today: ISODate): MakeupCandidate | null {
+  const monday = mondayOf(today)
+  const weekWrittenOff = data.excuses.some((e) => e.scope === 'week' && mondayOf(e.date) === monday)
+  if (weekWrittenOff) return null
+  for (let d = monday; d < today; d = addDaysISO(d, 1)) {
+    if (daysBetween(data.settings.installedAt, d) < 0) continue
+    const resolved = resolveDay(d, data)
+    if (resolved.kind !== 'session' && resolved.kind !== 'mobility') continue
+    if (!resolved.templateId) continue
+    const s = data.sessions[d]
+    if (s && s.status !== 'skipped') continue
+    return { date: d, templateId: resolved.templateId, title: resolved.title, cns: resolved.cns }
+  }
+  return null
 }
 
 /** Group misses by week Monday — used for the bulk "that was a travel week" resolution. */

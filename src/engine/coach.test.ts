@@ -14,7 +14,7 @@ import {
 } from './coach'
 import { validateProofFile } from '../store/storage'
 import { generateInsights } from './insights'
-import { findUnexplainedMisses } from './reconcile'
+import { findUnexplainedMisses, makeupCandidate } from './reconcile'
 import { composeDebrief } from './debrief'
 import { defaultWeekState } from '../types'
 
@@ -333,6 +333,46 @@ describe('reconcile', () => {
     d.settings.installedAt = '2026-08-14'
     const misses = findUnexplainedMisses(d, '2026-08-17')
     expect(misses.map((m) => m.date)).toEqual(['2026-08-14', '2026-08-15'])
+  })
+
+  it('leaves yesterday alone before 3am — the late-night window keeps it in play', () => {
+    const d = makeData()
+    // Monday missed, viewed from Tuesday 00:30 → not flagged yet…
+    expect(findUnexplainedMisses(d, '2026-08-11', 60, new Date(2026, 7, 11, 0, 30))).toEqual([])
+    // …but at 03:01 the day is genuinely over
+    expect(
+      findUnexplainedMisses(d, '2026-08-11', 60, new Date(2026, 7, 11, 3, 1)).map((m) => m.date),
+    ).toEqual(['2026-08-10'])
+  })
+})
+
+describe('rest-day make-up', () => {
+  it('offers the first missed session of the week, skipping trained days', () => {
+    const d = makeData()
+    d.sessions['2026-08-10'] = { date: '2026-08-10', templateId: 'monday', status: 'completed', exercises: [] }
+    // Tuesday never logged → Sunday's rest day offers Tuesday
+    const c = makeupCandidate(d, '2026-08-16')
+    expect(c?.date).toBe('2026-08-11')
+    expect(c?.templateId).toBeTruthy()
+  })
+
+  it('counts a skipped day as missed, and clears when the week is whole', () => {
+    const d = makeData()
+    for (let i = 0; i < 6; i++) {
+      const date = `2026-08-${String(10 + i)}`
+      d.sessions[date] = { date, templateId: 't', status: i === 1 ? 'skipped' : 'completed', exercises: [] }
+    }
+    expect(makeupCandidate(d, '2026-08-16')?.date).toBe('2026-08-11')
+    d.sessions['2026-08-11']!.status = 'completed'
+    expect(makeupCandidate(d, '2026-08-16')).toBeNull()
+  })
+
+  it('a week write-off suppresses the offer; a day excuse does not', () => {
+    const d = makeData()
+    d.excuses.push(excuse('2026-08-11', true)) // day-scope: explained, not done
+    expect(makeupCandidate(d, '2026-08-16')?.date).toBe('2026-08-10')
+    d.excuses.push({ ...excuse('2026-08-10', true, 'travel'), scope: 'week' })
+    expect(makeupCandidate(d, '2026-08-16')).toBeNull()
   })
 })
 

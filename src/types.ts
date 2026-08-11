@@ -315,6 +315,8 @@ export interface SessionLog {
   readiness?: ReadinessCheck
   /** Start-time intensity choice — 'lighter'/'minimum' finish as downgraded wins. */
   intensity?: SessionIntensity
+  /** Rest-day make-up: the missed date whose workout this session ran. */
+  makeupFor?: ISODate
   /** "Running long" cut point — exercises at index >= this were dropped (bottom-first rule). */
   trimmedFromIndex?: number
   exercises: ExerciseLog[]
@@ -646,7 +648,7 @@ export interface AppData {
   runs: RunLog[]
 }
 
-export const SCHEMA_VERSION = 15
+export const SCHEMA_VERSION = 16
 
 export interface Envelope {
   schemaVersion: number

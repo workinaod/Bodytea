@@ -44,7 +44,7 @@ export function say(text: string, opts?: { rate?: number; interrupt?: boolean })
     u.lang = 'en-US'
     if (chosenVoice) u.voice = chosenVoice
     // Slightly slower + a touch of pitch takes the edge off the delivery
-    u.rate = opts?.rate ?? 0.96
+    u.rate = opts?.rate ?? 0.9
     u.pitch = 1.04
     window.speechSynthesis.speak(u)
   } catch {
@@ -107,14 +107,17 @@ export function speechInSupported(): boolean {
 }
 
 // All the common ways people say it — matched on word boundaries.
-const GO_RE = /\b(go|start|begin|ready|run it|lessgo|less go|let'?s go|lets go|start set)\b/
+const GO_RE = /\b(go|start|begin|ready|yes|yeah|yep|yup|run it|lessgo|less go|let'?s go|lets go|start set)\b/
 const DONE_RE = /\b(done|finished|finish|next|got it|complete|that'?s it|i'?m done|im done)\b/
 const SKIP_RE = /\b(skip( the)?( rest| break)?|pass)\b/
+const ASK_RE = /\b(instructions?|how do i|how to|what is this|what'?s this|explain|show me how)\b/
 
 export interface EarHandlers {
   onGo?: () => void
   onDone?: () => void
   onSkip?: () => void
+  /** "how do I do this / instructions" — coach explains on request only. */
+  onAsk?: () => void
 }
 
 /**
@@ -132,10 +135,11 @@ export function startEars(handlers: EarHandlers): () => void {
   rec.onresult = (e) => {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const heard = (e.results[i][0]?.transcript ?? '').toLowerCase()
-      // SKIP before DONE: "skip the rest" contains no done-word, but keep
-      // the order deliberate anyway; GO last so "start" in a longer phrase
-      // like "i'm done, start the timer" resolves the completion first.
-      if (SKIP_RE.test(heard)) handlers.onSkip?.()
+      // ASK first ("how do I start this" must explain, not start), then
+      // SKIP, then DONE, then GO — so "i'm done, start the timer"
+      // resolves the completion first.
+      if (ASK_RE.test(heard)) handlers.onAsk?.()
+      else if (SKIP_RE.test(heard)) handlers.onSkip?.()
       else if (DONE_RE.test(heard)) handlers.onDone?.()
       else if (GO_RE.test(heard)) handlers.onGo?.()
     }

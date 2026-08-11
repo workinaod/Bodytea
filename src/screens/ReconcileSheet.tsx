@@ -32,7 +32,13 @@ const REASONS: { id: ExcuseReason; label: string }[] = [
 export function ReconcileSheet() {
   const data = useAppStore((s) => s.data)
   const today = useToday()
-  const misses = useMemo(() => findUnexplainedMisses(data, today), [data, today])
+  // Minute tick so the 12–3am suppression lifts at 03:00 without a reload
+  const [minute, setMinute] = useState(() => Math.floor(Date.now() / 60_000))
+  useEffect(() => {
+    const id = setInterval(() => setMinute(Math.floor(Date.now() / 60_000)), 60_000)
+    return () => clearInterval(id)
+  }, [])
+  const misses = useMemo(() => findUnexplainedMisses(data, today, 60, new Date()), [data, today, minute])
   const confronted = useRef(false)
   const [activeReason, setActiveReason] = useState<Record<string, ExcuseReason>>({})
   const [proofBusy, setProofBusy] = useState<string | null>(null)

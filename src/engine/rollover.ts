@@ -1,5 +1,6 @@
-import type { ISODate, SessionLog } from '../types'
+import type { AppData, ISODate } from '../types'
 import { addDaysISO, localISO } from './calendar'
+import { resolveDay } from './resolveDay'
 
 // ============================================================
 // Day-rollover math. Pure; the live clock in logic/clock.ts
@@ -17,21 +18,26 @@ export function msUntilNextMidnight(now: Date): number {
 }
 
 /**
- * Late-night grace: between midnight and 03:00, an unfinished session
- * from "yesterday" keeps the Today screen anchored on yesterday so the
- * lifter finishing at 12:40am logs against the day they actually trained.
+ * Late-night grace: between midnight and 03:00, "yesterday" stays the
+ * live day when its work is still in play — an unfinished session keeps
+ * its clock, and a scheduled day never started can STILL be started (a
+ * midnight-to-three workout counts as the day it belongs to). A day
+ * that was finished or explicitly skipped rolls over immediately.
  * Returns yesterday's date while grace applies, else null.
  */
 export function lateNightGraceDate(
-  sessions: Record<ISODate, SessionLog>,
+  data: AppData,
   today: ISODate,
   now: Date,
 ): ISODate | null {
   if (now.getHours() >= 3) return null
   if (localISO(now) !== today) return null // clock/state disagree — no grace games
   const yesterday = addDaysISO(today, -1)
-  const s = sessions[yesterday]
-  if (!s) return null
-  const inProgress = s.status === 'partial' && !!s.startedAt && !s.endedAt
-  return inProgress ? yesterday : null
+  const s = data.sessions[yesterday]
+  if (s) {
+    const inProgress = s.status === 'partial' && !!s.startedAt && !s.endedAt
+    return inProgress ? yesterday : null
+  }
+  const resolved = resolveDay(yesterday, data)
+  return resolved.kind === 'session' || resolved.kind === 'mobility' ? yesterday : null
 }

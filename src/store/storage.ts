@@ -89,6 +89,9 @@ export interface ReminderMeta {
   checkinNotifiedDate?: string | null
   /** The Sergeant's 22:00 missed-day word — fires once per missed day. */
   missNotifiedDate?: string | null
+  /** Rest day + a workout missed this week → the make-up push has a name. */
+  makeupTitle?: string | null
+  makeupNotifiedDate?: string | null
 }
 
 export const MetaStore = {

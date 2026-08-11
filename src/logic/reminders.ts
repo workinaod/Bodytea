@@ -1,6 +1,7 @@
 import { MetaStore, type ReminderMeta } from '../store/storage'
 import { useAppStore } from '../store/appStore'
 import { resolveDay, weekStateFor } from '../engine/resolveDay'
+import { makeupCandidate } from '../engine/reconcile'
 import { reviewReady } from '../engine/review'
 import { todayISO } from '../engine/calendar'
 
@@ -22,7 +23,10 @@ function todayState() {
   const log = data.sessions[date]
   const done = !!log && (log.status === 'completed' || log.status === 'downgraded-completed' || log.status === 'skipped' || !!log.endedAt)
   const cardioLogged = (data.cardio[date]?.length ?? 0) > 0 || weekStateFor(data, date).ballDates.includes(date)
-  return { date, scheduled, done, cardioLogged, title: resolved.title }
+  // Rest day + a workout missed this week + nothing trained yet → the
+  // off-day make-up push has something to say
+  const makeup = resolved.kind === 'rest' && !log ? makeupCandidate(data, date) : null
+  return { date, scheduled, done, cardioLogged, title: resolved.title, makeupTitle: makeup?.title ?? null }
 }
 
 /** Mirror reminder config + today's status into IDB (SW reads it) + badge. */
@@ -51,6 +55,8 @@ export async function syncReminderMeta(): Promise<void> {
     checkinDueToday,
     checkinNotifiedDate: prev?.checkinNotifiedDate ?? null,
     missNotifiedDate: prev?.missNotifiedDate ?? null,
+    makeupTitle: t.makeupTitle,
+    makeupNotifiedDate: prev?.makeupNotifiedDate ?? null,
   }
   await MetaStore.set(meta).catch(() => {})
 

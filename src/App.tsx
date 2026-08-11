@@ -17,15 +17,24 @@ import { lateNightGraceDate } from './engine/rollover'
 
 export default function App() {
   const onboarded = useAppStore((s) => s.data.settings.onboarded)
-  const sessions = useAppStore((s) => s.data.sessions)
+  const data = useAppStore((s) => s.data)
   const today = useToday()
   const [tab, setTab] = useState<TabId>('today')
   const [track, setTrack] = useState<'choose' | 'run' | 'bike' | null>(null)
 
   // A live session on the home date folds the tab bar into the glow strip
   // (only where the session UI actually is — the Today tab).
-  const homeDate = lateNightGraceDate(sessions, today, new Date()) ?? today
-  const live = sessions[homeDate]
+  const grace = lateNightGraceDate(data, today, new Date())
+  // While the 12–3am window is open nothing else re-renders at 03:00 —
+  // this ticker makes the flip to the new day visible within a minute.
+  const [, forceGraceTick] = useState(0)
+  useEffect(() => {
+    if (!grace) return
+    const id = window.setInterval(() => forceGraceTick((n) => n + 1), 60_000)
+    return () => window.clearInterval(id)
+  }, [grace])
+  const homeDate = grace ?? today
+  const live = data.sessions[homeDate]
   const sessionLive = !!live && live.status === 'partial' && !live.endedAt && !!live.startedAt
 
   useEffect(() => {

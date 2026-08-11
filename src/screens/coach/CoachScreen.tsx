@@ -8,7 +8,8 @@ import { GUIDE_SECTIONS } from '../../plan/guide'
 import { EXERCISES } from '../../plan/exercises'
 import { Btn, Card, Chip, SectionTitle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
-import { pushCoachMessage } from '../../logic/actions'
+import { coachLineFor } from '../../logic/actions'
+import { avgMph, fmtDuration, fmtPace } from '../../engine/runs'
 import { DebriefSheet } from '../today/DebriefSheet'
 import { ExerciseGuideSheet } from '../today/ExerciseGuideSheet'
 import { SettingsSheet } from './SettingsSheet'
@@ -42,6 +43,15 @@ export function CoachScreen() {
     () => MOTIVATION_QUOTES[daysBetween('2026-01-01', today) % MOTIVATION_QUOTES.length],
     [today],
   )
+
+  // The record is a merged, factual timeline: coach feed + GPS runs/rides
+  const record = useMemo(() => {
+    const rows = [
+      ...data.coach.feed.map((f) => ({ rowKind: 'feed' as const, at: f.at, f })),
+      ...data.runs.map((r) => ({ rowKind: 'run' as const, at: r.startedAt, r })),
+    ]
+    return rows.sort((a, b) => (a.at > b.at ? -1 : 1))
+  }, [data.coach.feed, data.runs])
 
   return (
     <div className="space-y-3 pb-6">
@@ -81,7 +91,8 @@ export function CoachScreen() {
         <Btn
           className="mt-3 w-full"
           onClick={() => {
-            setPushLine(pushCoachMessage('push'))
+            // A pep talk on demand — spoken, not written into the Record
+            setPushLine(coachLineFor('push'))
             setPushOpen(true)
           }}
         >
@@ -115,10 +126,28 @@ export function CoachScreen() {
         </div>
       </Card>
 
-      {/* Feed */}
+      {/* The record: what actually happened — sessions, adjustments,
+          runs/bikes. Pep talks live in the push sheet, not here. */}
       <SectionTitle>The record</SectionTitle>
       <div className="space-y-2">
-        {data.coach.feed.slice(0, feedCount).map((f) => {
+        {record.slice(0, feedCount).map((row) => {
+          if (row.rowKind === 'run') {
+            const r = row.r
+            return (
+              <Card key={`run-${r.id}`} className="!py-3">
+                <div className="flex items-center justify-between">
+                  <Chip tone="cyan">{r.activity === 'bike' ? 'ride' : 'run'}</Chip>
+                  <span className="text-[10px] font-semibold text-ink-faint">{formatShort(r.date)}</span>
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink">
+                  {r.activity === 'bike'
+                    ? `Ride — ${r.distanceMi.toFixed(2)} mi · ${fmtDuration(r.durationSec)} · ${avgMph(r.distanceMi, r.durationSec)} mph avg`
+                    : `Run — ${r.distanceMi.toFixed(2)} mi · ${fmtDuration(r.durationSec)} · ${fmtPace(r.avgPaceSec)}`}
+                </p>
+              </Card>
+            )
+          }
+          const f = row.f
           const linkedClaim = f.excuseId
             ? data.excuses.find((e) => e.id === f.excuseId)?.claimText
             : undefined
@@ -144,12 +173,12 @@ export function CoachScreen() {
             </Card>
           )
         })}
-        {data.coach.feed.length === 0 && (
+        {record.length === 0 && (
           <p className="py-6 text-center text-[12.5px] text-ink-faint">
             Nothing yet. Finish a session and the record starts.
           </p>
         )}
-        {data.coach.feed.length > feedCount && (
+        {record.length > feedCount && (
           <Btn kind="ghost" className="w-full" onClick={() => setFeedCount((c) => c + 20)}>
             Older entries
           </Btn>

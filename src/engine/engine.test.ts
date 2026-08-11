@@ -3,7 +3,7 @@ import { emptyAppData, defaultWeekState, type AppData, type SessionLog } from '.
 import { addDaysISO, daysBetween, mondayOf, weekdayOf, weekIndexFor } from './calendar'
 import { blockMathFor, cardioRequiredForWeek, nutritionDayType, resolveDay } from './resolveDay'
 import { isIntenseSport } from '../plan/cardio'
-import { currentStreak, detectPRs, e1RM, kcalBumpSuggestion, proteinFor } from './stats'
+import { currentStreak, detectPRs, e1RM, kcalBumpSuggestion, proteinFor, sessionGrade } from './stats'
 import { applyDeload, applyReadinessDowngrade, buildFromTemplate, minimumViableFor } from './transforms'
 import { getTemplate } from '../plan/templates'
 import { buildNaodPreset } from '../plan/presets/naod'
@@ -644,5 +644,57 @@ describe('same-day load trim (work ran long)', () => {
     const day = resolveDay(START, data)
     expect(day.exercises.find((e) => e.exerciseId === 'countermovement-jump')!.sets).toBe(2)
     expect(day.banners.filter((b) => b.id === 'readiness' || b.id === 'day-trimmed')).toHaveLength(1)
+  })
+})
+
+describe('session grades', () => {
+  const set = (done: boolean, target = '10', reps?: number) => ({ targetReps: target, reps, done })
+  const grade = (exercises: SessionLog['exercises']) =>
+    sessionGrade({ date: START, templateId: 't', status: 'partial', exercises })
+
+  it('0–1 exercises touched is extremely light, whatever the set count', () => {
+    const three = (a: boolean[], b: boolean[], c: boolean[]) => [
+      { exerciseId: 'a', sets: a.map((d) => set(d)) },
+      { exerciseId: 'b', sets: b.map((d) => set(d)) },
+      { exerciseId: 'c', sets: c.map((d) => set(d)) },
+    ]
+    expect(grade(three([false, false], [false, false], [false, false]))).toBe('extremely-light')
+    expect(grade(three([true, false], [false, false], [false, false]))).toBe('extremely-light')
+    expect(grade(three([true, true], [false, false], [false, false]))).toBe('extremely-light') // one exercise only
+  })
+
+  it('light under half, half up to full', () => {
+    const spread = (n: number) => [
+      { exerciseId: 'a', sets: [set(n > 0), set(n > 2)] },
+      { exerciseId: 'b', sets: [set(n > 1), set(n > 3)] },
+      { exerciseId: 'c', sets: [set(n > 4), set(n > 5)] },
+    ]
+    expect(grade(spread(2))).toBe('light') // 2/6 across two exercises
+    expect(grade(spread(3))).toBe('half') // 3/6
+    expect(grade(spread(5))).toBe('half') // 5/6 — close, still not done
+  })
+
+  it('full when every set is done; overtime when reps beat the target', () => {
+    expect(
+      grade([{ exerciseId: 'a', sets: [set(true, '8-12', 12), set(true, '8-12', 10)] }]),
+    ).toBe('full')
+    expect(
+      grade([{ exerciseId: 'a', sets: [set(true, '8-12', 14), set(true, '8-12', 10)] }]),
+    ).toBe('overtime')
+  })
+
+  it('skipped exercises and the trimmed tail stay out of the denominator', () => {
+    const s: SessionLog = {
+      date: START,
+      templateId: 't',
+      status: 'partial',
+      trimmedFromIndex: 2,
+      exercises: [
+        { exerciseId: 'a', sets: [set(true), set(true)] },
+        { exerciseId: 'b', skipped: true, sets: [set(false)] },
+        { exerciseId: 'c', sets: [set(false), set(false)] },
+      ],
+    }
+    expect(sessionGrade(s)).toBe('full') // only exercise a is considered
   })
 })

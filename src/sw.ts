@@ -36,6 +36,8 @@ interface ReminderMeta {
   checkinDueToday?: boolean
   checkinNotifiedDate?: string | null
   missNotifiedDate?: string | null
+  makeupTitle?: string | null
+  makeupNotifiedDate?: string | null
 }
 
 function readMeta(): Promise<ReminderMeta | null> {
@@ -142,6 +144,25 @@ async function maybeNotify(): Promise<void> {
     })
     await writeMeta(meta, { missNotifiedDate: today0 })
     meta.missNotifiedDate = today0
+  }
+
+  // Off-day make-up: a workout was missed this week and today is open.
+  // One push per day, from 9am — the week is still winnable.
+  if (
+    meta.makeupTitle &&
+    !meta.todayDone &&
+    now0.getHours() >= 9 &&
+    meta.makeupNotifiedDate !== today0 &&
+    meta.todayDate === today0
+  ) {
+    await self.registration.showNotification('Bodytea — Make-up day', {
+      body: `You missed ${meta.makeupTitle} this week. Off day, open window — let's make it up today.`,
+      tag: 'naod-makeup-week',
+      icon: 'icons/pwa-192.png',
+      badge: 'icons/pwa-192.png',
+    })
+    await writeMeta(meta, { makeupNotifiedDate: today0 })
+    meta.makeupNotifiedDate = today0
   }
 
   if (!meta.todayScheduled) return

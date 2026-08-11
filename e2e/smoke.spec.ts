@@ -55,7 +55,8 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
     }
 
     // ---- Focus mode is the default session UI: GO gate, then the set ----
-    await expect(page.getByText(/Set 1 of/)).toBeVisible()
+    // (both the prescription line and the intro caption carry "Set 1 of")
+    await expect(page.getByText(/Set 1 of/).first()).toBeVisible()
     await page.getByRole('button', { name: /^GO — START SET/ }).click()
     const next = page.getByRole('button', { name: /NEXT SET|SET DONE/ })
     await expect(next).toBeVisible()
@@ -68,7 +69,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
 
     // ---- Persistence: reload keeps the in-progress session (focus mode) ----
     await page.reload()
-    await expect(page.getByText(/Set \d+ of/)).toBeVisible()
+    await expect(page.getByText(/Set \d+ of/).first()).toBeVisible()
 
     // ---- Switch to list view and finish → quit gate → debrief ----
     await page.getByRole('button', { name: /list/ }).click()
@@ -157,14 +158,17 @@ test('midnight rollover advances the app without a reload', async ({ page }) => 
 
   await expect(page.getByText('Lower Strength', { exact: true })).toBeVisible()
 
-  // Cross midnight (the 30s safety check and midnight timer both fire)
+  // Cross midnight: the unstarted day does NOT vanish — the 12–3am
+  // window keeps Wednesday open (and startable) under a grace banner.
   await page.clock.fastForward('00:05:00')
+  await expect(page.getByText(/still open until 3 AM/)).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText('Lower Strength', { exact: true })).toBeVisible()
 
-  // Thursday's mobility day appears with NO reload or navigation
+  // Past 03:00 the window closes: Thursday arrives with NO reload…
+  await page.clock.fastForward('03:10:00')
   await expect(page.getByText('Mobility + Active Recovery')).toBeVisible({ timeout: 10_000 })
 
-  // The reconcile gate also fires on day change: Wednesday went unaccounted
-  // and the Sergeant blocks the app until it's answered.
+  // …and the reconcile gate fires for the now-genuinely-missed Wednesday.
   await expect(page.getByText(/unaccounted for/)).toBeVisible()
   await page.getByText('Tired', { exact: true }).click()
   await page.getByRole('button', { name: 'Skipped, no proof' }).click()

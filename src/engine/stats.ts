@@ -118,6 +118,56 @@ export function sessionSetsDone(session: SessionLog): { done: number; total: num
   return { done, total }
 }
 
+// ---------- Session grades ----------
+// "Partial" says nothing. Grades say how the day actually went, measured
+// against the session as it was started (post-intensity): extremely light
+// (0-1 exercises touched / under a quarter), light, half, full, and
+// overtime — more work logged than the plan asked for.
+
+export type SessionGrade = 'extremely-light' | 'light' | 'half' | 'full' | 'overtime'
+
+export const GRADE_LABEL: Record<SessionGrade, string> = {
+  'extremely-light': 'Extremely light',
+  light: 'Light',
+  half: 'Half session',
+  full: 'Full session',
+  overtime: 'Overtime',
+}
+
+/** Upper bound of a rep target: "8-12" → 12, "10" → 10, "30 sec" → 30. */
+function targetUpper(targetReps: string): number | null {
+  const m = /(\d+)(?:\s*[-–]\s*(\d+))?/.exec(targetReps)
+  if (!m) return null
+  return Number(m[2] ?? m[1])
+}
+
+export function sessionGrade(session: SessionLog): SessionGrade {
+  const considered = session.exercises.filter(
+    (e, i) => !e.skipped && (session.trimmedFromIndex === undefined || i < session.trimmedFromIndex),
+  )
+  const sets = considered.flatMap((e) => e.sets)
+  const total = sets.length
+  const done = sets.filter((s) => s.done).length
+  if (total === 0 || done === 0) return 'extremely-light'
+
+  if (done === total) {
+    const timed = (t: string) => /sec|min|hold/.test(t)
+    const over = sets.some((s) => {
+      const upper = targetUpper(s.targetReps)
+      if (upper === null) return false
+      const actual = timed(s.targetReps) ? s.seconds : s.reps
+      return actual !== undefined && actual > upper
+    })
+    return over ? 'overtime' : 'full'
+  }
+
+  const touched = considered.filter((e) => e.sets.some((s) => s.done)).length
+  const f = done / total
+  if (f < 0.25 || (touched <= 1 && considered.length > 2)) return 'extremely-light'
+  if (f < 0.5) return 'light'
+  return 'half'
+}
+
 /**
  * Current streak: consecutive scheduled training days (per the resolved
  * plan) with a non-skipped log, counting back from today. Rest days pass
