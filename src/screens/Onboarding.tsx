@@ -34,7 +34,7 @@ const GOAL_CHIPS: { label: string; goal: Goal }[] = [
   { label: '🧍 Get moving again', goal: 'general' },
   { label: '⚡ Get faster', goal: 'speed' },
   { label: '🏅 Dominate my sport', goal: 'speed' },
-  { label: '🏃 Endurance / go further', goal: 'general' },
+  { label: '🏃 Run further / race', goal: 'endurance' },
   { label: '🎯 All-around athlete', goal: 'general' },
   { label: '⬆️ Jump higher', goal: 'vertical' },
   { label: '🏀 Dunk a basketball', goal: 'vertical' },
@@ -758,8 +758,8 @@ export function Onboarding() {
           </Card>
 
           <p className="mt-2 border-l-2 border-cyan/60 py-1 pl-3 text-[11.5px] leading-snug text-cyan/90">
-            Plus conditioning: at least {({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 } as const)[preview.plan.goal]}{' '}
-            cardio session{({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 } as const)[preview.plan.goal] > 1 ? 's' : ''} a week,
+            Plus conditioning: at least {({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1, endurance: 4 } as const)[preview.plan.goal]}{' '}
+            cardio session{({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1, endurance: 4 } as const)[preview.plan.goal] > 1 ? 's' : ''} a week,
             scheduled in the Week tab. Sport, runs, and rides all count.
           </p>
 

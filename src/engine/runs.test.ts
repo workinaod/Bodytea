@@ -5,6 +5,8 @@ import {
   acceptFix,
   avgMph,
   buildRunLog,
+  estKcal,
+  runGoalReview,
   compressTrack,
   fitBounds,
   fmtDuration,
@@ -81,5 +83,67 @@ describe('run math', () => {
     const { zoom } = fitBounds(track, 480, 220)
     expect(zoom).toBeGreaterThan(8)
     expect(zoom).toBeLessThanOrEqual(17)
+  })
+})
+
+describe('estKcal', () => {
+  it('lands on the ACSM table for a 6 mph run', () => {
+    // 175 lb → 79.4 kg, 6 mph → 9.9 METs, 30 min → ~393 kcal
+    expect(estKcal('run', 3, 1800, 175)).toBe(393)
+  })
+  it('rides burn less than runs at the same speed', () => {
+    expect(estKcal('bike', 3, 1800, 175)).toBeLessThan(estKcal('run', 3, 1800, 175))
+  })
+  it('refuses junk inputs', () => {
+    expect(estKcal('run', 0, 1800, 175)).toBe(0)
+    expect(estKcal('run', 1, 30, 175)).toBe(0)
+  })
+})
+
+describe('runGoalReview', () => {
+  function dataWith(goal: 'endurance' | 'vertical', answers?: Record<string, string>) {
+    const d = emptyAppData('2026-08-10', '2026-08-10')
+    d.plan.goal = goal
+    d.plan.goalAnswers = answers
+    return d
+  }
+  const run = (id: string, date: string, mi: number, sec: number) => ({
+    id, activity: 'run' as const, date, startedAt: `${date}T09:00:00.000Z`,
+    durationSec: sec, distanceMi: mi, avgPaceSec: Math.round(sec / mi), splits: [], points: [],
+  })
+
+  it('marathon pickers get a marathon check-in with long-run guidance', () => {
+    const d = dataWith('endurance', { 'race-distance': 'Marathon' })
+    const log = run('r1', '2026-08-12', 4, 2400)
+    d.runs.push(log)
+    const rev = runGoalReview(d, log)!
+    expect(rev.title).toBe('Marathon check-in')
+    expect(rev.rows.some((r) => r.label === 'Race' && r.value.includes('26.2'))).toBe(true)
+    expect(rev.notes.join(' ')).toContain('20 mi')
+    expect(rev.notes.join(' ')).not.toContain('—')
+  })
+
+  it('a "marathon by fall" goal statement resolves without the picker', () => {
+    const d = dataWith('vertical')
+    d.plan.goalStatement = 'run a marathon by fall'
+    const log = run('r1', '2026-08-12', 4, 2400)
+    d.runs.push(log)
+    expect(runGoalReview(d, log)?.title).toBe('Marathon check-in')
+  })
+
+  it('lifters with no run goal get nothing; endurance without a race still reviews', () => {
+    const lifter = dataWith('vertical')
+    const log = run('r1', '2026-08-12', 4, 2400)
+    lifter.runs.push(log)
+    expect(runGoalReview(lifter, log)).toBeNull()
+    const noRace = dataWith('endurance')
+    noRace.runs.push(log)
+    expect(runGoalReview(noRace, log)?.title).toBe('Distance check-in')
+  })
+
+  it('rides never get a run review', () => {
+    const d = dataWith('endurance', { 'race-distance': 'Marathon' })
+    const log = { ...run('r1', '2026-08-12', 10, 2400), activity: 'bike' as const }
+    expect(runGoalReview(d, log)).toBeNull()
   })
 })

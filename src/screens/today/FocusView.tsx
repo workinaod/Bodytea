@@ -399,7 +399,7 @@ export function FocusView({
               <VolumeIcon waves={soundMode === 'voice' ? 3 : soundMode === 'beeps-names' ? 2 : soundMode === 'beeps' ? 1 : 0} />
             </button>
             {soundOpen && (
-              <div className="absolute right-0 top-9 z-20 w-56 overflow-hidden rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] shadow-2xl">
+              <div className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-2xl bg-[#17171a] ring-1 ring-white/10 shadow-2xl shadow-black/60">
                 {(
                   [
                     ['voice', 3, 'Voice coach', 'Set intros + countdown'],

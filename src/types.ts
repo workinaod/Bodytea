@@ -109,7 +109,7 @@ export interface DayTemplate {
 // ---------- Plan config (the generated / preset "booklet") ----------
 
 /** Engine-level training emphasis a plan is built around. */
-export type Goal = 'vertical' | 'speed' | 'muscle' | 'strength' | 'lean' | 'general'
+export type Goal = 'vertical' | 'speed' | 'muscle' | 'strength' | 'lean' | 'general' | 'endurance'
 
 /** What a bring-your-own routine is chasing, multi-select. */
 export type RoutineGoal = 'muscle' | 'lose-weight' | 'maintain' | 'athletic'
@@ -403,6 +403,8 @@ export interface RunLog {
   /** Per-mile split times in seconds. */
   splits: number[]
   points: RunPoint[]
+  /** MET-estimated calories at save time (wearables replace this later). */
+  kcalEst?: number
 }
 
 // ---------- Daily cardio / sport log ----------

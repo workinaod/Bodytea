@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ISODate, RunLog, RunPoint } from '../../types'
 import { uid } from '../../store/appStore'
 import {
   acceptFix,
   avgMph,
   buildRunLog,
+  estKcal,
   fmtDuration,
   fmtPace,
   paceSecPerMi,
+  runGoalReview,
   totalDistanceMi,
 } from '../../engine/runs'
 import { buildShareImage, shareRunCard } from '../../engine/shareCard'
@@ -92,9 +94,19 @@ export function RunTrackerSheet({
   const points = pointsRef.current
   const distance = totalDistanceMi(points)
   const pace = paceSecPerMi(distance, elapsed)
+  const mph = avgMph(distance, elapsed)
+  const bodyweight = useAppStore(
+    (st) => [...st.data.measurements].reverse().find((m) => m.weightLb !== undefined)?.weightLb ?? 175,
+  )
+  const liveKcal = estKcal(activity, distance, elapsed, bodyweight)
   const label = activity === 'run' ? 'Run' : 'Ride'
 
   const [scrapped, setScrapped] = useState(false)
+  // Goal check-in: composed once per finished run against live app data
+  const review = useMemo(
+    () => (saved ? runGoalReview(useAppStore.getState().data, saved) : null),
+    [saved],
+  )
 
   function finish() {
     if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
@@ -161,22 +173,25 @@ export function RunTrackerSheet({
             <div className="flex flex-1 items-center justify-between gap-3 py-3">
               <div>
                 <div className="font-display text-[46px] font-bold leading-none tabular-nums">{fmtDuration(elapsed)}</div>
+                {liveKcal > 0 && (
+                  <div className="mt-1 text-[12px] font-bold text-ink-dim">~{liveKcal} cal</div>
+                )}
                 <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-faint">
                   recording, screen stays on
                 </div>
               </div>
-              <div className="flex gap-4 text-right">
+              <div className="flex gap-3.5 text-right">
                 <div>
-                  <div className="font-display text-[26px] font-bold leading-none">{distance.toFixed(2)}</div>
+                  <div className="font-display text-[24px] font-bold leading-none">{distance.toFixed(2)}</div>
                   <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">mi</div>
                 </div>
                 <div>
-                  <div className="font-display text-[26px] font-bold leading-none">
-                    {activity === 'bike' ? avgMph(distance, elapsed) : fmtPace(pace).replace('/mi', '')}
-                  </div>
-                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">
-                    {activity === 'bike' ? 'mph' : 'pace'}
-                  </div>
+                  <div className="font-display text-[24px] font-bold leading-none">{fmtPace(pace).replace('/mi', '')}</div>
+                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">pace</div>
+                </div>
+                <div>
+                  <div className="font-display text-[24px] font-bold leading-none">{mph}</div>
+                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">mph</div>
                 </div>
               </div>
             </div>
@@ -210,11 +225,29 @@ export function RunTrackerSheet({
             {reaction && <RunReactionCard log={saved} reaction={reaction} />}
 
             <p className="text-center text-[13px] font-semibold text-ink-dim">
-              {saved.distanceMi.toFixed(2)} mi · {fmtDuration(saved.durationSec)} ·{' '}
-              {saved.activity === 'bike'
-                ? `${avgMph(saved.distanceMi, saved.durationSec)} mph avg`
-                : fmtPace(saved.avgPaceSec)}
+              {saved.distanceMi.toFixed(2)} mi · {fmtDuration(saved.durationSec)} · {fmtPace(saved.avgPaceSec)} ·{' '}
+              {avgMph(saved.distanceMi, saved.durationSec)} mph
+              {(saved.kcalEst ?? 0) > 0 && ` · ~${saved.kcalEst} cal`}
             </p>
+
+            {review && (
+              <div className="rounded-2xl bg-white/[0.045] p-4 ring-1 ring-white/[0.05]">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">{review.title}</p>
+                <div className="mt-2.5 space-y-1.5">
+                  {review.rows.map((r) => (
+                    <div key={r.label} className="flex items-baseline justify-between gap-3 text-[12.5px]">
+                      <span className="font-semibold text-ink-faint">{r.label}</span>
+                      <span className="text-right font-bold">{r.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 space-y-2 border-t border-white/[0.05] pt-3">
+                  {review.notes.map((n, i) => (
+                    <p key={i} className="text-[12px] leading-snug text-ink-dim">{n}</p>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Btn

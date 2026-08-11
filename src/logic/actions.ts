@@ -36,6 +36,7 @@ import {
 import { composeDebrief } from '../engine/debrief'
 import { currentStreak, detectPRs, proteinFor } from '../engine/stats'
 import { addDaysISO, daysBetween, mondayOf, todayISO, weekdayOf } from '../engine/calendar'
+import { estKcal } from '../engine/runs'
 import { nutritionDayType } from '../engine/resolveDay'
 
 // ============================================================
@@ -614,6 +615,15 @@ export function removeCardio(date: ISODate, entryId: string): void {
  */
 export function saveRun(run: RunLog): void {
   store().update((d) => {
+    // estimate calories with the freshest bodyweight on record
+    let bw: number | undefined
+    for (let i = d.measurements.length - 1; i >= 0; i--) {
+      if (d.measurements[i].weightLb !== undefined) {
+        bw = d.measurements[i].weightLb
+        break
+      }
+    }
+    run.kcalEst = estKcal(run.activity, run.distanceMi, run.durationSec, bw ?? 175)
     d.runs.push(run)
   })
   logCardio(run.date, {

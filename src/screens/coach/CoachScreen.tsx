@@ -143,9 +143,7 @@ export function CoachScreen() {
                   <span className="text-[10px] font-semibold text-ink-faint">{formatShort(r.date)}</span>
                 </div>
                 <p className="mt-2 text-[13px] leading-relaxed text-ink">
-                  {r.activity === 'bike'
-                    ? `Ride · ${r.distanceMi.toFixed(2)} mi · ${fmtDuration(r.durationSec)} · ${avgMph(r.distanceMi, r.durationSec)} mph avg`
-                    : `Run · ${r.distanceMi.toFixed(2)} mi · ${fmtDuration(r.durationSec)} · ${fmtPace(r.avgPaceSec)}`}
+                  {`${r.activity === 'bike' ? 'Ride' : 'Run'} · ${r.distanceMi.toFixed(2)} mi · ${fmtDuration(r.durationSec)} · ${fmtPace(r.avgPaceSec)} · ${avgMph(r.distanceMi, r.durationSec)} mph${(r.kcalEst ?? 0) > 0 ? ` · ~${r.kcalEst} cal` : ''}`}
                 </p>
               </Card>
             )

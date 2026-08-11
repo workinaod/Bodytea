@@ -65,7 +65,7 @@ const dayTemplateSchema = z.object({
 export const planConfigSchema = z.object({
   planVersion: z.literal(1),
   name: z.string().min(1),
-  goal: z.enum(['vertical', 'speed', 'muscle', 'strength', 'lean', 'general']),
+  goal: z.enum(['vertical', 'speed', 'muscle', 'strength', 'lean', 'general', 'endurance']),
   goalStatement: z.string(),
   routineGoals: z.array(z.enum(['muscle', 'lose-weight', 'maintain', 'athletic'])).optional(),
   whyWorks: z.string().optional(),
@@ -307,6 +307,7 @@ const appDataSchema = z.object({
       durationSec: z.number().min(0),
       distanceMi: z.number().min(0),
       avgPaceSec: z.number().min(0),
+      kcalEst: z.number().min(0).optional(),
       splits: z.array(z.number()),
       points: z.array(z.tuple([z.number(), z.number(), z.number()])),
     }),

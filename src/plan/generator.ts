@@ -111,6 +111,7 @@ const FAMILY: Record<Goal, GoalFamily> = {
   strength: 'strength',
   lean: 'general',
   general: 'general',
+  endurance: 'general',
 }
 
 const LAYOUTS: Record<GoalFamily, Record<3 | 4 | 5 | 6, Partial<Record<Weekday, Role>>>> = {
@@ -435,6 +436,11 @@ const RATIONALE_TEMPLATES: Record<Goal, string[]> = {
     'All-around athletes are built on {quality}. {name} is your rep for it.',
     '{name} is in YOUR plan because "{goal}" needs the complete package. This covers {quality}.',
   ],
+  endurance: [
+    '{name} is in YOUR plan because distance running breaks bodies that only run. {quality} is the armor.',
+    'Runners skip {name} and end up injured at mile 30 of a training block. {quality} keeps you on the road toward "{goal}".',
+    '{name} trains {quality}. More {quality} means every mile costs less, which is the whole endurance game.',
+  ],
 }
 
 /** Goal-voiced "why it's in YOUR plan" lines for a set of exercises. */
@@ -467,7 +473,7 @@ export function buildNutrition(
   // Same protein either way (1 g/lb); the calorie baseline runs a notch
   // lower for women (bw×14 vs ×15), standard TDEE difference.
   const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50
-  const adj: Record<Goal, number> = { muscle: 300, strength: 250, vertical: 200, speed: 150, general: 100, lean: -300 }
+  const adj: Record<Goal, number> = { muscle: 300, strength: 250, vertical: 200, speed: 150, general: 100, lean: -300, endurance: 150 }
   let kcalTraining = base + adj[goal]
   // Follow-up answers sharpen the number. A 30+ lb cut needs a real
   // deficit; a desk-bound day burns less than the formula assumes.
@@ -526,6 +532,11 @@ export const GOAL_FOLLOWUPS: Record<Goal, GoalFollowup[]> = {
     { id: 'matters-most', q: 'What matters most?', options: ['More energy', 'Look better', 'Health numbers', 'All of it'] },
     { id: 'day-movement', q: 'Outside the gym, your day is', options: ['Mostly sitting', 'On my feet', 'Pretty active'] },
     { id: 'barrier', q: 'What usually kills the streak?', options: ['Time', 'Energy', 'Boredom', 'Soreness'] },
+  ],
+  endurance: [
+    { id: 'race-distance', q: 'What are you training for?', options: ['5K or 10K', 'Half marathon', 'Marathon', 'No race yet'] },
+    { id: 'weekly-miles', q: 'Running now, per week?', options: ['Under 10 mi', '10 to 25 mi', '25+ mi'] },
+    { id: 'race-when', q: 'When is it?', options: ['Inside 3 months', '3 to 6 months', 'No date yet'] },
   ],
 }
 
@@ -658,6 +669,25 @@ const STRATEGY: Record<Goal, StrategyBuilder> = {
       out.push('The biggest win outside the gym: break up the sitting. Short walks count, and the plan nudges you.')
     return out
   },
+
+  endurance: (ans, n) => {
+    const out = [
+      'The 80/20 rule runs this plan: most miles easy enough to talk through, a small dose hard. Easy miles build the engine; running everything medium builds nothing.',
+      'Lifting is your injury insurance: strong hips, hamstrings and calves are what survive a training block. The gym days protect the road days.',
+      `Mileage needs fuel: ${n.kcalTraining} kcal and ${n.proteinTargetG} g protein on training days keep the legs rebuilding instead of breaking down.`,
+    ]
+    if (ans['race-distance'] === 'Marathon')
+      out.push('The marathon is won by the long run: one a week, growing toward 20 mi. Every run you track here gets a goal check against that build.')
+    if (ans['race-distance'] === 'Half marathon')
+      out.push('The half rewards steady volume: a weekly long run toward 11 mi and honest easy pace everywhere else.')
+    if (ans['race-distance'] === '5K or 10K')
+      out.push('Short races are speed on top of base: mostly easy miles, one sharper session a week once the base is in.')
+    if (ans['weekly-miles'] === 'Under 10 mi')
+      out.push('Base first: add about 10% a week, never more. Tissue adapts slower than lungs, and rushing mileage is how shins and knees quit.')
+    if (ans['race-when'] === 'Inside 3 months')
+      out.push('Race is close, so specificity wins: long runs and race-pace segments matter more than anything new.')
+    return out
+  },
 }
 
 /**
@@ -675,6 +705,7 @@ const GOAL_LABEL: Record<Goal, string> = {
   muscle: 'Muscle Build',
   strength: 'Strength Base',
   lean: 'Cut Engine',
+  endurance: 'Engine Builder',
   general: 'Hybrid Athlete',
 }
 
@@ -827,6 +858,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     general: { 1: { repText: '8-10', repsNum: 9 }, 2: { repText: '6-8', repsNum: 7 }, 3: { repText: '10-12', repsNum: 11 } },
     vertical: { 1: { repText: '6-8', repsNum: 7 }, 2: { repText: '4-6', repsNum: 5 }, 3: { repText: '6-8', repsNum: 7 } },
     speed: { 1: { repText: '6-8', repsNum: 7 }, 2: { repText: '4-6', repsNum: 5 }, 3: { repText: '6-8', repsNum: 7 } },
+    endurance: { 1: { repText: '8-10', repsNum: 9 }, 2: { repText: '6-8', repsNum: 7 }, 3: { repText: '12-15', repsNum: 13 } },
   }
   const slotRepsByBlock = Object.fromEntries(
     ['squatVariation', 'press1', 'rowVariation', 'hamstring'].map((s) => [s, REP_WAVES[a.goal]]),

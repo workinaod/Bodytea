@@ -56,10 +56,39 @@ export function paceSecPerMi(distanceMi: number, durationSec: number): number {
 }
 
 export function fmtPace(secPerMi: number): string {
-  if (!secPerMi) return ', '
+  if (!secPerMi) return '--'
   const m = Math.floor(secPerMi / 60)
   const s = Math.round(secPerMi % 60)
   return `${m}:${String(s).padStart(2, '0')}/mi`
+}
+
+/**
+ * MET-based calorie estimate: honest math from speed and bodyweight
+ * until wearables provide the real number. Running lands on the ACSM
+ * table (6 mph ≈ 9.9 METs); riding uses the standard speed brackets.
+ */
+export function estKcal(
+  activity: 'run' | 'bike',
+  distanceMi: number,
+  durationSec: number,
+  bodyweightLb: number,
+): number {
+  if (durationSec < 60 || distanceMi <= 0) return 0
+  const mph = (distanceMi / durationSec) * 3600
+  const met =
+    activity === 'run'
+      ? Math.max(3.5, 1.65 * mph)
+      : mph < 10
+        ? 4
+        : mph < 12
+          ? 6
+          : mph < 14
+            ? 8
+            : mph < 16
+              ? 10
+              : 12
+  const kg = Math.min(150, Math.max(40, (bodyweightLb || 175) * 0.4536))
+  return Math.round(met * kg * (durationSec / 3600))
 }
 
 export function fmtDuration(sec: number): string {
@@ -184,4 +213,89 @@ export function fitBounds(
   const cx = (minX + maxX) / 2
   const cy = (minY + maxY) / 2
   return { zoom, originX: cx - widthPx / 2 / scale, originY: cy - heightPx / 2 / scale }
+}
+
+// ---------- Run goal review: every run measured against the race ----------
+
+export interface RunGoalReview {
+  title: string
+  rows: { label: string; value: string }[]
+  notes: string[]
+}
+
+const RACES: { key: RegExp; label: string; mi: number; peakLong: number; peakWeek: number }[] = [
+  { key: /half\s*-?\s*marathon|13\.1/i, label: 'Half marathon', mi: 13.1, peakLong: 11, peakWeek: 22 },
+  { key: /marathon|26\.2/i, label: 'Marathon', mi: 26.2, peakLong: 20, peakWeek: 36 },
+  { key: /10\s*k/i, label: '10K', mi: 6.2, peakLong: 5, peakWeek: 15 },
+  { key: /5\s*k/i, label: '5K', mi: 3.1, peakLong: 2.5, peakWeek: 10 },
+]
+
+function raceTarget(data: AppData): (typeof RACES)[number] | null {
+  const ans = data.plan.goalAnswers?.['race-distance'] ?? ''
+  const text = `${ans} ${data.plan.goalStatement}`
+  for (const r of RACES) if (r.key.test(text)) return r
+  return null
+}
+
+/**
+ * Post-run check-in against the runner's actual goal. Race pickers and
+ * "marathon by fall" goal statements both resolve; endurance plans
+ * without a race still get a distance review. Lifters get nothing,
+ * their debrief lives elsewhere.
+ */
+export function runGoalReview(data: AppData, log: RunLog): RunGoalReview | null {
+  if (log.activity !== 'run') return null
+  const race = raceTarget(data)
+  if (!race && data.plan.goal !== 'endurance') return null
+
+  const runs = data.runs.filter((r) => r.activity === 'run')
+  const longest = Math.max(0, ...runs.map((r) => r.distanceMi))
+  const weekStart = mondayOf(log.date)
+  const weekMi =
+    Math.round(
+      runs
+        .filter((r) => mondayOf(r.date) === weekStart)
+        .reduce((s, r) => s + r.distanceMi, 0) * 10,
+    ) / 10
+
+  const rows: { label: string; value: string }[] = [
+    { label: 'This run', value: `${log.distanceMi.toFixed(2)} mi · ${fmtPace(log.avgPaceSec)}` },
+    { label: 'Longest run', value: `${longest.toFixed(1)} mi` },
+    { label: 'This week', value: `${weekMi} mi` },
+  ]
+  const notes: string[] = []
+
+  if (race) {
+    rows.push({ label: 'Race', value: `${race.label} · ${race.mi} mi` })
+    if (longest < race.peakLong) {
+      notes.push(
+        `Long runs carry a ${race.label.toLowerCase()}. Build the weekly long one toward ${race.peakLong} mi; today's longest is ${longest.toFixed(1)}.`,
+      )
+    } else {
+      notes.push(`Your long run already covers a ${race.label.toLowerCase()} build. Now it's about repeating it and holding pace.`)
+    }
+    if (weekMi < race.peakWeek) {
+      notes.push(`Weekly volume is the engine: a ${race.label.toLowerCase()} build peaks near ${race.peakWeek} mi a week. Add gently, about 10% at a time.`)
+    } else {
+      notes.push('Weekly volume is where it needs to be. Protect it: easy paces, boring consistency.')
+    }
+  } else {
+    notes.push('No race on the calendar, so the win is simple: one run a hair longer than last week, most of them easy.')
+  }
+
+  // Easy/hard read: compare against the median of recent runs
+  const recent = runs
+    .filter((r) => r.id !== log.id && r.avgPaceSec > 0)
+    .slice(-5)
+    .map((r) => r.avgPaceSec)
+    .sort((a, b) => a - b)
+  if (recent.length >= 2 && log.avgPaceSec > 0) {
+    const median = recent[Math.floor(recent.length / 2)]
+    if (log.avgPaceSec < median * 0.92)
+      notes.push('Fast one. Keep most runs easy: easy miles build the engine, the fast ones just sharpen it.')
+    else if (log.avgPaceSec > median * 1.05)
+      notes.push('Good easy pace. This is where the aerobic base actually grows.')
+  }
+
+  return { title: race ? `${race.label} check-in` : 'Distance check-in', rows, notes: notes.slice(0, 3) }
 }
