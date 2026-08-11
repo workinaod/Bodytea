@@ -21,6 +21,30 @@ export function say(text: string, opts?: { rate?: number; interrupt?: boolean })
   }
 }
 
+// ---- Beeps (Web Audio, lazy) ----
+let audioCtx: AudioContext | null = null
+
+export function beep(freq = 880, ms = 140, gain = 0.15): void {
+  try {
+    type AudioWindow = Window & { webkitAudioContext?: typeof AudioContext }
+    const Ctor = window.AudioContext ?? (window as AudioWindow).webkitAudioContext
+    if (!Ctor) return
+    audioCtx = audioCtx ?? new Ctor()
+    if (audioCtx.state === 'suspended') void audioCtx.resume()
+    const osc = audioCtx.createOscillator()
+    const g = audioCtx.createGain()
+    osc.frequency.value = freq
+    osc.type = 'sine'
+    g.gain.value = gain
+    osc.connect(g)
+    g.connect(audioCtx.destination)
+    osc.start()
+    osc.stop(audioCtx.currentTime + ms / 1000)
+  } catch {
+    /* audio is a garnish, never a blocker */
+  }
+}
+
 export function cancelSpeech(): void {
   if (!speechOutSupported()) return
   try {

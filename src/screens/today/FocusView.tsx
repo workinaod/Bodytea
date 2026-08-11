@@ -3,7 +3,7 @@ import type { ResolvedDay, SessionLog } from '../../types'
 import { getExercise } from '../../plan/exercises'
 import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../../engine/focus'
 import { briefingFor, cadencePlan, timesTrained } from '../../engine/cadence'
-import { cancelSpeech, say, speechInSupported, startEars } from '../../logic/speech'
+import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../logic/speech'
 import { useAppStore } from '../../store/appStore'
 import { patchSet, toggleExerciseSkipped } from '../../logic/actions'
 import { Stepper } from '../../components/ui'
@@ -49,7 +49,11 @@ export function FocusView({
   const [caption, setCaption] = useState('')
   const data = useAppStore((s) => s.data)
   const update = useAppStore((s) => s.update)
-  const voiceCoach = data.settings.voiceCoach ?? true
+  // Four sound levels: full voice / beeps + next-exercise name / beeps / silent
+  const soundMode = data.settings.soundMode ?? ((data.settings.voiceCoach ?? true) ? 'voice' : 'silent')
+  const voiceCoach = soundMode === 'voice'
+  const speed = data.settings.cadenceSpeed ?? 1
+  const [soundOpen, setSoundOpen] = useState(false)
 
   const current = currentFocusItem(session)
   const progress = focusProgress(session)
@@ -97,31 +101,109 @@ export function FocusView({
     cancelSpeech()
   }, [])
 
-  const startSet = useCallback(() => {
-    if (!current) return
-    const exNow = session.exercises[current.exIdx]
-    const defNow = getExercise(exNow.exerciseId)
-    const resolvedNow = day.exercises.find((r) => r.exerciseId === defNow.id)
-    setPhase('live')
-    setLiveCount(null)
-    if (!resolvedNow) return
-    clearCadence()
-    if (!voiceCoach) return
-    for (const ev of cadencePlan(resolvedNow, defNow)) {
+  const planRef = useRef<{ events: ReturnType<typeof cadencePlan>; nextIdx: number }>({ events: [], nextIdx: 0 })
+  const setStartedAt = useRef(0)
+  const speedRef = useRef(speed)
+  speedRef.current = speed
+  const soundRef = useRef(soundMode)
+  soundRef.current = soundMode
+
+  const scheduleFrom = useCallback((idx: number, offsetMs: number) => {
+    const { events } = planRef.current
+    const base = events[idx]?.atMs ?? 0
+    for (let i = idx; i < events.length; i++) {
+      const ev = events[i]
+      const isLast = i === events.length - 1
       cadenceTimers.current.push(
-        window.setTimeout(() => {
-          say(ev.say)
-          setCaption(ev.say)
-          if (ev.show) setLiveCount(ev.show)
-        }, ev.atMs),
+        window.setTimeout(
+          () => {
+            planRef.current.nextIdx = i + 1
+            if (soundRef.current === 'voice') say(ev.say)
+            else if (isLast && soundRef.current !== 'silent') beep(1046, 200)
+            setCaption(ev.say)
+            if (ev.show) setLiveCount(ev.show)
+          },
+          offsetMs + (ev.atMs - base) / speedRef.current,
+        ),
       )
     }
-  }, [current, session, day, voiceCoach, clearCadence])
+  }, [])
+
+  const startSet = useCallback(
+    (chained = false) => {
+      if (!current) return
+      const exNow = session.exercises[current.exIdx]
+      const defNow = getExercise(exNow.exerciseId)
+      const resolvedNow = day.exercises.find((r) => r.exerciseId === defNow.id)
+      setPhase('live')
+      setLiveCount(null)
+      clearCadence()
+      if (!resolvedNow) return
+      planRef.current = { events: cadencePlan(resolvedNow, defNow), nextIdx: 0 }
+      setStartedAt.current = Date.now()
+      // Fresh (non-chained) sets get a 3-2-1 beep countdown before the work
+      let offset = 0
+      if (!chained && soundRef.current !== 'silent') {
+        offset = 1800
+        for (const [t, f] of [
+          [0, 600],
+          [600, 600],
+          [1200, 600],
+          [1800, 1000],
+        ] as const) {
+          cadenceTimers.current.push(window.setTimeout(() => beep(f, t === 1800 ? 220 : 120), t))
+        }
+        setCaption('3… 2… 1…')
+      }
+      scheduleFrom(0, offset)
+    },
+    [current, session, day, clearCadence, scheduleFrom],
+  )
+
+  // Live speed change: re-time the remaining counts from right now
+  const setSpeed = useCallback(
+    (v: number) => {
+      const clamped = Math.min(1.6, Math.max(0.6, Math.round(v * 10) / 10))
+      update((d) => {
+        d.settings.cadenceSpeed = clamped
+      })
+      speedRef.current = clamped
+      if (phaseRefForSpeed.current === 'live' && planRef.current.nextIdx < planRef.current.events.length) {
+        for (const id of cadenceTimers.current) window.clearTimeout(id)
+        cadenceTimers.current = []
+        scheduleFrom(planRef.current.nextIdx, 400)
+      }
+    },
+    [update, scheduleFrom],
+  )
+  const phaseRefForSpeed = useRef(phase)
+  phaseRefForSpeed.current = phase
+
+  // Drift watch: if the athlete keeps finishing way off the count, nudge the knob
+  const driftRef = useRef<number[]>([])
 
   // ---- Advance ----
   const autoStartNext = useRef(false)
   const advance = useCallback(() => {
     if (!current) return
+    // Drift watch: compare when they finished vs when the count would have
+    if (soundRef.current === 'voice' && phaseRefForSpeed.current === 'live' && setStartedAt.current > 0) {
+      const events = planRef.current.events
+      const expected = (events[events.length - 1]?.atMs ?? 0) / speedRef.current + 1800
+      if (expected > 4000) {
+        const ratio = (Date.now() - setStartedAt.current) / expected
+        driftRef.current = [...driftRef.current.slice(-2), ratio]
+        if (driftRef.current.length === 3) {
+          if (driftRef.current.every((r) => r < 0.75)) {
+            setCaption("You're ahead of the count — bump the speed knob up?")
+            driftRef.current = []
+          } else if (driftRef.current.every((r) => r > 1.3)) {
+            setCaption('The count runs fast for you — slow the knob a notch?')
+            driftRef.current = []
+          }
+        }
+      }
+    }
     clearCadence()
     setLiveCount(null)
     patchSet(session.date, current.exIdx, current.setIdx, { done: true })
@@ -152,7 +234,7 @@ export function FocusView({
   useEffect(() => {
     if (autoStartNext.current) {
       autoStartNext.current = false
-      startSet()
+      startSet(true)
     } else {
       setPhase('go')
       setLiveCount(null)
@@ -247,13 +329,42 @@ export function FocusView({
           </div>
         </div>
         <div className="flex gap-1.5">
-          <button
-            onClick={() => update((d) => { d.settings.voiceCoach = !(d.settings.voiceCoach ?? true) })}
-            className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${voiceCoach ? 'bg-accent/20 text-accent-soft' : 'bg-surface-2 text-ink-faint'}`}
-            aria-label="Toggle spoken coaching"
-          >
-            {voiceCoach ? '🔊' : '🔇'}
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setSoundOpen((v) => !v)}
+              className={`rounded-full px-3 py-1.5 ${soundMode !== 'silent' ? 'bg-accent/20 text-accent-soft' : 'bg-surface-2 text-ink-faint'}`}
+              aria-label="Session sound"
+            >
+              <VolumeIcon waves={soundMode === 'voice' ? 3 : soundMode === 'beeps-names' ? 2 : soundMode === 'beeps' ? 1 : 0} />
+            </button>
+            {soundOpen && (
+              <div className="absolute right-0 top-9 z-20 w-56 overflow-hidden rounded-2xl border border-edge bg-surface shadow-2xl">
+                {(
+                  [
+                    ['voice', 3, 'Voice coach', 'Counting + briefings'],
+                    ['beeps-names', 2, 'Beeps + names', 'Countdown beeps, next exercise name only'],
+                    ['beeps', 1, 'Beeps only', 'Countdown + set-end beeps'],
+                    ['silent', 0, 'Silent', 'No sound at all'],
+                  ] as const
+                ).map(([id, waves, label, sub], i) => (
+                  <button
+                    key={id}
+                    onClick={() => {
+                      update((d) => { d.settings.soundMode = id })
+                      setSoundOpen(false)
+                    }}
+                    className={`flex w-full items-center gap-3 px-3.5 py-2.5 text-left ${i > 0 ? 'border-t border-edge/50' : ''} ${soundMode === id ? 'bg-accent/10' : ''}`}
+                  >
+                    <VolumeIcon waves={waves} />
+                    <span className="min-w-0">
+                      <span className={`block text-[12.5px] font-bold ${soundMode === id ? 'text-accent-soft' : 'text-ink'}`}>{label}</span>
+                      <span className="block text-[10px] leading-snug text-ink-faint">{sub}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {voiceSupported && (
             <button
               onClick={() => setVoiceOn(!voiceOn)}
@@ -379,14 +490,22 @@ export function FocusView({
       {/* Coach caption + the giant GO / NEXT button */}
       <div className="px-4 pt-2">
         {caption && (
-          <p className="mb-2 truncate text-center text-[11.5px] font-semibold text-ink-faint">
+          <p className="mb-1 truncate text-center text-[11.5px] font-semibold text-ink-faint">
             {liveCount ? <span className="mr-2 font-display text-[15px] font-bold text-accent">{liveCount}</span> : null}
             {caption}
           </p>
         )}
+        {soundMode === 'voice' && (
+          <div className="mb-2 flex items-center justify-center gap-2 text-[10.5px] font-bold text-ink-faint">
+            <span className="uppercase tracking-wider">count speed</span>
+            <button onClick={() => setSpeed(speed - 0.1)} className="h-6 w-7 rounded-md bg-surface-2 text-[13px] font-black text-ink-dim">−</button>
+            <span className="w-9 text-center font-mono text-[11.5px] text-ink">{speed.toFixed(1)}×</span>
+            <button onClick={() => setSpeed(speed + 0.1)} className="h-6 w-7 rounded-md bg-surface-2 text-[13px] font-black text-ink-dim">+</button>
+          </div>
+        )}
         {phase === 'go' ? (
           <button
-            onClick={startSet}
+            onClick={() => startSet()}
             className="w-full rounded-2xl bg-lime py-6 text-[19px] font-black tracking-wide text-black shadow-2xl shadow-lime/25 active:scale-[0.985]"
           >
             GO — START SET {current.setIdx + 1}
@@ -415,7 +534,7 @@ export function FocusView({
       {breakState && (
         <BreakScreen
           brk={breakState}
-          voice={voiceCoach}
+          mode={soundMode}
           onDone={() => {
             setBreakState(null)
             startSet()
@@ -428,14 +547,15 @@ export function FocusView({
 
 // ---------- Break screen: countdown → green READY gate ----------
 
-function BreakScreen({ brk, voice, onDone }: { brk: BreakState; voice: boolean; onDone: () => void }) {
+function BreakScreen({ brk, mode, onDone }: { brk: BreakState; mode: 'voice' | 'beeps-names' | 'beeps' | 'silent'; onDone: () => void }) {
   const endsAt = useRef(Date.now() + brk.seconds * 1000)
   const [remaining, setRemaining] = useState(brk.seconds)
   const buzzed = useRef(false)
 
-  // The coach uses the break to set up what's coming
+  // The coach uses the break to set up what's coming — or just the name
   useEffect(() => {
-    if (voice) say(`Rest. Next up: ${brk.nextName}, ${brk.nextSetLabel}. Say go or skip when you're ready.`)
+    if (mode === 'voice') say(`Rest. Next up: ${brk.nextName}, ${brk.nextSetLabel}. Say go or skip when you're ready.`)
+    else if (mode === 'beeps-names') say(brk.nextName)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -500,5 +620,19 @@ function BreakScreen({ brk, voice, onDone }: { brk: BreakState; voice: boolean; 
         Full recovery is part of the program — explosive quality dies when you rush it.
       </p>
     </div>
+  )
+}
+
+// ---------- Volume icon: speaker + 0-3 sound waves ----------
+
+function VolumeIcon({ waves }: { waves: 0 | 1 | 2 | 3 }) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 5 6.5 9H3v6h3.5L11 19V5Z" fill="currentColor" stroke="none" />
+      {waves >= 1 && <path d="M14.5 10a3.2 3.2 0 0 1 0 4" />}
+      {waves >= 2 && <path d="M16.8 8a6.4 6.4 0 0 1 0 8" />}
+      {waves >= 3 && <path d="M19.1 6a9.6 9.6 0 0 1 0 12" />}
+      {waves === 0 && <path d="M14.5 9.5 20 15M20 9.5 14.5 15" />}
+    </svg>
   )
 }
