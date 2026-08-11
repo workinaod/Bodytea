@@ -14,10 +14,12 @@ export function Card({
   className?: string
   onClick?: () => void
 }) {
+  // Soft elevation, no outline: borders are opt-in (pass a border color
+  // and the transparent base width picks it up) — boxes stop shouting.
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl border border-edge bg-surface p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_28px_-16px_rgba(0,0,0,0.7)] ${onClick ? 'cursor-pointer transition-transform active:scale-[0.99]' : ''} ${className}`}
+      className={`rounded-3xl border border-transparent bg-surface p-5 ${onClick ? 'cursor-pointer transition-transform active:scale-[0.99]' : ''} ${className}`}
     >
       {children}
     </div>
@@ -26,11 +28,10 @@ export function Card({
 
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
-    <div className="mb-2 mt-6 flex items-center gap-3 px-1">
-      <h2 className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">
+    <div className="mb-3 mt-9 flex items-baseline justify-between px-1">
+      <h2 className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.22em] text-ink-faint">
         {children}
       </h2>
-      <div className="h-px flex-1 bg-edge/60" />
       {right}
     </div>
   )
@@ -78,19 +79,19 @@ export function Btn({
   className?: string
   disabled?: boolean
 }) {
+  // Pills, flat color, no gradients or text shadows — confidence, not chrome.
   const kinds: Record<string, string> = {
-    primary:
-      'bg-gradient-to-b from-accent to-accent-deep text-black font-extrabold shadow-lg shadow-accent/25 [text-shadow:0_1px_0_rgba(255,255,255,0.18)]',
-    lime: 'bg-lime text-black font-extrabold shadow-lg shadow-lime/20',
-    ghost: 'bg-transparent border border-edge text-ink-dim font-semibold',
-    subtle: 'bg-surface-2 border border-edge/60 text-ink font-semibold',
-    danger: 'bg-danger/15 border border-danger/30 text-danger font-bold',
+    primary: 'bg-accent text-black font-bold',
+    lime: 'bg-lime text-black font-bold',
+    ghost: 'bg-white/[0.06] text-ink-dim font-semibold',
+    subtle: 'bg-surface-2 text-ink font-semibold',
+    danger: 'bg-danger/12 text-danger font-bold',
   }
   return (
     <button
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-xl px-4 py-3 text-sm transition-all active:translate-y-px active:scale-[0.985] disabled:opacity-40 ${kinds[kind]} ${className}`}
+      className={`rounded-full px-5 py-3 text-[13.5px] tracking-[0.01em] transition-all active:scale-[0.98] disabled:opacity-40 ${kinds[kind]} ${className}`}
     >
       {children}
     </button>
@@ -175,7 +176,7 @@ export function Stepper({
   return (
     <div className="flex items-center gap-1">
       <button
-        className="h-9 w-9 rounded-lg bg-surface-2 text-lg font-bold text-ink-dim active:bg-edge"
+        className="h-9 w-9 rounded-full bg-white/[0.07] text-lg font-bold text-ink-dim active:bg-edge"
         onClick={() => onChange(Math.max(min, +(v - step).toFixed(1)))}
       >
         −
@@ -195,7 +196,7 @@ export function Stepper({
         {suffix && <div className="text-[9px] font-semibold uppercase text-ink-faint">{suffix}</div>}
       </div>
       <button
-        className="h-9 w-9 rounded-lg bg-surface-2 text-lg font-bold text-ink-dim active:bg-edge"
+        className="h-9 w-9 rounded-full bg-white/[0.07] text-lg font-bold text-ink-dim active:bg-edge"
         onClick={() => onChange(+(v + step).toFixed(1))}
       >
         +
@@ -218,8 +219,8 @@ export function Toggle({
   return (
     <button
       onClick={() => onChange(!on)}
-      className={`flex w-full items-center justify-between rounded-xl border p-3.5 text-left transition-colors ${
-        on ? 'border-accent/40 bg-accent/10' : 'border-edge bg-surface-2'
+      className={`flex w-full items-center justify-between rounded-2xl border p-3.5 text-left transition-colors ${
+        on ? 'border-accent/35 bg-accent/10' : 'border-transparent bg-surface-2'
       }`}
     >
       <div className="pr-3">

@@ -6,9 +6,9 @@
    theme. Space Grotesk (bundled, offline) carries every heading. */
 @theme {
   --color-bg: #0a0a0a;
-  --color-surface: #141414;
-  --color-surface-2: #1e1e1e;
-  --color-edge: #2d2d2d;
+  --color-surface: #151515;
+  --color-surface-2: #202020;
+  --color-edge: #262626;
   --color-ink: #f6f6f4;
   --color-ink-dim: #a6a6a2;
   --color-ink-faint: #6e6e6a;

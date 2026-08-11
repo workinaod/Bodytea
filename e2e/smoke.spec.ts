@@ -136,7 +136,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
 
   // ---- Coach: export downloads a backup file ----
   await page.getByRole('button', { name: 'Coach', exact: true }).click()
-  await page.getByRole('button', { name: '⇅ data' }).click()
+  await page.getByRole('button', { name: 'Data' }).click()
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: /Export data only/ }).click()
   const download = await downloadPromise

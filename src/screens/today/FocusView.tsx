@@ -363,9 +363,14 @@ export function FocusView({
           {voiceSupported && (
             <button
               onClick={() => setVoiceOn(!voiceOn)}
-              className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${voiceOn ? 'bg-lime text-black' : 'bg-surface-2 text-ink-dim'}`}
+              aria-label="Voice control"
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold ${voiceOn ? 'bg-lime text-black' : 'bg-surface-2 text-ink-dim'}`}
             >
-              🎙 {voiceOn ? 'on' : 'voice'}
+              <svg viewBox="0 0 24 24" className="h-[13px] w-[13px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="2.5" width="6" height="11" rx="3" />
+                <path d="M5 11a7 7 0 0 0 14 0M12 18v3.5" />
+              </svg>
+              {voiceOn ? 'on' : 'voice'}
             </button>
           )}
           <button onClick={() => onOpenGuide(def.id)} className="rounded-full bg-surface-2 px-3 py-1.5 text-[11px] font-black text-cyan">

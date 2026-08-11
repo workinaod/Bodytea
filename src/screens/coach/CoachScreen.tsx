@@ -65,14 +65,23 @@ export function CoachScreen() {
           )}
         </div>
         <div className="flex gap-1.5">
-          <button onClick={() => setSettingsOpen(true)} className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] font-bold text-ink-dim">
-            ⚙︎
+          <button aria-label="Settings" onClick={() => setSettingsOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-ink-dim">
+            <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" />
+            </svg>
           </button>
-          <button onClick={() => setAccountOpen(true)} className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] font-bold text-ink-dim">
-            ☁︎
+          <button aria-label="Account" onClick={() => setAccountOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-ink-dim">
+            <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.5 19a4.5 4.5 0 0 0 .36-8.99A6 6 0 0 0 6.2 8.6 5 5 0 0 0 7 18.9" />
+              <path d="M12 13v8m0-8-3 3m3-3 3 3" />
+            </svg>
           </button>
-          <button onClick={() => setDataOpen(true)} className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] font-bold text-ink-dim">
-            ⇅ data
+          <button aria-label="Data" onClick={() => setDataOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-ink-dim">
+            <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 3v13m0 0-4-4m4 4 4-4" />
+              <path d="M16 21V8m0 0 4 4m-4-4-4 4" />
+            </svg>
           </button>
         </div>
       </div>
@@ -84,12 +93,16 @@ export function CoachScreen() {
         </button>
       )}
 
-      {/* Need a push */}
-      <Card className="border-accent/30">
-        <p className="text-[13px] italic leading-relaxed text-ink-dim">"{quote.text}"</p>
-        {quote.source && <p className="mt-1 text-[11px] font-bold text-ink-faint">— {quote.source}</p>}
+      {/* Need a push — typography, not a box */}
+      <div className="px-1 pt-3">
+        <p className="font-display text-[17px] font-semibold italic leading-snug text-ink">
+          “{quote.text}”
+        </p>
+        {quote.source && (
+          <p className="mt-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">{quote.source}</p>
+        )}
         <Btn
-          className="mt-3 w-full"
+          className="mt-4 w-full"
           onClick={() => {
             // A pep talk on demand — spoken, not written into the Record
             setPushLine(coachLineFor('push'))
@@ -98,28 +111,28 @@ export function CoachScreen() {
         >
           I'm feeling lazy — push me
         </Btn>
-      </Card>
+      </div>
 
       {/* Receipts + guide entry points */}
       <div className="grid grid-cols-2 gap-2">
-        <Card onClick={() => setLedgerOpen(true)} className="!p-3.5">
-          <div className="text-[13.5px] font-extrabold">📋 Receipts</div>
+        <Card onClick={() => setLedgerOpen(true)} className="!p-4">
+          <div className="text-[13.5px] font-extrabold">Receipts</div>
           <div className="mt-0.5 text-[11px] text-ink-faint">
             {data.excuses.length} on record · {unproven} unproven this month
           </div>
         </Card>
-        <Card onClick={() => setGuideOpen(true)} className="!p-3.5">
-          <div className="text-[13.5px] font-extrabold">📖 The Plan</div>
+        <Card onClick={() => setGuideOpen(true)} className="!p-4">
+          <div className="text-[13.5px] font-extrabold">The Plan</div>
           <div className="mt-0.5 text-[11px] text-ink-faint">Rules, why it works, exercise library</div>
         </Card>
       </div>
 
-      <Card onClick={() => setBookletOpen(true)} className="!p-3.5">
+      <Card onClick={() => setBookletOpen(true)} className="!p-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[13.5px] font-extrabold">📓 My Booklet — {data.plan.name}</div>
+            <div className="text-[13.5px] font-extrabold">My Booklet — {data.plan.name}</div>
             <div className="mt-0.5 text-[11px] text-ink-faint">
-              {data.plan.daysPerWeek} day{data.plan.daysPerWeek === 1 ? '' : 's'} a week · fine-tune days, exercises, sets & reps
+              {data.plan.daysPerWeek} day{data.plan.daysPerWeek === 1 ? '' : 's'} a week · fine-tune everything
             </div>
           </div>
           <span className="text-[16px] text-ink-faint">›</span>

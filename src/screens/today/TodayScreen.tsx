@@ -92,11 +92,11 @@ export function TodayScreen() {
   const cardioTip = useMemo(() => {
     if (day.kind === 'cardio-backup') return null // the day IS the cardio
     const tomorrowCns = resolveDay(addDaysISO(date, 1), data).cns
-    if (day.cns) return 'Cardio today? AFTER the session only — max-effort speed work needs fresh legs. Easy stuff in the evening is fine.'
-    if (tomorrowCns) return "Cardio is fine today — keep it EASY (zone 2). Tomorrow is a max-effort day, and tired legs can't produce speed."
-    if (day.kind === 'rest') return 'Rest means rest from lifting — easy cardio is welcome and counts toward the week.'
+    if (day.cns) return "Cardio only AFTER today's session — speed work needs fresh legs."
+    if (tomorrowCns) return 'Keep cardio easy (zone 2) — tomorrow is a max-effort day.'
+    if (day.kind === 'rest') return 'Rest from lifting — easy cardio still counts.'
     if (day.kind === 'mobility') return 'Good day for conditioning — pair it with the mobility work.'
-    return 'Cardio is fine today — after the lifts beats before them.'
+    return 'Cardio welcome — after the lifts beats before.'
   }, [day, date, data])
 
   function handleStart() {
@@ -185,9 +185,9 @@ export function TodayScreen() {
       {!session && data.dayLoad[date] === 'trimmed' && (
         <button
           onClick={() => restoreToday(date)}
-          className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-2.5 text-[12.5px] font-bold text-ink-dim"
+          className="w-full rounded-full bg-surface-2 px-3.5 py-2.5 text-[12.5px] font-bold text-ink-dim"
         >
-          ↩ Day freed up? Restore the full session
+          Day freed up? Restore the full session
         </button>
       )}
 
@@ -199,8 +199,7 @@ export function TodayScreen() {
           <Card className="border-cyan/25 !py-3.5">
             <div className="text-[13.5px] font-extrabold">Want workout reminders?</div>
             <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
-              Max two a day, and only on training days with an unfinished session. Free, on this phone — no texts, no
-              spam.
+              Two a day max, only while a session is unfinished. Free, on this phone.
             </p>
             <div className="mt-2.5 flex gap-2">
               <Btn
@@ -362,9 +361,9 @@ export function TodayScreen() {
         <>
           <button
             onClick={() => setViewMode('focus')}
-            className="w-full rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-[13px] font-black text-accent-soft"
+            className="w-full rounded-full bg-accent/12 px-4 py-3 text-[13px] font-bold text-accent-soft"
           >
-            ⛶ Back to focus mode
+            Back to focus mode
           </button>
           <SessionView
             day={viewDay}
@@ -444,7 +443,7 @@ export function TodayScreen() {
       {/* Preview (not started yet) */}
       {!session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
         <>
-          <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+          <div className="mt-1">
             {day.exercises.map((r, i) => {
               const def = getExercise(r.exerciseId)
               const swapBase = r.swappedFrom ?? r.exerciseId
@@ -452,7 +451,7 @@ export function TodayScreen() {
               return (
                 <div
                   key={swapBase}
-                  className={`flex items-center justify-between gap-3 px-4 py-3 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+                  className={`flex items-center justify-between gap-3 px-1 py-3.5 ${i > 0 ? 'border-t border-edge/40' : ''}`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-baseline gap-2">

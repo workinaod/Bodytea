@@ -76,13 +76,17 @@ export default function App() {
   if (!onboarded) return <Onboarding />
 
   return (
-    <div className="mx-auto min-h-dvh max-w-lg px-4 pb-28 pt-[max(env(safe-area-inset-top),16px)]">
-      {tab === 'today' && <TodayScreen />}
-      {tab === 'week' && <WeekScreen />}
-      {tab === 'meals' && <MealsScreen />}
-      {tab === 'progress' && <ProgressScreen />}
-      {tab === 'coach' && <CoachScreen />}
-
+    <div className="mx-auto min-h-dvh max-w-lg px-5 pb-28 pt-[max(env(safe-area-inset-top),16px)]">
+      {/* keyed wrapper: every tab switch rises in — screens feel placed, not
+          swapped. No fill-mode: a retained transform would become the
+          containing block for the fixed sheets inside the screens. */}
+      <div key={tab} style={{ animation: 'rise 0.24s ease-out' }}>
+        {tab === 'today' && <TodayScreen />}
+        {tab === 'week' && <WeekScreen />}
+        {tab === 'meals' && <MealsScreen />}
+        {tab === 'progress' && <ProgressScreen />}
+        {tab === 'coach' && <CoachScreen />}
+      </div>
       <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} session={sessionLive && tab === 'today'} />
       <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track with GPS">
         <div className="space-y-2 pb-8">
