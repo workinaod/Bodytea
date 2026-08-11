@@ -22,7 +22,7 @@ export default function App() {
   const data = useAppStore((s) => s.data)
   const today = useToday()
   const [tab, setTab] = useState<TabId>('today')
-  const [track, setTrack] = useState<'choose' | 'run' | 'bike' | null>(null)
+  const [track, setTrack] = useState<'choose' | 'run' | 'bike' | 'walk' | null>(null)
   const [timerActivity, setTimerActivity] = useState<string | null>(null)
 
   // A live session on the home date folds the tab bar into the glow strip
@@ -93,13 +93,14 @@ export default function App() {
       <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} session={sessionLive && tab === 'today'} />
       <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track">
         <div className="space-y-2 pb-8">
-          {/* The two GPS activities: big, centred, and raised off the sheet.
+          {/* The GPS activities: big, centred, and raised off the sheet.
               Nothing to read, one thing to hit. */}
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-3 gap-2.5">
             {(
               [
                 { id: 'run', label: 'Run', emoji: '🏃' },
                 { id: 'bike', label: 'Ride', emoji: '🚴' },
+                { id: 'walk', label: 'Walk', emoji: '🚶' },
               ] as const
             ).map((a) => (
               <button
@@ -107,14 +108,13 @@ export default function App() {
                 onClick={() => setTrack(a.id)}
                 className="press flex flex-col items-center justify-center gap-1.5 rounded-3xl bg-gradient-to-b from-white/[0.13] to-white/[0.05] py-6 shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_10px_24px_-12px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.09]"
               >
-                <span className="text-[26px] leading-none">{a.emoji}</span>
-                <span className="text-heading font-extrabold">{a.label}</span>
+                <span className="text-[24px] leading-none">{a.emoji}</span>
+                <span className="text-body font-extrabold">{a.label}</span>
               </button>
             ))}
           </div>
-          <p className="pt-2 text-[11px] font-black uppercase tracking-[0.18em] text-ink-faint">Everything else</p>
           <div className="grid grid-cols-2 gap-2">
-            {CARDIO_ACTIVITIES.filter((a) => a.id !== 'run' && a.id !== 'bike').map((a) => (
+            {CARDIO_ACTIVITIES.filter((a) => !a.gps).map((a) => (
               <button
                 key={a.id}
                 onClick={() => {
@@ -133,7 +133,7 @@ export default function App() {
           </p>
         </div>
       </Sheet>
-      {(track === 'run' || track === 'bike') && (
+      {(track === 'run' || track === 'bike' || track === 'walk') && (
         <RunTrackerSheet activity={track} date={today} onClose={() => setTrack(null)} />
       )}
       {timerActivity && (

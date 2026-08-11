@@ -1,0 +1,134 @@
+import { useEffect, useRef, useState } from 'react'
+import { say } from '../../platform/speech'
+import { buzzRestOver } from '../../platform/haptics'
+
+/** What the rest screen needs to know about the gap it is filling. */
+export interface BreakState {
+  seconds: number
+  nextName: string
+  nextSetLabel: string
+  /** Set → the just-finished exercise gets the "how was the weight?" chips. */
+  feelExIdx?: number
+}
+
+// ============================================================
+// The rest screen between sets: a countdown, what is coming
+// next, and once a fortnight the "how did that weight feel?"
+// check-in. Its own file because it is a whole screen, not a
+// step in the set loop.
+// ============================================================
+
+export function BreakScreen({
+  brk,
+  mode,
+  onDone,
+  onFeel,
+}: {
+  brk: BreakState
+  mode: 'voice' | 'beeps-names' | 'beeps' | 'silent'
+  onDone: () => void
+  onFeel?: (f: 'easy' | 'right' | 'hard') => void
+}) {
+  const endsAt = useRef(Date.now() + brk.seconds * 1000)
+  const [remaining, setRemaining] = useState(brk.seconds)
+  const [feelDone, setFeelDone] = useState(false)
+  const buzzed = useRef(false)
+
+  // Short and factual, the next gate handles weight + ready
+  useEffect(() => {
+    if (mode === 'voice') say(`Rest. Next: ${brk.nextName}, ${brk.nextSetLabel}.`)
+    else if (mode === 'beeps-names') say(brk.nextName)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const tick = () => {
+      const left = Math.max(0, Math.round((endsAt.current - Date.now()) / 1000))
+      setRemaining(left)
+      if (left === 0 && !buzzed.current) {
+        buzzed.current = true
+        try {
+          buzzRestOver()
+        } catch {
+          /* no vibration */
+        }
+      }
+    }
+    tick()
+    const id = setInterval(tick, 300)
+    const onVis = () => tick()
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [])
+
+  const ready = remaining === 0
+  const mm = Math.floor(remaining / 60)
+  const ss = String(remaining % 60).padStart(2, '0')
+
+  if (ready) {
+    return (
+      <button
+        onClick={onDone}
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-lime text-black animate-fade-in"
+      >
+        <div className="text-[64px] font-black leading-none tracking-tight">READY?</div>
+        <div className="mt-4 text-[16px] font-extrabold">{brk.nextName}</div>
+        <div className="text-[13px] font-bold opacity-70">{brk.nextSetLabel}</div>
+        <div className="mt-10 rounded-full border-2 border-black/30 px-6 py-2 text-[13px] font-black uppercase tracking-[0.2em]">
+          tap to continue
+        </div>
+      </button>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bg animate-fade-in">
+      <div className="text-[13px] font-black uppercase tracking-[0.25em] text-ink-faint">Rest</div>
+      <div className="mt-2 font-mono text-[96px] font-black leading-none tabular-nums text-ink">
+        {mm}:{ss}
+      </div>
+      <div className="mt-6 text-center">
+        <div className="text-[12px] font-bold uppercase tracking-wider text-ink-faint">next up</div>
+        <div className="mt-1 text-[17px] font-extrabold text-ink">{brk.nextName}</div>
+        <div className="text-[12.5px] font-semibold text-ink-dim">{brk.nextSetLabel}</div>
+      </div>
+      {onFeel && !feelDone && (
+        <div className="mt-7 text-center">
+          <div className="text-[11.5px] font-bold text-ink-dim">How was the weight?</div>
+          <div className="mt-2 flex gap-1.5">
+            {(
+              [
+                ['easy', 'Too easy'],
+                ['right', 'About right'],
+                ['hard', 'Too hard'],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => {
+                  onFeel(id)
+                  setFeelDone(true)
+                }}
+                className="rounded-full bg-white/[0.07] px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-white/[0.14]"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {feelDone && <div className="mt-7 text-[11.5px] font-bold text-lime">Got it. Next session adjusts.</div>}
+      <button onClick={onDone} className="mt-8 rounded-full bg-white/[0.07] px-5 py-2.5 text-[12.5px] font-bold text-ink-dim">
+        skip the rest, I'm ready
+      </button>
+      <p className="mt-3 max-w-[260px] text-center text-[11px] leading-snug text-ink-faint">
+        Full rest is part of the program. Rushing it kills explosive quality.
+      </p>
+    </div>
+  )
+}
+
+// ---------- Volume icon: speaker + 0-3 sound waves ----------

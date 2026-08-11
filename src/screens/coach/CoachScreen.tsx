@@ -18,6 +18,39 @@ import { AccountSheet } from './AccountSheet'
 import { BookletScreen } from '../booklet/BookletScreen'
 import type { DebriefData } from '../../types'
 
+/**
+ * The feed used to print its internal situation id in a pill, so the
+ * Sergeant announced himself with "protein-miss" and "tier-drop-planned".
+ * Those are database keys, not headlines. Every one gets said in English.
+ */
+const FEED_LABELS: Record<string, string> = {
+  'backup-nudge': 'Back it up',
+  'chronic-fallback': 'A pattern',
+  comeback: 'Comeback',
+  contradiction: "Doesn't add up",
+  'deload-start': 'Deload week',
+  'explosive-day-warning': 'Heads up',
+  lighten: 'Lighten it',
+  'minimum-taken': 'Minimum taken',
+  pr: 'Personal record',
+  'protein-miss': 'Protein missed',
+  'protein-streak': 'Protein streak',
+  push: 'Need a push',
+  'session-done': 'Session done',
+  'skip-no-proof': 'Skipped',
+  'skip-with-proof': 'Skipped, receipts in',
+  streak: 'Streak',
+  'tier-drop-midweek': 'Tier dropped',
+  'tier-drop-planned': 'Tier planned down',
+  'unexplained-miss': 'Missed day',
+  'week-complete': 'Week complete',
+}
+
+function feedLabel(situation?: string): string {
+  if (!situation) return 'Coach'
+  return FEED_LABELS[situation] ?? situation.replace(/-/g, ' ')
+}
+
 export function CoachScreen() {
   const data = useAppStore((s) => s.data)
   const [pushOpen, setPushOpen] = useState(false)
@@ -56,7 +89,7 @@ export function CoachScreen() {
     <div className="space-y-3 pb-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[30px] font-bold tracking-tight">The Sergeant</h1>
+          <h1 className="headline text-[31px]">The Sergeant</h1>
           {data.profile.displayName && (
             <p className="text-[11.5px] font-semibold text-ink-faint">
               Keeping {data.profile.displayName.split(/\s+/)[0]} honest.
@@ -154,10 +187,18 @@ export function CoachScreen() {
             : undefined
           return (
             <Card key={f.id} className="!py-3">
-              <div className="flex items-center justify-between">
-                <Chip tone={f.kind === 'debrief' ? 'cyan' : f.kind === 'insight' ? 'lime' : 'accent'}>
-                  {f.kind === 'debrief' ? 'debrief' : f.kind === 'insight' ? 'insight' : (f.situation ?? 'coach')}
-                </Chip>
+              <div className="flex items-baseline justify-between gap-3">
+                <span
+                  className={`eyebrow ${
+                    f.kind === 'debrief' ? 'text-cyan' : f.kind === 'insight' ? 'text-lime' : 'text-accent-soft'
+                  }`}
+                >
+                  {f.kind === 'debrief'
+                    ? 'Debrief'
+                    : f.kind === 'insight'
+                      ? 'Insight'
+                      : feedLabel(f.situation)}
+                </span>
                 <span className="text-[10px] font-semibold text-ink-faint">{formatShort(f.at.slice(0, 10))}</span>
               </div>
               <p className="mt-2 text-[13px] leading-relaxed text-ink">{f.text}</p>

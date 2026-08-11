@@ -62,33 +62,61 @@ export function fmtPace(secPerMi: number): string {
   return `${m}:${String(s).padStart(2, '0')}/mi`
 }
 
+const toKg = (lb: number) => Math.min(150, Math.max(40, (lb || 175) * 0.4536))
+
 /**
  * MET-based calorie estimate: honest math from speed and bodyweight
  * until wearables provide the real number. Running lands on the ACSM
  * table (6 mph ≈ 9.9 METs); riding uses the standard speed brackets.
+ *
+ * Speed is only known when distance is. A treadmill run with no GPS
+ * still burns calories, so a zero-distance session falls back to the
+ * activity's moderate MET rather than scoring zero, which is what made
+ * a logged run with no distance vanish from the day.
  */
 export function estKcal(
-  activity: 'run' | 'bike',
+  activity: 'run' | 'bike' | 'walk',
   distanceMi: number,
   durationSec: number,
   bodyweightLb: number,
 ): number {
-  if (durationSec < 60 || distanceMi <= 0) return 0
+  if (durationSec < 60) return 0
+  const kg = toKg(bodyweightLb)
+  if (distanceMi <= 0) {
+    const flat = activity === 'run' ? 9.8 : activity === 'bike' ? 8.0 : 4.3
+    return Math.round(flat * kg * (durationSec / 3600))
+  }
   const mph = (distanceMi / durationSec) * 3600
   const met =
     activity === 'run'
       ? Math.max(3.5, 1.65 * mph)
-      : mph < 10
-        ? 4
-        : mph < 12
-          ? 6
-          : mph < 14
-            ? 8
-            : mph < 16
-              ? 10
-              : 12
-  const kg = Math.min(150, Math.max(40, (bodyweightLb || 175) * 0.4536))
+      : activity === 'walk'
+        ? mph < 2.5
+          ? 2.8
+          : mph < 3.5
+            ? 3.5
+            : mph < 4
+              ? 5.0
+              : 6.3
+        : mph < 10
+          ? 4
+          : mph < 12
+            ? 6
+            : mph < 14
+              ? 8
+              : mph < 16
+                ? 10
+                : 12
   return Math.round(met * kg * (durationSec / 3600))
+}
+
+/**
+ * Calories for anything logged by time rather than distance: a game, a
+ * swim, a round on the bag. Straight Compendium MET math.
+ */
+export function estKcalFromMet(met: number, minutes: number, bodyweightLb: number): number {
+  if (minutes <= 0 || met <= 0) return 0
+  return Math.round(met * toKg(bodyweightLb) * (minutes / 60))
 }
 
 export function fmtDuration(sec: number): string {

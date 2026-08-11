@@ -302,11 +302,13 @@ const appDataSchema = z.object({
   runs: z.array(
     z.object({
       id: z.string(),
-      activity: z.enum(['run', 'bike']),
+      activity: z.enum(['run', 'bike', 'walk']),
       date: isoDate,
       startedAt: z.string(),
       durationSec: z.number().min(0),
       distanceMi: z.number().min(0),
+      distanceSource: z.enum(['gps', 'steps', 'manual', 'none']).optional(),
+      steps: z.number().min(0).optional(),
       avgPaceSec: z.number().min(0),
       kcalEst: z.number().min(0).optional(),
       splits: z.array(z.number()),

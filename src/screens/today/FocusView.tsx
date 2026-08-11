@@ -14,6 +14,7 @@ import { musclesFor } from '../../plan/muscles'
 import { demoFor } from '../../plan/demos'
 import { photosFor } from '../../plan/demoPhotos'
 import { HowToSlides } from './HowToSlides'
+import { BreakScreen, type BreakState } from './BreakScreen'
 
 // ============================================================
 // Focus mode, guided: each set is intro'd (name, set, reps at
@@ -21,14 +22,6 @@ import { HowToSlides } from './HowToSlides'
 // a true 1-second 3-2-1, then the coach shuts up and lets you
 // work. Instructions are spoken only when asked, and shortened.
 // ============================================================
-
-interface BreakState {
-  seconds: number
-  nextName: string
-  nextSetLabel: string
-  /** Set → the just-finished exercise gets the "how was the weight?" chips. */
-  feelExIdx?: number
-}
 
 /** True if this exercise already answered a weight check-in in the last 2 weeks. */
 function feelAskedRecently(
@@ -86,15 +79,17 @@ export function FocusView({
   const soundRef = useRef(soundMode)
   soundRef.current = soundMode
 
-  // The voice nudge: once per user, not once per session. Held in local
-  // state as well so dismissing it is instant rather than store-round-trip.
+  // The voice nudge shows whenever a session opens on its first set, so
+  // cancelling a set and coming back in still gets it. Once someone has
+  // actually used voice control they know it exists and it stops.
   const [voiceTip, setVoiceTip] = useState(!data.settings.voiceTipSeen)
-  const dismissVoiceTip = () => {
-    if (!voiceTip) return
+  const dismissVoiceTip = (permanently = false) => {
     setVoiceTip(false)
-    update((d) => {
-      d.settings.voiceTipSeen = true
-    })
+    if (permanently && !data.settings.voiceTipSeen) {
+      update((d) => {
+        d.settings.voiceTipSeen = true
+      })
+    }
   }
 
   // Flipping the sound down mid-sentence must actually silence it
@@ -159,10 +154,12 @@ export function FocusView({
   const liveSec = phase === 'live' && liveStartRef.current > 0 ? Math.max(0, Math.floor((Date.now() - liveStartRef.current) / 1000)) : 0
   void liveTick
 
-  // Work starting is the nudge's cue to leave: it has done its job.
+  // Work starting hides the nudge for this set. It is not marked seen: a
+  // cancelled set that comes back to the gate should still get it.
   useEffect(() => {
-    if (phase === 'live') dismissVoiceTip()
-  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (phase === 'live') setVoiceTip(false)
+    else if (!data.settings.voiceTipSeen && current?.setIdx === 0) setVoiceTip(true)
+  }, [phase, current?.exIdx, current?.setIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startSet = useCallback(
     (chained = false) => {
@@ -290,13 +287,17 @@ export function FocusView({
         ? `${set.reps} reps`
         : `${set.targetReps} reps`
     const weightBit = isLoaded && set.weightLb !== undefined ? ` at ${set.weightLb} pounds` : ''
-    const intro = `${def.name}. Set ${current.setIdx + 1} of ${ex?.sets.length}: ${repsBit}${weightBit}.`
-    // The weight card is right there on screen and already filled in, so
-    // the voice does not narrate it. One closing line, both ways to start.
-    const prompt = "Tap go or tell me when you're ready."
+
+    // Set 1 gets the full introduction. After that they know what they are
+    // doing, so repeating the exercise name every set is a coach who does
+    // not trust you. Sets 2 and up get the count and nothing else.
+    const first = current.setIdx === 0
+    const line = first
+      ? `${def.name}. Set 1 of ${ex?.sets.length}: ${repsBit}${weightBit}. Tap go or tell me when you're ready.`
+      : `Set ${current.setIdx + 1} of ${ex?.sets.length}.`
     // Spoken only. The screen already shows all of this (name, set line,
     // weight card), so no caption: screen-followers don't need an echo.
-    if (soundRef.current === 'voice') say(`${intro} ${prompt}`, { interrupt: true })
+    if (soundRef.current === 'voice') say(line, { interrupt: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posKey, breakState, phase])
 
@@ -451,7 +452,7 @@ export function FocusView({
             <button
               onClick={() => {
                 setVoiceOn(!voiceOn)
-                dismissVoiceTip()
+                dismissVoiceTip(true)
               }}
               aria-label={voiceOn ? 'Voice control on' : 'Voice control'}
               className={`press grid h-8 w-8 place-items-center rounded-full ${voiceOn ? 'bg-lime text-black' : 'bg-white/[0.07] text-ink-dim'}`}
@@ -471,7 +472,7 @@ export function FocusView({
       {voiceSupported && voiceTip && (
         <div className="mt-2 flex justify-end px-4">
           <button
-            onClick={dismissVoiceTip}
+            onClick={() => dismissVoiceTip(true)}
             className="breathe-in relative rounded-2xl bg-lime px-3 py-1.5 text-[11.5px] font-bold text-black shadow-lg shadow-lime/25"
           >
             <span
@@ -642,121 +643,6 @@ export function FocusView({
   )
 }
 
-
-function BreakScreen({
-  brk,
-  mode,
-  onDone,
-  onFeel,
-}: {
-  brk: BreakState
-  mode: 'voice' | 'beeps-names' | 'beeps' | 'silent'
-  onDone: () => void
-  onFeel?: (f: 'easy' | 'right' | 'hard') => void
-}) {
-  const endsAt = useRef(Date.now() + brk.seconds * 1000)
-  const [remaining, setRemaining] = useState(brk.seconds)
-  const [feelDone, setFeelDone] = useState(false)
-  const buzzed = useRef(false)
-
-  // Short and factual, the next gate handles weight + ready
-  useEffect(() => {
-    if (mode === 'voice') say(`Rest. Next: ${brk.nextName}, ${brk.nextSetLabel}.`)
-    else if (mode === 'beeps-names') say(brk.nextName)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    const tick = () => {
-      const left = Math.max(0, Math.round((endsAt.current - Date.now()) / 1000))
-      setRemaining(left)
-      if (left === 0 && !buzzed.current) {
-        buzzed.current = true
-        try {
-          navigator.vibrate?.([250, 120, 250])
-        } catch {
-          /* no vibration */
-        }
-      }
-    }
-    tick()
-    const id = setInterval(tick, 300)
-    const onVis = () => tick()
-    document.addEventListener('visibilitychange', onVis)
-    return () => {
-      clearInterval(id)
-      document.removeEventListener('visibilitychange', onVis)
-    }
-  }, [])
-
-  const ready = remaining === 0
-  const mm = Math.floor(remaining / 60)
-  const ss = String(remaining % 60).padStart(2, '0')
-
-  if (ready) {
-    return (
-      <button
-        onClick={onDone}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-lime text-black animate-fade-in"
-      >
-        <div className="text-[64px] font-black leading-none tracking-tight">READY?</div>
-        <div className="mt-4 text-[16px] font-extrabold">{brk.nextName}</div>
-        <div className="text-[13px] font-bold opacity-70">{brk.nextSetLabel}</div>
-        <div className="mt-10 rounded-full border-2 border-black/30 px-6 py-2 text-[13px] font-black uppercase tracking-[0.2em]">
-          tap to continue
-        </div>
-      </button>
-    )
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bg animate-fade-in">
-      <div className="text-[13px] font-black uppercase tracking-[0.25em] text-ink-faint">Rest</div>
-      <div className="mt-2 font-mono text-[96px] font-black leading-none tabular-nums text-ink">
-        {mm}:{ss}
-      </div>
-      <div className="mt-6 text-center">
-        <div className="text-[12px] font-bold uppercase tracking-wider text-ink-faint">next up</div>
-        <div className="mt-1 text-[17px] font-extrabold text-ink">{brk.nextName}</div>
-        <div className="text-[12.5px] font-semibold text-ink-dim">{brk.nextSetLabel}</div>
-      </div>
-      {onFeel && !feelDone && (
-        <div className="mt-7 text-center">
-          <div className="text-[11.5px] font-bold text-ink-dim">How was the weight?</div>
-          <div className="mt-2 flex gap-1.5">
-            {(
-              [
-                ['easy', 'Too easy'],
-                ['right', 'About right'],
-                ['hard', 'Too hard'],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => {
-                  onFeel(id)
-                  setFeelDone(true)
-                }}
-                className="rounded-full bg-white/[0.07] px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-white/[0.14]"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {feelDone && <div className="mt-7 text-[11.5px] font-bold text-lime">Got it. Next session adjusts.</div>}
-      <button onClick={onDone} className="mt-8 rounded-full bg-white/[0.07] px-5 py-2.5 text-[12.5px] font-bold text-ink-dim">
-        skip the rest, I'm ready
-      </button>
-      <p className="mt-3 max-w-[260px] text-center text-[11px] leading-snug text-ink-faint">
-        Full rest is part of the program. Rushing it kills explosive quality.
-      </p>
-    </div>
-  )
-}
-
-// ---------- Volume icon: speaker + 0-3 sound waves ----------
 
 function VolumeIcon({ waves }: { waves: 0 | 1 | 2 | 3 }) {
   return (

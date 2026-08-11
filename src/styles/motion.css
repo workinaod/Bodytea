@@ -176,6 +176,35 @@
   transition: width var(--dur-slow) var(--ease-out);
 }
 
+/* ---------- shimmer: a highlight travelling across a CTA ---------- */
+
+/* Light catching an edge as it turns. Slow and wide, so it reads as
+   material rather than as a loading skeleton. */
+@keyframes bt-shimmer {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(340%) skewX(-18deg);
+  }
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: 0;
+  width: 32%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: bt-shimmer 3.4s var(--ease-out) infinite;
+  pointer-events: none;
+}
+
 /* ---------- accessibility ---------- */
 
 @media (prefers-reduced-motion: reduce) {

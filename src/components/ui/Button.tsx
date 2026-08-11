@@ -40,6 +40,7 @@ export function Btn({
   size = 'md',
   className = '',
   disabled,
+  shimmer = false,
   type,
   'aria-label': ariaLabel,
 }: {
@@ -49,6 +50,8 @@ export function Btn({
   size?: Size
   className?: string
   disabled?: boolean
+  /** A highlight travels across it. For the one CTA a screen is about. */
+  shimmer?: boolean
   type?: 'button' | 'submit'
   'aria-label'?: string
 }) {
@@ -58,9 +61,9 @@ export function Btn({
       disabled={disabled}
       onClick={onClick}
       aria-label={ariaLabel}
-      className={`press rounded-full tracking-[0.01em] disabled:opacity-40 disabled:shadow-none ${KINDS[kind]} ${SIZES[size]} ${className}`}
+      className={`press rounded-full tracking-[0.01em] disabled:opacity-40 disabled:shadow-none ${shimmer && !disabled ? 'shimmer' : ''} ${KINDS[kind]} ${SIZES[size]} ${className}`}
     >
-      {children}
+      <span className="relative z-10">{children}</span>
     </button>
   )
 }

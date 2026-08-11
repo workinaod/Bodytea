@@ -161,7 +161,7 @@ export function TodayScreen() {
           {day.isDeload && <Chip tone="lime">deload</Chip>}
           {day.cns && <Chip tone="accent">CNS day</Chip>}
         </div>
-        <h1 className="mt-1.5 text-[30px] font-bold leading-[1.06] tracking-tight">{day.title}</h1>
+        <h1 className="mt-1.5 headline text-[31px]">{day.title}</h1>
         <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">{day.tagline}</p>
       </div>
 

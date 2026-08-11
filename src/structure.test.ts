@@ -46,16 +46,17 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   'plan/athleticExercises.ts': 1250,
   'plan/demos.ts': 900,
   'plan/athletic.ts': 735,
-  'types.ts': 745,
+  // Activity shapes moved to activityTypes.ts; the allowance follows.
+  'types.ts': 715,
   // Real splits owed, in plan order.
   'screens/onboarding/Onboarding.tsx': 1095,
   'screens/meals/MealsScreen.tsx': 980,
   'plan/generator.ts': 920,
   'logic/actions.ts': 835,
-  // Was 836 and is now 771 after the how-to reader moved out. The
-  // allowance follows it down: an oversized file that shrinks does not
-  // get to keep the headroom it earned.
-  'screens/today/FocusView.tsx': 775,
+  // Was 836. The how-to reader and the rest screen both moved out, and
+  // the allowance follows it down: an oversized file that shrinks does
+  // not get to keep the headroom it earned.
+  'screens/today/FocusView.tsx': 660,
   'store/schema.ts': 680,
   'engine/engine.test.ts': 705,
 }
@@ -155,9 +156,6 @@ const PLATFORM_ALLOWED = new Set([
   'sw.ts',
   // → platform/geo.ts, with the health layer
   'screens/today/RunTrackerSheet.tsx',
-  // navigator.vibrate → platform/haptics.ts
-  'components/RestTimer.tsx',
-  'screens/today/FocusView.tsx',
   // navigator.share / clipboard → platform/share.ts, with the share cards
   'engine/shareCard.ts',
   'screens/coach/AccountSheet.tsx',

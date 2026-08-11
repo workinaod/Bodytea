@@ -388,42 +388,12 @@ export interface WeekState {
 
 // ---------- GPS-tracked runs & rides ----------
 
-/** [lat, lng, elapsedSec], compact enough to live in the envelope. */
-export type RunPoint = [number, number, number]
 
-export interface RunLog {
-  id: string
-  activity: 'run' | 'bike'
-  date: ISODate
-  startedAt: string
-  durationSec: number
-  distanceMi: number
-  /** Average pace in seconds per mile (running) / speed derives for rides. */
-  avgPaceSec: number
-  /** Per-mile split times in seconds. */
-  splits: number[]
-  points: RunPoint[]
-  /** MET-estimated calories at save time (wearables replace this later). */
-  kcalEst?: number
-}
-
-// ---------- Daily cardio / sport log ----------
-
-export type CardioWhen = 'pre' | 'post' | 'solo'
-
-export interface CardioEntry {
-  id: string
-  at: string
-  /** Catalog id from plan/cardio.ts ('custom' carries its own label). */
-  activityId: string
-  label: string
-  when: CardioWhen
-  where?: 'indoor' | 'outdoor'
-  miles?: number
-  minutes?: number
-  /** Activity-specific mode, e.g. basketball 'games' vs 'shooting'. */
-  mode?: string
-}
+// Type-only cycle: activityTypes needs ISODate from here, this needs its
+// shapes for AppData. TypeScript erases both, so nothing circular survives
+// into the bundle.
+import type { CardioEntry, RunLog } from './activityTypes'
+export * from './activityTypes'
 
 // ---------- Meals ----------
 

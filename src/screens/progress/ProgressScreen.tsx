@@ -121,7 +121,7 @@ export function ProgressScreen() {
 
   return (
     <div className="space-y-3 pb-6">
-      <h1 className="text-[30px] font-bold tracking-tight">Progress</h1>
+      <h1 className="headline text-[31px]">Progress</h1>
 
       {/* You vs everyone: the Board lives here as a second lens */}
       <div className="flex rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-1">

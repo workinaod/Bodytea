@@ -19,6 +19,12 @@ import { useAppStore } from '../../store/appStore'
 import { Btn } from '../../components/ui'
 import { RouteMap } from '../../components/RouteMap'
 import { RunReactionCard } from '../../components/RunReactionCard'
+import {
+  requestMotionPermission,
+  startStepCounter,
+  strideMiles,
+  type StepCounter,
+} from '../../platform/motion'
 
 type Phase = 'acquiring' | 'live' | 'done' | 'denied'
 
@@ -33,12 +39,15 @@ export function RunTrackerSheet({
   date,
   onClose,
 }: {
-  activity: 'run' | 'bike'
+  activity: 'run' | 'bike' | 'walk'
   date: ISODate
   onClose: () => void
 }) {
   const [phase, setPhase] = useState<Phase>('acquiring')
   const [elapsed, setElapsed] = useState(0)
+  // Street level by default: close enough to read the road you are on.
+  const [zoom, setZoom] = useState(17)
+  const stepsRef = useRef<StepCounter | null>(null)
   const [, forceRender] = useState(0)
   const [saved, setSaved] = useState<RunLog | null>(null)
   const [reaction, setReaction] = useState<Reaction | null>(null)
@@ -51,6 +60,20 @@ export function RunTrackerSheet({
   const startedAtIso = useRef('')
   const watchRef = useRef<number | null>(null)
   const wakeRef = useRef<{ release?: () => Promise<void> } | null>(null)
+
+  // Steps run alongside GPS from the first moment. A treadmill gives the
+  // satellites nothing to work with, so the pedometer is what turns an
+  // indoor session from "0.00 mi" into real distance.
+  useEffect(() => {
+    let live = true
+    void requestMotionPermission().then((ok) => {
+      if (ok && live) stepsRef.current = startStepCounter()
+    })
+    return () => {
+      live = false
+      stepsRef.current?.stop()
+    }
+  }, [])
 
   useEffect(() => {
     if (!('geolocation' in navigator)) {
@@ -98,8 +121,15 @@ export function RunTrackerSheet({
   const bodyweight = useAppStore(
     (st) => [...st.data.measurements].reverse().find((m) => m.weightLb !== undefined)?.weightLb ?? 175,
   )
+  // Stride length scales with height, so indoor distance needs it.
+  const heightIn = useAppStore((st) => st.data.profile.heightIn)
   const liveKcal = estKcal(activity, distance, elapsed, bodyweight)
-  const label = activity === 'run' ? 'Run' : 'Ride'
+  const label = activity === 'run' ? 'Run' : activity === 'bike' ? 'Ride' : 'Walk'
+
+  // The map is a full-screen takeover, so its box is the viewport minus
+  // the fixed furniture: top bar, the stats band, and the finish button.
+  const mapW = Math.min(typeof window !== 'undefined' ? window.innerWidth : 390, 512) - 32
+  const mapH = Math.max(280, (typeof window !== 'undefined' ? window.innerHeight : 800) - 260)
 
   const [scrapped, setScrapped] = useState(false)
   // Goal check-in: composed once per finished run against live app data
@@ -111,13 +141,32 @@ export function RunTrackerSheet({
   function finish() {
     if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
     void wakeRef.current?.release?.()
-    // False start: nothing moved, seconds on the clock, log NOTHING.
-    if (totalDistanceMi(pointsRef.current) < 0.05 && elapsed < 120) {
+    const steps = stepsRef.current?.steps() ?? 0
+    stepsRef.current?.stop()
+    const gpsMi = totalDistanceMi(pointsRef.current)
+
+    // False start: nothing moved AND nobody took a step AND barely any
+    // time on the clock. Anything else is real work and gets logged.
+    if (gpsMi < 0.05 && steps < 50 && elapsed < 120) {
       setScrapped(true)
       setPhase('done')
       return
     }
     const log = buildRunLog(uid(), activity, date, startedAtIso.current, elapsed, points)
+
+    // A treadmill moves the body without moving the phone, so GPS reports
+    // nothing for a genuine session. When the satellites saw no distance
+    // but the pedometer did, count the steps and say where the number
+    // came from rather than banking a run of 0.00 miles.
+    if (gpsMi < 0.05 && steps >= 50) {
+      log.steps = steps
+      log.distanceMi = +(steps * strideMiles(heightIn, activity === 'run')).toFixed(2)
+      log.distanceSource = 'steps'
+      log.avgPaceSec = log.distanceMi > 0 ? Math.round(elapsed / log.distanceMi) : 0
+    } else {
+      log.distanceSource = gpsMi >= 0.05 ? 'gps' : 'none'
+      if (steps > 0) log.steps = steps
+    }
     const rx = reactionForRun(log, pastRuns)
     saveRun(log)
     setSaved(log)
@@ -133,11 +182,11 @@ export function RunTrackerSheet({
   return (
     <div className="fixed inset-0 z-[80] flex flex-col overflow-y-auto bg-bg">
       <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-4 pb-[max(env(safe-area-inset-bottom),16px)] pt-[max(env(safe-area-inset-top),14px)]">
-        {/* Top bar */}
+        {/* Top bar. While recording there is no title: the map is the screen. */}
         <div className="flex shrink-0 items-center justify-between py-1">
-          <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-ink-dim">{label} tracker</div>
+          <div className="eyebrow text-ink-dim">{phase === 'live' ? '' : `${label} tracker`}</div>
           {phase !== 'live' && (
-            <button onClick={onClose} className="rounded-full bg-white/[0.07] px-4 py-1.5 text-[12px] font-bold text-ink-dim">
+            <button onClick={onClose} className="press rounded-full bg-white/[0.07] px-4 py-1.5 text-[12px] font-bold text-ink-dim">
               {phase === 'done' ? '✕' : 'Cancel'}
             </button>
           )}
@@ -166,31 +215,47 @@ export function RunTrackerSheet({
 
         {phase === 'live' && (
           <>
-            {/* The map IS the screen, stats ride in a compact band below */}
-            <div className="mt-1 shrink-0 overflow-hidden rounded-2xl border border-edge/80">
-              <RouteMap points={points} live height={Math.max(300, Math.round(window.innerHeight * 0.54))} />
+            {/* The map IS the screen: it takes every pixel the layout can
+                spare, stays locked on the runner, and carries its own zoom. */}
+            <div className="relative min-h-0 flex-1">
+              <RouteMap points={points} live follow zoom={zoom} width={mapW} height={mapH} />
+              <div className="absolute right-2 top-2 flex flex-col overflow-hidden rounded-xl bg-black/55 ring-1 ring-white/15 backdrop-blur-sm">
+                <button
+                  aria-label="Zoom in"
+                  onClick={() => setZoom((z) => Math.min(18, z + 1))}
+                  className="press h-9 w-9 text-[18px] font-bold text-white/90"
+                >
+                  +
+                </button>
+                <span aria-hidden className="h-px bg-white/15" />
+                <button
+                  aria-label="Zoom out"
+                  onClick={() => setZoom((z) => Math.max(13, z - 1))}
+                  className="press h-9 w-9 text-[18px] font-bold text-white/90"
+                >
+                  −
+                </button>
+              </div>
             </div>
-            <div className="flex flex-1 items-center justify-between gap-3 py-3">
+            {/* One band of numbers, directly under the map */}
+            <div className="flex shrink-0 items-end justify-between gap-3 pb-3 pt-3">
               <div>
-                <div className="font-display text-[46px] font-bold leading-none tabular-nums">{fmtDuration(elapsed)}</div>
-                {liveKcal > 0 && (
-                  <div className="mt-1 text-[12px] font-bold text-ink-dim">~{liveKcal} cal</div>
-                )}
+                <div className="num text-[46px] font-bold leading-none">{fmtDuration(elapsed)}</div>
                 <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-faint">
-                  recording, screen stays on
+                  recording{liveKcal > 0 ? ` · ~${liveKcal} cal` : ''}
                 </div>
               </div>
               <div className="flex gap-3.5 text-right">
                 <div>
-                  <div className="font-display text-[24px] font-bold leading-none">{distance.toFixed(2)}</div>
+                  <div className="num text-[24px] font-bold leading-none">{distance.toFixed(2)}</div>
                   <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">mi</div>
                 </div>
                 <div>
-                  <div className="font-display text-[24px] font-bold leading-none">{fmtPace(pace).replace('/mi', '')}</div>
+                  <div className="num text-[24px] font-bold leading-none">{fmtPace(pace).replace('/mi', '')}</div>
                   <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">pace</div>
                 </div>
                 <div>
-                  <div className="font-display text-[24px] font-bold leading-none">{mph}</div>
+                  <div className="num text-[24px] font-bold leading-none">{mph}</div>
                   <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">mph</div>
                 </div>
               </div>

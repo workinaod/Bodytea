@@ -32,7 +32,7 @@ test('track a run with GPS: live stats → finish → logged everywhere', async 
   await page.getByRole('button', { name: /^🏃\s*Run$/ }).click()
 
   // First fix arrives from the mocked position → recording starts
-  await expect(page.getByText(/recording, screen stays on/)).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText(/^recording/)).toBeVisible({ timeout: 10000 })
 
   // Move north ~0.35 mi per minute, three times (~1 mi total)
   for (const lat of [40.7178, 40.7228, 40.7278]) {

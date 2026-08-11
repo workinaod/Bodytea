@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { buzzRestOver } from '../platform/haptics'
 
 /**
  * Timestamp-based rest timer, survives backgrounding (iOS throttles
@@ -14,7 +15,7 @@ export function RestTimer({ seconds, onDismiss }: { seconds: number; onDismiss: 
       setRemaining(left)
       if (left === 0) {
         try {
-          navigator.vibrate?.([200, 100, 200])
+          buzzRestOver()
         } catch {
           /* no vibration support */
         }

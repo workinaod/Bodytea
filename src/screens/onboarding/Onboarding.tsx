@@ -341,7 +341,7 @@ export function Onboarding() {
 
       {step === 1 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">What do we call you?</h2>
+          <h2 className="headline text-[26px]">What do we call you?</h2>
           <p className="mt-1 text-[13px] text-ink-dim">Shows on your booklet and (later) the leaderboard.</p>
           <input
             value={displayName}
@@ -357,7 +357,7 @@ export function Onboarding() {
 
       {step === 2 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">
+          <h2 className="headline text-[26px]">
             {mode === 'byor'
               ? 'What is this routine chasing?'
               : `What are you chasing${displayName.trim() ? `, ${displayName.trim().split(/\s+/)[0]}` : ''}?`}
@@ -500,7 +500,7 @@ export function Onboarding() {
 
       {step === 3 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">How many days can you actually train?</h2>
+          <h2 className="headline text-[26px]">How many days can you actually train?</h2>
           <p className="mt-1 text-[13px] text-ink-dim">Be honest. A 4-day plan you keep beats a 6-day plan you dodge.</p>
           <div className="mt-5 grid grid-cols-4 gap-2">
             {([3, 4, 5, 6] as const).map((d) => (
@@ -570,7 +570,7 @@ export function Onboarding() {
 
       {step === 4 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">Where do you train?</h2>
+          <h2 className="headline text-[26px]">Where do you train?</h2>
           <div className="mt-4 space-y-2">
             {(
               [
@@ -632,7 +632,7 @@ export function Onboarding() {
 
       {step === 5 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">Training age?</h2>
+          <h2 className="headline text-[26px]">Training age?</h2>
           <div className="mt-4 space-y-2">
             {(
               [
@@ -660,7 +660,7 @@ export function Onboarding() {
 
       {step === 6 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">Baseline numbers</h2>
+          <h2 className="headline text-[26px]">Baseline numbers</h2>
           <p className="mt-1 text-[13px] text-ink-dim">Weight sets your protein + calorie targets. The rest is your before picture.</p>
           <div className="mt-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -867,7 +867,7 @@ export function Onboarding() {
 
       {step === 8 && byorDraft && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">Build your week</h2>
+          <h2 className="headline text-[26px]">Build your week</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
             Lay out the routine you already run: training days, names, exercises, sets, reps.
           </p>
@@ -904,7 +904,7 @@ export function Onboarding() {
       {step === 9 && byorDraft && (
         <div className="flex flex-1 flex-col">
           <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">One honest question</div>
-          <h2 className="mt-1 text-[26px] font-black tracking-tight">Why has this routine been working for you?</h2>
+          <h2 className="headline mt-1 text-[26px]">Why has this routine been working for you?</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
             Be specific: “bench goes up every month”, “I actually show up when it's only 3 days”, “my
             knees stopped hurting”. The coach reads this before writing the notes.
@@ -934,7 +934,7 @@ export function Onboarding() {
       {step === 11 && byorDraft && (
         <div className="flex flex-1 flex-col">
           <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">The read on your routine</div>
-          <h2 className="mt-1 text-[26px] font-black tracking-tight">Straight notes, no fluff</h2>
+          <h2 className="headline mt-1 text-[26px]">Straight notes, no fluff</h2>
           {byorDraft.whyWorks && (
             <div className="mt-3 rounded-xl border-l-2 border-gold/50 bg-white/[0.05] px-3.5 py-2.5">
               <div className="text-[10px] font-black uppercase tracking-[0.14em] text-gold">Your read</div>
@@ -973,7 +973,7 @@ export function Onboarding() {
 
       {step === 10 && tuneDraft && (
         <div className="flex flex-1 flex-col">
-          <h2 className="text-[26px] font-black tracking-tight">Fine-tune your booklet</h2>
+          <h2 className="headline text-[26px]">Fine-tune your booklet</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
             Swap exercises, change sets and reps, rename days, move the week around. Blocks, deloads, and busy-week
             tiers rebuild themselves around your edits.

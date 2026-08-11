@@ -94,9 +94,24 @@ describe('estKcal', () => {
   it('rides burn less than runs at the same speed', () => {
     expect(estKcal('bike', 3, 1800, 175)).toBeLessThan(estKcal('run', 3, 1800, 175))
   })
+  it('a treadmill run with no GPS distance still burns calories', () => {
+    // The bug this fixes: half an hour of real running indoors scored
+    // zero, because speed cannot be computed without distance. It falls
+    // back to the activity's moderate MET instead of pretending nothing
+    // happened.
+    const indoors = estKcal('run', 0, 1800, 175)
+    expect(indoors).toBeGreaterThan(300)
+    expect(indoors).toBeLessThan(estKcal('bike', 0, 1800, 175) * 2)
+  })
+
+  it('walking is costed as walking, not as a slow run', () => {
+    expect(estKcal('walk', 1.5, 1800, 175)).toBeLessThan(estKcal('run', 1.5, 1800, 175))
+  })
+
   it('refuses junk inputs', () => {
-    expect(estKcal('run', 0, 1800, 175)).toBe(0)
+    // Under a minute is a mis-tap, not a session, whatever the distance.
     expect(estKcal('run', 1, 30, 175)).toBe(0)
+    expect(estKcal('run', 0, 0, 175)).toBe(0)
   })
 })
 

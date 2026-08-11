@@ -89,7 +89,15 @@ export function TabBar({
   }
 
   return (
-    <nav
+    <>
+      {/* The page must not be readable through the gaps around the bar.
+          A scrim fades the last inch of content into the background so
+          the nav sits on nothing rather than on half a sentence. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-32 bg-gradient-to-t from-bg via-bg/90 to-transparent"
+      />
+      <nav
       className={`fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),10px)] z-40 mx-auto max-w-lg ${session ? 'animate-rise' : ''}`}
       onTouchStart={(e) => {
         if (session) touchY.current = e.touches[0]?.clientY ?? null
@@ -132,6 +140,7 @@ export function TabBar({
           ))}
         </div>
       </div>
-    </nav>
+      </nav>
+    </>
   )
 }

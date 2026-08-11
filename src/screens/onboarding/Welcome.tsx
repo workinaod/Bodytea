@@ -48,9 +48,9 @@ export function Welcome({
     <div className="flex flex-1 flex-col justify-center">
       <div className="eyebrow text-accent">Bodytea</div>
       <h1 className="mt-2 text-display font-black">
-        Name any goal.
+        Name any goal
         <br />
-        Get the exact plan.
+        Get the exact plan
       </h1>
 
       {/* The proof, not the pitch: five goals with nothing in common. */}
@@ -60,7 +60,7 @@ export function Welcome({
             key={g.label}
             type="button"
             onClick={() => onPickGoal(g)}
-            className="press rounded-full bg-white/[0.06] px-4 py-2.5 text-[13.5px] font-semibold text-ink shadow-[0_1px_0_rgba(255,255,255,0.06)_inset] ring-1 ring-white/[0.08]"
+            className="press rounded-full bg-gradient-to-b from-white/[0.12] to-white/[0.05] px-4 py-2.5 text-[13.5px] font-semibold text-ink shadow-[0_1px_0_rgba(255,255,255,0.13)_inset,0_6px_16px_-10px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.1]"
           >
             {g.label}
           </button>
@@ -87,7 +87,7 @@ export function Welcome({
         </p>
       )}
 
-      <Btn size="lg" className="mt-8 w-full" onClick={onBuild}>
+      <Btn size="lg" shimmer className="mt-8 w-full" onClick={onBuild}>
         {rebuilding ? 'Rebuild my plan' : 'Build my plan'}
       </Btn>
       <Btn kind="subtle" size="lg" className="mt-3 w-full" onClick={onOwnRoutine}>

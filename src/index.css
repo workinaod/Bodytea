@@ -114,6 +114,32 @@ h3 {
   letter-spacing: -0.015em;
 }
 
+/* Screen titles.
+   Space Grotesk set at default weight with a nudge of negative tracking
+   is just a UI font with the corners filed off, which is why the
+   headlines read as generic. At display sizes it wants to be set HEAVY
+   and TIGHT: weight 800 closes the counters, -0.04em locks the letters
+   into a single mass, and 0.98 leading stops two-line titles drifting
+   apart. That is the difference between type that was chosen and type
+   that was defaulted. */
+.headline {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  /* Optical sizing where the face offers it, so big text is not just
+     small text scaled up. */
+  font-optical-sizing: auto;
+}
+
+/* The same voice one step down: card titles and sheet headers. */
+.headline-sm {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+}
+
 ::selection {
   background: rgba(255, 79, 48, 0.35);
 }
