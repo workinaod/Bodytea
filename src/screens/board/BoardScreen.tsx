@@ -2,33 +2,23 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { computeBoardStats } from '../../engine/board'
 import type { BoardCategory, BoardRow } from '../../cloud/board'
-import type { Goal } from '../../types'
-import { Btn, Card, Chip } from '../../components/ui'
+import { Btn, Chip } from '../../components/ui'
 import { AccountSheet } from '../coach/AccountSheet'
 
 // ============================================================
-// The Board: one global leaderboard for everyone on the app.
+// The Board — global leaderboard, now a subtab of Progress.
 // Your own numbers always render (computed locally, even offline
 // or signed out); the ranked lists come from board_stats and are
 // cached for 5 minutes / kept for offline viewing.
 // ============================================================
 
-const CATEGORIES: { id: BoardCategory; label: string; emoji: string; blurb: string }[] = [
-  { id: 'streak', label: 'Streak', emoji: '🔥', blurb: 'Consecutive scheduled days honored' },
-  { id: 'consistency30', label: 'Consistency', emoji: '📅', blurb: 'Scheduled days honored, last 30' },
-  { id: 'pr_gain90', label: 'PR gains', emoji: '📈', blurb: 'Strength climbed, last 90 days' },
-  { id: 'protein30', label: 'Meal prep', emoji: '🍗', blurb: 'Protein target hit, last 30' },
-  { id: 'sessions_total', label: 'Sessions', emoji: '🏋️', blurb: 'Total sessions, all time' },
+const CATEGORIES: { id: BoardCategory; label: string; blurb: string }[] = [
+  { id: 'streak', label: 'Streak', blurb: 'Consecutive scheduled days honored' },
+  { id: 'consistency30', label: 'Consistency', blurb: 'Scheduled days honored, last 30' },
+  { id: 'pr_gain90', label: 'PR gains', blurb: 'Strength climbed, last 90 days' },
+  { id: 'protein30', label: 'Meal prep', blurb: 'Protein target hit, last 30' },
+  { id: 'sessions_total', label: 'Sessions', blurb: 'Total sessions, all time' },
 ]
-
-const GOAL_EMOJI: Record<Goal, string> = {
-  vertical: '🏀',
-  speed: '⚡',
-  muscle: '💪',
-  strength: '🏋️',
-  lean: '🔥',
-  general: '🎯',
-}
 
 function fmtValue(category: BoardCategory, v: number): string {
   if (category === 'streak') return `${Math.round(v)}d`
@@ -39,7 +29,7 @@ function fmtValue(category: BoardCategory, v: number): string {
 
 type CloudBoard = typeof import('../../cloud/board')
 
-export function BoardScreen() {
+export function BoardContent() {
   const data = useAppStore((s) => s.data)
   const [board, setBoard] = useState<CloudBoard | null>(null)
   const [uid, setUid] = useState<string | null>(null)
@@ -101,14 +91,11 @@ export function BoardScreen() {
             : mine.sessionsTotal
 
   return (
-    <div className="space-y-3 pb-6">
-      <div>
-        <h1 className="text-[24px] font-black tracking-tight">The Board</h1>
-        <p className="text-[12px] text-ink-faint">Global — every athlete on the app, one ladder.</p>
-      </div>
+    <div className="space-y-3">
+      <p className="text-[12px] text-ink-faint">Global — every athlete on the app, one ladder.</p>
 
       {/* Your numbers always render, account or not */}
-      <Card className="!p-3.5">
+      <div className="rounded-2xl border border-edge/80 bg-surface p-3.5">
         <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-ink-faint">Your numbers</div>
         <div className="grid grid-cols-5 gap-1 text-center">
           <MiniStat label="Streak" value={`${mine.streak}d`} hot={mine.streak >= 7} />
@@ -122,10 +109,10 @@ export function BoardScreen() {
             “—” = not enough data yet. Keep logging — the numbers rank themselves.
           </p>
         )}
-      </Card>
+      </div>
 
       {checked && !uid && (
-        <Card className="border-accent/30">
+        <div className="rounded-2xl border border-accent/30 bg-surface p-4">
           <p className="text-[13px] leading-relaxed text-ink-dim">
             The board is where your streak meets everyone else's. Create a free account (number + PIN, no SMS) and
             your numbers start competing.
@@ -133,7 +120,7 @@ export function BoardScreen() {
           <Btn className="mt-3 w-full py-3" onClick={() => setAccountOpen(true)}>
             Put me on the board
           </Btn>
-        </Card>
+        </div>
       )}
 
       {uid && (
@@ -142,7 +129,7 @@ export function BoardScreen() {
             <div className="flex w-max gap-1.5">
               {CATEGORIES.map((c) => (
                 <Chip key={c.id} tone={category === c.id ? 'accent' : 'default'} onClick={() => setCategory(c.id)}>
-                  {c.emoji} {c.label}
+                  {c.label}
                 </Chip>
               ))}
             </div>
@@ -155,12 +142,12 @@ export function BoardScreen() {
           {rows === null && <p className="py-8 text-center text-[12.5px] text-ink-faint">Loading the ladder…</p>}
 
           {rows !== null && rows.length === 0 && (
-            <Card className="!py-6 text-center">
+            <div className="rounded-2xl border border-edge/80 bg-surface py-6 text-center">
               <p className="text-[13px] font-bold">Nobody's ranked yet.</p>
               <p className="mt-1 text-[12px] text-ink-dim">
                 Ranking takes 3 logged sessions. Log yours and take the top spot while it's free.
               </p>
-            </Card>
+            </div>
           )}
 
           {rows !== null && rows.length > 0 && (
@@ -169,7 +156,7 @@ export function BoardScreen() {
               <div className="grid grid-cols-3 items-end gap-2">
                 {[rows[1], rows[0], rows[2]].map((r, i) =>
                   r ? (
-                    <PodiumCard
+                    <PodiumTile
                       key={r.user_id}
                       row={r}
                       rank={i === 1 ? 1 : i === 0 ? 2 : 3}
@@ -182,38 +169,41 @@ export function BoardScreen() {
                 )}
               </div>
 
-              {/* 4..50 */}
-              <div className="space-y-1.5">
+              {/* 4..50 — one ladder, not fifty boxes */}
+              <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
                 {rows.slice(3).map((r, i) => (
                   <div
                     key={r.user_id}
-                    className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
-                      r.user_id === uid ? 'border-accent/50 bg-accent/10' : 'border-edge bg-surface'
+                    className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-edge/50' : ''} ${
+                      r.user_id === uid ? 'bg-accent/10' : ''
                     }`}
                   >
-                    <span className="w-7 text-[12px] font-black text-ink-faint">#{i + 4}</span>
-                    <span className="text-[14px]">{GOAL_EMOJI[r.goal as Goal] ?? '🎯'}</span>
+                    <span className="w-7 shrink-0 font-mono text-[12px] font-bold text-ink-faint">{i + 4}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13.5px] font-bold">
+                      <div className={`truncate text-[13.5px] font-bold ${r.user_id === uid ? 'text-accent-soft' : ''}`}>
                         @{r.username}
-                        {r.user_id === uid ? ' · you' : ''}
+                        {r.user_id === uid ? ' — you' : ''}
                       </div>
-                      {r.streak >= 7 && <div className="text-[10.5px] text-ink-faint">🔥 {r.streak}-day streak</div>}
+                      {r.streak >= 7 && (
+                        <div className="text-[10.5px] text-ink-faint">{r.streak}-day streak</div>
+                      )}
                     </div>
-                    <span className="text-[15px] font-black text-accent">{fmtValue(category, Number(r[category]))}</span>
+                    <span className="shrink-0 font-mono text-[14px] font-black text-ink">
+                      {fmtValue(category, Number(r[category]))}
+                    </span>
                   </div>
                 ))}
               </div>
 
               {/* Me, when outside the top 50 */}
               {!myRow && (
-                <div className="flex items-center gap-3 rounded-xl border border-accent/50 bg-accent/10 px-3 py-2.5">
-                  <span className="w-7 text-[12px] font-black text-ink-faint">—</span>
+                <div className="flex items-center gap-3 rounded-2xl border border-accent/50 bg-accent/10 px-4 py-2.5">
+                  <span className="w-7 shrink-0 font-mono text-[12px] font-bold text-ink-faint">—</span>
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] font-bold">You — outside the top 50 (for now)</div>
                     <div className="text-[10.5px] text-ink-faint">Every logged day moves this number.</div>
                   </div>
-                  <span className="text-[15px] font-black text-accent">
+                  <span className="shrink-0 font-mono text-[14px] font-black text-accent">
                     {myLocalValue === null ? '—' : fmtValue(category, myLocalValue)}
                   </span>
                 </div>
@@ -240,22 +230,20 @@ function MiniStat({ label, value, hot }: { label: string; value: string; hot?: b
   )
 }
 
-function PodiumCard({ row, rank, category, me }: { row: BoardRow; rank: 1 | 2 | 3; category: BoardCategory; me: boolean }) {
+function PodiumTile({ row, rank, category, me }: { row: BoardRow; rank: 1 | 2 | 3; category: BoardCategory; me: boolean }) {
   const heights = { 1: 'pt-5 pb-4', 2: 'pt-3 pb-3', 3: 'pt-2 pb-2.5' }
-  const medals = { 1: '🥇', 2: '🥈', 3: '🥉' }
+  const rankTone = { 1: 'text-gold', 2: 'text-ink', 3: 'text-ink-dim' }
   return (
     <div
       style={{ animationDelay: `${rank * 60}ms` }}
       className={`animate-rise rounded-2xl border text-center ${heights[rank]} ${
-        me ? 'border-accent/60 bg-accent/15' : rank === 1 ? 'border-gold/40 bg-gold/10' : 'border-edge bg-surface'
+        me ? 'border-accent/60 bg-accent/15' : rank === 1 ? 'border-gold/40 bg-surface' : 'border-edge bg-surface'
       }`}
     >
-      <div className="text-[18px]">{medals[rank]}</div>
-      <div className="truncate px-2 text-[12.5px] font-black">@{row.username}</div>
-      <div className="mt-0.5 text-[14px] font-black text-accent">{fmtValue(category, Number(row[category]))}</div>
-      <div className="mt-0.5 text-[10px] text-ink-faint">
-        {GOAL_EMOJI[row.goal as Goal] ?? '🎯'} {row.streak >= 7 ? `· 🔥${row.streak}` : ''}
-      </div>
+      <div className={`font-display text-[17px] font-bold leading-none ${rankTone[rank]}`}>{rank}</div>
+      <div className="mt-1 truncate px-2 text-[12.5px] font-black">@{row.username}</div>
+      <div className="mt-0.5 font-mono text-[14px] font-black text-accent">{fmtValue(category, Number(row[category]))}</div>
+      {row.streak >= 7 && <div className="mt-0.5 text-[10px] text-ink-faint">{row.streak}-day streak</div>}
     </div>
   )
 }

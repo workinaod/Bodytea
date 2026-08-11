@@ -77,23 +77,30 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
     await page.getByRole('button', { name: 'Done', exact: true }).click()
   }
 
-  // ---- Meals: one-tap template moves the protein ring ----
+  // ---- Meals: log-first — the one button opens every path ----
   await page.getByRole('button', { name: 'Meals', exact: true }).click()
   await expect(page.getByText('Protein', { exact: true })).toBeVisible()
-  const mealChip = page.locator('button', { hasText: /Breakfast — / }).first()
-  await mealChip.click()
+  await page.getByRole('button', { name: '+ Log food' }).click()
+  await page.locator('button', { hasText: /Breakfast — / }).first().click() // one tap, sheet closes
   // Generated plan @180 lb → protein target 180 g (1 g/lb)
   await expect(page.locator('text=/4[05] ?\\/ 180/').first()).toBeVisible({ timeout: 5000 })
 
-  // ---- My meals: the templates are the user's own data ----
-  await page.getByText('edit my meals').click()
-  await page.getByRole('button', { name: '+ New meal' }).click()
+  // ---- My plan: bring your own meals, get common-grocery swaps ----
+  await page.getByRole('button', { name: 'My plan', exact: true }).click()
+  await page.getByRole('button', { name: '+ Add a meal' }).click()
   await page.getByPlaceholder('Meal name').fill('Chipotle bowl')
   await page.getByPlaceholder('Protein (g)').fill('50')
   await page.getByPlaceholder('Calories').fill('800')
   await page.getByRole('button', { name: 'Save meal' }).click()
+  // The saved meal offers alternatives at matching macros
+  await page.getByText('Meal — Chipotle bowl').click()
+  await expect(page.getByText('Same macros, common groceries')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Use instead' }).first()).toBeVisible()
   await page.getByRole('button', { name: 'Close' }).click()
-  await page.getByText('Meal — Chipotle bowl').click() // one tap logs THEIR meal
+  // Back on the log view, THEIR meal is now a one-tap log
+  await page.getByRole('button', { name: 'Log', exact: true }).click()
+  await page.getByRole('button', { name: '+ Log food' }).click()
+  await page.getByText('Meal — Chipotle bowl').click()
   await expect(page.locator('text=/9[05] ?\\/ 180/').first()).toBeVisible()
 
   // ---- Progress renders ----

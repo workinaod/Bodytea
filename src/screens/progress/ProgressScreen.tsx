@@ -21,6 +21,7 @@ import { daysBetween } from '../../engine/calendar'
 import { MilestoneReviewSheet } from './MilestoneReview'
 import { BodyFatEstimator } from './BodyFatEstimator'
 import { WeeklyRecap } from './WeeklyRecap'
+import { BoardContent } from '../board/BoardScreen'
 import { avgMph, fmtDuration, fmtPace, weeklyMiles } from '../../engine/runs'
 import { RouteMap } from '../../components/RouteMap'
 import type { RunLog } from '../../types'
@@ -63,6 +64,7 @@ export function ProgressScreen() {
   const [review, setReview] = useState<MilestoneReview | null>(null)
   const [openRun, setOpenRun] = useState<RunLog | null>(null)
   const [recapOpen, setRecapOpen] = useState(false)
+  const [view, setView] = useState<'me' | 'board'>('me')
   const [metric, setMetric] = useState<(typeof METRICS)[number]['key']>('waistIn')
   const [lift, setLift] = useState(data.plan.trackedLifts[0]?.exerciseId ?? 'front-squat')
 
@@ -121,7 +123,29 @@ export function ProgressScreen() {
     <div className="space-y-3 pb-6">
       <h1 className="text-[30px] font-bold tracking-tight">Progress</h1>
 
-      {checkinDue && (
+      {/* You vs everyone: the Board lives here as a second lens */}
+      <div className="flex rounded-xl border border-edge bg-surface p-1">
+        {(
+          [
+            { id: 'me', label: 'My progress' },
+            { id: 'board', label: 'The Board' },
+          ] as const
+        ).map((v) => (
+          <button
+            key={v.id}
+            onClick={() => setView(v.id)}
+            className={`flex-1 rounded-lg py-2 text-[12.5px] font-bold transition-colors ${
+              view === v.id ? 'bg-surface-2 text-ink' : 'text-ink-faint'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'board' && <BoardContent />}
+
+      {view === 'me' && checkinDue && (
         <Card className="border-accent/40">
           <p className="text-[13.5px] font-bold text-accent-soft">Weekly check-in day</p>
           <p className="mt-0.5 text-[12px] text-ink-dim">
@@ -133,6 +157,8 @@ export function ProgressScreen() {
         </Card>
       )}
 
+      {view === 'me' && (
+        <>
       {/* Milestone review, when one has unlocked and hasn't been opened */}
       {(() => {
         const ready = reviewReady(data, today)
@@ -317,6 +343,8 @@ export function ProgressScreen() {
           )
         })}
       </div>
+        </>
+      )}
 
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} onSaved={() => setRecapOpen(true)} last={lastCheckin} />
       {recapOpen && <WeeklyRecap data={data} today={today} onClose={() => setRecapOpen(false)} />}

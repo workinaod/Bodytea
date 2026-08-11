@@ -123,6 +123,18 @@ export function TodayScreen() {
         <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">{day.tagline}</p>
       </div>
 
+      {/* Actions live at the top — no reaching past the list to start */}
+      {today && !session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
+        <div className="flex gap-2 pt-0.5">
+          <Btn className="flex-[2]" onClick={handleStart}>
+            {day.cns ? 'Readiness check → start' : 'Start session'}
+          </Btn>
+          <Btn kind="ghost" className="flex-1" onClick={() => setSkipOpen(true)}>
+            Can't train
+          </Btn>
+        </div>
+      )}
+
       {day.banners.map((b) => (
         <BannerRow key={b.id} banner={b} />
       ))}
@@ -359,18 +371,6 @@ export function TodayScreen() {
             <p className="px-1 text-[12px] leading-relaxed text-ink-faint">{day.note}</p>
           )}
 
-          {today && (
-            <div className="sticky bottom-[64px] z-30 -mx-4 bg-gradient-to-t from-bg via-bg/95 to-transparent px-4 pb-2 pt-6">
-              <div className="flex gap-2">
-                <Btn kind="ghost" className="flex-1 bg-bg" onClick={() => setSkipOpen(true)}>
-                  Can't train
-                </Btn>
-                <Btn className="flex-[2]" onClick={handleStart}>
-                  {day.cns ? 'Readiness check → start' : 'Start session'}
-                </Btn>
-              </div>
-            </div>
-          )}
           {!today && (
             <p className="px-1 text-center text-[11.5px] text-ink-faint">
               Preview only — sessions start on their day.

@@ -1,25 +1,24 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from './store/appStore'
 import { TabBar, type TabId } from './components/TabBar'
+import { Sheet } from './components/Sheet'
 import { TodayScreen } from './screens/today/TodayScreen'
 import { WeekScreen } from './screens/week/WeekScreen'
 import { MealsScreen } from './screens/meals/MealsScreen'
 import { ProgressScreen } from './screens/progress/ProgressScreen'
-import { BoardScreen } from './screens/board/BoardScreen'
 import { CoachScreen } from './screens/coach/CoachScreen'
+import { RunTrackerSheet } from './screens/today/RunTrackerSheet'
 import { Onboarding } from './screens/Onboarding'
 import { ReconcileSheet } from './screens/ReconcileSheet'
 import { dailyCoachSweep } from './logic/actions'
 import { refreshReminders, syncReminderMeta } from './logic/reminders'
 import { startClock, useToday } from './logic/clock'
-import { mondayOf } from './engine/calendar'
 
 export default function App() {
   const onboarded = useAppStore((s) => s.data.settings.onboarded)
   const today = useToday()
-  const monday = mondayOf(today)
-  const weekPicked = useAppStore((s) => !!s.data.weeks[monday]?.tierPickedAt)
   const [tab, setTab] = useState<TabId>('today')
+  const [track, setTrack] = useState<'choose' | 'run' | 'bike' | null>(null)
 
   useEffect(() => {
     // Cloud sync restores only for devices that have used an account —
@@ -65,10 +64,37 @@ export default function App() {
       {tab === 'week' && <WeekScreen />}
       {tab === 'meals' && <MealsScreen />}
       {tab === 'progress' && <ProgressScreen />}
-      {tab === 'board' && <BoardScreen />}
       {tab === 'coach' && <CoachScreen />}
 
-      <TabBar tab={tab} onChange={setTab} alert={{ week: !weekPicked }} />
+      <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} />
+      <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track with GPS">
+        <div className="space-y-2 pb-8">
+          <p className="text-[12.5px] leading-snug text-ink-dim">
+            Live map, time, distance, and pace — finishing logs it as today's cardio automatically.
+          </p>
+          {(
+            [
+              { id: 'run', label: 'Run', sub: 'pace per mile + splits' },
+              { id: 'bike', label: 'Ride', sub: 'average mph + route' },
+            ] as const
+          ).map((a) => (
+            <button
+              key={a.id}
+              onClick={() => setTrack(a.id)}
+              className="flex w-full items-center justify-between rounded-2xl border border-edge bg-surface-2 px-4 py-4 text-left active:border-accent/40"
+            >
+              <span>
+                <span className="block text-[15px] font-extrabold">{a.label}</span>
+                <span className="mt-0.5 block text-[11.5px] text-ink-faint">{a.sub}</span>
+              </span>
+              <span className="text-[17px] font-bold text-accent">→</span>
+            </button>
+          ))}
+        </div>
+      </Sheet>
+      {(track === 'run' || track === 'bike') && (
+        <RunTrackerSheet activity={track} date={today} onClose={() => setTrack(null)} />
+      )}
       <ReconcileSheet />
       <UpdateToast />
     </div>

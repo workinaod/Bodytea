@@ -6,6 +6,7 @@ import { useToday } from '../../logic/clock'
 import { kcalTargetFor, nutritionDayType } from '../../engine/resolveDay'
 import { kcalBumpSuggestion, kcalFor, proteinFor, proteinStreak } from '../../engine/stats'
 import { FOODS, SUPPLEMENT_CATALOG } from '../../plan/foods'
+import { mealAlternatives } from '../../plan/mealAlts'
 import { Btn, Card, Chip, Ring, SectionTitle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import {
@@ -16,17 +17,26 @@ import {
   toggleSupplement,
 } from '../../logic/actions'
 
+// ============================================================
+// Meals, restructured around three jobs a normal person has:
+//   Today    — log what you actually ate, tick supplements
+//   My plan  — YOUR meals (bring your own), each with common-
+//              grocery alternatives at matching macros
+//   Grocery  — the list that feeds the plan
+// One primary action per view; everything else is one tap deep.
+// ============================================================
+
+type MealsView = 'today' | 'plan' | 'grocery'
+
 export function MealsScreen() {
   const data = useAppStore((s) => s.data)
   const update = useAppStore((s) => s.update)
   const today = useToday()
   const [selected, setSelected] = useState<string | null>(null)
   const date = selected ?? today
-  const [customOpen, setCustomOpen] = useState(false)
-  const [groceryOpen, setGroceryOpen] = useState(false)
-  const [myMealsOpen, setMyMealsOpen] = useState(false)
+  const [view, setView] = useState<MealsView>('today')
+  const [logOpen, setLogOpen] = useState(false)
   const [stackOpen, setStackOpen] = useState(false)
-  const [foodQuery, setFoodQuery] = useState('')
 
   const day = data.meals[date]
   const mealPlan = data.plan.mealPlan
@@ -36,26 +46,6 @@ export function MealsScreen() {
   const kcal = kcalFor(data, date)
   const pStreak = proteinStreak(data)
   const bump = useMemo(() => kcalBumpSuggestion(data), [data])
-
-  const recents = useMemo(() => {
-    const freq = new Map<string, { label: string; proteinG: number; kcal: number; count: number }>()
-    for (const m of Object.values(data.meals)) {
-      for (const e of m.entries) {
-        if (e.source !== 'custom') continue
-        const cur = freq.get(e.label) ?? { label: e.label, proteinG: e.proteinG, kcal: e.kcal, count: 0 }
-        cur.count++
-        freq.set(e.label, cur)
-      }
-    }
-    return [...freq.values()].sort((a, b) => b.count - a.count).slice(0, 8)
-  }, [data.meals])
-
-  const templates = mealPlan.templates.filter((m) => m.dayType === dayType)
-  const foodMatches = useMemo(() => {
-    const q = foodQuery.trim().toLowerCase()
-    if (!q) return null
-    return FOODS.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 12)
-  }, [foodQuery])
 
   return (
     <div className="space-y-3 pb-6">
@@ -73,122 +63,256 @@ export function MealsScreen() {
         </button>
       </div>
 
-      {/* Rings */}
-      <Card className="flex items-center justify-around !py-5">
-        <Ring value={protein} target={data.settings.proteinTargetG} label="Protein" unit="g" color="var(--color-accent)" size={140} />
-        <Ring value={kcal} target={kcalTarget} label="Calories" unit="kcal" color="var(--color-cyan)" size={112} />
-      </Card>
-
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Chip tone={dayType === 'training' ? 'accent' : 'default'} onClick={() => cycleDayTypeOverride(date)}>
-          {dayType === 'training' ? 'Training day' : 'Rest day'} · {kcalTarget} kcal
-          {day?.dayTypeOverride ? ' (manual)' : ''}
-        </Chip>
-        <Chip tone="lime">protein never drops: {data.settings.proteinTargetG} g</Chip>
-        {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
-      </div>
-
-      {bump && (
-        <Card className="border-gold/40">
-          <p className="text-[13px] font-bold text-gold">Check-in rule triggered</p>
-          <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
-            Strength up {bump.strengthGainPct}% while the scale moved {bump.weightChangeLb} lb over 3+
-            weeks. The plan says: add 150–200 kcal to training days. Recomp is slow — don't panic-cut.
-          </p>
-          <div className="mt-2.5 flex gap-2">
-            {[150, 200].map((b) => (
-              <Btn key={b} kind="subtle" className="flex-1 !py-2"
-                onClick={() => update((d) => { d.settings.trainingDayKcalBonus = b as 150 | 200 })}>
-                +{b} kcal
-              </Btn>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* One-tap meal templates — the user's own, editable */}
-      <SectionTitle
-        right={
-          <div className="flex items-center gap-3">
-            <button onClick={() => setGroceryOpen(true)} className="text-[11px] font-bold text-cyan underline">
-              grocery
-            </button>
-            <button onClick={() => setMyMealsOpen(true)} className="text-[11px] font-bold text-accent underline">
-              edit my meals
-            </button>
-          </div>
-        }
-      >
-        {dayType === 'training' ? 'Training-day meals' : 'Rest-day meals'}
-      </SectionTitle>
-      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
-        {templates.map((t, i) => (
+      {/* The three jobs, one switch */}
+      <div className="flex rounded-xl border border-edge bg-surface p-1">
+        {(
+          [
+            { id: 'today', label: 'Log' },
+            { id: 'plan', label: 'My plan' },
+            { id: 'grocery', label: 'Grocery' },
+          ] as const
+        ).map((v) => (
           <button
-            key={t.id}
-            onClick={() => addMealEntry(date, { label: `${t.slot}: ${t.name}`, proteinG: t.proteinG, kcal: t.kcal, source: 'mealTemplate' })}
-            className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-surface-2 ${
-              i > 0 ? 'border-t border-edge/50' : ''
+            key={v.id}
+            onClick={() => setView(v.id)}
+            className={`flex-1 rounded-lg py-2 text-[12.5px] font-bold transition-colors ${
+              view === v.id ? 'bg-surface-2 text-ink' : 'text-ink-faint'
             }`}
           >
-            <span className="min-w-0">
-              <span className="block truncate text-[13.5px] font-extrabold">
-                {t.slot} — {t.name}
-              </span>
-              {t.detail && <span className="mt-0.5 block text-[11px] leading-snug text-ink-faint">{t.detail}</span>}
-            </span>
-            <span className="shrink-0 text-right">
-              <span className="block font-mono text-[12.5px] font-bold text-accent-soft">+{t.proteinG}g P</span>
-              <span className="block font-mono text-[10.5px] text-ink-faint">~{t.kcal} kcal</span>
-            </span>
+            {v.label}
           </button>
         ))}
-        {templates.length === 0 && (
-          <p className="px-4 py-4 text-center text-[12.5px] text-ink-faint">
-            No meals for this day type yet — build yours with “edit my meals”.
-          </p>
-        )}
       </div>
 
-      {/* Food library — search-first, big enough for anyone's diet */}
-      <SectionTitle>Quick-add foods</SectionTitle>
-      <input
-        className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-2.5 text-[13px] outline-none placeholder:text-ink-faint"
-        placeholder={`Search ${FOODS.length} foods…`}
-        value={foodQuery}
-        onChange={(e) => setFoodQuery(e.target.value)}
-      />
-      {foodMatches ? (
-        <div className="flex flex-wrap gap-1.5">
-          {foodMatches.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => addMealEntry(date, { label: `${f.name} (${f.serving})`, proteinG: f.proteinG, kcal: f.kcal, source: 'chip', foodId: f.id })}
-              className="rounded-xl border border-edge bg-surface-2 px-3 py-2 text-left active:border-accent/40"
-            >
-              <div className="text-[12px] font-bold leading-tight">{f.name}</div>
-              <div className="text-[10px] font-semibold text-ink-faint">
-                {f.serving} · {f.proteinG}g P · {f.kcal} kcal
+      {view === 'today' && (
+        <>
+          <Card className="flex items-center justify-around !py-5">
+            <Ring value={protein} target={data.settings.proteinTargetG} label="Protein" unit="g" color="var(--color-accent)" size={140} />
+            <Ring value={kcal} target={kcalTarget} label="Calories" unit="kcal" color="var(--color-cyan)" size={112} />
+          </Card>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Chip tone={dayType === 'training' ? 'accent' : 'default'} onClick={() => cycleDayTypeOverride(date)}>
+              {dayType === 'training' ? 'Training day' : 'Rest day'} · {kcalTarget} kcal
+              {day?.dayTypeOverride ? ' (manual)' : ''}
+            </Chip>
+            <Chip tone="lime">protein never drops: {data.settings.proteinTargetG} g</Chip>
+            {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
+          </div>
+
+          {bump && (
+            <Card className="border-gold/40">
+              <p className="text-[13px] font-bold text-gold">Check-in rule triggered</p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
+                Strength up {bump.strengthGainPct}% while the scale moved {bump.weightChangeLb} lb over 3+
+                weeks. The plan says: add 150–200 kcal to training days. Recomp is slow — don't panic-cut.
+              </p>
+              <div className="mt-2.5 flex gap-2">
+                {[150, 200].map((b) => (
+                  <Btn key={b} kind="subtle" className="flex-1 !py-2"
+                    onClick={() => update((d) => { d.settings.trainingDayKcalBonus = b as 150 | 200 })}>
+                    +{b} kcal
+                  </Btn>
+                ))}
               </div>
-            </button>
-          ))}
-          {foodMatches.length === 0 && (
-            <p className="w-full py-2 text-center text-[12px] text-ink-faint">
-              Nothing matches — log it as a custom entry below.
-            </p>
+            </Card>
           )}
-        </div>
-      ) : (
-        (['protein', 'carb', 'fat', 'snack'] as const).map((cat) => (
-          <div key={cat} className="mb-1">
-            <div className="mb-1 px-1 text-[10px] font-black uppercase tracking-wider text-ink-faint">
-              {cat === 'protein' ? 'Proteins (the priority)' : cat === 'carb' ? 'Carbs' : cat === 'fat' ? 'Fats' : 'Snacks & veg'}
+
+          {/* THE action on this screen */}
+          <Btn className="w-full py-4 text-[15px]" onClick={() => setLogOpen(true)}>
+            + Log food
+          </Btn>
+
+          <SectionTitle>Eaten {day?.entries.length ? `(${day.entries.length})` : ''}</SectionTitle>
+          <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+            {(day?.entries ?? []).map((e, i) => (
+              <div
+                key={e.id}
+                className={`flex items-center justify-between gap-2 px-4 py-2.5 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13px] font-bold">{e.label}</div>
+                  <div className="text-[11px] font-semibold text-ink-faint">
+                    {Math.round(e.proteinG * e.servings)}g P · {Math.round(e.kcal * e.servings)} kcal
+                    {e.servings !== 1 && ` · ${e.servings}×`}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button className="h-8 w-8 rounded-lg bg-surface-2 text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings - 0.5)}>−</button>
+                  <button className="h-8 w-8 rounded-lg bg-surface-2 text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings + 0.5)}>+</button>
+                  <button className="h-8 w-8 rounded-lg text-sm font-bold text-danger" onClick={() => removeMealEntry(date, e.id)}>✕</button>
+                </div>
+              </div>
+            ))}
+            {!day?.entries.length && (
+              <p className="px-4 py-4 text-center text-[12.5px] text-ink-faint">
+                Nothing logged yet — the button above covers the whole day in a few taps.
+              </p>
+            )}
+          </div>
+
+          {/* Supplements — daily tick-off */}
+          {mealPlan.supplements.length > 0 && (
+            <>
+              <SectionTitle
+                right={
+                  <button onClick={() => setStackOpen(true)} className="text-[11px] font-bold text-accent underline">
+                    edit stack
+                  </button>
+                }
+              >
+                Supplements
+              </SectionTitle>
+              <div className="grid grid-cols-2 gap-2">
+                {mealPlan.supplements.map((s) => {
+                  const on = day?.supplements[s.id] ?? false
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => toggleSupplement(date, s.id)}
+                      className={`rounded-xl border p-3 text-left ${on ? 'border-lime/40 bg-lime/8' : 'border-edge bg-surface'}`}
+                    >
+                      <div className={`text-[12.5px] font-bold ${on ? 'text-lime' : 'text-ink'}`}>
+                        {on ? '✓ ' : ''}{s.name}
+                      </div>
+                      <div className="text-[10.5px] text-ink-faint">{s.dose} · {s.when}</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {view === 'plan' && <PlanView onEditStack={() => setStackOpen(true)} />}
+      {view === 'grocery' && <GroceryList />}
+
+      {logOpen && <LogSheet date={date} dayType={dayType} onClose={() => setLogOpen(false)} />}
+      {stackOpen && <SupplementStackSheet onClose={() => setStackOpen(false)} />}
+    </div>
+  )
+}
+
+// ============================================================
+// Log sheet — every way food gets logged, one place:
+// plan meals (one tap), recents, food search, custom numbers.
+// ============================================================
+
+function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training' | 'rest'; onClose: () => void }) {
+  const data = useAppStore((s) => s.data)
+  const [foodQuery, setFoodQuery] = useState('')
+  const [added, setAdded] = useState(0)
+  const [name, setName] = useState('')
+  const [protein, setProtein] = useState('')
+  const [kcal, setKcal] = useState('')
+
+  const templates = data.plan.mealPlan.templates.filter((m) => m.dayType === dayType)
+
+  const recents = useMemo(() => {
+    const freq = new Map<string, { label: string; proteinG: number; kcal: number; count: number }>()
+    for (const m of Object.values(data.meals)) {
+      for (const e of m.entries) {
+        if (e.source !== 'custom') continue
+        const cur = freq.get(e.label) ?? { label: e.label, proteinG: e.proteinG, kcal: e.kcal, count: 0 }
+        cur.count++
+        freq.set(e.label, cur)
+      }
+    }
+    return [...freq.values()].sort((a, b) => b.count - a.count).slice(0, 8)
+  }, [data.meals])
+
+  const foodMatches = useMemo(() => {
+    const q = foodQuery.trim().toLowerCase()
+    if (!q) return null
+    return FOODS.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 12)
+  }, [foodQuery])
+
+  const field = 'rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint'
+
+  return (
+    <Sheet open onClose={onClose} title="Log food">
+      <div className="space-y-4 pb-8">
+        {added > 0 && (
+          <div className="border-l-2 border-lime/70 py-1 pl-3 text-[12.5px] font-bold text-lime/90">
+            {added} logged ✓ — keep going or swipe down when you're done.
+          </div>
+        )}
+
+        {/* One-tap: the user's own plan meals for this day type */}
+        {templates.length > 0 && (
+          <div>
+            <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
+              From my plan — one tap
             </div>
-            <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1">
-              {FOODS.filter((f) => (cat === 'snack' ? f.category === 'snack' || f.category === 'veg' : f.category === cat)).map((f) => (
+            <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+              {templates.map((t, i) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    addMealEntry(date, { label: `${t.slot}: ${t.name}`, proteinG: t.proteinG, kcal: t.kcal, source: 'mealTemplate' })
+                    onClose()
+                  }}
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-surface-2 ${
+                    i > 0 ? 'border-t border-edge/50' : ''
+                  }`}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13.5px] font-extrabold">
+                      {t.slot} — {t.name}
+                    </span>
+                    {t.detail && <span className="mt-0.5 block truncate text-[11px] leading-snug text-ink-faint">{t.detail}</span>}
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className="block font-mono text-[12.5px] font-bold text-accent-soft">+{t.proteinG}g P</span>
+                    <span className="block font-mono text-[10.5px] text-ink-faint">~{t.kcal} kcal</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {recents.length > 0 && (
+          <div>
+            <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">Your recents</div>
+            <div className="flex flex-wrap gap-1.5">
+              {recents.map((r) => (
+                <button
+                  key={r.label}
+                  onClick={() => {
+                    addMealEntry(date, { label: r.label, proteinG: r.proteinG, kcal: r.kcal, source: 'recent' })
+                    onClose()
+                  }}
+                  className="rounded-xl border border-cyan/25 bg-cyan/5 px-3 py-2 text-left"
+                >
+                  <div className="text-[12px] font-bold leading-tight text-cyan">{r.label}</div>
+                  <div className="text-[10px] font-semibold text-ink-faint">{r.proteinG}g P · {r.kcal} kcal</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Single foods — search first, browse as fallback */}
+        <div>
+          <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">Single foods</div>
+          <input
+            className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-2.5 text-[13px] outline-none placeholder:text-ink-faint"
+            placeholder={`Search ${FOODS.length} foods…`}
+            value={foodQuery}
+            onChange={(e) => setFoodQuery(e.target.value)}
+          />
+          {foodMatches ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {foodMatches.map((f) => (
                 <button
                   key={f.id}
-                  onClick={() => addMealEntry(date, { label: `${f.name} (${f.serving})`, proteinG: f.proteinG, kcal: f.kcal, source: 'chip', foodId: f.id })}
-                  className="shrink-0 rounded-xl border border-edge bg-surface-2 px-3 py-2 text-left active:border-accent/40"
+                  onClick={() => {
+                    addMealEntry(date, { label: `${f.name} (${f.serving})`, proteinG: f.proteinG, kcal: f.kcal, source: 'chip', foodId: f.id })
+                    setAdded((n) => n + 1)
+                  }}
+                  className="rounded-xl border border-edge bg-surface-2 px-3 py-2 text-left active:border-accent/40"
                 >
                   <div className="text-[12px] font-bold leading-tight">{f.name}</div>
                   <div className="text-[10px] font-semibold text-ink-faint">
@@ -196,116 +320,86 @@ export function MealsScreen() {
                   </div>
                 </button>
               ))}
+              {foodMatches.length === 0 && (
+                <p className="w-full py-2 text-center text-[12px] text-ink-faint">
+                  Nothing matches — log it with your own numbers below.
+                </p>
+              )}
             </div>
-          </div>
-        ))
-      )}
-
-      {recents.length > 0 && !foodMatches && (
-        <>
-          <div className="mb-1 px-1 text-[10px] font-black uppercase tracking-wider text-ink-faint">Your recents</div>
-          <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1">
-            {recents.map((r) => (
-              <button
-                key={r.label}
-                onClick={() => addMealEntry(date, { label: r.label, proteinG: r.proteinG, kcal: r.kcal, source: 'recent' })}
-                className="shrink-0 rounded-xl border border-cyan/25 bg-cyan/5 px-3 py-2 text-left"
-              >
-                <div className="text-[12px] font-bold leading-tight text-cyan">{r.label}</div>
-                <div className="text-[10px] font-semibold text-ink-faint">{r.proteinG}g P · {r.kcal} kcal</div>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      <Btn kind="subtle" className="w-full" onClick={() => setCustomOpen(true)}>
-        + Custom entry
-      </Btn>
-
-      {/* Logged entries */}
-      <SectionTitle>Logged {day?.entries.length ? `(${day.entries.length})` : ''}</SectionTitle>
-      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
-        {(day?.entries ?? []).map((e, i) => (
-          <div
-            key={e.id}
-            className={`flex items-center justify-between gap-2 px-4 py-2.5 ${i > 0 ? 'border-t border-edge/50' : ''}`}
-          >
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-bold">{e.label}</div>
-              <div className="text-[11px] font-semibold text-ink-faint">
-                {Math.round(e.proteinG * e.servings)}g P · {Math.round(e.kcal * e.servings)} kcal
-                {e.servings !== 1 && ` · ${e.servings}×`}
-              </div>
+          ) : (
+            <div className="mt-2 space-y-2">
+              {(['protein', 'carb', 'fat', 'snack'] as const).map((cat) => (
+                <div key={cat}>
+                  <div className="mb-1 px-1 text-[10px] font-black uppercase tracking-wider text-ink-faint">
+                    {cat === 'protein' ? 'Proteins (the priority)' : cat === 'carb' ? 'Carbs' : cat === 'fat' ? 'Fats' : 'Snacks & veg'}
+                  </div>
+                  <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1">
+                    {FOODS.filter((f) => (cat === 'snack' ? f.category === 'snack' || f.category === 'veg' : f.category === cat)).map((f) => (
+                      <button
+                        key={f.id}
+                        onClick={() => {
+                          addMealEntry(date, { label: `${f.name} (${f.serving})`, proteinG: f.proteinG, kcal: f.kcal, source: 'chip', foodId: f.id })
+                          setAdded((n) => n + 1)
+                        }}
+                        className="shrink-0 rounded-xl border border-edge bg-surface-2 px-3 py-2 text-left active:border-accent/40"
+                      >
+                        <div className="text-[12px] font-bold leading-tight">{f.name}</div>
+                        <div className="text-[10px] font-semibold text-ink-faint">
+                          {f.serving} · {f.proteinG}g P · {f.kcal} kcal
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-1">
-              <button className="h-8 w-8 rounded-lg bg-surface-2 text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings - 0.5)}>−</button>
-              <button className="h-8 w-8 rounded-lg bg-surface-2 text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings + 0.5)}>+</button>
-              <button className="h-8 w-8 rounded-lg text-sm font-bold text-danger" onClick={() => removeMealEntry(date, e.id)}>✕</button>
-            </div>
-          </div>
-        ))}
-        {!day?.entries.length && (
-          <p className="px-4 py-4 text-center text-[12.5px] text-ink-faint">Nothing logged yet. Five taps covers the whole day.</p>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Supplements — the user's stack */}
-      <SectionTitle
-        right={
-          <button onClick={() => setStackOpen(true)} className="text-[11px] font-bold text-accent underline">
-            edit stack
-          </button>
-        }
-      >
-        Supplements
-      </SectionTitle>
-      <div className="grid grid-cols-2 gap-2">
-        {mealPlan.supplements.map((s) => {
-          const on = day?.supplements[s.id] ?? false
-          return (
-            <button
-              key={s.id}
-              onClick={() => toggleSupplement(date, s.id)}
-              className={`rounded-xl border p-3 text-left ${on ? 'border-lime/40 bg-lime/8' : 'border-edge bg-surface'}`}
+        {/* Custom numbers — takeout, restaurant, whatever */}
+        <div>
+          <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">Anything else</div>
+          <div className="space-y-2">
+            <input className={`${field} w-full`} placeholder="What was it?" value={name} onChange={(e) => setName(e.target.value)} />
+            <div className="flex gap-2">
+              <input inputMode="numeric" className={`${field} flex-1`} placeholder="Protein (g)" value={protein} onChange={(e) => setProtein(e.target.value)} />
+              <input inputMode="numeric" className={`${field} flex-1`} placeholder="Calories" value={kcal} onChange={(e) => setKcal(e.target.value)} />
+            </div>
+            <Btn
+              kind="subtle"
+              className="w-full"
+              disabled={!name || !protein}
+              onClick={() => {
+                addMealEntry(date, { label: name, proteinG: parseFloat(protein) || 0, kcal: parseFloat(kcal) || 0, source: 'custom' })
+                onClose()
+              }}
             >
-              <div className={`text-[12.5px] font-bold ${on ? 'text-lime' : 'text-ink'}`}>
-                {on ? '✓ ' : ''}{s.name}
-              </div>
-              <div className="text-[10.5px] text-ink-faint">{s.dose} · {s.when}</div>
-            </button>
-          )
-        })}
-        {mealPlan.supplements.length === 0 && (
-          <p className="col-span-2 py-2 text-center text-[12px] text-ink-faint">
-            No stack — add what you actually take with “edit stack”.
-          </p>
-        )}
+              Log it
+            </Btn>
+            <p className="text-[11px] text-ink-faint">Custom entries land in your recents for one-tap next time.</p>
+          </div>
+        </div>
       </div>
-
-      <div className="border-l-2 border-edge py-1 pl-3">
-        <div className="text-[10.5px] font-black uppercase tracking-wider text-ink-faint">Late night?</div>
-        <p className="mt-0.5 text-[11.5px] leading-snug text-ink-dim">
-          <span className="font-bold text-lime">Yes:</span> {mealPlan.lateNight.yes.join(', ')} ·{' '}
-          <span className="font-bold text-danger">No:</span> {mealPlan.lateNight.no.join(', ')}
-        </p>
-      </div>
-
-      <CustomEntrySheet open={customOpen} onClose={() => setCustomOpen(false)} date={date} />
-      <Sheet open={groceryOpen} onClose={() => setGroceryOpen(false)} title="Grocery list">
-        <GroceryList />
-      </Sheet>
-      {myMealsOpen && <MyMealsSheet onClose={() => setMyMealsOpen(false)} />}
-      {stackOpen && <SupplementStackSheet onClose={() => setStackOpen(false)} />}
-    </div>
+    </Sheet>
   )
 }
 
-/** Add / edit / delete the plan's one-tap meals — they're YOURS. */
-function MyMealsSheet({ onClose }: { onClose: () => void }) {
-  const templates = useAppStore((s) => s.data.plan.mealPlan.templates)
+// ============================================================
+// My plan — the user's meals as first-class data. Tap any meal
+// for common-grocery alternatives at matching macros; bring your
+// own plan by clearing the starter meals and adding yours.
+// ============================================================
+
+function PlanView({ onEditStack }: { onEditStack: () => void }) {
+  const plan = useAppStore((s) => s.data.plan.mealPlan)
   const update = useAppStore((s) => s.update)
+  const [dt, setDt] = useState<'training' | 'rest'>('training')
+  const [openMeal, setOpenMeal] = useState<MealTemplateDef | null>(null)
   const [editing, setEditing] = useState<MealTemplateDef | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
+
+  const meals = plan.templates.filter((t) => t.dayType === dt)
+  const totals = meals.reduce((a, t) => ({ p: a.p + t.proteinG, k: a.k + t.kcal }), { p: 0, k: 0 })
 
   function save(t: MealTemplateDef) {
     update((d) => {
@@ -315,6 +409,7 @@ function MyMealsSheet({ onClose }: { onClose: () => void }) {
       else list.push(t)
     })
     setEditing(null)
+    setOpenMeal(null)
   }
 
   function remove(id: string) {
@@ -322,60 +417,223 @@ function MyMealsSheet({ onClose }: { onClose: () => void }) {
       d.plan.mealPlan.templates = d.plan.mealPlan.templates.filter((x) => x.id !== id)
     })
     setEditing(null)
-  }
-
-  if (editing) {
-    return (
-      <MealForm
-        value={editing}
-        onSave={save}
-        onDelete={templates.some((t) => t.id === editing.id) ? () => remove(editing.id) : undefined}
-        onClose={() => setEditing(null)}
-      />
-    )
+    setOpenMeal(null)
   }
 
   return (
-    <Sheet open onClose={onClose} title="My meals">
-      <div className="space-y-4 pb-6">
-        <p className="text-[12px] leading-snug text-ink-faint">
-          These are the one-tap meals on your Fuel screen — make them YOUR real food. Protein and
-          calories are what count; the name is for you.
+    <div className="space-y-3">
+      <div className="border-l-2 border-cyan/60 py-1 pl-3 text-[12.5px] leading-snug text-cyan/90">
+        Your day of eating, as one-tap meals. Already have a plan? Add your meals here — rough protein
+        and calories are enough. Tap any meal for swaps built from common groceries.
+      </div>
+
+      <div className="flex gap-2">
+        {(['training', 'rest'] as const).map((x) => (
+          <Chip key={x} tone={dt === x ? 'accent' : 'default'} onClick={() => setDt(x)}>
+            {x === 'training' ? 'Training days' : 'Rest days'}
+          </Chip>
+        ))}
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+        {meals.map((t, i) => (
+          <button
+            key={t.id}
+            onClick={() => setOpenMeal(t)}
+            className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left active:bg-surface-2 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-[13.5px] font-extrabold">
+                {t.slot} — {t.name}
+              </span>
+              {t.detail && <span className="mt-0.5 block truncate text-[11px] text-ink-faint">{t.detail}</span>}
+            </span>
+            <span className="shrink-0 text-right font-mono text-[11.5px] text-ink-faint">
+              {t.proteinG}g · {t.kcal} kcal
+            </span>
+          </button>
+        ))}
+        {meals.length === 0 && (
+          <p className="px-4 py-5 text-center text-[12.5px] text-ink-faint">
+            No meals yet for {dt === 'training' ? 'training' : 'rest'} days — add your first below.
+          </p>
+        )}
+      </div>
+
+      {meals.length > 0 && (
+        <p className="px-1 text-[11px] font-semibold text-ink-faint">
+          Day adds up to {totals.p}g protein · ~{totals.k} kcal
         </p>
-        {(['training', 'rest'] as const).map((dt) => (
-          <div key={dt}>
-            <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
-              {dt === 'training' ? 'Training days' : 'Rest days'}
-            </div>
-            <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
-              {templates.filter((t) => t.dayType === dt).map((t, i) => (
-                <button
-                  key={t.id}
-                  onClick={() => setEditing({ ...t })}
-                  className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left ${i > 0 ? 'border-t border-edge/50' : ''}`}
-                >
-                  <span className="min-w-0 truncate text-[13px] font-bold">
-                    {t.slot} — {t.name}
-                  </span>
-                  <span className="shrink-0 font-mono text-[11.5px] text-ink-faint">
-                    {t.proteinG}g · {t.kcal} kcal
-                  </span>
-                </button>
-              ))}
-              {templates.filter((t) => t.dayType === dt).length === 0 && (
-                <p className="px-4 py-3 text-center text-[12px] text-ink-faint">None yet.</p>
-              )}
-            </div>
+      )}
+
+      <Btn
+        className="w-full"
+        onClick={() =>
+          setEditing({ id: uid(), dayType: dt, slot: 'Meal', name: '', detail: '', proteinG: 40, kcal: 500 })
+        }
+      >
+        + Add a meal
+      </Btn>
+
+      {plan.templates.length > 0 && (
+        <button
+          className="w-full py-1 text-center text-[11.5px] font-semibold text-ink-faint underline"
+          onClick={() => {
+            if (!confirmClear) {
+              setConfirmClear(true)
+              setTimeout(() => setConfirmClear(false), 4000)
+              return
+            }
+            update((d) => {
+              d.plan.mealPlan.templates = []
+            })
+            setConfirmClear(false)
+          }}
+        >
+          {confirmClear
+            ? `Tap again to clear all ${plan.templates.length} meals and start from yours`
+            : 'Bringing your own plan? Clear these and build yours'}
+        </button>
+      )}
+
+      {/* Stack + late-night live with the plan, not the daily log */}
+      <SectionTitle
+        right={
+          <button onClick={onEditStack} className="text-[11px] font-bold text-accent underline">
+            edit stack
+          </button>
+        }
+      >
+        Supplement stack
+      </SectionTitle>
+      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+        {plan.supplements.map((s, i) => (
+          <div key={s.id} className={`flex items-center justify-between px-4 py-2.5 ${i > 0 ? 'border-t border-edge/50' : ''}`}>
+            <span className="text-[13px] font-bold">{s.name}</span>
+            <span className="text-[11px] text-ink-faint">{s.dose} · {s.when}</span>
           </div>
         ))}
-        <Btn
-          className="w-full"
-          onClick={() =>
-            setEditing({ id: uid(), dayType: 'training', slot: 'Meal', name: '', detail: '', proteinG: 40, kcal: 500 })
+        {plan.supplements.length === 0 && (
+          <p className="px-4 py-3 text-center text-[12px] text-ink-faint">No stack — add what you actually take.</p>
+        )}
+      </div>
+
+      <div className="border-l-2 border-edge py-1 pl-3">
+        <div className="text-[10.5px] font-black uppercase tracking-wider text-ink-faint">Late night?</div>
+        <p className="mt-0.5 text-[11.5px] leading-snug text-ink-dim">
+          <span className="font-bold text-lime">Yes:</span> {plan.lateNight.yes.join(', ')} ·{' '}
+          <span className="font-bold text-danger">No:</span> {plan.lateNight.no.join(', ')}
+        </p>
+      </div>
+
+      {openMeal && !editing && (
+        <MealDetailSheet
+          meal={openMeal}
+          onEdit={() => setEditing({ ...openMeal })}
+          onReplace={(alt) =>
+            save({
+              ...openMeal,
+              name: alt.name,
+              detail: alt.ingredients.join(', '),
+              proteinG: alt.proteinG,
+              kcal: alt.kcal,
+            })
           }
-        >
-          + New meal
-        </Btn>
+          onAddAlt={(alt) =>
+            save({
+              id: uid(),
+              dayType: openMeal.dayType,
+              slot: openMeal.slot,
+              name: alt.name,
+              detail: alt.ingredients.join(', '),
+              proteinG: alt.proteinG,
+              kcal: alt.kcal,
+            })
+          }
+          onClose={() => setOpenMeal(null)}
+        />
+      )}
+      {editing && (
+        <MealForm
+          value={editing}
+          onSave={save}
+          onDelete={plan.templates.some((t) => t.id === editing.id) ? () => remove(editing.id) : undefined}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+/** One meal up close: its numbers, edit access, and grocery-store swaps. */
+function MealDetailSheet({
+  meal,
+  onEdit,
+  onReplace,
+  onAddAlt,
+  onClose,
+}: {
+  meal: MealTemplateDef
+  onEdit: () => void
+  onReplace: (alt: { name: string; ingredients: string[]; proteinG: number; kcal: number }) => void
+  onAddAlt: (alt: { name: string; ingredients: string[]; proteinG: number; kcal: number }) => void
+  onClose: () => void
+}) {
+  const alts = useMemo(
+    () => mealAlternatives({ proteinG: meal.proteinG, kcal: meal.kcal, slot: meal.slot, excludeName: meal.name }),
+    [meal],
+  )
+
+  return (
+    <Sheet open onClose={onClose} title={`${meal.slot} — ${meal.name}`}>
+      <div className="space-y-4 pb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-mono text-[20px] font-black text-accent-soft">{meal.proteinG}g protein</div>
+            <div className="font-mono text-[12px] text-ink-faint">~{meal.kcal} kcal</div>
+          </div>
+          <Btn kind="subtle" className="!py-2" onClick={onEdit}>
+            Edit meal
+          </Btn>
+        </div>
+        {meal.detail && <p className="text-[12.5px] leading-snug text-ink-dim">{meal.detail}</p>}
+
+        <div>
+          <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
+            Same macros, common groceries
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+            {alts.map((a, i) => (
+              <div key={a.id} className={`px-4 py-3 ${i > 0 ? 'border-t border-edge/50' : ''}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-[13.5px] font-extrabold">{a.name}</span>
+                  <span className="shrink-0 font-mono text-[11.5px] text-ink-faint">
+                    {a.proteinG}g · {a.kcal} kcal
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[11.5px] leading-snug text-ink-faint">{a.ingredients.join(' · ')}</p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    className="flex-1 rounded-lg border border-accent/35 bg-accent/10 py-2 text-[12px] font-bold text-accent-soft"
+                    onClick={() => onReplace(a)}
+                  >
+                    Use instead
+                  </button>
+                  <button
+                    className="flex-1 rounded-lg border border-edge bg-surface-2 py-2 text-[12px] font-bold text-ink-dim"
+                    onClick={() => onAddAlt(a)}
+                  >
+                    + Add to plan
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-1.5 px-1 text-[11px] leading-snug text-ink-faint">
+            Swaps match this meal's protein and calories as closely as possible using everyday
+            ingredients — the plan holds even when the fridge changes.
+          </p>
+        </div>
       </div>
     </Sheet>
   )
@@ -510,59 +768,6 @@ function SupplementStackSheet({ onClose }: { onClose: () => void }) {
         >
           Add to stack
         </Btn>
-      </div>
-    </Sheet>
-  )
-}
-
-function CustomEntrySheet({ open, onClose, date }: { open: boolean; onClose: () => void; date: string }) {
-  const [name, setName] = useState('')
-  const [protein, setProtein] = useState('')
-  const [kcal, setKcal] = useState('')
-  return (
-    <Sheet open={open} onClose={onClose} title="Custom entry">
-      <div className="space-y-3 pb-6">
-        <input
-          className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint"
-          placeholder="What was it?"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <div className="flex gap-2">
-          <input
-            inputMode="numeric"
-            className="flex-1 rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint"
-            placeholder="Protein (g)"
-            value={protein}
-            onChange={(e) => setProtein(e.target.value)}
-          />
-          <input
-            inputMode="numeric"
-            className="flex-1 rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint"
-            placeholder="Calories"
-            value={kcal}
-            onChange={(e) => setKcal(e.target.value)}
-          />
-        </div>
-        <Btn
-          className="w-full"
-          disabled={!name || !protein}
-          onClick={() => {
-            addMealEntry(date, {
-              label: name,
-              proteinG: parseFloat(protein) || 0,
-              kcal: parseFloat(kcal) || 0,
-              source: 'custom',
-            })
-            setName('')
-            setProtein('')
-            setKcal('')
-            onClose()
-          }}
-        >
-          Log it
-        </Btn>
-        <p className="text-[11px] text-ink-faint">Saved to your recents for one-tap next time.</p>
       </div>
     </Sheet>
   )
