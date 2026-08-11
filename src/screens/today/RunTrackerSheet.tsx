@@ -94,9 +94,17 @@ export function RunTrackerSheet({
   const pace = paceSecPerMi(distance, elapsed)
   const label = activity === 'run' ? 'Run' : 'Ride'
 
+  const [scrapped, setScrapped] = useState(false)
+
   function finish() {
     if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
     void wakeRef.current?.release?.()
+    // False start: nothing moved, seconds on the clock — log NOTHING.
+    if (totalDistanceMi(pointsRef.current) < 0.05 && elapsed < 120) {
+      setScrapped(true)
+      setPhase('done')
+      return
+    }
     const log = buildRunLog(uid(), activity, date, startedAtIso.current, elapsed, points)
     const rx = reactionForRun(log, pastRuns)
     saveRun(log)
@@ -178,7 +186,20 @@ export function RunTrackerSheet({
           </>
         )}
 
-        {phase === 'done' && saved && (
+        {phase === 'done' && scrapped && (
+          <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <div className="text-[13px] font-black uppercase tracking-[0.2em] text-ink-faint">False start</div>
+            <p className="mt-3 max-w-[30ch] text-[13.5px] leading-relaxed text-ink-dim">
+              Nothing moved yet, so nothing was logged. Step outside, let the dot find you, and give it a
+              real go.
+            </p>
+            <Btn kind="ghost" className="mt-6 w-full max-w-xs" onClick={onClose}>
+              Done
+            </Btn>
+          </div>
+        )}
+
+        {phase === 'done' && !scrapped && saved && (
           <div className="space-y-3 pb-4">
             <div className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-accent">
               {label} banked ✓ — cardio logged for today
@@ -201,9 +222,10 @@ export function RunTrackerSheet({
                 disabled={!cardUrl}
                 onClick={() => {
                   if (!cardBlobRef.current) return
-                  void shareRunCard(saved, cardBlobRef.current).then((r) =>
-                    setShareNote(r === 'shared' ? 'Shared ✓' : 'Saved to your downloads ✓'),
-                  )
+                  void shareRunCard(saved, cardBlobRef.current).then((r) => {
+                    if (r === 'cancelled') return
+                    setShareNote(r === 'shared' ? 'Shared ✓' : 'Saved to your downloads ✓')
+                  })
                 }}
               >
                 Share the card

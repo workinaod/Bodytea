@@ -190,16 +190,21 @@ export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise
   return await new Promise<Blob | null>((res) => c.toBlob((b) => res(b), 'image/png'))
 }
 
-/** Share the card via the native sheet, or download it where share isn't supported. */
-export async function shareRunCard(log: RunLog, blob: Blob): Promise<'shared' | 'downloaded'> {
+/**
+ * Share via the native sheet. Cancelling the sheet does NOTHING (no
+ * surprise file popups); download is only the fallback when the share
+ * sheet genuinely isn't available or errored.
+ */
+export async function shareRunCard(log: RunLog, blob: Blob): Promise<'shared' | 'downloaded' | 'cancelled'> {
   const file = new File([blob], `bodytea-${log.activity}-${log.date}.png`, { type: 'image/png' })
   const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean }
   if (nav.canShare?.({ files: [file] }) && navigator.share) {
     try {
       await navigator.share({ files: [file], title: `${log.distanceMi.toFixed(2)} mi ${log.activity}` })
       return 'shared'
-    } catch {
-      /* user cancelled — fall through to download */
+    } catch (err) {
+      if ((err as { name?: string })?.name === 'AbortError') return 'cancelled'
+      /* real failure — fall through to download */
     }
   }
   const url = URL.createObjectURL(blob)
