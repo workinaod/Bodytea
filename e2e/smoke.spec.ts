@@ -70,10 +70,13 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
     await page.reload()
     await expect(page.getByText(/Set \d+ of/)).toBeVisible()
 
-    // ---- Switch to list view and finish → debrief ----
+    // ---- Switch to list view and finish → quit gate → debrief ----
     await page.getByRole('button', { name: /list/ }).click()
     await expect(page.getByText(/sets ·/)).toBeVisible()
     await page.getByRole('button', { name: /Finish session/ }).click()
+    // sets are still open, so the quit confirmation must intercept
+    await expect(page.getByText('Quit the session?')).toBeVisible()
+    await page.getByRole('button', { name: /Yes, quit/ }).click()
     await expect(page.getByText('Session debrief')).toBeVisible()
     await expect(page.getByText('Eat now')).toBeVisible()
     await expect(page.getByRole('heading', { name: /Sleep/ })).toBeVisible()

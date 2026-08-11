@@ -92,9 +92,24 @@ export function TodayScreen() {
   }
 
   function handleFinish() {
+    setConfirmEnd(false)
     const d = finishSession(date)
     const line = useAppStore.getState().data.coach.feed.find((f) => f.kind === 'coach' && f.situation === 'pr')
     setDebrief({ data: d, coachLine: line && line.at.slice(0, 10) === todayISO() ? line.text : undefined })
+  }
+
+  // A finish tap with work still on the table needs a real yes — one
+  // mis-tap must never end the day (learned the hard way).
+  const [confirmEnd, setConfirmEnd] = useState(false)
+  function requestFinish() {
+    const s = session
+    if (!s) return
+    const considered = s.exercises.filter(
+      (e, i) => !e.skipped && (s.trimmedFromIndex === undefined || i < s.trimmedFromIndex),
+    )
+    const allDone = considered.length > 0 && considered.every((e) => e.sets.every((x) => x.done))
+    if (allDone) handleFinish()
+    else setConfirmEnd(true)
   }
 
   return (
@@ -269,7 +284,7 @@ export function TodayScreen() {
           day={day}
           session={session}
           onOpenGuide={setGuideId}
-          onFinish={handleFinish}
+          onFinish={requestFinish}
           onSkip={() => setSkipOpen(true)}
           onListView={() => setViewMode('list')}
         />
@@ -286,10 +301,43 @@ export function TodayScreen() {
             day={day}
             session={session}
             onOpenGuide={setGuideId}
-            onFinish={handleFinish}
+            onFinish={requestFinish}
             onSkip={() => setSkipOpen(true)}
           />
         </>
+      )}
+
+      {/* Quit gate: ending with sets still open takes a deliberate yes */}
+      {confirmEnd && session && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/70 animate-fade-in" onClick={() => setConfirmEnd(false)} />
+          <div className="relative w-full max-w-sm rounded-2xl border border-danger/40 bg-bg p-5 shadow-2xl animate-fade-in">
+            <h3 className="text-[17px] font-black tracking-tight text-danger">Quit the session?</h3>
+            <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">
+              You still have unfinished work —{' '}
+              {(() => {
+                const total = session.exercises.reduce((n, e) => n + e.sets.length, 0)
+                const done = session.exercises.reduce((n, e) => n + e.sets.filter((x) => x.done).length, 0)
+                return `${done} of ${total} sets logged`
+              })()}
+              . Ending now closes the day as a partial, not a completion.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                className="w-full rounded-xl bg-accent py-3 text-[14px] font-black text-black active:scale-[0.98]"
+                onClick={() => setConfirmEnd(false)}
+              >
+                No — keep training
+              </button>
+              <button
+                className="w-full rounded-xl border border-danger/40 bg-surface-2 py-3 text-[13px] font-bold text-danger active:scale-[0.98]"
+                onClick={handleFinish}
+              >
+                Yes, quit — log it as partial
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Required cardio: the chooser IS the day until an option is picked */}

@@ -342,3 +342,57 @@ describe('v13 → v14: the basketball voice becomes owner-only', () => {
     expect(parseEnvelope(JSON.stringify(env2)).data.plan.sportMode).toBe('generic')
   })
 })
+
+describe('v14 → v15: un-finish the mis-tapped Aug 11 session', () => {
+  type Env = { schemaVersion: number; data: ReturnType<typeof fixtureData> }
+
+  function withAug11(session: Partial<ReturnType<typeof fixtureData>['sessions'][string]>): Env {
+    const env = JSON.parse(serializeState(fixtureData())) as Env
+    env.schemaVersion = 14
+    env.data.sessions['2026-08-11'] = {
+      date: '2026-08-11',
+      templateId: 'tuesday',
+      status: 'partial',
+      startedAt: '2026-08-11T15:00:00.000Z',
+      endedAt: '2026-08-11T15:04:00.000Z',
+      exercises: [
+        { exerciseId: 'box-jump', sets: [{ targetReps: '3', reps: 3, done: true }] },
+        { exerciseId: 'goblet-squat', sets: [{ targetReps: '6-8', reps: 8, done: false }] },
+      ],
+      ...session,
+    }
+    env.data.coach.feed.push({
+      id: 'dbf1',
+      at: '2026-08-11T15:04:01.000Z',
+      kind: 'debrief',
+      text: 'Debrief — phantom',
+      debrief: { date: '2026-08-11', title: 'phantom', recap: [], recovery: [], eat: [], sleep: [], tomorrow: '' },
+    })
+    return env
+  }
+
+  it('removes a session ended during the first exercise, and its debrief', () => {
+    const parsed = parseEnvelope(JSON.stringify(withAug11({})))
+    expect(parsed.data.sessions['2026-08-11']).toBeUndefined()
+    expect(parsed.data.coach.feed.some((f) => f.kind === 'debrief' && f.debrief?.date === '2026-08-11')).toBe(false)
+    expect(parsed.data.sessions['2026-08-10']).toBeDefined() // neighbors untouched
+  })
+
+  it('keeps real partials: work logged past the first exercise', () => {
+    const env = withAug11({
+      exercises: [
+        { exerciseId: 'box-jump', sets: [{ targetReps: '3', reps: 3, done: true }] },
+        { exerciseId: 'goblet-squat', sets: [{ targetReps: '6-8', reps: 8, done: true }] },
+      ],
+    })
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.data.sessions['2026-08-11']).toBeDefined()
+  })
+
+  it('keeps sessions that were never ended', () => {
+    const env = withAug11({ endedAt: undefined })
+    delete (env.data.sessions['2026-08-11'] as { endedAt?: string }).endedAt
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.data.sessions['2026-08-11']).toBeDefined()
+  })
+})

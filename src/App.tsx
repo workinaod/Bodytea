@@ -13,12 +13,20 @@ import { ReconcileSheet } from './screens/ReconcileSheet'
 import { dailyCoachSweep } from './logic/actions'
 import { refreshReminders, syncReminderMeta } from './logic/reminders'
 import { startClock, useToday } from './logic/clock'
+import { lateNightGraceDate } from './engine/rollover'
 
 export default function App() {
   const onboarded = useAppStore((s) => s.data.settings.onboarded)
+  const sessions = useAppStore((s) => s.data.sessions)
   const today = useToday()
   const [tab, setTab] = useState<TabId>('today')
   const [track, setTrack] = useState<'choose' | 'run' | 'bike' | null>(null)
+
+  // A live session on the home date folds the tab bar into the glow strip
+  // (only where the session UI actually is — the Today tab).
+  const homeDate = lateNightGraceDate(sessions, today, new Date()) ?? today
+  const live = sessions[homeDate]
+  const sessionLive = !!live && live.status === 'partial' && !live.endedAt && !!live.startedAt
 
   useEffect(() => {
     // Cloud sync restores only for devices that have used an account —
@@ -66,7 +74,7 @@ export default function App() {
       {tab === 'progress' && <ProgressScreen />}
       {tab === 'coach' && <CoachScreen />}
 
-      <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} />
+      <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} session={sessionLive && tab === 'today'} />
       <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track with GPS">
         <div className="space-y-2 pb-8">
           <p className="text-[12.5px] leading-snug text-ink-dim">

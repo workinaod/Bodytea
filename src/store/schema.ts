@@ -529,6 +529,29 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     return env
   },
+  // v14 → v15: repair. Before the quit-confirmation existed, a mis-tap on
+  // 2026-08-11 could end a session during the FIRST exercise. Exactly that
+  // shape — ended, still 'partial', nothing logged past exercise one — is
+  // un-finished here: the phantom session and its debrief entry are removed
+  // so the day starts clean. Real partials (work past exercise one) keep.
+  14: (env) => {
+    const e = env as {
+      data?: {
+        sessions?: Record<string, { endedAt?: string; status?: string; exercises?: { sets?: { done?: boolean }[] }[] }>
+        coach?: { feed?: { kind?: string; debrief?: { date?: string } }[] }
+      }
+    }
+    const s = e.data?.sessions?.['2026-08-11']
+    const pastFirst = !!s?.exercises?.slice(1).some((ex) => ex.sets?.some((st) => st.done))
+    if (s && s.endedAt && s.status === 'partial' && !pastFirst) {
+      delete e.data!.sessions!['2026-08-11']
+      const feed = e.data?.coach?.feed
+      if (feed) {
+        e.data!.coach!.feed = feed.filter((f) => !(f.kind === 'debrief' && f.debrief?.date === '2026-08-11'))
+      }
+    }
+    return env
+  },
 }
 
 export function migrate(env: unknown): Envelope {

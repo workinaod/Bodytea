@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+
 export type TabId = 'today' | 'week' | 'meals' | 'progress' | 'coach'
 
 const ICONS: Record<TabId, (active: boolean) => JSX.Element> = {
@@ -59,14 +61,85 @@ function TabButton({ id, label, active, onClick }: { id: TabId; label: string; a
 /**
  * Five tabs around a raised center button: the GPS run/ride tracker
  * gets the Strava treatment — one thumb, straight into recording.
+ *
+ * While a session is live on the Today tab the whole bar folds into a
+ * thin glowing strip at the screen's bottom edge — the session buttons
+ * take its place. Tap or swipe the strip up and the real bar slides
+ * back over the session row (and tucks away again after a tab pick or
+ * a few seconds of quiet).
  */
-export function TabBar({ tab, onChange, onTrack }: { tab: TabId; onChange: (t: TabId) => void; onTrack: () => void }) {
+export function TabBar({
+  tab,
+  onChange,
+  onTrack,
+  session = false,
+}: {
+  tab: TabId
+  onChange: (t: TabId) => void
+  onTrack: () => void
+  session?: boolean
+}) {
+  const [peek, setPeek] = useState(false)
+  const touchY = useRef<number | null>(null)
+
+  useEffect(() => setPeek(false), [session, tab])
+  useEffect(() => {
+    if (!peek) return
+    const id = window.setTimeout(() => setPeek(false), 6000)
+    return () => window.clearTimeout(id)
+  }, [peek])
+
+  if (session && !peek) {
+    return (
+      <button
+        aria-label="Show navigation"
+        onClick={() => setPeek(true)}
+        onTouchStart={(e) => {
+          touchY.current = e.touches[0]?.clientY ?? null
+        }}
+        onTouchMove={(e) => {
+          const y = e.touches[0]?.clientY
+          if (touchY.current !== null && y !== undefined && touchY.current - y > 12) {
+            touchY.current = null
+            setPeek(true)
+          }
+        }}
+        onTouchEnd={() => {
+          touchY.current = null
+        }}
+        className="nav-glow fixed inset-x-16 bottom-[max(env(safe-area-inset-bottom),10px)] z-40 mx-auto h-[16px] max-w-xs rounded-full opacity-90 active:scale-x-95"
+      >
+        <span className="sr-only">Show navigation</span>
+      </button>
+    )
+  }
+
+  const pick = (t: TabId) => {
+    if (session) setPeek(false)
+    onChange(t)
+  }
+
   return (
-    <nav className="fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),10px)] z-40 mx-auto max-w-lg">
+    <nav
+      className={`fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),10px)] z-40 mx-auto max-w-lg ${session ? 'animate-rise' : ''}`}
+      onTouchStart={(e) => {
+        if (session) touchY.current = e.touches[0]?.clientY ?? null
+      }}
+      onTouchMove={(e) => {
+        const y = e.touches[0]?.clientY
+        if (session && touchY.current !== null && y !== undefined && y - touchY.current > 14) {
+          touchY.current = null
+          setPeek(false)
+        }
+      }}
+      onTouchEnd={() => {
+        touchY.current = null
+      }}
+    >
       <div className="relative flex items-stretch rounded-[22px] border border-edge/80 bg-surface/92 px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_16px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur-xl">
         <div className="flex flex-1 items-stretch">
           {LEFT.map((t) => (
-            <TabButton key={t.id} id={t.id} label={t.label} active={tab === t.id} onClick={() => onChange(t.id)} />
+            <TabButton key={t.id} id={t.id} label={t.label} active={tab === t.id} onClick={() => pick(t.id)} />
           ))}
         </div>
 
@@ -86,7 +159,7 @@ export function TabBar({ tab, onChange, onTrack }: { tab: TabId; onChange: (t: T
 
         <div className="flex flex-1 items-stretch">
           {RIGHT.map((t) => (
-            <TabButton key={t.id} id={t.id} label={t.label} active={tab === t.id} onClick={() => onChange(t.id)} />
+            <TabButton key={t.id} id={t.id} label={t.label} active={tab === t.id} onClick={() => pick(t.id)} />
           ))}
         </div>
       </div>
