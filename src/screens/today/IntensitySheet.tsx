@@ -28,11 +28,11 @@ export function IntensitySheet({
   }, [day, plan])
 
   const options: { id: SessionIntensity; label: string; sub: string; hero?: boolean }[] = [
-    { id: 'full', label: 'Full session', sub: 'The day as written. The default answer.', hero: true },
+    { id: 'full', label: 'Full session', sub: 'The day exactly as written — go get it.', hero: true },
     {
       id: 'lighter',
-      label: 'Lighter today',
-      sub: 'Explosive volume −1/3, every lift light — leave 3 in the tank.',
+      label: 'Normal',
+      sub: 'Dialed back a notch: explosive volume −1/3, every lift light — 3 in the tank.',
     },
     {
       id: 'minimum',
@@ -63,7 +63,7 @@ export function IntensitySheet({
           </button>
         ))}
         <p className="px-1 text-[11px] leading-snug text-ink-faint">
-          Lighter and minimum log honestly — a downgraded win, not a full one. Still a win.
+          Normal and minimum trim the day honestly — the debrief logs what actually happened.
         </p>
       </div>
     </Sheet>

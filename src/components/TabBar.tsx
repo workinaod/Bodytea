@@ -107,7 +107,7 @@ export function TabBar({
         onTouchEnd={() => {
           touchY.current = null
         }}
-        className="nav-glow fixed inset-x-16 bottom-[max(env(safe-area-inset-bottom),10px)] z-40 mx-auto h-[16px] max-w-xs rounded-full opacity-90 active:scale-x-95"
+        className="nav-glow fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),8px)] z-20 mx-auto h-[20px] max-w-lg rounded-full opacity-90 active:scale-x-[0.98]"
       >
         <span className="sr-only">Show navigation</span>
       </button>

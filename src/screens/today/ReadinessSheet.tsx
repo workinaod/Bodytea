@@ -11,8 +11,8 @@ const FLAGS: { label: string; sub: string }[] = [
 ]
 
 const INTENSITIES: { id: SessionIntensity; label: string; sub: string }[] = [
-  { id: 'full', label: 'Full send', sub: 'The day as written.' },
-  { id: 'lighter', label: 'Lighter', sub: 'Volume −1/3, lifts light — 3 in the tank.' },
+  { id: 'full', label: 'Full send', sub: 'The day exactly as written.' },
+  { id: 'lighter', label: 'Normal', sub: 'Dialed back a notch: explosive volume −1/3, lifts light.' },
   { id: 'minimum', label: 'Bare minimum', sub: 'Shortest honest version. Beats zero.' },
 ]
 
@@ -87,7 +87,7 @@ export function ReadinessSheet({
         </div>
         <p className="mt-1.5 px-0.5 text-[11px] leading-snug text-ink-faint">
           {INTENSITIES.find((o) => o.id === intensity)?.sub}
-          {intensity !== 'full' && ' Logs as a downgraded win — still a win.'}
+          {intensity === 'minimum' && ' Logs as a downgraded win — still a win.'}
         </p>
       </div>
 
@@ -95,7 +95,7 @@ export function ReadinessSheet({
         <Btn className="flex-1" onClick={() => onStart(flags, intensity)}>
           {intensity === 'minimum'
             ? 'Start the bare minimum'
-            : downgrade || intensity === 'lighter'
+            : downgrade
               ? 'Start downgraded session'
               : 'Start session'}
         </Btn>

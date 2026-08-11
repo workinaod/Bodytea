@@ -193,9 +193,10 @@ export function SessionView({
         )
       })}
 
-      {/* The session's own bottom bar — it takes the nav's slot while the
-          nav rides above it as the glow strip */}
-      <div className="fixed inset-x-0 bottom-[calc(max(env(safe-area-inset-bottom),10px)+24px)] z-30 border-t border-edge bg-bg/95 px-4 py-3 backdrop-blur">
+      {/* The session's own bottom bar sits ON TOP of the nav's slot — only
+          a glowing sliver of the tucked-away nav peeks below it (slide that
+          to bring the real nav back) */}
+      <div className="fixed inset-x-0 bottom-[calc(max(env(safe-area-inset-bottom),8px)+12px)] z-30 border-t border-edge bg-bg/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-lg gap-2">
           <Btn kind="ghost" className="flex-1" onClick={onSkip}>
             Can't finish
