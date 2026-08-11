@@ -185,7 +185,7 @@ export function TodayScreen() {
       {!session && data.dayLoad[date] === 'trimmed' && (
         <button
           onClick={() => restoreToday(date)}
-          className="w-full rounded-full bg-surface-2 px-3.5 py-2.5 text-[12.5px] font-bold text-ink-dim"
+          className="w-full rounded-full bg-white/[0.07] px-3.5 py-2.5 text-[12.5px] font-bold text-ink-dim"
         >
           Day freed up? Restore the full session
         </button>
@@ -391,13 +391,13 @@ export function TodayScreen() {
             </p>
             <div className="mt-4 flex flex-col gap-2">
               <button
-                className="w-full rounded-xl bg-accent py-3 text-[14px] font-black text-black active:scale-[0.98]"
+                className="sheen w-full rounded-xl bg-gradient-to-b from-accent to-accent-deep py-3 text-[14px] font-black text-black shadow-lg shadow-accent/20 active:scale-[0.98]"
                 onClick={() => setConfirmEnd(false)}
               >
                 No, keep training
               </button>
               <button
-                className="w-full rounded-xl border border-danger/40 bg-surface-2 py-3 text-[13px] font-bold text-danger active:scale-[0.98]"
+                className="w-full rounded-xl border border-danger/40 bg-white/[0.07] py-3 text-[13px] font-bold text-danger active:scale-[0.98]"
                 onClick={handleFinish}
               >
                 Yes, quit and log what's done
@@ -424,7 +424,7 @@ export function TodayScreen() {
                   <button
                     key={c.exerciseId}
                     onClick={() => chooseCardio(date, c.exerciseId)}
-                    className="flex w-full items-center justify-between rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-left active:border-accent/40"
+                    className="flex w-full items-center justify-between rounded-xl bg-white/[0.07] px-3.5 py-3 text-left active:bg-white/[0.09]"
                   >
                     <span className="text-[13.5px] font-bold">{def.name}</span>
                     <span className="font-mono text-[11.5px] text-ink-dim">{c.repText}</span>

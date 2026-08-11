@@ -196,7 +196,7 @@ function PhotoDemo({
   return (
     <div className={className}>
       <div className="mx-auto w-full" style={{ maxWidth: compact ? undefined : 330 }}>
-        <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-surface-2">
+        <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-white/[0.07]">
           {frames.map((f, i) => (
             <img
               key={f.file + i}
@@ -214,7 +214,7 @@ function PhotoDemo({
       <div className={compact ? 'mt-1' : 'mt-1.5'}>
         <div className="flex items-center justify-center gap-1">
           {frames.map((_, i) => (
-            <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i === idx ? 'w-4 bg-accent' : 'w-1 bg-surface-2'}`} />
+            <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i === idx ? 'w-4 bg-accent' : 'w-1 bg-white/[0.07]'}`} />
           ))}
         </div>
         <div className={`mx-auto mt-1 max-w-[280px] text-center font-bold leading-snug text-accent-soft ${compact ? 'text-[10.5px]' : 'text-[12px]'}`}>
@@ -422,7 +422,7 @@ function FigureDemo({ spec, compact = false, className = '' }: { spec: DemoSpec;
       <div className={compact ? 'mt-0.5' : 'mt-1'}>
         <div className="flex items-center justify-center gap-1">
           {spec.frames.map((_, i) => (
-            <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i === segIdx ? 'w-4 bg-accent' : 'w-1 bg-surface-2'}`} />
+            <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i === segIdx ? 'w-4 bg-accent' : 'w-1 bg-white/[0.07]'}`} />
           ))}
         </div>
         {label && (

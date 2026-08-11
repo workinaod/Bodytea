@@ -52,7 +52,7 @@ export function SessionView({
         <div className="text-[12px] font-bold text-ink-faint">
           {doneSets}/{totalSets} sets · {fmtElapsed(session.startedAt)} elapsed
         </div>
-        <div className="h-1.5 w-28 overflow-hidden rounded-full bg-surface-2">
+        <div className="h-1.5 w-28 overflow-hidden rounded-full bg-white/[0.07]">
           <div
             className="h-full rounded-full bg-accent transition-all"
             style={{ width: `${totalSets ? (doneSets / totalSets) * 100 : 0}%` }}
@@ -82,12 +82,12 @@ export function SessionView({
             key={`${ex.exerciseId}-${exIdx}`}
             className={`rounded-2xl border transition-colors ${
               trimmed
-                ? 'border-edge bg-surface opacity-40'
+                ? 'border-edge bg-white/[0.05] opacity-40'
                 : allDone
                   ? 'border-lime/30 bg-lime/5'
                   : open
-                    ? 'border-accent/40 bg-surface'
-                    : 'border-edge bg-surface'
+                    ? 'border-accent/40 bg-white/[0.05]'
+                    : 'border-edge bg-white/[0.05]'
             }`}
           >
             <button
@@ -115,7 +115,7 @@ export function SessionView({
                     e.stopPropagation()
                     onOpenGuide(ex.exerciseId)
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-[13px] font-black text-cyan"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.07] text-[13px] font-black text-cyan"
                 >
                   ?
                 </span>
@@ -156,7 +156,7 @@ export function SessionView({
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-lg font-black transition-colors ${
                         set.done
                           ? 'border-lime/50 bg-lime text-black'
-                          : 'border-edge bg-surface-2 text-ink-faint'
+                          : 'border-edge bg-white/[0.07] text-ink-faint'
                       }`}
                     >
                       ✓

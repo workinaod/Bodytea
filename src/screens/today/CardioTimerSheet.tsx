@@ -59,7 +59,7 @@ export function CardioTimerSheet({
           <button
             aria-label="Close"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-ink-dim"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.07] text-ink-dim"
           >
             <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
               <path d="M6 6l12 12M18 6L6 18" />

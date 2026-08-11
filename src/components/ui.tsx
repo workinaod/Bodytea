@@ -14,12 +14,13 @@ export function Card({
   className?: string
   onClick?: () => void
 }) {
-  // Soft elevation, no outline: borders are opt-in (pass a border color
-  // and the transparent base width picks it up), boxes stop shouting.
+  // Layered glass, not a gray box: a faint top-lit gradient plus a
+  // hairline ring. Borders stay opt-in (pass a border color and the
+  // transparent base width picks it up).
   return (
     <div
       onClick={onClick}
-      className={`rounded-3xl border border-transparent bg-surface p-5 ${onClick ? 'cursor-pointer transition-transform active:scale-[0.99]' : ''} ${className}`}
+      className={`rounded-3xl border border-transparent bg-gradient-to-b from-white/[0.06] to-white/[0.025] ring-1 ring-white/[0.045] p-5 ${onClick ? 'cursor-pointer transition-transform duration-150 active:scale-[0.985]' : ''} ${className}`}
     >
       {children}
     </div>
@@ -51,7 +52,7 @@ export function Chip({
   className?: string
 }) {
   const tones: Record<string, string> = {
-    default: 'bg-surface-2 text-ink-dim border-edge',
+    default: 'bg-white/[0.07] text-ink-dim border-white/[0.05]',
     accent: 'bg-accent/15 text-accent-soft border-accent/30',
     lime: 'bg-lime/10 text-lime border-lime/25',
     cyan: 'bg-cyan/10 text-cyan border-cyan/25',
@@ -81,19 +82,21 @@ export function Btn({
   className?: string
   disabled?: boolean
 }) {
-  // Pills, flat color, no gradients or text shadows, confidence, not chrome.
+  // Depth without noise: primary CTAs carry a soft vertical gradient, a
+  // glossy top light (.sheen) and a color-tinted glow. Quiet kinds stay
+  // translucent glass, never opaque gray.
   const kinds: Record<string, string> = {
-    primary: 'bg-accent text-black font-bold',
-    lime: 'bg-lime text-black font-bold',
+    primary: 'sheen bg-gradient-to-b from-accent to-accent-deep text-black font-bold shadow-lg shadow-accent/25',
+    lime: 'sheen bg-gradient-to-b from-lime to-[#a9d63d] text-black font-bold shadow-lg shadow-lime/20',
     ghost: 'bg-white/[0.06] text-ink-dim font-semibold',
-    subtle: 'bg-surface-2 text-ink font-semibold',
+    subtle: 'bg-white/[0.08] text-ink font-semibold',
     danger: 'bg-danger/12 text-danger font-bold',
   }
   return (
     <button
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-full px-5 py-3 text-[13.5px] tracking-[0.01em] transition-all active:scale-[0.98] disabled:opacity-40 ${kinds[kind]} ${className}`}
+      className={`rounded-full px-5 py-3 text-[13.5px] tracking-[0.01em] transition-[transform,opacity,box-shadow] duration-150 active:scale-[0.97] disabled:opacity-40 disabled:shadow-none ${kinds[kind]} ${className}`}
     >
       {children}
     </button>
@@ -178,7 +181,7 @@ export function Stepper({
   return (
     <div className="flex items-center gap-1">
       <button
-        className="h-9 w-9 rounded-full bg-white/[0.07] text-lg font-bold text-ink-dim active:bg-edge"
+        className="h-9 w-9 rounded-full bg-white/[0.08] text-lg font-bold text-ink-dim transition-colors active:bg-white/[0.16]"
         onClick={() => onChange(Math.max(min, +(v - step).toFixed(1)))}
       >
         −
@@ -188,7 +191,7 @@ export function Stepper({
           inputMode="decimal"
           className="w-full rounded-lg bg-transparent text-center text-[15px] font-extrabold text-ink outline-none"
           value={value === undefined ? '' : String(value)}
-          placeholder=", "
+          placeholder="0"
           onChange={(e) => {
             const n = parseFloat(e.target.value)
             if (!Number.isNaN(n)) onChange(n)
@@ -198,7 +201,7 @@ export function Stepper({
         {suffix && <div className="text-[9px] font-semibold uppercase text-ink-faint">{suffix}</div>}
       </div>
       <button
-        className="h-9 w-9 rounded-full bg-white/[0.07] text-lg font-bold text-ink-dim active:bg-edge"
+        className="h-9 w-9 rounded-full bg-white/[0.08] text-lg font-bold text-ink-dim transition-colors active:bg-white/[0.16]"
         onClick={() => onChange(+(v + step).toFixed(1))}
       >
         +
@@ -222,7 +225,7 @@ export function Toggle({
     <button
       onClick={() => onChange(!on)}
       className={`flex w-full items-center justify-between rounded-2xl border p-3.5 text-left transition-colors ${
-        on ? 'border-accent/35 bg-accent/10' : 'border-transparent bg-surface-2'
+        on ? 'border-accent/35 bg-accent/10' : 'border-transparent bg-white/[0.06]'
       }`}
     >
       <div className="pr-3">

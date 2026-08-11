@@ -46,7 +46,7 @@ export function YouTubeEmbed({ videoId, query }: { videoId?: string; query: stri
         href={searchUrl}
         target="_blank"
         rel="noreferrer"
-        className="flex items-center justify-center gap-2 rounded-xl border border-edge bg-surface-2 px-4 py-3 text-[13px] font-bold text-ink-dim active:bg-edge"
+        className="flex items-center justify-center gap-2 rounded-xl bg-white/[0.07] px-4 py-3 text-[13px] font-bold text-ink-dim active:bg-white/[0.14]"
       >
         <svg viewBox="0 0 24 24" className="h-4 w-4 fill-danger">
           <path d="M23 7.5s-.2-1.6-.9-2.3c-.9-.9-1.9-.9-2.4-1C16.4 4 12 4 12 4s-4.4 0-7.7.2c-.5.1-1.5.1-2.4 1-.7.7-.9 2.3-.9 2.3S.8 9.4.8 11.3v1.4c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.9.9 2 .9 2.5 1 1.9.2 7.6.2 7.6.2s4.4 0 7.7-.2c.5-.1 1.5-.1 2.4-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8v-1.4c0-1.9-.2-3.8-.2-3.8ZM9.8 14.9V8.6l6.2 3.2-6.2 3.1Z" />

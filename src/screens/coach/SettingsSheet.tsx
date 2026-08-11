@@ -58,7 +58,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
                       })
                       refreshReminders()
                     }}
-                    className="rounded-xl border border-edge bg-surface-2 px-2 py-2.5 text-center text-[13px] font-bold outline-none [color-scheme:dark]"
+                    className="rounded-xl bg-white/[0.07] px-2 py-2.5 text-center text-[13px] font-bold outline-none [color-scheme:dark]"
                   />
                 ))}
               </div>
@@ -79,7 +79,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
               const v = e.target.value
               if (v) update((d) => { d.settings.phaseStartDate = mondayOf(v) })
             }}
-            className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[14px] outline-none [color-scheme:dark]"
+            className="w-full rounded-xl bg-white/[0.07] px-3.5 py-3 text-[14px] outline-none [color-scheme:dark]"
           />
           <p className="mt-1 text-[10.5px] text-ink-faint">Snaps to that week's Monday. Blocks, deloads, and A/B weeks all count from here.</p>
         </div>
@@ -91,7 +91,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
               <button
                 key={w}
                 onClick={() => update((d) => { d.settings.checkinWeekday = i as 0 | 1 | 2 | 3 | 4 | 5 | 6 })}
-                className={`rounded-lg px-2 py-2 text-[11px] font-bold ${settings.checkinWeekday === i ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'}`}
+                className={`rounded-lg px-2 py-2 text-[11px] font-bold ${settings.checkinWeekday === i ? 'bg-accent text-black' : 'bg-white/[0.07] text-ink-faint'}`}
               >
                 {w.slice(0, 3)}
               </button>
@@ -108,7 +108,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
               <button
                 key={b}
                 onClick={() => update((d) => { d.settings.trainingDayKcalBonus = b as 0 | 150 | 200 })}
-                className={`rounded-lg px-2 py-2.5 text-[12px] font-bold ${settings.trainingDayKcalBonus === b ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'}`}
+                className={`rounded-lg px-2 py-2.5 text-[12px] font-bold ${settings.trainingDayKcalBonus === b ? 'bg-accent text-black' : 'bg-white/[0.07] text-ink-faint'}`}
               >
                 {b === 0 ? 'none' : `+${b} kcal`}
               </button>

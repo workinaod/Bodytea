@@ -45,11 +45,11 @@ export function BookletScreen({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[60] flex flex-col bg-bg">
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col overflow-hidden px-4 pt-[max(env(safe-area-inset-top),16px)]">
         <div className="flex items-center justify-between pb-3">
-          <button onClick={onClose} className="rounded-full bg-surface-2 px-3.5 py-1.5 text-[12px] font-bold text-ink-dim">
+          <button onClick={onClose} className="rounded-full bg-white/[0.07] px-3.5 py-1.5 text-[12px] font-bold text-ink-dim">
             Cancel
           </button>
           <h2 className="text-[16px] font-black tracking-tight">My Booklet</h2>
-          <button onClick={save} className="rounded-full bg-accent px-4 py-1.5 text-[12px] font-black text-black">
+          <button onClick={save} className="sheen rounded-full bg-gradient-to-b from-accent to-accent-deep px-4 py-1.5 text-[12px] font-black text-black shadow-md shadow-accent/25">
             Save
           </button>
         </div>

@@ -125,7 +125,7 @@ export function RunTrackerSheet({
         <div className="flex shrink-0 items-center justify-between py-1">
           <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-ink-dim">{label} tracker</div>
           {phase !== 'live' && (
-            <button onClick={onClose} className="rounded-full bg-surface-2 px-4 py-1.5 text-[12px] font-bold text-ink-dim">
+            <button onClick={onClose} className="rounded-full bg-white/[0.07] px-4 py-1.5 text-[12px] font-bold text-ink-dim">
               {phase === 'done' ? '✕' : 'Cancel'}
             </button>
           )}
@@ -237,11 +237,11 @@ export function RunTrackerSheet({
             {shareNote && <p className="text-center text-[11.5px] font-bold text-lime">{shareNote}</p>}
 
             {saved.splits.length > 0 && (
-              <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+              <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
                 {saved.splits.map((s, i) => (
                   <div
                     key={i}
-                    className={`flex items-center justify-between px-4 py-2 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+                    className={`flex items-center justify-between px-4 py-2 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
                   >
                     <span className="text-[12.5px] font-bold">Mile {i + 1}</span>
                     <span className="font-mono text-[12px] text-ink-dim">{fmtDuration(s)}</span>

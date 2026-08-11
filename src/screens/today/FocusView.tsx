@@ -333,7 +333,7 @@ export function FocusView({
         <p className="mt-2 text-[13.5px] text-ink-dim">Work banked. The debrief has your recovery orders.</p>
         <button
           onClick={onFinish}
-          className="mt-8 w-full max-w-sm rounded-2xl bg-lime py-5 text-[17px] font-black text-black shadow-2xl shadow-lime/20 active:scale-[0.98]"
+          className="sheen mt-8 w-full max-w-sm rounded-2xl bg-gradient-to-b from-lime to-[#a9d63d] py-5 text-[17px] font-black text-black shadow-2xl shadow-lime/20 active:scale-[0.98]"
         >
           FINISH → DEBRIEF
         </button>
@@ -369,14 +369,14 @@ export function FocusView({
           <button
             aria-label="Exit session"
             onClick={() => abandonSession(session.date)}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink-dim"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-ink-dim"
           >
             <svg viewBox="0 0 24 24" className="h-[13px] w-[13px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
         )}
-        <button onClick={onListView} className="rounded-full bg-surface-2 px-3 py-1.5 text-[11px] font-bold text-ink-dim">
+        <button onClick={onListView} className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[11px] font-bold text-ink-dim">
           ☰ list
         </button>
         <div className="flex-1" />
@@ -384,7 +384,7 @@ export function FocusView({
           <div className="text-[11px] font-black uppercase tracking-wider text-ink-faint">
             {progress.done + 1} / {progress.total} sets
           </div>
-          <div className="mx-auto mt-1 h-1 w-32 overflow-hidden rounded-full bg-surface-2">
+          <div className="mx-auto mt-1 h-1 w-32 overflow-hidden rounded-full bg-white/[0.07]">
             <div className="h-full bg-accent transition-all" style={{ width: `${(progress.done / Math.max(1, progress.total)) * 100}%` }} />
           </div>
         </div>
@@ -393,13 +393,13 @@ export function FocusView({
           <div className="relative">
             <button
               onClick={() => setSoundOpen((v) => !v)}
-              className={`rounded-full px-3 py-1.5 ${soundMode !== 'silent' ? 'bg-accent/20 text-accent-soft' : 'bg-surface-2 text-ink-faint'}`}
+              className={`rounded-full px-3 py-1.5 ${soundMode !== 'silent' ? 'bg-accent/20 text-accent-soft' : 'bg-white/[0.07] text-ink-faint'}`}
               aria-label="Session sound"
             >
               <VolumeIcon waves={soundMode === 'voice' ? 3 : soundMode === 'beeps-names' ? 2 : soundMode === 'beeps' ? 1 : 0} />
             </button>
             {soundOpen && (
-              <div className="absolute right-0 top-9 z-20 w-56 overflow-hidden rounded-2xl border border-edge bg-surface shadow-2xl">
+              <div className="absolute right-0 top-9 z-20 w-56 overflow-hidden rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] shadow-2xl">
                 {(
                   [
                     ['voice', 3, 'Voice coach', 'Set intros + countdown'],
@@ -414,7 +414,7 @@ export function FocusView({
                       update((d) => { d.settings.soundMode = id })
                       setSoundOpen(false)
                     }}
-                    className={`flex w-full items-center gap-3 px-3.5 py-2.5 text-left ${i > 0 ? 'border-t border-edge/50' : ''} ${soundMode === id ? 'bg-accent/10' : ''}`}
+                    className={`flex w-full items-center gap-3 px-3.5 py-2.5 text-left ${i > 0 ? 'border-t border-white/[0.05]' : ''} ${soundMode === id ? 'bg-accent/10' : ''}`}
                   >
                     <VolumeIcon waves={waves} />
                     <span className="min-w-0">
@@ -430,7 +430,7 @@ export function FocusView({
             <button
               onClick={() => setVoiceOn(!voiceOn)}
               aria-label="Voice control"
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold ${voiceOn ? 'bg-lime text-black' : 'bg-surface-2 text-ink-dim'}`}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold ${voiceOn ? 'bg-lime text-black' : 'bg-white/[0.07] text-ink-dim'}`}
             >
               <svg viewBox="0 0 24 24" className="h-[13px] w-[13px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" />
@@ -439,7 +439,7 @@ export function FocusView({
               {voiceOn ? 'on' : 'voice'}
             </button>
           )}
-          <button onClick={() => onOpenGuide(def.id)} className="rounded-full bg-surface-2 px-3 py-1.5 text-[11px] font-black text-cyan">
+          <button onClick={() => onOpenGuide(def.id)} className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[11px] font-black text-cyan">
             ?
           </button>
         </div>
@@ -457,7 +457,7 @@ export function FocusView({
 
       {/* Middle: reference material (screen-followers live here) */}
       <div className="mx-4 mt-3 flex-1 overflow-y-auto">
-        <div className="rounded-2xl border border-edge bg-surface p-4">
+        <div className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
           {def.videoId ? (
             videoOpen ? (
               <div className="overflow-hidden rounded-xl">
@@ -525,7 +525,7 @@ export function FocusView({
       <div className="px-4 pt-2">
         {/* The gate: weight goes in BEFORE the set, always in view */}
         {phase === 'go' && isLoaded && (
-          <div className="mx-auto mb-2 flex max-w-xs items-center justify-between rounded-2xl border border-accent/30 bg-surface px-4 py-2.5">
+          <div className="mx-auto mb-2 flex max-w-xs items-center justify-between rounded-2xl border border-accent/30 bg-white/[0.05] px-4 py-2.5">
             <span className="text-[11px] font-black uppercase tracking-wider text-ink-dim">{loadLabel(def.equipment)}</span>
             <Stepper
               value={set.weightLb}
@@ -556,7 +556,7 @@ export function FocusView({
           <button
             onClick={gateGo}
             className={`w-full rounded-2xl py-6 text-[19px] font-black tracking-wide text-black shadow-2xl active:scale-[0.985] ${
-              needsWeight ? 'bg-lime/40 shadow-none' : 'bg-lime shadow-lime/25'
+              needsWeight ? 'bg-lime/35 shadow-none' : 'sheen bg-gradient-to-b from-lime to-[#a9d63d] shadow-lime/25'
             }`}
           >
             GO · START SET {current.setIdx + 1}
@@ -564,20 +564,20 @@ export function FocusView({
         ) : (
           <button
             onClick={advance}
-            className="w-full rounded-2xl bg-accent py-6 text-[19px] font-black tracking-wide text-black shadow-2xl shadow-accent/25 active:scale-[0.985]"
+            className="sheen w-full rounded-2xl bg-gradient-to-b from-accent to-accent-deep py-6 text-[19px] font-black tracking-wide text-black shadow-2xl shadow-accent/25 active:scale-[0.985]"
           >
             {current.setIdx + 1 === totalSetsThisEx ? 'SET DONE. NEXT' : 'NEXT SET ✓'}
           </button>
         )}
         <div className="mt-2.5 flex items-center justify-center gap-2 pb-1">
           {staleOnFirst && (
-            <button onClick={restartFresh} className="rounded-full bg-surface-2 px-4 py-2.5 text-[12px] font-bold text-cyan active:scale-95">
+            <button onClick={restartFresh} className="rounded-full bg-white/[0.07] px-4 py-2.5 text-[12px] font-bold text-cyan active:scale-95">
               ↻ Fresh time
             </button>
           )}
           <button
             onClick={() => setHowToOpen(true)}
-            className="rounded-full bg-surface-2 px-4 py-2.5 text-[12px] font-bold text-ink-dim active:scale-95"
+            className="rounded-full bg-white/[0.07] px-4 py-2.5 text-[12px] font-bold text-ink-dim active:scale-95"
           >
             How do I do this?
           </button>
@@ -626,7 +626,7 @@ function HowToSlides({ def, onClose }: { def: ExerciseDef; onClose: () => void }
         <button
           aria-label="Close"
           onClick={onClose}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink-dim"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-ink-dim"
         >
           <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18" />
@@ -653,13 +653,13 @@ function HowToSlides({ def, onClose }: { def: ExerciseDef; onClose: () => void }
         <button
           onClick={() => setI((n) => Math.max(0, n - 1))}
           disabled={i === 0}
-          className="flex-1 rounded-2xl bg-surface-2 py-4 text-[14px] font-black text-ink-dim disabled:opacity-30"
+          className="flex-1 rounded-2xl bg-white/[0.07] py-4 text-[14px] font-black text-ink-dim disabled:opacity-30"
         >
           Back
         </button>
         <button
           onClick={() => (last ? onClose() : setI((n) => n + 1))}
-          className="flex-[2] rounded-2xl bg-accent py-4 text-[14px] font-black text-black"
+          className="sheen flex-[2] rounded-2xl bg-gradient-to-b from-accent to-accent-deep py-4 text-[14px] font-black text-black shadow-lg shadow-accent/20"
         >
           {last ? 'Got it' : 'Next'}
         </button>
@@ -764,7 +764,7 @@ function BreakScreen({
                   onFeel(id)
                   setFeelDone(true)
                 }}
-                className="rounded-full bg-surface-2 px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-edge"
+                className="rounded-full bg-white/[0.07] px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-white/[0.14]"
               >
                 {label}
               </button>
@@ -773,7 +773,7 @@ function BreakScreen({
         </div>
       )}
       {feelDone && <div className="mt-7 text-[11.5px] font-bold text-lime">Got it. Next session adjusts.</div>}
-      <button onClick={onDone} className="mt-8 rounded-full bg-surface-2 px-5 py-2.5 text-[12.5px] font-bold text-ink-dim">
+      <button onClick={onDone} className="mt-8 rounded-full bg-white/[0.07] px-5 py-2.5 text-[12.5px] font-bold text-ink-dim">
         skip the rest, I'm ready
       </button>
       <p className="mt-3 max-w-[260px] text-center text-[11px] leading-snug text-ink-faint">

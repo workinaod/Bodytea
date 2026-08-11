@@ -119,7 +119,7 @@ export function ReconcileSheet() {
                     <button
                       key={r}
                       onClick={() => writeOffWeek(monday, r)}
-                      className="rounded-lg bg-surface-2 px-2.5 py-1 text-[10.5px] font-bold text-ink-dim"
+                      className="rounded-lg bg-white/[0.07] px-2.5 py-1 text-[10.5px] font-bold text-ink-dim"
                     >
                       write off: {r}
                     </button>
@@ -128,7 +128,7 @@ export function ReconcileSheet() {
               )}
             </div>
             {weekMisses.map((m) => (
-              <div key={m.date} className="rounded-xl border border-edge bg-surface p-3.5">
+              <div key={m.date} className="rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-3.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[13.5px] font-bold">
                     {formatShort(m.date)} · {m.title}

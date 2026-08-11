@@ -136,7 +136,7 @@ export function TabBar({
         touchY.current = null
       }}
     >
-      <div className="relative flex items-stretch rounded-[22px] border border-edge/80 bg-surface/92 px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_16px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+      <div className="relative flex items-stretch rounded-[22px] bg-[#131315]/90 ring-1 ring-white/[0.06] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_16px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur-xl">
         <div className="flex flex-1 items-stretch">
           {LEFT.map((t) => (
             <TabButton key={t.id} id={t.id} label={t.label} active={tab === t.id} onClick={() => pick(t.id)} />

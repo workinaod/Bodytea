@@ -49,7 +49,7 @@ export function WeekScreen() {
     }
     if (d.date < data.settings.installedAt) return { dot: 'bg-edge', label: 'before the app' }
     if (d.date < today) return { dot: 'bg-danger/50', label: 'unaccounted' }
-    return { dot: 'bg-surface-2 border border-edge', label: 'upcoming' }
+    return { dot: 'bg-white/[0.07] border border-edge', label: 'upcoming' }
   }
 
   function markersFor(d: ResolvedDay): string[] {
@@ -109,13 +109,13 @@ export function WeekScreen() {
           Pick once, at the start of the week. Go with what you honestly have.
         </p>
       )}
-      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
         {( [1, 2, 3] as Tier[]).map((t, i) => (
           <button
             key={t}
             onClick={() => handleTierTap(t)}
             className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
-              i > 0 ? 'border-t border-edge/50' : ''
+              i > 0 ? 'border-t border-white/[0.05]' : ''
             } ${tier === t ? 'bg-accent/8' : ''}`}
           >
             <span
@@ -154,7 +154,7 @@ export function WeekScreen() {
                           })
                         }
                         className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
-                          wd === d ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
+                          wd === d ? 'bg-accent text-black' : 'bg-white/[0.07] text-ink-faint'
                         }`}
                       >
                         {WD_LABEL[d]}
@@ -173,15 +173,15 @@ export function WeekScreen() {
 
       {/* 7-day strip */}
       <SectionTitle>The days</SectionTitle>
-      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
         {days.map((d, i) => {
           const st = statusFor(d)
           return (
             <div
               key={d.date}
               onClick={() => setPreview(d)}
-              className={`flex cursor-pointer items-center gap-3 px-4 py-3 active:bg-surface-2 ${
-                i > 0 ? 'border-t border-edge/50' : ''
+              className={`flex cursor-pointer items-center gap-3 px-4 py-3 active:bg-white/[0.07] ${
+                i > 0 ? 'border-t border-white/[0.05]' : ''
               }`}
             >
               <div className="w-9 text-center">
@@ -239,7 +239,7 @@ export function WeekScreen() {
                       d.plan.lifeEvents = d.plan.lifeEvents.filter((x) => x.id !== ev.id)
                     })
                   }
-                  className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-bold text-ink-faint"
+                  className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-bold text-ink-faint"
                 >
                   ✕
                 </button>
@@ -257,7 +257,7 @@ export function WeekScreen() {
                         })
                       }
                       className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
-                        days.includes(d) ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
+                        days.includes(d) ? 'bg-accent text-black' : 'bg-white/[0.07] text-ink-faint'
                       }`}
                     >
                       {WD_LABEL[d]}
@@ -298,7 +298,7 @@ export function WeekScreen() {
           <div className="space-y-2 pb-6">
             <p className="text-[12.5px] text-ink-dim">{preview.tagline}</p>
             {preview.exercises.map((r) => (
-              <div key={r.exerciseId} className="flex items-center justify-between rounded-xl bg-surface-2 px-3.5 py-2.5">
+              <div key={r.exerciseId} className="flex items-center justify-between rounded-xl bg-white/[0.07] px-3.5 py-2.5">
                 <span className="text-[13px] font-bold">{r.name}</span>
                 <span className="font-mono text-[12px] text-ink-dim">
                   {r.sets > 1 ? `${r.sets} × ${r.repText}` : r.repText}
@@ -333,7 +333,7 @@ function AddLifeEvent({ onAdd }: { onAdd: (label: string, kind: LifeEventKind) =
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-xl border border-dashed border-edge py-3 text-[12.5px] font-bold text-ink-faint"
+        className="w-full rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06] py-3 text-[12.5px] font-bold text-ink-faint"
       >
         + Add a life event (gig, shift, whatever's real)
       </button>
@@ -345,7 +345,7 @@ function AddLifeEvent({ onAdd }: { onAdd: (label: string, kind: LifeEventKind) =
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         placeholder='Name it: "DJ set", "night shift", "closing shift"'
-        className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:border-accent/60"
+        className="w-full rounded-xl bg-white/[0.07] px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
       />
       <div className="flex gap-1.5">
         {(
@@ -365,7 +365,7 @@ function AddLifeEvent({ onAdd }: { onAdd: (label: string, kind: LifeEventKind) =
           : 'All day standing → the NEXT day drops a jump set (legs arrive pre-fatigued).'}
       </p>
       <div className="flex gap-2">
-        <button onClick={() => setOpen(false)} className="flex-1 rounded-xl bg-surface-2 py-2.5 text-[12.5px] font-bold text-ink-dim">
+        <button onClick={() => setOpen(false)} className="flex-1 rounded-xl bg-white/[0.07] py-2.5 text-[12.5px] font-bold text-ink-dim">
           Cancel
         </button>
         <button

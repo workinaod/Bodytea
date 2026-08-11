@@ -164,7 +164,7 @@ export function CoachScreen() {
               </div>
               <p className="mt-2 text-[13px] leading-relaxed text-ink">{f.text}</p>
               {linkedClaim && (
-                <p className="mt-2 rounded-lg border-l-2 border-gold/50 bg-surface-2 px-3 py-2 text-[12.5px] italic leading-snug text-ink-dim">
+                <p className="mt-2 rounded-lg border-l-2 border-gold/50 bg-white/[0.07] px-3 py-2 text-[12.5px] italic leading-snug text-ink-dim">
                   Your words: "{linkedClaim}"
                 </p>
               )}
@@ -218,7 +218,7 @@ export function CoachScreen() {
                 href={`https://www.youtube.com/results?search_query=${encodeURIComponent(v.query)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="block rounded-xl border border-edge bg-surface-2 px-3.5 py-3"
+                className="block rounded-xl bg-white/[0.07] px-3.5 py-3"
               >
                 <div className="text-[13px] font-bold text-ink">▶ {v.title}</div>
                 <div className="text-[11px] text-ink-faint">{v.note}</div>
@@ -268,7 +268,7 @@ function GuideReader({ onOpenExercise }: { onOpenExercise: (id: string) => void 
   return (
     <div className="space-y-2 pb-6">
       {GUIDE_SECTIONS.map((s) => (
-        <div key={s.id} className="overflow-hidden rounded-xl border border-edge bg-surface">
+        <div key={s.id} className="overflow-hidden rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05]">
           <button
             className="flex w-full items-center justify-between px-4 py-3 text-left"
             onClick={() => setOpen(open === s.id ? null : s.id)}

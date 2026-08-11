@@ -53,7 +53,7 @@ export function TierDropSheet({
                 key={r.id}
                 onClick={() => setReason(r.id)}
                 className={`rounded-xl border px-3 py-2.5 text-[12.5px] font-bold ${
-                  reason === r.id ? 'border-accent/50 bg-accent/15 text-accent-soft' : 'border-edge bg-surface-2 text-ink-dim'
+                  reason === r.id ? 'border-accent/50 bg-accent/15 text-accent-soft' : 'border-edge bg-white/[0.07] text-ink-dim'
                 }`}
               >
                 {r.label}
@@ -71,7 +71,7 @@ export function TierDropSheet({
             onChange={(e) => setClaimText(e.target.value)}
             rows={3}
             placeholder="e.g. Double gigs Fri + Sat and inventory shifts Mon–Wed. Realistically three sessions max."
-            className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[13.5px] leading-snug outline-none placeholder:text-ink-faint focus:border-accent/50"
+            className="w-full rounded-xl bg-white/[0.07] px-3.5 py-3 text-[13.5px] leading-snug outline-none placeholder:text-ink-faint focus:border-accent/50"
           />
           {claimText.length > 0 && claimText.trim().length < 5 && (
             <p className="mt-1 text-[11px] font-semibold text-danger">

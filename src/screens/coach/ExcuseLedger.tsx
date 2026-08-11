@@ -40,7 +40,7 @@ export function ExcuseLedger() {
 
       <div className="space-y-2">
         {sorted.map((e) => (
-          <div key={e.id} className={`rounded-xl border p-3.5 ${e.accepted ? 'border-edge bg-surface' : 'border-danger/25 bg-danger/5'}`}>
+          <div key={e.id} className={`rounded-xl border p-3.5 ${e.accepted ? 'border-edge bg-white/[0.05]' : 'border-danger/25 bg-danger/5'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Chip tone={e.accepted ? 'lime' : 'danger'}>{e.accepted ? 'accepted' : 'unproven'}</Chip>

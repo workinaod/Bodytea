@@ -95,7 +95,7 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
     })
 
   const field =
-    'w-full rounded-xl border border-edge bg-surface px-4 py-3 text-[15px] font-semibold text-ink outline-none focus:border-accent/60'
+    'w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-4 py-3 text-[15px] font-semibold text-ink outline-none focus:ring-accent/45'
 
   return (
     <Sheet open={open} onClose={onClose} title="Account & backup">
@@ -209,7 +209,7 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
 
         {cloud && view === 'status' && status && (
           <>
-            <div className="rounded-2xl border border-edge bg-surface p-4">
+            <div className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
               <div className="text-[16px] font-black">@{meta?.username || 'you'}</div>
               <div className="mt-0.5 text-[12px] text-ink-faint">{meta?.phone ? `···${meta.phone.slice(-4)}` : ''}</div>
               <div className="mt-3 text-[13px] font-semibold">

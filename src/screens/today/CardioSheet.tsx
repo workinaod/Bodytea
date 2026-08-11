@@ -67,7 +67,7 @@ export function CardioSheet({
         {entries.length > 0 && !picked && (
           <div className="space-y-1.5">
             {entries.map((e) => (
-              <div key={e.id} className="flex items-center gap-2.5 rounded-xl border border-edge bg-surface px-3 py-2.5">
+              <div key={e.id} className="flex items-center gap-2.5 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2.5">
                 <span className="text-[16px]">{cardioActivity(e.activityId).emoji}</span>
                 <div className="min-w-0 flex-1">
                   <div className="text-[13.5px] font-bold">{e.label}{e.mode ? ` · ${modeLabel(e.activityId, e.mode)}` : ''}</div>
@@ -75,7 +75,7 @@ export function CardioSheet({
                 </div>
                 <button
                   onClick={() => removeCardio(date, e.id)}
-                  className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-bold text-danger"
+                  className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-bold text-danger"
                 >
                   ✕
                 </button>
@@ -95,7 +95,7 @@ export function CardioSheet({
                 <button
                   key={a.id}
                   onClick={() => { setPicked(a.id); setMode(a.modes?.[0]?.id ?? null) }}
-                  className="rounded-xl border border-edge bg-surface px-2 py-3 text-center active:border-accent/50"
+                  className="rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-2 py-3 text-center active:border-accent/50"
                 >
                   <div className="text-[20px]">{a.emoji}</div>
                   <div className="mt-0.5 text-[11px] font-bold leading-tight">{a.label}</div>
@@ -115,7 +115,7 @@ export function CardioSheet({
             <div className="flex items-center gap-2">
               <span className="text-[22px]">{def.emoji}</span>
               <span className="text-[16px] font-black">{def.label}</span>
-              <button onClick={reset} className="ml-auto rounded-full bg-surface-2 px-3 py-1 text-[11px] font-bold text-ink-dim">
+              <button onClick={reset} className="ml-auto rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold text-ink-dim">
                 change
               </button>
             </div>
@@ -143,7 +143,7 @@ export function CardioSheet({
                 value={customLabel}
                 onChange={(e) => setCustomLabel(e.target.value)}
                 placeholder="What was it? (spin class, boxing, …)"
-                className="w-full rounded-xl border border-edge bg-surface px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:border-accent/60"
+                className="w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
               />
             )}
 

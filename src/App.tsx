@@ -102,7 +102,7 @@ export default function App() {
             <button
               key={a.id}
               onClick={() => setTrack(a.id)}
-              className="flex w-full items-center justify-between rounded-2xl border border-edge bg-surface-2 px-4 py-4 text-left active:border-accent/40"
+              className="flex w-full items-center justify-between rounded-2xl bg-white/[0.07] px-4 py-4 text-left active:bg-white/[0.09]"
             >
               <span>
                 <span className="block text-[15px] font-extrabold">{a.label}</span>
@@ -120,7 +120,7 @@ export default function App() {
                   setTrack(null)
                   setTimerActivity(a.id)
                 }}
-                className="flex items-center gap-2.5 rounded-2xl bg-surface-2 px-3.5 py-3 text-left active:bg-edge"
+                className="flex items-center gap-2.5 rounded-2xl bg-white/[0.07] px-3.5 py-3 text-left active:bg-white/[0.14]"
               >
                 <span className="text-[18px]">{a.emoji}</span>
                 <span className="text-[13px] font-bold">{a.label}</span>
@@ -161,21 +161,21 @@ function UpdateToast() {
   if (!show) return null
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-6">
-      <div className="absolute inset-0 bg-black/60 animate-fade-in" onClick={() => setShow(false)} />
-      <div className="relative w-full max-w-sm rounded-2xl border border-cyan/30 bg-bg p-5 shadow-2xl animate-fade-in">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-[6px] animate-fade-in" onClick={() => setShow(false)} />
+      <div className="relative w-full max-w-sm rounded-[26px] bg-[#141416]/95 ring-1 ring-white/[0.08] p-5 shadow-2xl backdrop-blur-2xl animate-fade-in">
         <h3 className="text-[17px] font-black tracking-tight text-cyan">Update ready</h3>
         <p className="mt-1 text-[13px] leading-snug text-ink-dim">
           A new version of the app is available.
         </p>
         <div className="mt-4 flex flex-col gap-2">
           <button
-            className="w-full rounded-xl bg-cyan py-3 text-[14px] font-black text-black active:scale-[0.98]"
+            className="sheen w-full rounded-xl bg-gradient-to-b from-cyan to-[#4f93cc] py-3 text-[14px] font-black text-black shadow-lg shadow-cyan/20 active:scale-[0.98]"
             onClick={() => reload?.()}
           >
             Update now
           </button>
           <button
-            className="w-full rounded-xl bg-surface-2 py-3 text-[13px] font-bold text-ink-dim active:scale-[0.98]"
+            className="w-full rounded-xl bg-white/[0.07] py-3 text-[13px] font-bold text-ink-dim transition-transform active:scale-[0.98]"
             onClick={() => setShow(false)}
           >
             After my session

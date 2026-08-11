@@ -71,7 +71,7 @@ export function BookletEditor({
             <input
               value={draft.name}
               onChange={(e) => mutate((p) => { p.name = e.target.value })}
-              className="mt-1 w-full rounded-xl border border-edge bg-surface-2 px-3 py-2.5 text-[14px] font-bold outline-none focus:border-accent/60"
+              className="mt-1 w-full rounded-xl bg-white/[0.07] px-3 py-2.5 text-[14px] font-bold outline-none focus:ring-accent/45"
             />
           </div>
           <div>
@@ -80,7 +80,7 @@ export function BookletEditor({
               value={draft.goalStatement}
               onChange={(e) => mutate((p) => { p.goalStatement = e.target.value })}
               rows={2}
-              className="mt-1 w-full resize-none rounded-xl border border-edge bg-surface-2 px-3 py-2.5 text-[13px] font-semibold outline-none focus:border-accent/60"
+              className="mt-1 w-full resize-none rounded-xl bg-white/[0.07] px-3 py-2.5 text-[13px] font-semibold outline-none focus:ring-accent/45"
             />
           </div>
           {draft.routineGoals !== undefined && (
@@ -114,7 +114,7 @@ export function BookletEditor({
                   value={draft.whyWorks ?? ''}
                   onChange={(e) => mutate((p) => { p.whyWorks = e.target.value || undefined })}
                   rows={2}
-                  className="mt-1 w-full resize-none rounded-xl border border-edge bg-surface-2 px-3 py-2.5 text-[13px] font-semibold outline-none focus:border-accent/60"
+                  className="mt-1 w-full resize-none rounded-xl bg-white/[0.07] px-3 py-2.5 text-[13px] font-semibold outline-none focus:ring-accent/45"
                 />
               </div>
             </>
@@ -158,7 +158,7 @@ export function BookletEditor({
                     </button>
                     <button
                       onClick={() => removeDay(wd)}
-                      className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-bold text-danger"
+                      className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-bold text-danger"
                     >
                       ✕
                     </button>
@@ -166,7 +166,7 @@ export function BookletEditor({
                 ) : (
                   <button
                     onClick={() => addDay(wd)}
-                    className="flex-1 rounded-xl border border-dashed border-edge py-2 text-[12.5px] font-bold text-ink-faint"
+                    className="flex-1 rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06] py-2 text-[12.5px] font-bold text-ink-faint"
                   >
                     + add a training day
                   </button>
@@ -235,14 +235,14 @@ function DayEditorSheet({
         <input
           value={template.title}
           onChange={(e) => onChange({ ...template, title: e.target.value })}
-          className="w-full rounded-xl border border-edge bg-surface px-3 py-2.5 text-[15px] font-black outline-none focus:border-accent/60"
+          className="w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2.5 text-[15px] font-black outline-none focus:ring-accent/45"
         />
 
         <div className="space-y-2">
           {template.entries.map((e, i) => {
             const info = entryName(e)
             return (
-              <div key={i} className="rounded-xl border border-edge bg-surface p-3">
+              <div key={i} className="rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     {info.blockNames ? (
@@ -262,7 +262,7 @@ function DayEditorSheet({
                   </div>
                   <button
                     onClick={() => onChange({ ...template, entries: template.entries.filter((_, idx) => idx !== i) })}
-                    className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-bold text-danger"
+                    className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-bold text-danger"
                   >
                     ✕
                   </button>
@@ -273,7 +273,7 @@ function DayEditorSheet({
                     <input
                       value={e.repText}
                       onChange={(ev) => setEntry(i, { repText: ev.target.value })}
-                      className="w-24 rounded-lg border border-edge bg-surface-2 px-2.5 py-1.5 text-[12.5px] font-semibold outline-none focus:border-accent/60"
+                      className="w-24 rounded-lg bg-white/[0.07] px-2.5 py-1.5 text-[12.5px] font-semibold outline-none focus:ring-accent/45"
                       placeholder="reps"
                     />
                   </div>
@@ -409,7 +409,7 @@ function ExercisePicker({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search name, muscle, or quality (e.g. acceleration)…"
-          className="mb-2.5 w-full rounded-xl border border-edge bg-surface px-3.5 py-3 text-[14px] font-semibold outline-none focus:border-accent/60"
+          className="mb-2.5 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-3 text-[14px] font-semibold outline-none focus:ring-accent/45"
         />
         <div className="no-scrollbar -mx-1 mb-2.5 overflow-x-auto px-1">
           <div className="flex w-max gap-1.5">
@@ -440,7 +440,7 @@ function ExercisePicker({
                   <button
                     key={id}
                     onClick={() => onPick(id)}
-                    className="flex w-full items-center gap-3 rounded-xl border border-edge bg-surface px-3 py-2 text-left active:border-accent/50"
+                    className="flex w-full items-center gap-3 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2 text-left active:border-accent/50"
                   >
                     {photo ? (
                       <img
@@ -450,7 +450,7 @@ function ExercisePicker({
                         className="h-10 w-14 shrink-0 rounded-lg object-cover"
                       />
                     ) : (
-                      <span className="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-[16px]">🏃</span>
+                      <span className="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg bg-white/[0.07] text-[16px]">🏃</span>
                     )}
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13.5px] font-bold">{def.name}</span>

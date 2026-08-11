@@ -59,7 +59,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
               { url: before, label: `Before · ${formatShort(review.from)}` },
               { url: after, label: `After · ${formatShort(review.to)}` },
             ].map((p) => (
-              <div key={p.label} className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+              <div key={p.label} className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
                 {p.url ? (
                   <img src={p.url} alt={p.label} className="aspect-[3/4] w-full object-cover" />
                 ) : (
@@ -77,7 +77,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
 
         {/* Effort */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-2xl border border-edge/80 bg-surface px-4 py-3 text-center">
+          <div className="rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05] px-4 py-3 text-center">
             <div className="font-display text-[26px] font-bold leading-none">
               {review.adherencePct !== null ? `${review.adherencePct}%` : ', '}
             </div>
@@ -85,7 +85,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
               attendance · {review.done + review.partial}/{review.scheduled} sessions
             </div>
           </div>
-          <div className="rounded-2xl border border-edge/80 bg-surface px-4 py-3 text-center">
+          <div className="rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05] px-4 py-3 text-center">
             <div className="font-display text-[26px] font-bold leading-none">
               {review.proteinPct !== null ? `${review.proteinPct}%` : ', '}
             </div>
@@ -96,7 +96,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
         </div>
 
         {/* The numbers */}
-        <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+        <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
           {review.deltas.map((d, i) => {
             const has = d.delta !== undefined
             const good = has && (d.better === 'down' ? d.delta! < 0 : d.delta! > 0)
@@ -104,7 +104,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
             return (
               <div
                 key={d.key}
-                className={`flex items-center justify-between px-4 py-2.5 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+                className={`flex items-center justify-between px-4 py-2.5 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
               >
                 <span className="text-[13px] font-bold">{d.label}</span>
                 {has ? (
@@ -124,7 +124,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
             )
           })}
           {review.strength.map((s) => (
-            <div key={s.label} className="flex items-center justify-between border-t border-edge/50 px-4 py-2.5">
+            <div key={s.label} className="flex items-center justify-between border-t border-white/[0.05] px-4 py-2.5">
               <span className="text-[13px] font-bold">{s.label} e1RM</span>
               <span className="font-mono text-[12.5px]">
                 <span className="text-ink-faint">

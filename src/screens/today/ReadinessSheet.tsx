@@ -78,7 +78,7 @@ export function ReadinessSheet({
               className={`rounded-xl border px-2 py-2 text-[12px] font-bold ${
                 intensity === o.id
                   ? 'border-accent/50 bg-accent/15 text-accent-soft'
-                  : 'border-edge bg-surface-2 text-ink-dim'
+                  : 'border-edge bg-white/[0.07] text-ink-dim'
               }`}
             >
               {o.label}

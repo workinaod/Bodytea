@@ -5,7 +5,7 @@ import { Btn } from '../../components/ui'
 function Section({ icon, title, lines }: { icon: string; title: string; lines: string[] }) {
   if (!lines.length) return null
   return (
-    <section className="rounded-2xl border border-edge bg-surface p-4">
+    <section className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
       <h4 className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
         <span className="text-[14px]">{icon}</span> {title}
       </h4>

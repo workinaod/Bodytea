@@ -106,13 +106,13 @@ export function Sheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div
-        className="absolute inset-0 bg-black/70 animate-fade-in"
+        className="absolute inset-0 bg-black/60 backdrop-blur-[6px] animate-fade-in"
         style={{ opacity: dragY > 0 ? Math.max(0.25, 1 - dragY / 400) : undefined }}
         onClick={locked ? undefined : onClose}
       />
       <div
         ref={sheetRef}
-        className={`relative flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-3xl border-t border-edge bg-bg pb-[max(env(safe-area-inset-bottom),16px)] ${
+        className={`relative flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-[30px] bg-[#141416]/95 ring-1 ring-white/[0.07] backdrop-blur-2xl pb-[max(env(safe-area-inset-bottom),16px)] ${
           dragY === 0 && !dragging ? 'animate-slide-up' : ''
         }`}
         style={{
@@ -121,8 +121,8 @@ export function Sheet({
         }}
       >
         {/* Header / drag handle zone */}
-        <div data-sheet-handle className="shrink-0 cursor-grab select-none bg-bg/95 px-5 pb-1 pt-3 backdrop-blur">
-          <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-edge" />
+        <div data-sheet-handle className="shrink-0 cursor-grab select-none px-5 pb-1 pt-3">
+          <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
           <div className="flex items-center justify-between">
             {title ? <h3 className="text-[17px] font-black tracking-tight">{title}</h3> : <span />}
             {!locked && (
@@ -134,7 +134,7 @@ export function Sheet({
                   e.preventDefault()
                   onClose()
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-ink-dim"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.07] text-ink-dim"
               >
                 <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                   <path d="M6 6l12 12M18 6L6 18" />

@@ -265,12 +265,12 @@ export function Onboarding() {
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-[max(env(safe-area-inset-top),24px)]">
       {step > 0 && (
         <div className="mb-4 flex items-center justify-between">
-          <button onClick={back} className="rounded-full bg-surface-2 px-3 py-1.5 text-[12px] font-bold text-ink-dim">
+          <button onClick={back} className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-bold text-ink-dim">
             ‹ back
           </button>
           <div className="flex gap-1">
             {Array.from({ length: 8 }, (_, i) => (
-              <span key={i} className={`h-1 rounded-full transition-all ${i === Math.min(step, 7) ? 'w-5 bg-accent' : i < Math.min(step, 7) ? 'w-2 bg-accent/50' : 'w-2 bg-surface-2'}`} />
+              <span key={i} className={`h-1 rounded-full transition-all ${i === Math.min(step, 7) ? 'w-5 bg-accent' : i < Math.min(step, 7) ? 'w-2 bg-accent/50' : 'w-2 bg-white/[0.07]'}`} />
             ))}
           </div>
           <span className="w-14" />
@@ -316,7 +316,7 @@ export function Onboarding() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Your name"
-            className="mt-5 w-full rounded-xl border border-edge bg-surface px-4 py-3.5 text-[15px] font-semibold text-ink outline-none focus:border-accent/60"
+            className="mt-5 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-4 py-3.5 text-[15px] font-semibold text-ink outline-none focus:ring-accent/45"
           />
           <Btn className="mt-6 w-full py-4" onClick={next}>
             Next: the goal
@@ -353,14 +353,14 @@ export function Onboarding() {
             onChange={(e) => setGoalStatement(e.target.value)}
             placeholder={'"dunk on a 10-ft rim by June"  ·  "squat 315"  ·  "visible abs"'}
             rows={2}
-            className="mt-2 w-full resize-none rounded-xl border border-edge bg-surface px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:border-accent/60"
+            className="mt-2 w-full resize-none rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:ring-accent/45"
           />
           <p className="mt-1 text-[11px] text-ink-faint">This phrase follows you through the whole app. Make it yours.</p>
 
           {/* The coach's follow-ups: "gain 20 lbs" alone can't build a
               great plan. One tap each, every answer shapes the build. */}
           {mode !== 'byor' && goalChip !== null && (
-            <div className="mt-5 rounded-2xl bg-surface p-4">
+            <div className="mt-5 rounded-2xl bg-white/[0.05] p-4">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-accent">Coach follow-ups</p>
               <p className="mt-0.5 text-[11px] text-ink-faint">One tap each. Every answer changes how your plan gets built.</p>
               {GOAL_FOLLOWUPS[goal].map((fq) => (
@@ -395,20 +395,20 @@ export function Onboarding() {
               value={target1.label}
               onChange={(e) => setTarget1({ ...target1, label: e.target.value })}
               placeholder="e.g. Vert"
-              className="min-w-0 flex-1 rounded-xl border border-edge bg-surface px-3 py-2.5 text-[13px] font-semibold outline-none focus:border-accent/60"
+              className="min-w-0 flex-1 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2.5 text-[13px] font-semibold outline-none focus:ring-accent/45"
             />
             <input
               value={target1.target}
               onChange={(e) => setTarget1({ ...target1, target: e.target.value.replace(/[^0-9.]/g, '') })}
               placeholder="30"
               inputMode="decimal"
-              className="w-16 rounded-xl border border-edge bg-surface px-3 py-2.5 text-[13px] font-semibold outline-none focus:border-accent/60"
+              className="w-16 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2.5 text-[13px] font-semibold outline-none focus:ring-accent/45"
             />
             <input
               value={target1.unit}
               onChange={(e) => setTarget1({ ...target1, unit: e.target.value })}
               placeholder="in"
-              className="w-14 rounded-xl border border-edge bg-surface px-3 py-2.5 text-[13px] font-semibold outline-none focus:border-accent/60"
+              className="w-14 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2.5 text-[13px] font-semibold outline-none focus:ring-accent/45"
             />
           </div>
           {mode !== 'byor' && (
@@ -466,7 +466,7 @@ export function Onboarding() {
               <button
                 key={d}
                 onClick={() => setDays(d)}
-                className={`rounded-2xl border py-5 text-center ${days === d ? 'border-accent bg-accent/15 text-accent' : 'border-edge bg-surface text-ink-dim'}`}
+                className={`rounded-2xl border py-5 text-center ${days === d ? 'border-accent bg-accent/15 text-accent' : 'border-edge bg-white/[0.05] text-ink-dim'}`}
               >
                 <div className="text-[24px] font-black">{d}</div>
                 <div className="text-[10px] font-bold uppercase">days</div>
@@ -503,7 +503,7 @@ export function Onboarding() {
               value={customLife}
               onChange={(e) => setCustomLife(e.target.value)}
               placeholder="Your own: a DJ set, league night, choir…"
-              className="mt-2 w-full rounded-xl border border-edge bg-surface px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint focus:border-accent/60"
+              className="mt-2 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint focus:ring-accent/45"
             />
             {customLife.trim() && (
               <div className="mt-1.5 flex gap-1.5">
@@ -642,7 +642,7 @@ export function Onboarding() {
                     key={v}
                     onClick={() => setSex((prev) => (prev === v ? null : v))}
                     className={`rounded-lg px-3.5 py-2 text-[12px] font-bold ${
-                      sex === v ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
+                      sex === v ? 'bg-accent text-black' : 'bg-white/[0.07] text-ink-faint'
                     }`}
                   >
                     {label}
@@ -672,7 +672,7 @@ export function Onboarding() {
                         setSkipMeals(false)
                       }}
                       className={`rounded-xl border px-3 py-2.5 text-[12.5px] font-bold ${
-                        mealsPerDay === n && !skipMeals ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-surface-2 text-ink-dim'
+                        mealsPerDay === n && !skipMeals ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-white/[0.07] text-ink-dim'
                       }`}
                     >
                       {label}
@@ -717,7 +717,7 @@ export function Onboarding() {
                 type="date"
                 value={pickedStart}
                 onChange={(e) => e.target.value && setPickedStart(mondayOf(e.target.value))}
-                className="rounded-xl border border-edge bg-surface px-3 py-2 text-[13px] font-semibold outline-none"
+                className="rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2 text-[13px] font-semibold outline-none"
               />
             </div>
             <p className="text-[11px] text-ink-faint">Weeks start Mondays. Your pick snaps to {formatShort(mondayOf(pickedStart))} → first week runs through {formatShort(addDaysISO(mondayOf(pickedStart), 6))}.</p>
@@ -783,7 +783,7 @@ export function Onboarding() {
 
           {/* The plan's thinking, spelled out. Deep beats generic. */}
           {preview.strategy.length > 0 && (
-            <div className="mt-3 rounded-2xl bg-surface p-4">
+            <div className="mt-3 rounded-2xl bg-white/[0.05] p-4">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">How this plan thinks</p>
               <ul className="mt-2 space-y-2">
                 {preview.strategy.map((s, i) => (
@@ -873,7 +873,7 @@ export function Onboarding() {
             onChange={(e) => setWhyWorks(e.target.value)}
             placeholder={'"I never miss because it\'s short"  ·  "squat added 40 lb this year"'}
             rows={3}
-            className="mt-4 w-full resize-none rounded-xl border border-edge bg-surface px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:border-accent/60"
+            className="mt-4 w-full resize-none rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:ring-accent/45"
           />
           <p className="mt-1 text-[11px] text-ink-faint">
             Goes on record in your coach feed. Empty is fine if it honestly hasn't been working. That's an answer too.
@@ -895,7 +895,7 @@ export function Onboarding() {
           <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">The read on your routine</div>
           <h2 className="mt-1 text-[26px] font-black tracking-tight">Straight notes, no fluff</h2>
           {byorDraft.whyWorks && (
-            <div className="mt-3 rounded-xl border-l-2 border-gold/50 bg-surface px-3.5 py-2.5">
+            <div className="mt-3 rounded-xl border-l-2 border-gold/50 bg-white/[0.05] px-3.5 py-2.5">
               <div className="text-[10px] font-black uppercase tracking-[0.14em] text-gold">Your read</div>
               <p className="mt-0.5 text-[12.5px] italic leading-snug text-ink-dim">“{byorDraft.whyWorks}”</p>
             </div>
@@ -1012,7 +1012,7 @@ function PermissionsBlock() {
             setNotif(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission),
           )
         }}
-        className={`${row} ${notif === 'granted' ? 'border-lime/40 bg-lime/8' : 'border-edge bg-surface-2'}`}
+        className={`${row} ${notif === 'granted' ? 'border-lime/40 bg-lime/8' : 'border-edge bg-white/[0.07]'}`}
       >
         <span>
           <span className={`block text-[13.5px] font-bold ${notif === 'granted' ? 'text-lime' : 'text-ink'}`}>
@@ -1032,7 +1032,7 @@ function PermissionsBlock() {
             { timeout: 10000 },
           )
         }
-        className={`${row} ${geo === 'granted' ? 'border-lime/40 bg-lime/8' : 'border-edge bg-surface-2'}`}
+        className={`${row} ${geo === 'granted' ? 'border-lime/40 bg-lime/8' : 'border-edge bg-white/[0.07]'}`}
       >
         <span>
           <span className={`block text-[13.5px] font-bold ${geo === 'granted' ? 'text-lime' : 'text-ink'}`}>

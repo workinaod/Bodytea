@@ -66,7 +66,7 @@ export function RouteMap({
   if (!view) {
     return (
       <div
-        className="flex items-center justify-center rounded-2xl border border-edge/80 bg-surface text-[11.5px] text-ink-faint"
+        className="flex items-center justify-center rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05] text-[11.5px] text-ink-faint"
         style={{ height }}
       >
         {live ? 'Waiting for GPS movement…' : 'No route recorded'}
@@ -75,7 +75,7 @@ export function RouteMap({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-edge/80 bg-surface" style={{ height }}>
+    <div className="relative overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]" style={{ height }}>
       <div className="absolute inset-0 opacity-[0.55] saturate-[0.35] brightness-[0.62] contrast-[1.05]">
         {view.tiles.map((t) => (
           <img

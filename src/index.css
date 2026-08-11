@@ -78,6 +78,21 @@ h3 {
   border-radius: 6px;
 }
 
+/* Glossy top-light on colored buttons: depth without a border. The
+   overlay inherits the radius, so it works on pills and blocks alike. */
+.sheen {
+  position: relative;
+  isolation: isolate;
+}
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 45%);
+  pointer-events: none;
+}
+
 /* Hide scrollbars on chip rows but keep scrollability */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

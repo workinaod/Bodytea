@@ -65,7 +65,7 @@ export function MealsScreen() {
       </div>
 
       {/* The three jobs, one switch */}
-      <div className="flex rounded-xl border border-edge bg-surface p-1">
+      <div className="flex rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-1">
         {(
           [
             { id: 'today', label: 'Log' },
@@ -77,7 +77,7 @@ export function MealsScreen() {
             key={v.id}
             onClick={() => setView(v.id)}
             className={`flex-1 rounded-lg py-2 text-[12.5px] font-bold transition-colors ${
-              view === v.id ? 'bg-surface-2 text-ink' : 'text-ink-faint'
+              view === v.id ? 'bg-white/[0.07] text-ink' : 'text-ink-faint'
             }`}
           >
             {v.label}
@@ -141,11 +141,11 @@ export function MealsScreen() {
           </Btn>
 
           <SectionTitle>Eaten {day?.entries.length ? `(${day.entries.length})` : ''}</SectionTitle>
-          <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+          <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
             {(day?.entries ?? []).map((e, i) => (
               <div
                 key={e.id}
-                className={`flex items-center justify-between gap-2 px-4 py-2.5 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+                className={`flex items-center justify-between gap-2 px-4 py-2.5 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
               >
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[13px] font-bold">{e.label}</div>
@@ -155,8 +155,8 @@ export function MealsScreen() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button className="h-8 w-8 rounded-lg bg-surface-2 text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings - 0.5)}>−</button>
-                  <button className="h-8 w-8 rounded-lg bg-surface-2 text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings + 0.5)}>+</button>
+                  <button className="h-8 w-8 rounded-lg bg-white/[0.07] text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings - 0.5)}>−</button>
+                  <button className="h-8 w-8 rounded-lg bg-white/[0.07] text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings + 0.5)}>+</button>
                   <button className="h-8 w-8 rounded-lg text-sm font-bold text-danger" onClick={() => removeMealEntry(date, e.id)}>✕</button>
                 </div>
               </div>
@@ -187,7 +187,7 @@ export function MealsScreen() {
                     <button
                       key={s.id}
                       onClick={() => toggleSupplement(date, s.id)}
-                      className={`rounded-xl border p-3 text-left ${on ? 'border-lime/40 bg-lime/8' : 'border-edge bg-surface'}`}
+                      className={`rounded-xl border p-3 text-left ${on ? 'border-lime/40 bg-lime/8' : 'border-edge bg-white/[0.05]'}`}
                     >
                       <div className={`text-[12.5px] font-bold ${on ? 'text-lime' : 'text-ink'}`}>
                         {on ? '✓ ' : ''}{s.name}
@@ -246,7 +246,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
     return FOODS.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 12)
   }, [foodQuery])
 
-  const field = 'rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint'
+  const field = 'rounded-xl bg-white/[0.07] px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint'
 
   return (
     <Sheet open onClose={onClose} title="Log food">
@@ -263,7 +263,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
             <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
               From my plan, one tap
             </div>
-            <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+            <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
               {templates.map((t, i) => (
                 <button
                   key={t.id}
@@ -271,8 +271,8 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
                     addMealEntry(date, { label: `${t.slot} · ${t.name}`, proteinG: t.proteinG, kcal: t.kcal, source: 'mealTemplate' })
                     onClose()
                   }}
-                  className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-surface-2 ${
-                    i > 0 ? 'border-t border-edge/50' : ''
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-white/[0.07] ${
+                    i > 0 ? 'border-t border-white/[0.05]' : ''
                   }`}
                 >
                   <span className="min-w-0">
@@ -316,7 +316,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
         <div>
           <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">Single foods</div>
           <input
-            className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-2.5 text-[13px] outline-none placeholder:text-ink-faint"
+            className="w-full rounded-xl bg-white/[0.07] px-3.5 py-2.5 text-[13px] outline-none placeholder:text-ink-faint"
             placeholder={`Search ${FOODS.length} foods…`}
             value={foodQuery}
             onChange={(e) => setFoodQuery(e.target.value)}
@@ -330,7 +330,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
                     addMealEntry(date, { label: `${f.name} (${f.serving})`, proteinG: f.proteinG, kcal: f.kcal, source: 'chip', foodId: f.id })
                     setAdded((n) => n + 1)
                   }}
-                  className="rounded-xl border border-edge bg-surface-2 px-3 py-2 text-left active:border-accent/40"
+                  className="rounded-xl bg-white/[0.07] px-3 py-2 text-left active:bg-white/[0.09]"
                 >
                   <div className="text-[12px] font-bold leading-tight">{f.name}</div>
                   <div className="text-[10px] font-semibold text-ink-faint">
@@ -359,7 +359,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
                           addMealEntry(date, { label: `${f.name} (${f.serving})`, proteinG: f.proteinG, kcal: f.kcal, source: 'chip', foodId: f.id })
                           setAdded((n) => n + 1)
                         }}
-                        className="shrink-0 rounded-xl border border-edge bg-surface-2 px-3 py-2 text-left active:border-accent/40"
+                        className="shrink-0 rounded-xl bg-white/[0.07] px-3 py-2 text-left active:bg-white/[0.09]"
                       >
                         <div className="text-[12px] font-bold leading-tight">{f.name}</div>
                         <div className="text-[10px] font-semibold text-ink-faint">
@@ -454,12 +454,12 @@ function PlanView({ onEditStack, onSetup }: { onEditStack: () => void; onSetup: 
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
         {meals.map((t, i) => (
           <button
             key={t.id}
             onClick={() => setOpenMeal(t)}
-            className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left active:bg-surface-2 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+            className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left active:bg-white/[0.07] ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
           >
             <span className="min-w-0">
               <span className="block truncate text-[13.5px] font-extrabold">
@@ -532,9 +532,9 @@ function PlanView({ onEditStack, onSetup }: { onEditStack: () => void; onSetup: 
       >
         Supplement stack
       </SectionTitle>
-      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
         {plan.supplements.map((s, i) => (
-          <div key={s.id} className={`flex items-center justify-between px-4 py-2.5 ${i > 0 ? 'border-t border-edge/50' : ''}`}>
+          <div key={s.id} className={`flex items-center justify-between px-4 py-2.5 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}>
             <span className="text-[13px] font-bold">{s.name}</span>
             <span className="text-[11px] text-ink-faint">{s.dose} · {s.when}</span>
           </div>
@@ -622,7 +622,7 @@ function MealPlanSetupSheet({ onClose }: { onClose: () => void }) {
                 key={n}
                 onClick={() => setCount(n)}
                 className={`rounded-xl border px-3 py-2.5 text-[12.5px] font-bold ${
-                  count === n ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-surface-2 text-ink-dim'
+                  count === n ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-white/[0.07] text-ink-dim'
                 }`}
               >
                 {label}
@@ -706,9 +706,9 @@ function MealDetailSheet({
           <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
             Same macros, common groceries
           </div>
-          <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+          <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
             {alts.map((a, i) => (
-              <div key={a.id} className={`px-4 py-3 ${i > 0 ? 'border-t border-edge/50' : ''}`}>
+              <div key={a.id} className={`px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 truncate text-[13.5px] font-extrabold">{a.name}</span>
                   <span className="shrink-0 font-mono text-[11.5px] text-ink-faint">
@@ -724,7 +724,7 @@ function MealDetailSheet({
                     Use instead
                   </button>
                   <button
-                    className="flex-1 rounded-lg border border-edge bg-surface-2 py-2 text-[12px] font-bold text-ink-dim"
+                    className="flex-1 rounded-lg bg-white/[0.07] py-2 text-[12px] font-bold text-ink-dim"
                     onClick={() => onAddAlt(a)}
                   >
                     + Add to plan
@@ -755,7 +755,7 @@ function MealForm({
   onClose: () => void
 }) {
   const [t, setT] = useState(value)
-  const field = 'w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint'
+  const field = 'w-full rounded-xl bg-white/[0.07] px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint'
   return (
     <Sheet open onClose={onClose} title={value.name ? 'Edit meal' : 'New meal'}>
       <div className="space-y-3 pb-6">
@@ -815,7 +815,7 @@ function SupplementStackSheet({ onClose }: { onClose: () => void }) {
   const [dose, setDose] = useState('')
   const [when, setWhen] = useState('')
   const available = SUPPLEMENT_CATALOG.filter((c) => !stack.some((s) => s.id === c.id))
-  const field = 'rounded-xl border border-edge bg-surface-2 px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint'
+  const field = 'rounded-xl bg-white/[0.07] px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint'
 
   function add(s: SupplementDef) {
     update((d) => {
@@ -826,9 +826,9 @@ function SupplementStackSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet open onClose={onClose} title="My supplement stack">
       <div className="space-y-4 pb-6">
-        <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+        <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
           {stack.map((s, i) => (
-            <div key={s.id} className={`flex items-center justify-between gap-2 px-4 py-3 ${i > 0 ? 'border-t border-edge/50' : ''}`}>
+            <div key={s.id} className={`flex items-center justify-between gap-2 px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}>
               <div className="min-w-0">
                 <div className="truncate text-[13px] font-bold">{s.name}</div>
                 <div className="text-[10.5px] text-ink-faint">{s.dose} · {s.when}</div>
@@ -914,7 +914,7 @@ function GroceryList() {
                 >
                   <span
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] font-black ${
-                      checked[item] ? 'border-lime/50 bg-lime text-black' : 'border-edge bg-surface-2'
+                      checked[item] ? 'border-lime/50 bg-lime text-black' : 'border-edge bg-white/[0.07]'
                     }`}
                   >
                     {checked[item] ? '✓' : ''}
@@ -940,13 +940,13 @@ function GroceryList() {
             {editing && (
               <div className="flex gap-1.5 pt-1">
                 <input
-                  className="flex-1 rounded-lg border border-edge bg-surface-2 px-2.5 py-1.5 text-[12.5px] outline-none placeholder:text-ink-faint"
+                  className="flex-1 rounded-lg bg-white/[0.07] px-2.5 py-1.5 text-[12.5px] outline-none placeholder:text-ink-faint"
                   placeholder={`Add to ${g.category.toLowerCase()}…`}
                   value={drafts[g.category] ?? ''}
                   onChange={(e) => setDrafts((p) => ({ ...p, [g.category]: e.target.value }))}
                 />
                 <button
-                  className="rounded-lg bg-surface-2 px-3 text-[12px] font-bold text-ink-dim"
+                  className="rounded-lg bg-white/[0.07] px-3 text-[12px] font-bold text-ink-dim"
                   onClick={() => {
                     const item = (drafts[g.category] ?? '').trim()
                     if (!item) return

@@ -95,7 +95,7 @@ export function BoardContent() {
       <p className="text-[12px] text-ink-faint">Global. Every athlete on the app, one ladder.</p>
 
       {/* Your numbers always render, account or not */}
-      <div className="rounded-2xl border border-edge/80 bg-surface p-3.5">
+      <div className="rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05] p-3.5">
         <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-ink-faint">Your numbers</div>
         <div className="grid grid-cols-5 gap-1 text-center">
           <MiniStat label="Streak" value={`${mine.streak}d`} hot={mine.streak >= 7} />
@@ -112,7 +112,7 @@ export function BoardContent() {
       </div>
 
       {checked && !uid && (
-        <div className="rounded-2xl border border-accent/30 bg-surface p-4">
+        <div className="rounded-2xl border border-accent/30 bg-white/[0.05] p-4">
           <p className="text-[13px] leading-relaxed text-ink-dim">
             The board is where your streak meets everyone else's. Create a free account (number + PIN, no SMS) and
             your numbers start competing.
@@ -142,7 +142,7 @@ export function BoardContent() {
           {rows === null && <p className="py-8 text-center text-[12.5px] text-ink-faint">Loading the ladder…</p>}
 
           {rows !== null && rows.length === 0 && (
-            <div className="rounded-2xl border border-edge/80 bg-surface py-6 text-center">
+            <div className="rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05] py-6 text-center">
               <p className="text-[13px] font-bold">Nobody's ranked yet.</p>
               <p className="mt-1 text-[12px] text-ink-dim">
                 Ranking takes 3 logged sessions. Log yours and take the top spot while it's free.
@@ -170,11 +170,11 @@ export function BoardContent() {
               </div>
 
               {/* 4..50, one ladder, not fifty boxes */}
-              <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+              <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
                 {rows.slice(3).map((r, i) => (
                   <div
                     key={r.user_id}
-                    className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-edge/50' : ''} ${
+                    className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-white/[0.05]' : ''} ${
                       r.user_id === uid ? 'bg-accent/10' : ''
                     }`}
                   >
@@ -237,7 +237,7 @@ function PodiumTile({ row, rank, category, me }: { row: BoardRow; rank: 1 | 2 | 
     <div
       style={{ animationDelay: `${rank * 60}ms` }}
       className={`animate-rise rounded-2xl border text-center ${heights[rank]} ${
-        me ? 'border-accent/60 bg-accent/15' : rank === 1 ? 'border-gold/40 bg-surface' : 'border-edge bg-surface'
+        me ? 'border-accent/60 bg-accent/15' : rank === 1 ? 'border-gold/40 bg-white/[0.05]' : 'border-edge bg-white/[0.05]'
       }`}
     >
       <div className={`font-display text-[17px] font-bold leading-none ${rankTone[rank]}`}>{rank}</div>

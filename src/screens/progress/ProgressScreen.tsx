@@ -124,7 +124,7 @@ export function ProgressScreen() {
       <h1 className="text-[30px] font-bold tracking-tight">Progress</h1>
 
       {/* You vs everyone: the Board lives here as a second lens */}
-      <div className="flex rounded-xl border border-edge bg-surface p-1">
+      <div className="flex rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-1">
         {(
           [
             { id: 'me', label: 'My progress' },
@@ -135,7 +135,7 @@ export function ProgressScreen() {
             key={v.id}
             onClick={() => setView(v.id)}
             className={`flex-1 rounded-lg py-2 text-[12.5px] font-bold transition-colors ${
-              view === v.id ? 'bg-surface-2 text-ink' : 'text-ink-faint'
+              view === v.id ? 'bg-white/[0.07] text-ink' : 'text-ink-faint'
             }`}
           >
             {v.label}
@@ -284,13 +284,13 @@ export function ProgressScreen() {
             <SimpleLine points={weeklyMiles(data, today)} unit=" mi" color="var(--color-accent)" />
             <p className="mt-1 text-[11px] font-semibold text-ink-faint">Weekly miles, GPS-tracked.</p>
           </Card>
-          <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+          <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
             {[...data.runs].reverse().slice(0, 8).map((r, i) => (
               <div
                 key={r.id}
                 onClick={() => setOpenRun(r)}
-                className={`flex cursor-pointer items-center justify-between px-4 py-2.5 active:bg-surface-2 ${
-                  i > 0 ? 'border-t border-edge/50' : ''
+                className={`flex cursor-pointer items-center justify-between px-4 py-2.5 active:bg-white/[0.07] ${
+                  i > 0 ? 'border-t border-white/[0.05]' : ''
                 }`}
               >
                 <span className="text-[13px] font-bold">
@@ -312,7 +312,7 @@ export function ProgressScreen() {
 
       {/* Milestones */}
       <SectionTitle>Milestones</SectionTitle>
-      <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
         {REVIEW_MARKS.map((mark, i) => {
           const unlocked = unlockedMarks(data, today).some((m) => m.id === mark.id)
           const daysIn = daysBetween(data.settings.phaseStartDate, today)
@@ -331,8 +331,8 @@ export function ProgressScreen() {
                     }
                   : undefined
               }
-              className={`flex items-center justify-between px-4 py-3 ${i > 0 ? 'border-t border-edge/50' : ''} ${
-                unlocked ? 'cursor-pointer active:bg-surface-2' : 'opacity-50'
+              className={`flex items-center justify-between px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''} ${
+                unlocked ? 'cursor-pointer active:bg-white/[0.07]' : 'opacity-50'
               }`}
             >
               <span className="text-[13px] font-bold">{mark.label}</span>
@@ -369,11 +369,11 @@ export function ProgressScreen() {
             </div>
             <RouteMap points={openRun.points} height={230} />
             {openRun.splits.length > 0 && (
-              <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
+              <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
                 {openRun.splits.map((s, i) => (
                   <div
                     key={i}
-                    className={`flex items-center justify-between px-4 py-2 ${i > 0 ? 'border-t border-edge/50' : ''}`}
+                    className={`flex items-center justify-between px-4 py-2 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
                   >
                     <span className="text-[12.5px] font-bold">Mile {i + 1}</span>
                     <span className="font-mono text-[12px] text-ink-dim">{fmtDuration(s)}</span>
@@ -496,7 +496,7 @@ function CheckinSheet({ open, onClose, onSaved, last }: { open: boolean; onClose
                   fileRef.current?.click()
                 }}
                 className={`rounded-xl border p-3 text-center text-[12px] font-bold ${
-                  m.photoIds[angle] ? 'border-lime/40 bg-lime/8 text-lime' : 'border-edge bg-surface-2 text-ink-dim'
+                  m.photoIds[angle] ? 'border-lime/40 bg-lime/8 text-lime' : 'border-edge bg-white/[0.07] text-ink-dim'
                 }`}
               >
                 {busy === angle ? 'Saving…' : m.photoIds[angle] ? `✓ ${angle}` : `📷 ${angle}`}
@@ -557,7 +557,7 @@ function PhotoCompare({ measurements }: { measurements: Measurement[] }) {
           { url: rightUrl, m: right, idx: rightIdx, set: setRightIdx },
         ].map((side, i) => (
           <div key={i}>
-            <div className="aspect-[3/4] overflow-hidden rounded-xl border border-edge bg-surface-2">
+            <div className="aspect-[3/4] overflow-hidden rounded-xl bg-white/[0.07]">
               {side.url ? (
                 <img src={side.url} alt="progress" className="h-full w-full object-cover" />
               ) : (
