@@ -48,13 +48,13 @@ function usePhotoUrl(id: string | undefined): string | null {
 }
 
 const METRICS = [
-  { key: 'weightLb', label: 'Weight', unit: ' lb', caption: 'Will barely move — that\'s the design. Recomp, not a cut.' },
-  { key: 'bodyFatPct', label: 'Body fat', unit: '%', caption: 'Target: 10% or less. Same method, same morning — the trend is the truth, not any single reading.' },
+  { key: 'weightLb', label: 'Weight', unit: ' lb', caption: 'Will barely move, that\'s the design. Recomp, not a cut.' },
+  { key: 'bodyFatPct', label: 'Body fat', unit: '%', caption: 'Target: 10% or less. Same method, same morning. The trend is the truth.' },
   { key: 'waistIn', label: 'Waist', unit: '"', caption: 'THE metric. This line falling is the whole recomp.' },
   { key: 'chestIn', label: 'Chest', unit: '"', caption: '' },
   { key: 'armsIn', label: 'Arms', unit: '"', caption: 'Target: 16"' },
   { key: 'thighIn', label: 'Thigh', unit: '"', caption: '' },
-  { key: 'vertIn', label: 'Vert / rim', unit: '"', caption: 'Consistent dunks are the goal — track the same touch point.' },
+  { key: 'vertIn', label: 'Vert / rim', unit: '"', caption: 'Consistent dunks are the goal. Track the same touch point.' },
 ] as const
 
 export function ProgressScreen() {
@@ -112,10 +112,10 @@ export function ProgressScreen() {
     if (plan.name.startsWith('NAOD')) return fallback
     const hint = key === 'vertIn' ? 'vert' : key === 'armsIn' ? 'arm' : key === 'waistIn' ? 'waist' : key === 'weightLb' ? 'weight' : key === 'bodyFatPct' ? 'fat' : '␀'
     const t = plan.customTargets.find((c) => c.label.toLowerCase().includes(hint))
-    if (t) return `Target: ${t.target}${t.unit} — “${plan.goalStatement}”`
-    if (key === 'vertIn' && (plan.goal === 'vertical' || plan.goal === 'speed')) return `“${plan.goalStatement}” — track the same touch point every time.`
-    if (key === 'waistIn' && plan.goal === 'lean') return 'THE metric for your cut — this line falling is the whole goal.'
-    if (key === 'weightLb' && plan.goal === 'muscle') return 'Should trend UP slowly — muscle is built, not wished for.'
+    if (t) return `Target: ${t.target}${t.unit} · “${plan.goalStatement}”`
+    if (key === 'vertIn' && (plan.goal === 'vertical' || plan.goal === 'speed')) return `“${plan.goalStatement}”. Track the same touch point every time.`
+    if (key === 'waistIn' && plan.goal === 'lean') return 'THE metric for your cut. This line falling is the whole goal.'
+    if (key === 'weightLb' && plan.goal === 'muscle') return 'Should trend UP slowly. Muscle is built, not wished for.'
     return ''
   }
 
@@ -260,7 +260,7 @@ export function ProgressScreen() {
       <Card>
         <SimpleLine points={liftPoints} unit={lift === 'pull-up' ? ' reps' : ' lb'} color="var(--color-lime)" />
         <p className="mt-1 text-[11px] font-semibold text-ink-faint">
-          Core movers never rotate — keep adding load and watch this climb.
+          Core movers never rotate. Keep adding load and watch this climb.
         </p>
       </Card>
 
@@ -429,7 +429,7 @@ function CheckinSheet({ open, onClose, onSaved, last }: { open: boolean; onClose
     <Sheet open={open} onClose={onClose} title="Weekly check-in">
       <div className="space-y-3 pb-6">
         <p className="text-[12px] text-ink-dim">
-          Same morning each week, same conditions. Prefilled with last week — adjust what changed.
+          Same morning each week, same conditions. Prefilled with last week, adjust what changed.
         </p>
         {fields.map((f) => (
           <div key={f.key}>
@@ -466,7 +466,7 @@ function CheckinSheet({ open, onClose, onSaved, last }: { open: boolean; onClose
 
         <div className="pt-1">
           <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
-            Photos — front, side, back, same lighting
+            Photos: front, side, back, same lighting
           </div>
           <input
             ref={fileRef}
@@ -536,7 +536,7 @@ function PhotoCompare({ measurements }: { measurements: Measurement[] }) {
     return (
       <Card>
         <p className="py-2 text-center text-[12.5px] text-ink-faint">
-          No photos yet. The mirror lags the logbook — photos are how you catch it moving.
+          No photos yet. The mirror lags the logbook. Photos catch it moving.
         </p>
       </Card>
     )

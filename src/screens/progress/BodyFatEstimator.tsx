@@ -53,7 +53,7 @@ export function BodyFatEstimator({
           <>
             <p className="text-[12.5px] leading-snug text-ink-dim">
               All you need is a soft tape measure. The US Navy method estimates body fat from two or
-              three tape sites — not lab-grade, but consistent, and consistency is what the trend needs.
+              three tape sites. Not lab-grade, but consistent, and that's what the trend needs.
             </p>
             <div>
               <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
@@ -81,7 +81,7 @@ export function BodyFatEstimator({
         {guidance && (
           <>
             <div className="text-[11px] font-black uppercase tracking-[0.16em] text-accent">
-              Tape site {step === 'neck' ? 1 : step === 'waist' ? 2 : 3} — {guidance.title}
+              Tape site {step === 'neck' ? 1 : step === 'waist' ? 2 : 3}: {guidance.title}
             </div>
             <ol className="space-y-2">
               {guidance.how.map((h, i) => (
@@ -128,8 +128,8 @@ export function BodyFatEstimator({
                     {pct}%
                   </div>
                   <p className="mx-auto mt-3 max-w-[36ch] text-[11.5px] leading-snug text-ink-faint">
-                    Tape estimates carry a few points of error — that's fine. Measure the SAME way at
-                    every check-in and the trend line becomes the most honest number you own.
+                    Tape estimates carry a few points of error, that's fine. Measure the SAME way
+                    every check-in and the trend becomes the most honest number you own.
                   </p>
                 </div>
                 <Btn
@@ -144,7 +144,7 @@ export function BodyFatEstimator({
               </>
             ) : (
               <div className="border-l-2 border-danger/70 py-1 pl-3 text-[12.5px] leading-snug text-danger">
-                Those numbers don't produce a sane estimate — usually a tape slip (neck bigger than
+                Those numbers don't produce a sane estimate. Usually a tape slip (neck bigger than
                 waist, or a missed site). Go back and re-measure.
               </div>
             )}

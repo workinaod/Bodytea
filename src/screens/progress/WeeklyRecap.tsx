@@ -32,7 +32,7 @@ function buildCards(data: AppData, today: string): RecapCard[] {
         ? 'Every scheduled session, banked. That is how bodies get built.'
         : scheduled === 0
           ? 'A quiet week on the schedule.'
-          : `${done + partial} of ${scheduled} sessions. Every one you made counts — every one you missed knows.`,
+          : `${done + partial} of ${scheduled} sessions. Every one you made counts. Every one you missed knows.`,
     glow: 'var(--color-accent)',
   })
 
@@ -41,7 +41,7 @@ function buildCards(data: AppData, today: string): RecapCard[] {
     cards.push({
       eyebrow: 'Streak',
       big: String(streak),
-      caption: streak >= 14 ? 'Days in a row. This is who you are now.' : 'Days in a row — protect it like a PR.',
+      caption: streak >= 14 ? 'Days in a row. This is who you are now.' : 'Days in a row. Protect it like a PR.',
       glow: 'var(--color-lime)',
     })
   }
@@ -62,7 +62,7 @@ function buildCards(data: AppData, today: string): RecapCard[] {
       caption:
         pHit === pDays
           ? 'Target hit every logged day. The muscle you keep is built at the table.'
-          : `Days on target. The other ${pDays - pHit} — that's where gains leak.`,
+          : `Days on target. The other ${pDays - pHit}? That's where gains leak.`,
       glow: 'var(--color-cyan)',
     })
   }
@@ -84,7 +84,7 @@ function buildCards(data: AppData, today: string): RecapCard[] {
         caption:
           bf !== null
             ? `Body fat ${bf > 0 ? '+' : ''}${bf}% since last check-in. Trends, not days.`
-            : 'Since last check-in. One data point — the trend line is the truth.',
+            : 'Since last check-in. One data point. The trend line is the truth.',
         glow: 'var(--color-gold)',
       })
     }

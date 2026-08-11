@@ -37,8 +37,8 @@ export function TierDropSheet({
       <div className="space-y-4 pb-6">
         <p className="text-[13px] leading-snug text-ink-dim">
           {planned
-            ? 'Planned fallback weeks are how the plan survives real life — but every one goes on the record with your reason, in your words.'
-            : 'The plan says pick the tier at the START of the week. Dropping now still works — with your reason, in your words, on the record.'}{' '}
+            ? 'Planned fallback weeks are how the plan survives real life. Every one goes on the record, in your words.'
+            : 'You pick the tier at the START of the week. Dropping now still works, but the reason goes on the record.'}{' '}
           Write it like you'll re-read it in a month, because you will. And if this "brutal week"
           somehow contains full sessions, the Sergeant will notice.
         </p>

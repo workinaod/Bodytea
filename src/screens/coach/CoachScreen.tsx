@@ -107,7 +107,7 @@ export function CoachScreen() {
           className="mt-4 w-full"
           onClick={() => {
             // A pep talk on demand — spoken, not written into the Record
-            setPushLine(coachLineFor('push'))
+            setPushLine(coachLineFor('push', { goal: data.plan.goalStatement || 'getting better than yesterday' }))
             setPushOpen(true)
           }}
         >

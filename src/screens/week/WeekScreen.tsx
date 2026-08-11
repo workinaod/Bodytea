@@ -106,7 +106,7 @@ export function WeekScreen() {
       </div>
 
       {/* Tier picker */}
-      <SectionTitle>This week's tier {needsPick && <span className="text-danger">— pick it now</span>}</SectionTitle>
+      <SectionTitle>This week's tier {needsPick && <span className="text-danger">· pick it now</span>}</SectionTitle>
       {needsPick && (
         <div className="border-l-2 border-gold/70 py-1 pl-3 text-[12.5px] font-semibold leading-snug text-gold/95">
           Pick the tier at the START of the week based on what you honestly have. Don't decide day by day.
@@ -216,8 +216,8 @@ export function WeekScreen() {
           <Card className="!py-3.5">
             <p className="text-[12.5px] leading-relaxed text-ink-dim">
               {ball
-                ? 'Add the real-life stuff that hits your training — a DJ set, a night shift, a closing shift on your feet. Then each week just tap the days it happens and the plan bends around it.'
-                : 'Add the real-life stuff that hits your training — work shifts, late nights, whatever leaves you drained. Then each week just tap the days it happens and the plan bends around it.'}
+                ? 'Add the real-life stuff that hits your training: a DJ set, a night shift, a closing shift on your feet. Tap the days it happens and the plan bends around it.'
+                : 'Add the real-life stuff that hits your training: work shifts, late nights, whatever leaves you drained. Tap the days it happens and the plan bends around it.'}
             </p>
           </Card>
         )}
@@ -233,7 +233,7 @@ export function WeekScreen() {
                   <div className="text-[10.5px] text-ink-faint">
                     {ev.kind === 'late-night'
                       ? 'Train that morning · next day starts short on sleep'
-                      : 'Next day drops a jump set — legs arrive pre-fatigued'}
+                      : 'Next day drops a jump set, legs arrive pre-fatigued'}
                   </div>
                 </div>
                 <button
@@ -310,8 +310,8 @@ export function WeekScreen() {
             </div>
             <div className="text-[10.5px] text-ink-faint">
               {ball
-                ? 'Log what actually happens day-of — Today tab, cardio button.'
-                : 'Games and hard sessions count as conditioning. Log day-of — Today tab, cardio button.'}
+                ? 'Log what actually happens day-of: Today tab, cardio button.'
+                : 'Games and hard sessions count as conditioning. Log day-of: Today tab, cardio button.'}
             </div>
           </div>
           <div className="flex gap-1.5">
@@ -348,8 +348,8 @@ export function WeekScreen() {
                     ? 'REQUIRED: no ball logged → one backup session this week. Thursday holds the slot until you pick.'
                     : 'REQUIRED: no conditioning yet → at least one session this week. Pick below.'
                 : ball
-                  ? 'If the ball doesn\'t happen, one backup session is the rule — it stands in for ball that week.'
-                  : `Every plan carries cardio — ${condPerWeek} session${condPerWeek > 1 ? 's' : ''} a week for your goal. Sport counts; so do tracked runs and rides.`}
+                  ? 'If the ball doesn\'t happen, one backup session is the rule. It stands in for ball that week.'
+                  : `Every plan carries cardio: ${condPerWeek} session${condPerWeek > 1 ? 's' : ''} a week for your goal. Sport counts, so do tracked runs and rides.`}
             </p>
             {(['A', 'B', 'circuit'] as const).map((g) => (
               <div key={g}>
@@ -493,7 +493,7 @@ function AddLifeEvent({ onAdd }: { onAdd: (label: string, kind: LifeEventKind) =
       <input
         value={label}
         onChange={(e) => setLabel(e.target.value)}
-        placeholder='Name it — "DJ set", "night shift", "closing shift"'
+        placeholder='Name it: "DJ set", "night shift", "closing shift"'
         className="w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:border-accent/60"
       />
       <div className="flex gap-1.5">
