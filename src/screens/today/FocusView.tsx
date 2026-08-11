@@ -25,6 +25,15 @@ interface BreakState {
   nextSetLabel: string
 }
 
+/** What load the number means, by equipment. "Your weight" reads like
+    body weight; "Weight per dumbbell" can't be misread. */
+function loadLabel(equipment: string): string {
+  if (/dumbbell/i.test(equipment)) return 'Weight per dumbbell'
+  if (/barbell|ez bar|trap bar/i.test(equipment)) return 'Weight on the bar'
+  if (/kettlebell/i.test(equipment)) return 'Kettlebell weight'
+  return 'Added weight'
+}
+
 /** The main details in one breath — cue first, then the first two steps
     trimmed to their opening clause. Never the write-up verbatim. */
 function shortHowTo(def: ExerciseDef): string {
@@ -237,7 +246,7 @@ export function FocusView({
         : `${set.targetReps.replace(/[-–]/, ' to ')} reps`
     const weightBit = isLoaded && set.weightLb !== undefined ? ` at ${set.weightLb} pounds` : ''
     const intro = `${def.name}. Set ${current.setIdx + 1} of ${ex?.sets.length} — ${repsBit}${weightBit}.`
-    const prompt = isLoaded ? 'Set your weight, then say ready.' : 'Say ready when set.'
+    const prompt = isLoaded ? `${loadLabel(def.equipment)} first, then say ready.` : 'Say ready when set.'
     setCaption(`${intro} ${prompt}`)
     if (soundRef.current === 'voice') say(`${intro} ${prompt}`, { interrupt: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -315,7 +324,7 @@ export function FocusView({
     (set.weightLb === undefined || set.weightLb <= 0)
   const gateGo = () => {
     if (needsWeight) {
-      const line = 'Enter your weight first.'
+      const line = `${loadLabel(def.equipment)} first.`
       setCaption(line)
       if (soundRef.current === 'voice') say(line, { interrupt: true })
       return
@@ -489,7 +498,7 @@ export function FocusView({
         {/* The gate: weight goes in BEFORE the set — always in view */}
         {phase === 'go' && isLoaded && (
           <div className="mx-auto mb-2 flex max-w-xs items-center justify-between rounded-2xl border border-accent/30 bg-surface px-4 py-2.5">
-            <span className="text-[11px] font-black uppercase tracking-wider text-ink-dim">Your weight</span>
+            <span className="text-[11px] font-black uppercase tracking-wider text-ink-dim">{loadLabel(def.equipment)}</span>
             <Stepper
               value={set.weightLb}
               onChange={(v) => patchSet(session.date, current.exIdx, current.setIdx, { weightLb: v })}
