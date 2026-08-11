@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { CustomTarget, EquipTag, Goal, PlanConfig, RoutineGoal, Weekday } from '../types'
+import type { CustomTarget, EquipTag, Goal, LifeEventKind, PlanConfig, RoutineGoal, Weekday } from '../types'
+
+// The real-life checklist: each pick seeds a life event with a label the
+// engine's notes will use, so the coaching speaks this user's schedule.
+const LIFE_CHIPS: { id: string; chip: string; label: string; kind: LifeEventKind }[] = [
+  { id: 'night-shift', chip: '🌙 Night shifts', label: 'Night shift', kind: 'late-night' },
+  { id: 'late-gig', chip: '🎤 Gigs / late events', label: 'Late gig', kind: 'late-night' },
+  { id: 'on-feet', chip: '🦵 On my feet at work', label: 'On-feet shift', kind: 'on-feet' },
+  { id: 'kids', chip: '👶 Up nights with kids', label: 'Up with the kids', kind: 'late-night' },
+]
 import { mondayOf, todayISO, formatShort, addDaysISO } from '../engine/calendar'
 import { useAppStore, uid } from '../store/appStore'
 import { saveMeasurement } from '../logic/actions'
@@ -90,6 +99,9 @@ export function Onboarding() {
   const [extras, setExtras] = useState<Set<EquipTag>>(new Set())
   const [experience, setExperience] = useState<'new' | 'returning' | 'trained'>('returning')
   const [mealsPerDay, setMealsPerDay] = useState<2 | 3 | 4 | 5>(4)
+  const [lifePicks, setLifePicks] = useState<Set<string>>(new Set())
+  const [customLife, setCustomLife] = useState('')
+  const [customLifeKind, setCustomLifeKind] = useState<LifeEventKind>('late-night')
   const [weight, setWeight] = useState(180)
   const [vert, setVert] = useState(0)
   const [pickedStart, setPickedStart] = useState(mondayOf(todayISO()))
@@ -111,8 +123,12 @@ export function Onboarding() {
       experience,
       bodyweightLb: weight,
       mealsPerDay,
+      lifeSeeds: [
+        ...LIFE_CHIPS.filter((c) => lifePicks.has(c.id)).map((c) => ({ label: c.label, kind: c.kind })),
+        ...(customLife.trim() ? [{ label: customLife.trim(), kind: customLifeKind }] : []),
+      ],
     }
-  }, [goal, goalStatement, target1, days, profile, extras, experience, weight, mealsPerDay])
+  }, [goal, goalStatement, target1, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
@@ -191,6 +207,7 @@ export function Onboarding() {
       customTargets: answers.customTargets,
       bodyweightLb: weight,
       mealsPerDay,
+      lifeSeeds: answers.lifeSeeds,
     })
     setByorDraft((prev) =>
       prev
@@ -376,6 +393,54 @@ export function Onboarding() {
               </button>
             ))}
           </div>
+
+          {/* Their real week — seeds life events so every coach note speaks their schedule */}
+          <div className="mt-6">
+            <div className="text-[14px] font-bold">What else does your week hold?</div>
+            <p className="mt-0.5 text-[11.5px] leading-snug text-ink-faint">
+              The plan bends around real life. Pick what's true and the coach's notes will talk about YOUR
+              shifts and nights — not somebody else's.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {LIFE_CHIPS.map((c) => (
+                <Chip
+                  key={c.id}
+                  tone={lifePicks.has(c.id) ? 'accent' : 'default'}
+                  onClick={() =>
+                    setLifePicks((prev) => {
+                      const n = new Set(prev)
+                      if (n.has(c.id)) n.delete(c.id)
+                      else n.add(c.id)
+                      return n
+                    })
+                  }
+                >
+                  {c.chip}
+                </Chip>
+              ))}
+            </div>
+            <input
+              value={customLife}
+              onChange={(e) => setCustomLife(e.target.value)}
+              placeholder="Your own — a DJ set, league night, choir…"
+              className="mt-2 w-full rounded-xl border border-edge bg-surface px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint focus:border-accent/60"
+            />
+            {customLife.trim() && (
+              <div className="mt-1.5 flex gap-1.5">
+                {(
+                  [
+                    ['late-night', '🌙 keeps me up late'],
+                    ['on-feet', '🦵 hours on my feet'],
+                  ] as const
+                ).map(([k, l]) => (
+                  <Chip key={k} tone={customLifeKind === k ? 'accent' : 'default'} onClick={() => setCustomLifeKind(k)}>
+                    {l}
+                  </Chip>
+                ))}
+              </div>
+            )}
+          </div>
+
           <Btn className="mt-6 w-full py-4" onClick={next}>
             Next — my gear
           </Btn>
@@ -562,6 +627,13 @@ export function Onboarding() {
             cardio session{({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 } as const)[preview.plan.goal] > 1 ? 's' : ''} a week —
             scheduled in the Week tab. Sport, runs, and rides all count; the plan enforces the minimum.
           </p>
+
+          {preview.plan.lifeEvents.length > 0 && (
+            <p className="mt-2 border-l-2 border-gold/60 py-1 pl-3 text-[11.5px] leading-snug text-gold/90">
+              Knows your week: {preview.plan.lifeEvents.map((e) => e.label).join(' · ')} — flag the days each
+              week and the sessions adapt around them.
+            </p>
+          )}
 
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Card className="!p-3 text-center">

@@ -215,8 +215,9 @@ export function WeekScreen() {
         {data.plan.lifeEvents.length === 0 && (
           <Card className="!py-3.5">
             <p className="text-[12.5px] leading-relaxed text-ink-dim">
-              Add the real-life stuff that hits your training — a DJ set, a night shift, a closing shift on your feet.
-              Then each week just tap the days it happens and the plan bends around it.
+              {ball
+                ? 'Add the real-life stuff that hits your training — a DJ set, a night shift, a closing shift on your feet. Then each week just tap the days it happens and the plan bends around it.'
+                : 'Add the real-life stuff that hits your training — work shifts, late nights, whatever leaves you drained. Then each week just tap the days it happens and the plan bends around it.'}
             </p>
           </Card>
         )}

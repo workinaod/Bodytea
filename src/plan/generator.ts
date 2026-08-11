@@ -4,6 +4,7 @@ import type {
   DayTemplate,
   EquipTag,
   Goal,
+  LifeEventKind,
   PlanConfig,
   TemplateEntry,
   Weekday,
@@ -33,6 +34,9 @@ export interface OnboardingAnswers {
   bodyweightLb: number
   /** How they actually like to eat — the meal plan is built at this count. */
   mealsPerDay?: MealsPerDay
+  /** Their real week (shifts, gigs, kids) — seeded as life events so the
+   *  coach's notes speak THEIR schedule from day one. */
+  lifeSeeds?: { label: string; kind: LifeEventKind }[]
 }
 
 // ---------- Equipment profiles ----------
@@ -532,7 +536,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     coreMovers,
     anchors: { conditioningWeekday, cnsWeekdays },
     lifeRules: { djWeekend: false, longShiftMonday: false },
-    lifeEvents: [],
+    lifeEvents: (a.lifeSeeds ?? []).map((s, i) => ({ id: `life-${i + 1}`, label: s.label, kind: s.kind })),
     rationale: buildRationale(a.goal, a.goalStatement, [...referenced]),
     nutrition: { kcalTraining: nutrition.kcalTraining, kcalRest: nutrition.kcalRest },
     mealPlan: buildMealPlan(a.goal, nutrition.proteinTargetG, nutrition, a.mealsPerDay ?? 4),
