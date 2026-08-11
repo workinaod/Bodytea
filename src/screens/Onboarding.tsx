@@ -103,7 +103,11 @@ export function Onboarding() {
   // Someone with history who lands here was reset onto the new engine
   // (schema v19). Say so, so it never reads as lost data.
   const rebuilding = useAppStore(
-    (st) => Object.keys(st.data.sessions).length > 0 || st.data.measurements.length > 0,
+    (st) =>
+      Object.keys(st.data.sessions).length > 0 ||
+      Object.keys(st.data.meals).length > 0 ||
+      st.data.runs.length > 0 ||
+      st.data.measurements.length > 0,
   )
   const [step, setStep] = useState(0)
   const [mode, setMode] = useState<'gen' | 'byor'>('gen')
