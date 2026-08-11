@@ -16,20 +16,24 @@ const ICONS: Record<TabId, (active: boolean) => JSX.Element> = {
     </svg>
   ),
   meals: (a) => (
-    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round">
-      <path d="M7 3v7a2 2 0 0 0 2 2v9M11 3v7a2 2 0 0 1-2 2M17 3c-2 2-2.5 5-2.5 8H17v10" />
+    // Fork and a real, closed-blade knife
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
     </svg>
   ),
   progress: (a) => (
+    // Bars climb left to right: progress goes UP
     <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round">
-      <path d="M4 20V10M10 20V4M16 20v-6M21 20H3" strokeLinejoin="round" />
+      <path d="M4 20v-5M10 20V9M16 20V4M21 20H3" strokeLinejoin="round" />
     </svg>
   ),
   coach: (a) => (
-    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round">
-      <path d="M8 3h8l2 4-6 3-6-3 2-4ZM12 10v4" strokeLinejoin="round" />
-      <path d="M7 21a5 5 0 0 1 10 0" />
-      <circle cx="12" cy="16" r="2.5" />
+    // The Sergeant's whistle
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9.5 9H20a1.5 1.5 0 0 1 1.5 1.5v1.2a1.5 1.5 0 0 1-1.1 1.45L15 14.4A5.5 5.5 0 1 1 9.5 9Z" />
+      <circle cx="9.5" cy="14.5" r="1.6" fill={a ? 'var(--color-accent)' : 'none'} />
     </svg>
   ),
 }

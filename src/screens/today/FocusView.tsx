@@ -486,10 +486,24 @@ export function FocusView({
                 </span>
               </button>
             )
-          ) : null}
+          ) : (
+            // No verified clip for this one: hand them a solid search
+            // instead of leaving the session videoless.
+            <a
+              href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${def.name} exercise form`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mb-1 flex items-center justify-center gap-1.5 rounded-xl bg-white/[0.05] py-2.5 text-[12px] font-bold text-ink-dim active:bg-white/[0.1]"
+            >
+              <svg viewBox="0 0 24 24" className="h-[13px] w-[13px] fill-accent">
+                <path d="M8 5v14l11-7L8 5Z" />
+              </svg>
+              Watch it done
+            </a>
+          )}
 
           {def.cue && (
-            <div className={`${def.videoId ? 'mt-3' : ''} rounded-lg border border-gold/30 bg-gold/8 px-3 py-2 text-[12.5px] font-semibold text-gold`}>
+            <div className={`${def.videoId ? 'mt-3' : ''} px-1 pb-1 text-center text-[13px] font-bold leading-snug text-gold`}>
               {def.cue}
             </div>
           )}

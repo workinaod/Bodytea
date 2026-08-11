@@ -68,7 +68,7 @@ export function ExerciseGuideSheet({
         </section>
 
         {def.cue && (
-          <div className="rounded-xl border border-gold/30 bg-gold/8 px-3.5 py-3 text-[13px] font-semibold leading-snug text-gold">
+          <div className="px-1 py-1 text-center text-[13.5px] font-bold leading-snug text-gold">
             {def.cue}
           </div>
         )}
