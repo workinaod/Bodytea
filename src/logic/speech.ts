@@ -20,8 +20,9 @@ function pickVoice(): void {
     const en = vs.filter((v) => v.lang.toLowerCase().startsWith('en'))
     const pool = en.length ? en : vs
     const score = (v: SpeechSynthesisVoice) =>
-      (/enhanced|premium|natural|neural/i.test(v.name) ? 8 : 0) +
+      (/enhanced|premium|natural|neural/i.test(v.name) ? 12 : 0) +
       (/samantha|ava|allison|zoe|susan|karen|serena|moira|nicky|google us english/i.test(v.name) ? 4 : 0) +
+      (/compact|albert|fred|zarvox|junior|whisper|bells|organ|cellos|bad news|good news/i.test(v.name) ? -10 : 0) +
       (v.lang === 'en-US' ? 2 : 0) +
       (v.localService ? 1 : 0)
     chosenVoice = [...pool].sort((a, b) => score(b) - score(a))[0] ?? null
@@ -43,9 +44,10 @@ export function say(text: string, opts?: { rate?: number; interrupt?: boolean })
     const u = new SpeechSynthesisUtterance(text)
     u.lang = 'en-US'
     if (chosenVoice) u.voice = chosenVoice
-    // Slightly slower + a touch of pitch takes the edge off the delivery
-    u.rate = opts?.rate ?? 0.9
-    u.pitch = 1.04
+    // Slightly slower, natural pitch. The ceiling is the device's installed
+    // voice: an Enhanced/Premium system voice gets picked automatically.
+    u.rate = opts?.rate ?? 0.92
+    u.pitch = 1.0
     window.speechSynthesis.speak(u)
   } catch {
     /* never let audio kill the session */

@@ -76,7 +76,6 @@ export function SessionView({
         const trimmed = session.trimmedFromIndex !== undefined && exIdx >= session.trimmedFromIndex
         const allDone = ex.sets.every((s) => s.done)
         const isLoaded = def.kind === 'lift' || def.kind === 'carry'
-        const isTimed = /sec|min|hold/.test(ex.sets[0]?.targetReps ?? '')
 
         return (
           <div
@@ -142,24 +141,10 @@ export function SessionView({
                         suffix="lb"
                       />
                     )}
-                    {!isTimed && (
-                      <Stepper
-                        value={set.reps}
-                        onChange={(v) => patchSet(session.date, exIdx, setIdx, { reps: v })}
-                        step={1}
-                        suffix="reps"
-                        width="w-12"
-                      />
-                    )}
-                    {isTimed && (
-                      <Stepper
-                        value={set.seconds}
-                        onChange={(v) => patchSet(session.date, exIdx, setIdx, { seconds: v })}
-                        step={5}
-                        suffix="sec"
-                        width="w-12"
-                      />
-                    )}
+                    {/* Reps are prescribed by the plan, not picked */}
+                    <span className="min-w-[52px] text-center text-[12.5px] font-bold text-ink-dim">
+                      {set.targetReps}
+                    </span>
                     <button
                       onClick={() => {
                         const next = !set.done

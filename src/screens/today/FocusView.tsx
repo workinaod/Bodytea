@@ -4,7 +4,7 @@ import { getExercise } from '../../plan/exercises'
 import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../../engine/focus'
 import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../logic/speech'
 import { useAppStore } from '../../store/appStore'
-import { patchSet, restartSession } from '../../logic/actions'
+import { abandonSession, patchSet, restartSession } from '../../logic/actions'
 import { Stepper } from '../../components/ui'
 import { MuscleMap } from '../../components/MuscleMap'
 import { ExerciseDemo } from '../../components/ExerciseDemo'
@@ -258,6 +258,7 @@ export function FocusView({
   advanceRef.current = advance
   const startSetRef = useRef(startSet)
   startSetRef.current = startSet
+  const gateRef = useRef<() => void>(() => {})
   const askRef = useRef(speakInstructions)
   askRef.current = speakInstructions
   const breakRef = useRef<BreakState | null>(breakState)
@@ -272,7 +273,7 @@ export function FocusView({
     const stop = startEars({
       onGo: () => {
         if (breakRef.current) setBreakState(null) // back to the gate — weight first
-        else if (phaseRef.current === 'go') startSetRef.current()
+        else if (phaseRef.current === 'go') gateRef.current()
       },
       onDone: () => {
         if (breakRef.current) setBreakState(null)
@@ -307,14 +308,41 @@ export function FocusView({
   }
 
   const totalSetsThisEx = ex.sets.length
+  // Loaded movements need a real weight before the set can start
+  const needsWeight =
+    isLoaded &&
+    /dumbbell|barbell|kettlebell|ez bar|trap bar|plate|weighted/i.test(def.equipment) &&
+    (set.weightLb === undefined || set.weightLb <= 0)
+  const gateGo = () => {
+    if (needsWeight) {
+      const line = 'Enter your weight first.'
+      setCaption(line)
+      if (soundRef.current === 'voice') say(line, { interrupt: true })
+      return
+    }
+    startSet()
+  }
+  gateRef.current = gateGo
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-bg pb-[max(env(safe-area-inset-bottom),12px)] pt-[max(env(safe-area-inset-top),12px)]">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4">
+      <div className="flex items-center gap-1.5 px-4">
+        {current.exIdx === 0 && (
+          <button
+            aria-label="Exit session"
+            onClick={() => abandonSession(session.date)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink-dim"
+          >
+            <svg viewBox="0 0 24 24" className="h-[13px] w-[13px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        )}
         <button onClick={onListView} className="rounded-full bg-surface-2 px-3 py-1.5 text-[11px] font-bold text-ink-dim">
           ☰ list
         </button>
+        <div className="flex-1" />
         <div className="text-center">
           <div className="text-[11px] font-black uppercase tracking-wider text-ink-faint">
             {progress.done + 1} / {progress.total} sets
@@ -323,6 +351,7 @@ export function FocusView({
             <div className="h-full bg-accent transition-all" style={{ width: `${(progress.done / Math.max(1, progress.total)) * 100}%` }} />
           </div>
         </div>
+        <div className="flex-1" />
         <div className="flex gap-1.5">
           <div className="relative">
             <button
@@ -488,8 +517,10 @@ export function FocusView({
         )}
         {phase === 'go' ? (
           <button
-            onClick={() => startSet()}
-            className="w-full rounded-2xl bg-lime py-6 text-[19px] font-black tracking-wide text-black shadow-2xl shadow-lime/25 active:scale-[0.985]"
+            onClick={gateGo}
+            className={`w-full rounded-2xl py-6 text-[19px] font-black tracking-wide text-black shadow-2xl active:scale-[0.985] ${
+              needsWeight ? 'bg-lime/40 shadow-none' : 'bg-lime shadow-lime/25'
+            }`}
           >
             GO — START SET {current.setIdx + 1}
           </button>

@@ -231,6 +231,17 @@ export function patchSet(
 }
 
 /**
+ * Walk away before the work starts: wipes the in-progress session so
+ * the day is startable again later. Only offered while nothing past
+ * the first exercise is logged.
+ */
+export function abandonSession(date: ISODate): void {
+  store().update((d) => {
+    delete d.sessions[date]
+  })
+}
+
+/**
  * Un-finish an early-ended session: the endedAt stamp and its debrief
  * come off, and the session resumes in-progress. The self-serve fix
  * for a mis-tapped finish.
