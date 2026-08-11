@@ -49,7 +49,10 @@ export function RouteMap({
       return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`
     })
     return { zoom, tiles, path, start: px(points[0]), end: px(points[points.length - 1]) }
-  }, [points, width, height])
+    // points is mutated in place during live tracking — length is the
+    // signal that a new fix landed, so it must be a dependency too.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points, points.length, width, height])
 
   if (!view) {
     return (
