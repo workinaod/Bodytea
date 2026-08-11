@@ -8,13 +8,44 @@ export function speechOutSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
 }
 
+// Pick the most natural voice the device offers — Enhanced/Premium system
+// voices first, then the known-warm names, never the flat robot default.
+let chosenVoice: SpeechSynthesisVoice | null = null
+let voicesHooked = false
+
+function pickVoice(): void {
+  try {
+    const vs = window.speechSynthesis.getVoices()
+    if (!vs.length) return
+    const en = vs.filter((v) => v.lang.toLowerCase().startsWith('en'))
+    const pool = en.length ? en : vs
+    const score = (v: SpeechSynthesisVoice) =>
+      (/enhanced|premium|natural|neural/i.test(v.name) ? 8 : 0) +
+      (/samantha|ava|allison|zoe|susan|karen|serena|moira|nicky|google us english/i.test(v.name) ? 4 : 0) +
+      (v.lang === 'en-US' ? 2 : 0) +
+      (v.localService ? 1 : 0)
+    chosenVoice = [...pool].sort((a, b) => score(b) - score(a))[0] ?? null
+  } catch {
+    /* keep default */
+  }
+}
+
 export function say(text: string, opts?: { rate?: number; interrupt?: boolean }): void {
   if (!speechOutSupported()) return
   try {
+    if (!voicesHooked) {
+      voicesHooked = true
+      pickVoice()
+      window.speechSynthesis.addEventListener?.('voiceschanged', pickVoice)
+    }
+    if (!chosenVoice) pickVoice()
     if (opts?.interrupt) window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text)
     u.lang = 'en-US'
-    u.rate = opts?.rate ?? 1
+    if (chosenVoice) u.voice = chosenVoice
+    // Slightly slower + a touch of pitch takes the edge off the delivery
+    u.rate = opts?.rate ?? 0.96
+    u.pitch = 1.04
     window.speechSynthesis.speak(u)
   } catch {
     /* never let audio kill the session */
