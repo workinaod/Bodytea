@@ -147,6 +147,7 @@ const sessionSchema = z.object({
       fromSlot: z.string().optional(),
       sets: z.array(setLogSchema),
       skipped: z.boolean().optional(),
+      feel: z.enum(['easy', 'right', 'hard']).optional(),
     }),
   ),
   notes: z.string().optional(),

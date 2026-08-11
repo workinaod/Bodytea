@@ -7,7 +7,7 @@ const FLAGS: { label: string; sub: string }[] = [
   { label: 'Slept under 6 hours', sub: 'The red line for CNS work.' },
   { label: 'Wired or run-down', sub: 'Resting heart rate feels elevated.' },
   { label: 'Legs sore or heavy', sub: 'Still carrying the last session.' },
-  { label: 'Genuinely low energy', sub: 'Not just lazy — actually flat.' },
+  { label: 'Genuinely low energy', sub: 'Not just lazy, actually flat.' },
 ]
 
 const INTENSITIES: { id: SessionIntensity; label: string; sub: string }[] = [
@@ -34,7 +34,7 @@ export function ReadinessSheet({
   return (
     <Sheet open={open} onClose={onClose} title="10-second readiness check">
       <p className="mb-4 text-[13px] leading-snug text-ink-dim">
-        Max-effort day. Fast and fresh beats tired and grinding — be honest, this only works on real
+        Max-effort day. Fast and fresh beats tired and grinding. Be honest, this only works on real
         answers.
       </p>
       <div className="space-y-2.5">
@@ -59,9 +59,9 @@ export function ReadinessSheet({
         }`}
       >
         {downgrade
-          ? `${count} flags → the day downgrades: sprint/jump volume −1/3, lifts light with 3 in the tank. Backing off a fatigued day is how pros stay healthy — not weakness.`
+          ? `${count} flags → the day downgrades: sprint/jump volume −1/3, lifts light with 3 in the tank. Backing off a tired day is how pros stay healthy.`
           : count === 1
-            ? '1 flag — under the line. Full session as written, but keep an ear on it.'
+            ? '1 flag, under the line. Full session as written, just keep an ear on it.'
             : 'All clear. Full send.'}
       </div>
 
@@ -87,7 +87,7 @@ export function ReadinessSheet({
         </div>
         <p className="mt-1.5 px-0.5 text-[11px] leading-snug text-ink-faint">
           {INTENSITIES.find((o) => o.id === intensity)?.sub}
-          {intensity === 'minimum' && ' Logs as a downgraded win — still a win.'}
+          {intensity === 'minimum' && ' Logs as a downgraded win. Still a win.'}
         </p>
       </div>
 

@@ -289,6 +289,8 @@ export interface ExerciseLog {
   fromSlot?: SlotId
   sets: SetLog[]
   skipped?: boolean
+  /** Mid-rest check-in: how the weight felt. Drives the ±5 lb nudge next session. */
+  feel?: 'easy' | 'right' | 'hard'
 }
 
 export type SessionStatus =

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ExerciseDef, ResolvedDay, SessionLog } from '../../types'
+import type { ExerciseDef, ISODate, ResolvedDay, SessionLog } from '../../types'
 import { getExercise } from '../../plan/exercises'
 import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../../engine/focus'
 import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../logic/speech'
 import { useAppStore } from '../../store/appStore'
-import { abandonSession, patchSet, restartSession } from '../../logic/actions'
+import { abandonSession, patchSet, restartSession, setExerciseFeel } from '../../logic/actions'
+import { daysBetween } from '../../engine/calendar'
 import { Stepper } from '../../components/ui'
 import { MuscleMap } from '../../components/MuscleMap'
 import { ExerciseDemo } from '../../components/ExerciseDemo'
@@ -23,6 +24,20 @@ interface BreakState {
   seconds: number
   nextName: string
   nextSetLabel: string
+  /** Set → the just-finished exercise gets the "how was the weight?" chips. */
+  feelExIdx?: number
+}
+
+/** True if this exercise already answered a weight check-in in the last 2 weeks. */
+function feelAskedRecently(
+  sessions: Record<string, SessionLog>,
+  exerciseId: string,
+  today: ISODate,
+): boolean {
+  return Object.values(sessions).some((s) => {
+    const d = daysBetween(s.date, today)
+    return d >= 0 && d < 14 && s.exercises.some((e) => e.exerciseId === exerciseId && e.feel !== undefined)
+  })
 }
 
 /** What load the number means, by equipment. "Your weight" reads like
@@ -203,12 +218,19 @@ export function FocusView({
       const nextEx = session.exercises[next.exIdx]
       const nextDef = getExercise(nextEx.exerciseId)
       const sameExercise = next.exIdx === current.exIdx
+      // Weight check-in: loaded lift, not asked in 2 weeks → chips in the break
+      const justDef = getExercise(session.exercises[current.exIdx].exerciseId)
+      const askFeel =
+        (justDef.kind === 'lift' || justDef.kind === 'carry') &&
+        /dumbbell|barbell|kettlebell|ez bar|trap bar|plate|weighted/i.test(justDef.equipment) &&
+        !feelAskedRecently(data.sessions, justDef.id, session.date)
       setBreakState({
         seconds: rest,
         nextName: nextDef.name,
         nextSetLabel: sameExercise
           ? `Set ${next.setIdx + 1} of ${nextEx.sets.length}`
           : `${nextEx.sets.length} × ${nextEx.sets[0]?.targetReps}`,
+        feelExIdx: askFeel ? current.exIdx : undefined,
       })
       setPhase('go')
     } else if (rest <= 15 && next) {
@@ -522,7 +544,7 @@ export function FocusView({
           </div>
         )}
         {caption && (
-          <p className="mb-1.5 truncate text-center text-[12px] font-semibold text-ink-faint">{caption}</p>
+          <p className="mb-1.5 line-clamp-2 text-center text-[12px] font-semibold leading-snug text-ink-faint">{caption}</p>
         )}
         {phase === 'go' ? (
           <button
@@ -561,6 +583,11 @@ export function FocusView({
           brk={breakState}
           mode={soundMode}
           onDone={() => setBreakState(null)}
+          onFeel={
+            breakState.feelExIdx !== undefined
+              ? (f) => setExerciseFeel(session.date, breakState.feelExIdx!, f)
+              : undefined
+          }
         />
       )}
     </div>
@@ -569,9 +596,20 @@ export function FocusView({
 
 // ---------- Break screen: countdown → back to the gate ----------
 
-function BreakScreen({ brk, mode, onDone }: { brk: BreakState; mode: 'voice' | 'beeps-names' | 'beeps' | 'silent'; onDone: () => void }) {
+function BreakScreen({
+  brk,
+  mode,
+  onDone,
+  onFeel,
+}: {
+  brk: BreakState
+  mode: 'voice' | 'beeps-names' | 'beeps' | 'silent'
+  onDone: () => void
+  onFeel?: (f: 'easy' | 'right' | 'hard') => void
+}) {
   const endsAt = useRef(Date.now() + brk.seconds * 1000)
   const [remaining, setRemaining] = useState(brk.seconds)
+  const [feelDone, setFeelDone] = useState(false)
   const buzzed = useRef(false)
 
   // Short and factual — the next gate handles weight + ready
@@ -635,11 +673,37 @@ function BreakScreen({ brk, mode, onDone }: { brk: BreakState; mode: 'voice' | '
         <div className="mt-1 text-[17px] font-extrabold text-ink">{brk.nextName}</div>
         <div className="text-[12.5px] font-semibold text-ink-dim">{brk.nextSetLabel}</div>
       </div>
-      <button onClick={onDone} className="mt-10 rounded-full bg-surface-2 px-5 py-2.5 text-[12.5px] font-bold text-ink-dim">
-        skip the rest — I'm ready
+      {onFeel && !feelDone && (
+        <div className="mt-7 text-center">
+          <div className="text-[11.5px] font-bold text-ink-dim">How was the weight?</div>
+          <div className="mt-2 flex gap-1.5">
+            {(
+              [
+                ['easy', 'Too easy'],
+                ['right', 'About right'],
+                ['hard', 'Too hard'],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => {
+                  onFeel(id)
+                  setFeelDone(true)
+                }}
+                className="rounded-full bg-surface-2 px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-edge"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {feelDone && <div className="mt-7 text-[11.5px] font-bold text-lime">Got it. Next session adjusts.</div>}
+      <button onClick={onDone} className="mt-8 rounded-full bg-surface-2 px-5 py-2.5 text-[12.5px] font-bold text-ink-dim">
+        skip the rest, I'm ready
       </button>
       <p className="mt-3 max-w-[260px] text-center text-[11px] leading-snug text-ink-faint">
-        Full recovery is part of the program — explosive quality dies when you rush it.
+        Full rest is part of the program. Rushing it kills explosive quality.
       </p>
     </div>
   )

@@ -65,7 +65,7 @@ export function SessionView({
           onClick={() => restartSession(session.date)}
           className="w-full rounded-xl border border-cyan/30 bg-cyan/8 px-3.5 py-2.5 text-left text-[12.5px] font-bold leading-snug text-cyan"
         >
-          ↻ Still on the first exercise with the clock running — restart with fresh time
+          ↻ Still on the first exercise? Tap to restart with fresh time
         </button>
       )}
 
@@ -127,7 +127,7 @@ export function SessionView({
               <div className="space-y-2 border-t border-edge/60 px-4 pb-4 pt-3">
                 {resolved?.lightMode && (
                   <div className="text-[11.5px] font-semibold text-gold">
-                    Light mode — leave 3 in the tank, ~85% of usual weight.
+                    Light mode: leave 3 in the tank, ~85% of usual weight.
                   </div>
                 )}
                 {ex.sets.map((set, setIdx) => (
@@ -169,7 +169,7 @@ export function SessionView({
                       onClick={() => trimFromExercise(session.date, exIdx)}
                       className="text-[11.5px] font-semibold text-gold underline"
                     >
-                      {session.trimmedFromIndex === exIdx ? 'restore the tail' : 'running long — cut from here down'}
+                      {session.trimmedFromIndex === exIdx ? 'restore the tail' : 'running long? cut from here down'}
                     </button>
                   </div>
                 )}

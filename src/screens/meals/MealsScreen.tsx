@@ -106,7 +106,7 @@ export function MealsScreen() {
               <p className="text-[13px] font-bold text-gold">Check-in rule triggered</p>
               <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
                 Strength up {bump.strengthGainPct}% while the scale moved {bump.weightChangeLb} lb over 3+
-                weeks. The plan says: add 150–200 kcal to training days. Recomp is slow — don't panic-cut.
+                weeks. The plan says: add 150–200 kcal to training days. Recomp is slow, don't panic-cut.
               </p>
               <div className="mt-2.5 flex gap-2">
                 {[150, 200].map((b) => (
@@ -126,11 +126,11 @@ export function MealsScreen() {
               className="w-full rounded-2xl border border-accent/35 bg-accent/8 px-4 py-3.5 text-left active:bg-accent/15"
             >
               <span className="block text-[13.5px] font-extrabold text-accent-soft">
-                No meal plan yet — build one in 20 seconds
+                No meal plan yet. Build one in 20 seconds
               </span>
               <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-dim">
-                How many meals a day, how you eat (vegetarian and vegan covered) — the coach does the math.
-                Or skip it and just log; the rings work either way.
+                How many meals a day, how you eat (vegetarian and vegan covered). The coach does the math.
+                Or skip it and just log, the rings work either way.
               </span>
             </button>
           )}
@@ -163,7 +163,7 @@ export function MealsScreen() {
             ))}
             {!day?.entries.length && (
               <p className="px-4 py-4 text-center text-[12.5px] text-ink-faint">
-                Nothing logged yet — the button above covers the whole day in a few taps.
+                Nothing logged yet. The button above covers the whole day in a few taps.
               </p>
             )}
           </div>
@@ -253,7 +253,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
       <div className="space-y-4 pb-8">
         {added > 0 && (
           <div className="border-l-2 border-lime/70 py-1 pl-3 text-[12.5px] font-bold text-lime/90">
-            {added} logged ✓ — keep going or swipe down when you're done.
+            {added} logged ✓. Keep going or swipe down when you're done.
           </div>
         )}
 
@@ -261,7 +261,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
         {templates.length > 0 && (
           <div>
             <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
-              From my plan — one tap
+              From my plan, one tap
             </div>
             <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
               {templates.map((t, i) => (
@@ -340,7 +340,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
               ))}
               {foodMatches.length === 0 && (
                 <p className="w-full py-2 text-center text-[12px] text-ink-faint">
-                  Nothing matches — log it with your own numbers below.
+                  Nothing matches. Log it with your own numbers below.
                 </p>
               )}
             </div>
@@ -442,7 +442,7 @@ function PlanView({ onEditStack, onSetup }: { onEditStack: () => void; onSetup: 
   return (
     <div className="space-y-3">
       <div className="border-l-2 border-cyan/60 py-1 pl-3 text-[12.5px] leading-snug text-cyan/90">
-        Your day of eating, as one-tap meals. Already have a plan? Add your meals here — rough protein
+        Your day of eating, as one-tap meals. Already have a plan? Add it here, rough protein
         and calories are enough. Tap any meal for swaps built from common groceries.
       </div>
 
@@ -474,7 +474,7 @@ function PlanView({ onEditStack, onSetup }: { onEditStack: () => void; onSetup: 
         ))}
         {meals.length === 0 && (
           <p className="px-4 py-5 text-center text-[12.5px] text-ink-faint">
-            No meals yet for {dt === 'training' ? 'training' : 'rest'} days — add your first below.
+            No meals yet for {dt === 'training' ? 'training' : 'rest'} days. Add your first below.
           </p>
         )}
       </div>
@@ -540,7 +540,7 @@ function PlanView({ onEditStack, onSetup }: { onEditStack: () => void; onSetup: 
           </div>
         ))}
         {plan.supplements.length === 0 && (
-          <p className="px-4 py-3 text-center text-[12px] text-ink-faint">No stack — add what you actually take.</p>
+          <p className="px-4 py-3 text-center text-[12px] text-ink-faint">No stack yet. Add what you actually take.</p>
         )}
       </div>
 
@@ -615,7 +615,7 @@ function MealPlanSetupSheet({ onClose }: { onClose: () => void }) {
                 [2, '2 big meals'],
                 [3, '3 square meals'],
                 [4, '3 meals + a snack'],
-                [5, 'Grazer — 5 small'],
+                [5, 'Grazer (5 small)'],
               ] as const
             ).map(([n, label]) => (
               <button
@@ -656,11 +656,11 @@ function MealPlanSetupSheet({ onClose }: { onClose: () => void }) {
             onClose()
           }}
         >
-          Build it — sized to my {proteinTarget}g protein target
+          Build it around my {proteinTarget}g protein target
         </Btn>
         <p className="text-[11px] leading-snug text-ink-faint">
-          Every meal comes with a concrete common-grocery example and swap options. Edit or replace any of
-          them after — it's your plan.
+          Every meal comes with a common-grocery example and swaps. Edit or replace any of them
+          after, it's your plan.
         </p>
       </div>
     </Sheet>
@@ -735,7 +735,7 @@ function MealDetailSheet({
           </div>
           <p className="mt-1.5 px-1 text-[11px] leading-snug text-ink-faint">
             Swaps match this meal's protein and calories as closely as possible using everyday
-            ingredients — the plan holds even when the fridge changes.
+            ingredients. The plan holds even when the fridge changes.
           </p>
         </div>
       </div>
@@ -895,7 +895,7 @@ function GroceryList() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center justify-between">
-        <p className="text-[11.5px] text-ink-faint">Your list — from your meal plan, yours to change.</p>
+        <p className="text-[11.5px] text-ink-faint">Your list, from your meal plan. Yours to change.</p>
         <button className="text-[11.5px] font-bold text-accent underline" onClick={() => setEditing((v) => !v)}>
           {editing ? 'done' : 'edit list'}
         </button>

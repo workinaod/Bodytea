@@ -165,10 +165,23 @@ function prefillFor(date: ISODate, exerciseId: string): { weightLb?: number; rep
     const done = log.sets.filter((x) => x.done && x.weightLb !== undefined)
     if (done.length) {
       const best = done.reduce((a, b) => ((a.weightLb ?? 0) >= (b.weightLb ?? 0) ? a : b))
-      return { weightLb: best.weightLb, reps: best.reps }
+      // The feel check-in steers the next prescription: easy climbs, hard backs off
+      const bump = log.feel === 'easy' ? 5 : log.feel === 'hard' ? -5 : 0
+      return {
+        weightLb: best.weightLb !== undefined ? Math.max(0, best.weightLb + bump) : undefined,
+        reps: best.reps,
+      }
     }
   }
   return {}
+}
+
+/** Mid-rest weight check-in, asked at most once per exercise every 2 weeks. */
+export function setExerciseFeel(date: ISODate, exIdx: number, feel: 'easy' | 'right' | 'hard'): void {
+  store().update((d) => {
+    const ex = d.sessions[date]?.exercises[exIdx]
+    if (ex) ex.feel = feel
+  })
 }
 
 export function startSession(

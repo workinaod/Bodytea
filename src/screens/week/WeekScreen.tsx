@@ -300,8 +300,8 @@ export function WeekScreen() {
       <Card className="space-y-3">
         <p className="border-l-2 border-cyan/60 py-0.5 pl-3 text-[11.5px] leading-snug text-cyan/90">
           {ball
-            ? 'Day-of is the truth — log ball or any run from the Today tab, always. This is the plan-ahead backup for no-ball weeks: a booked session shows up ON that day (after the workout, which stays), hard options keep off your max-effort days, and the weekly rule stops chasing you.'
-            : 'Day-of is the truth — you can always just log cardio from the Today tab. Booking here is the plan-ahead option: the session shows up ON that day (after the workout, which stays), hard options keep off your max-effort days, and the weekly rule stops chasing you.'}
+            ? 'Log ball and runs day-of in the Today tab. This is just the backup plan: it sits on top of that day, and hard options stay off max-effort days.'
+            : 'Log cardio day-of in the Today tab. Booking here is the plan-ahead option: it sits on top of that day, and hard options stay off max-effort days.'}
         </p>
         <div className="flex items-center justify-between">
           <div>
@@ -343,7 +343,7 @@ export function WeekScreen() {
             }`}>
               {cardioRequiredForWeek(data, addDaysISO(weekStart, 3))
                 ? week?.cardio
-                  ? 'Scheduled ✓ — it rides on top of that day\'s workout and counts as the week\'s conditioning.'
+                  ? "Scheduled ✓. Rides on top of that day's workout, counts as the week's conditioning."
                   : ball
                     ? 'REQUIRED: no ball logged → one backup session this week. Thursday holds the slot until you pick.'
                     : 'REQUIRED: no conditioning yet → at least one session this week. Pick below.'
@@ -430,9 +430,8 @@ export function WeekScreen() {
                   </div>
                   {intense && blocked.size > 0 && (
                     <p className="text-[10.5px] leading-snug text-ink-faint">
-                      Struck-out days are blocked for hard cardio: they're your max-effort days (
-                      {data.plan.anchors.cnsWeekdays.map((d) => WD_LABEL[d]).join(', ')}) or the evening
-                      before one — tired legs can't produce speed. Easy Zone-2 options ignore this rule.
+                      Struck days are max-effort days ({data.plan.anchors.cnsWeekdays.map((d) => WD_LABEL[d]).join(', ')})
+                      or the night before one. Hard cardio is blocked there, easy Zone 2 is fine.
                     </p>
                   )}
                 </div>

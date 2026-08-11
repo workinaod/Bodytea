@@ -65,7 +65,7 @@ export function SkipFlow({
       setProofError(
         check.reason === 'stale'
           ? `That image is ${check.ageDays} days old. A conflict THIS week has proof FROM this week. Fresh screenshot or no proof.`
-          : 'That file is not an image. Calendar screenshot, schedule photo, gig poster — pictures only.',
+          : 'That file is not an image. Calendar screenshot, schedule photo, gig poster. Pictures only.',
       )
       return
     }
@@ -109,8 +109,8 @@ export function SkipFlow({
     <Sheet open onClose={() => {}} locked title={day.cns ? '⚠ This is an explosive day' : "Can't train?"}>
       {day.cns && (
         <div className="mb-3 rounded-xl border border-danger/30 bg-danger/8 px-3.5 py-3 text-[12.5px] font-semibold leading-snug text-danger">
-          The plan's rule: NEVER drop the explosive day — it's the first thing people cut and the
-          fastest thing to lose. Consider moving it to another day (Week tab) before zeroing it.
+          Rule one: NEVER drop the explosive day. First thing people cut, fastest thing to lose.
+          Try moving it to another day (Week tab) before zeroing it.
         </div>
       )}
 
@@ -123,7 +123,7 @@ export function SkipFlow({
             >
               <div className="text-[14px] font-bold">Trim today's load</div>
               <div className="mt-0.5 text-[11.5px] text-ink-faint">
-                Full session, volume cut — explosive −1/3, lifts light. Still counts as training.
+                Full session, volume cut: explosive −1/3, lifts light. Still counts as training.
               </div>
             </button>
             <button
@@ -161,7 +161,7 @@ export function SkipFlow({
             </div>
             <input
               className="mt-2 w-full rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[13px] outline-none placeholder:text-ink-faint"
-              placeholder="Details (optional) — goes on the record"
+              placeholder="Details (optional), goes on the record"
               value={claimText}
               onChange={(e) => setClaimText(e.target.value)}
             />
@@ -169,7 +169,7 @@ export function SkipFlow({
 
           <div className="flex gap-2">
             <Btn kind="ghost" className="flex-1" onClick={onCancel}>
-              Never mind — I'll train
+              Never mind, I'll train
             </Btn>
             {mode === 'trim' ? (
               <Btn
@@ -197,7 +197,7 @@ export function SkipFlow({
           <p className="text-[13.5px] leading-snug text-ink-dim">
             {level >= 2
               ? 'At this point in the month: calendar photo or it didn\'t happen. Screenshot of the schedule, the gig poster, anything real.'
-              : 'Attach proof and this counts as a planned choice, not a failure — the plan\'s own words. No proof means it goes on the record as unproven.'}
+              : 'Attach proof and this counts as a planned choice, not a failure. No proof means it goes down as unproven.'}
           </p>
           <input
             ref={fileRef}
@@ -226,13 +226,13 @@ export function SkipFlow({
                   Wrong photo
                 </Btn>
                 <Btn kind="lime" className="flex-1" disabled={proofBusy} onClick={() => void confirmProof()}>
-                  {proofBusy ? 'Saving…' : 'It shows it — attach'}
+                  {proofBusy ? 'Saving…' : 'Yep, attach it'}
                 </Btn>
               </div>
             </div>
           ) : proofId ? (
             <div className="flex items-center justify-between rounded-xl border border-lime/30 bg-lime/8 px-3.5 py-3">
-              <span className="text-[13px] font-bold text-lime">✓ Fresh proof attached — accepted</span>
+              <span className="text-[13px] font-bold text-lime">✓ Fresh proof attached, accepted</span>
               <button className="text-[12px] font-semibold text-ink-faint underline" onClick={() => setProofId(undefined)}>
                 remove
               </button>
@@ -271,8 +271,8 @@ export function SkipFlow({
                 ))}
               </ul>
               <p className="mt-2 text-[12px] leading-snug text-ink-dim">
-                Ten-ish minutes. The habit survives, the streak survives, and you get to stop after —
-                deal's a deal.
+                Ten-ish minutes. The habit survives, the streak survives, and you can stop after.
+                Deal's a deal.
               </p>
             </div>
           )}
@@ -306,7 +306,7 @@ export function SkipFlow({
               {mode === 'lighten' && !mv ? 'Log it lightened' : 'Still skipping'}
             </Btn>
             <Btn kind="ghost" onClick={onCancel}>
-              Never mind — I'll train
+              Never mind, I'll train
             </Btn>
           </div>
         </div>

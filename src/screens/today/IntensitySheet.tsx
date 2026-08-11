@@ -28,11 +28,11 @@ export function IntensitySheet({
   }, [day, plan])
 
   const options: { id: SessionIntensity; label: string; sub: string; hero?: boolean }[] = [
-    { id: 'full', label: 'Full session', sub: 'The day exactly as written — go get it.', hero: true },
+    { id: 'full', label: 'Full session', sub: 'The day exactly as written. Go get it.', hero: true },
     {
       id: 'lighter',
       label: 'Normal',
-      sub: 'Dialed back a notch: explosive volume −1/3, every lift light — 3 in the tank.',
+      sub: 'Dialed back a notch: explosive volume −1/3, every lift light with 3 in the tank.',
     },
     {
       id: 'minimum',
@@ -44,7 +44,7 @@ export function IntensitySheet({
   return (
     <Sheet open={open} onClose={onClose} title="How much do you have today?">
       <p className="mb-4 text-[13px] leading-snug text-ink-dim">
-        Be straight with yourself — the plan scales to the answer. A lighter day you finish beats a
+        Be straight with yourself, the plan scales to the answer. A lighter day you finish beats a
         full day you abandon.
       </p>
       <div className="space-y-2.5 pb-4">
@@ -63,7 +63,7 @@ export function IntensitySheet({
           </button>
         ))}
         <p className="px-1 text-[11px] leading-snug text-ink-faint">
-          Normal and minimum trim the day honestly — the debrief logs what actually happened.
+          Normal and minimum trim the day honestly. The debrief logs what actually happened.
         </p>
       </div>
     </Sheet>

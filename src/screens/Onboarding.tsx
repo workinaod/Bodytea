@@ -285,10 +285,10 @@ export function Onboarding() {
             Two minutes of straight answers gets you a coach, not another app:
           </p>
           <div className="mt-3 space-y-2 border-l-2 border-edge pl-3 text-[13px] leading-snug text-ink-dim">
-            <p>A training booklet built around YOUR goal, gear, and week — photo demos and muscle maps on every movement.</p>
-            <p>Meals sized to how you actually eat — 2 big plates or 5 small, with common-grocery swaps.</p>
+            <p>A training booklet built around YOUR goal, gear, and week. Photo demos and muscle maps on every movement.</p>
+            <p>Meals sized to how you actually eat: 2 big plates or 5 small, with common-grocery swaps.</p>
             <p>GPS run &amp; ride tracking, PRs, streaks, a global leaderboard, and 3 / 6 / 12-month reviews.</p>
-            <p>A sergeant that bends the plan around real life — and accepts calendar proof, nothing less.</p>
+            <p>A sergeant that bends the plan around real life and accepts calendar proof, nothing less.</p>
           </div>
           <Btn className="mt-8 w-full py-4 text-[16px]" onClick={() => { setMode('gen'); next() }}>
             Build my plan
@@ -297,7 +297,7 @@ export function Onboarding() {
             I already have a routine
           </Btn>
           <p className="mt-2 text-center text-[11.5px] text-ink-faint">
-            Bring your own — the app maps it, tracks it, and gives you straight notes on it.
+            Bring your own. The app maps it, tracks it, and gives you straight notes on it.
           </p>
         </div>
       )}
@@ -326,7 +326,7 @@ export function Onboarding() {
               : `What are you chasing${displayName.trim() ? `, ${displayName.trim().split(/\s+/)[0]}` : ''}?`}
           </h2>
           {mode === 'byor' && (
-            <p className="mt-1 text-[13px] text-ink-dim">Pick every one that applies — the notes check your routine against them.</p>
+            <p className="mt-1 text-[13px] text-ink-dim">Pick every one that applies. The notes check your routine against them.</p>
           )}
           <div className="mt-4 flex flex-wrap gap-2">
             {mode === 'byor'
@@ -349,7 +349,7 @@ export function Onboarding() {
             rows={2}
             className="mt-2 w-full resize-none rounded-xl border border-edge bg-surface px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:border-accent/60"
           />
-          <p className="mt-1 text-[11px] text-ink-faint">This exact phrase follows you through the whole app — make it yours.</p>
+          <p className="mt-1 text-[11px] text-ink-faint">This phrase follows you through the whole app. Make it yours.</p>
 
           <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Optional: a number to beat</p>
           <div className="mt-2 flex gap-2">
@@ -422,7 +422,7 @@ export function Onboarding() {
       {step === 3 && (
         <div className="flex flex-1 flex-col">
           <h2 className="text-[26px] font-black tracking-tight">How many days can you actually train?</h2>
-          <p className="mt-1 text-[13px] text-ink-dim">Be honest — a 4-day plan you keep beats a 6-day plan you dodge.</p>
+          <p className="mt-1 text-[13px] text-ink-dim">Be honest. A 4-day plan you keep beats a 6-day plan you dodge.</p>
           <div className="mt-5 grid grid-cols-4 gap-2">
             {([3, 4, 5, 6] as const).map((d) => (
               <button
@@ -440,8 +440,8 @@ export function Onboarding() {
           <div className="mt-6">
             <div className="text-[14px] font-bold">What else does your week hold?</div>
             <p className="mt-0.5 text-[11.5px] leading-snug text-ink-faint">
-              The plan bends around real life. Pick what's true and the coach's notes will talk about YOUR
-              shifts and nights — not somebody else's.
+              The plan bends around real life. Pick what's true and the coach's notes will talk about
+              YOUR shifts and nights.
             </p>
             <div className="mt-2.5 flex flex-wrap gap-1.5">
               {LIFE_CHIPS.map((c) => (
@@ -464,7 +464,7 @@ export function Onboarding() {
             <input
               value={customLife}
               onChange={(e) => setCustomLife(e.target.value)}
-              placeholder="Your own — a DJ set, league night, choir…"
+              placeholder="Your own: a DJ set, league night, choir…"
               className="mt-2 w-full rounded-xl border border-edge bg-surface px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint focus:border-accent/60"
             />
             {customLife.trim() && (
@@ -495,7 +495,7 @@ export function Onboarding() {
           <div className="mt-4 space-y-2">
             {(
               [
-                ['gym', 'Full gym', 'Racks, machines, cables — the works.'],
+                ['gym', 'Full gym', 'Racks, machines, cables, the works.'],
                 ['home-db', 'Home gym', "You'll check off exactly what you've got."],
                 ['minimal', 'No weights', 'Bodyweight + somewhere to move.'],
               ] as const
@@ -517,8 +517,8 @@ export function Onboarding() {
                 Check everything you have
               </p>
               <p className="mt-1 text-[11.5px] leading-snug text-ink-faint">
-                Nothing is assumed — the plan only prescribes gear you check. Check nothing and you get a
-                bodyweight plan.
+                Nothing is assumed. The plan only prescribes gear you check. Check nothing and you get
+                a bodyweight plan.
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {HOME_CHECKLIST.map((e) => (
@@ -615,7 +615,7 @@ export function Onboarding() {
             <div>
               <span className="text-[14px] font-bold">How do you actually eat?</span>
               <p className="mt-0.5 text-[11px] leading-snug text-ink-faint">
-                Your meal plan is built around this — fewer meals just means bigger ones. Protein stays the same.
+                Your meal plan is built around this. Fewer meals just means bigger ones, protein stays the same.
               </p>
               <div className={skipMeals ? 'opacity-40' : ''}>
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
@@ -624,7 +624,7 @@ export function Onboarding() {
                       [2, '2 big meals'],
                       [3, '3 square meals'],
                       [4, '3 meals + a snack'],
-                      [5, 'Grazer — 5 small'],
+                      [5, 'Grazer (5 small)'],
                     ] as const
                   ).map(([n, label]) => (
                     <button
@@ -666,7 +666,7 @@ export function Onboarding() {
                 className="mt-2 text-[11.5px] font-semibold text-ink-faint underline"
                 onClick={() => setSkipMeals((v) => !v)}
               >
-                {skipMeals ? '↩ Actually, set my meals up now' : 'Skip meals for now — set them up anytime in the Meals tab'}
+                {skipMeals ? '↩ Actually, set my meals up now' : 'Skip meals for now, set them up anytime in the Meals tab'}
               </button>
             </div>
             <div className="flex items-center justify-between">
@@ -682,7 +682,7 @@ export function Onboarding() {
                 className="rounded-xl border border-edge bg-surface px-3 py-2 text-[13px] font-semibold outline-none"
               />
             </div>
-            <p className="text-[11px] text-ink-faint">Weeks start Mondays — your pick snaps to {formatShort(mondayOf(pickedStart))} → first week runs through {formatShort(addDaysISO(mondayOf(pickedStart), 6))}.</p>
+            <p className="text-[11px] text-ink-faint">Weeks start Mondays. Your pick snaps to {formatShort(mondayOf(pickedStart))} → first week runs through {formatShort(addDaysISO(mondayOf(pickedStart), 6))}.</p>
           </div>
 
           <PermissionsBlock />
@@ -721,14 +721,14 @@ export function Onboarding() {
 
           <p className="mt-2 border-l-2 border-cyan/60 py-1 pl-3 text-[11.5px] leading-snug text-cyan/90">
             Plus conditioning: at least {({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 } as const)[preview.plan.goal]}{' '}
-            cardio session{({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 } as const)[preview.plan.goal] > 1 ? 's' : ''} a week —
-            scheduled in the Week tab. Sport, runs, and rides all count; the plan enforces the minimum.
+            cardio session{({ lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 } as const)[preview.plan.goal] > 1 ? 's' : ''} a week,
+            scheduled in the Week tab. Sport, runs, and rides all count.
           </p>
 
           {preview.plan.lifeEvents.length > 0 && (
             <p className="mt-2 border-l-2 border-gold/60 py-1 pl-3 text-[11.5px] leading-snug text-gold/90">
-              Knows your week: {preview.plan.lifeEvents.map((e) => e.label).join(' · ')} — flag the days each
-              week and the sessions adapt around them.
+              Knows your week: {preview.plan.lifeEvents.map((e) => e.label).join(' · ')}. Flag the days
+              each week and the sessions adapt around them.
             </p>
           )}
 
@@ -772,8 +772,7 @@ export function Onboarding() {
         <div className="flex flex-1 flex-col">
           <h2 className="text-[26px] font-black tracking-tight">Build your week</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
-            Lay out the routine you already run — pick your training days, name them, load each one with exercises,
-            sets, and reps.
+            Lay out the routine you already run: training days, names, exercises, sets, reps.
           </p>
           {byorProblems.length > 0 && (
             <div className="mt-3 rounded-xl border border-danger/40 bg-danger/10 px-3.5 py-2.5">
@@ -810,8 +809,8 @@ export function Onboarding() {
           <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">One honest question</div>
           <h2 className="mt-1 text-[26px] font-black tracking-tight">Why has this routine been working for you?</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
-            Be specific — “bench goes up every month”, “I actually show up when it's only 3 days”, “my knees stopped
-            hurting”. The coach reads your answer before writing the notes.
+            Be specific: “bench goes up every month”, “I actually show up when it's only 3 days”, “my
+            knees stopped hurting”. The coach reads this before writing the notes.
           </p>
           <textarea
             value={whyWorks}
@@ -821,7 +820,7 @@ export function Onboarding() {
             className="mt-4 w-full resize-none rounded-xl border border-edge bg-surface px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:border-accent/60"
           />
           <p className="mt-1 text-[11px] text-ink-faint">
-            Goes on record in your coach feed. Leave it empty if it honestly hasn't been working — that's an answer too.
+            Goes on record in your coach feed. Empty is fine if it honestly hasn't been working. That's an answer too.
           </p>
           <Btn
             className="mt-6 w-full py-4"
@@ -854,8 +853,8 @@ export function Onboarding() {
             ))}
           </div>
           <p className="mt-3 text-[12px] leading-relaxed text-ink-dim">
-            These land in your coach feed too, and refresh whenever you edit the booklet. Your routine, your call —
-            the app tracks it exactly as you built it.
+            These land in your coach feed too, and refresh whenever you edit the booklet. Your routine,
+            your call. The app tracks it exactly as you built it.
           </p>
           <Btn
             className="mt-5 w-full py-4 text-[16px]"
@@ -984,12 +983,12 @@ function PermissionsBlock() {
             {geo === 'granted' ? '✓ Location on' : 'Allow location'}
           </span>
           <span className="mt-0.5 block text-[11px] leading-snug text-ink-faint">
-            Only for the GPS run/ride tracker — maps your route, measures distance and pace.
+            Only for the GPS run/ride tracker. Maps your route, measures distance and pace.
           </span>
         </span>
       </button>
       <p className="text-[10.5px] leading-snug text-ink-faint">
-        Both optional — you can do this later in Settings. Nothing leaves your phone.
+        Both optional, you can do this later in Settings. Nothing leaves your phone.
       </p>
     </div>
   )

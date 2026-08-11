@@ -103,8 +103,8 @@ export function CardioSheet({
               ))}
             </div>
             <p className="text-[11px] leading-snug text-ink-faint">
-              Games and hard runs count as this week's conditioning automatically — and the plan protects the next
-              day's speed work.
+              Games and hard runs count as this week's conditioning automatically. The plan protects
+              the next day's speed work.
             </p>
           </>
         )}
@@ -130,7 +130,7 @@ export function CardioSheet({
                     Track it live with GPS
                   </span>
                   <span className="mt-0.5 block text-[11px] leading-snug text-ink-faint">
-                    Map, time, distance, {def.id === 'bike' ? 'speed' : 'pace'} + mile splits — logs itself
+                    Map, time, distance, {def.id === 'bike' ? 'speed' : 'pace'} + mile splits. Logs itself
                     when you finish.
                   </span>
                 </span>

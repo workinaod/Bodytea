@@ -91,7 +91,7 @@ export function CoachScreen() {
       {(backupDays === null || backupDays >= 7) && (
         <button onClick={() => setDataOpen(true)} className="w-full rounded-xl border border-gold/30 bg-gold/8 px-3.5 py-2.5 text-left text-[12.5px] font-semibold text-gold">
           {backupDays === null ? 'Never backed up. ' : `${backupDays} days since your last backup. `}
-          Everything lives on this phone — one tap fixes that. →
+          It all lives on this phone. One tap fixes that →
         </button>
       )}
 

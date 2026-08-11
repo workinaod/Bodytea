@@ -134,8 +134,8 @@ export function RunTrackerSheet({
         {phase === 'denied' && (
           <div className="flex flex-1 flex-col justify-center">
             <div className="border-l-2 border-danger/70 py-1 pl-3 text-[13px] leading-snug text-danger">
-              No GPS available — location permission is off or this device can't provide it. Log the{' '}
-              {label.toLowerCase()} manually instead; nothing is lost but the map.
+              No GPS. Location permission is off or this device can't provide it. Log the{' '}
+              {label.toLowerCase()} manually instead, you only lose the map.
             </div>
             <Btn kind="ghost" className="mt-4 w-full" onClick={onClose}>
               Back
