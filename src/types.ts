@@ -596,6 +596,8 @@ export interface Settings {
   units: 'imperial' | 'metric'
   /** Milestone reviews already opened ('3mo' | '6mo' | '1yr'). */
   reviewsSeen?: string[]
+  /** Spoken counting + briefings in focus mode (default on). */
+  voiceCoach?: boolean
 }
 
 export interface AppData {

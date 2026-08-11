@@ -1,4 +1,5 @@
 import type { RunLog } from '../types'
+import type { Reaction } from './reactions'
 import { avgMph, fmtDuration, fmtPace } from './runs'
 
 // ============================================================
@@ -16,7 +17,68 @@ function tracePath(x: CanvasRenderingContext2D, pts: RunLog['points'], sx: (lo: 
   pts.forEach((p, i) => (i ? x.lineTo(sx(p[1]), sy(p[0])) : x.moveTo(sx(p[1]), sy(p[0]))))
 }
 
-export async function buildShareImage(log: RunLog): Promise<Blob | null> {
+/** The tier's celebration, frozen mid-moment behind the route. */
+function drawFrozenReaction(x: CanvasRenderingContext2D, tier: Reaction['tier']): void {
+  x.save()
+  if (tier === 'fireworks') {
+    for (const [cx, cy, hue] of [[300, 420, '#ff4f30'], [760, 330, '#f2c14e'], [600, 560, '#c6f24e']] as const) {
+      x.strokeStyle = hue
+      x.lineWidth = 5
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2
+        x.beginPath()
+        x.moveTo(cx + Math.cos(a) * 26, cy + Math.sin(a) * 26)
+        x.lineTo(cx + Math.cos(a) * 86, cy + Math.sin(a) * 86)
+        x.stroke()
+      }
+    }
+  } else if (tier === 'disco') {
+    x.fillStyle = 'rgba(230,230,245,0.85)'
+    x.beginPath()
+    x.arc(540, 380, 90, 0, Math.PI * 2)
+    x.fill()
+    x.strokeStyle = 'rgba(255,255,255,0.5)'
+    x.lineWidth = 4
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2
+      x.beginPath()
+      x.moveTo(540 + Math.cos(a) * 100, 380 + Math.sin(a) * 100)
+      x.lineTo(540 + Math.cos(a) * 190, 380 + Math.sin(a) * 190)
+      x.stroke()
+    }
+  } else if (tier === 'shooting-star') {
+    for (const [sx, sy] of [[140, 240], [420, 180], [700, 300]] as const) {
+      const g = x.createLinearGradient(sx, sy, sx + 260, sy + 90)
+      g.addColorStop(0, 'rgba(255,255,255,0)')
+      g.addColorStop(1, '#f2c14e')
+      x.strokeStyle = g
+      x.lineWidth = 8
+      x.beginPath()
+      x.moveTo(sx, sy)
+      x.lineTo(sx + 260, sy + 90)
+      x.stroke()
+    }
+  } else if (tier === 'first') {
+    const hues = ['#ff4f30', '#c6f24e', '#6fb2e8', '#f2c14e', '#ffffff']
+    for (let i = 0; i < 22; i++) {
+      x.fillStyle = hues[i % hues.length]
+      x.save()
+      x.translate(((i * 173) % 1000) + 40, ((i * 259) % 700) + 160)
+      x.rotate((i * 47) % 360)
+      x.fillRect(-7, -10, 14, 20)
+      x.restore()
+    }
+  } else {
+    const g = x.createRadialGradient(540, 480, 0, 540, 480, 320)
+    g.addColorStop(0, 'rgba(255,79,48,0.4)')
+    g.addColorStop(1, 'rgba(255,79,48,0)')
+    x.fillStyle = g
+    x.fillRect(0, 100, W, 800)
+  }
+  x.restore()
+}
+
+export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise<Blob | null> {
   const c = document.createElement('canvas')
   c.width = W
   c.height = H
@@ -45,6 +107,9 @@ export async function buildShareImage(log: RunLog): Promise<Blob | null> {
   x.fillStyle = 'rgba(255,255,255,0.55)'
   x.font = `600 34px ${DISPLAY}`
   x.fillText(`${log.activity === 'bike' ? 'RIDE' : 'RUN'} · ${log.date}`, 72, 132)
+
+  // The celebration sits BEHIND the route
+  if (reaction) drawFrozenReaction(x, reaction.tier)
 
   // The route — the hero of the card
   const pts = log.points
@@ -86,10 +151,20 @@ export async function buildShareImage(log: RunLog): Promise<Blob | null> {
     x.fillText('no GPS route — indoor grind', 72, 480)
   }
 
+  // Headline + note carry the reaction's voice
+  x.textBaseline = 'alphabetic'
+  if (reaction) {
+    x.fillStyle = '#f2c14e'
+    x.font = `700 34px ${DISPLAY}`
+    x.fillText(reaction.headline, 72, H - 560)
+    x.fillStyle = 'rgba(255,255,255,0.75)'
+    x.font = `600 33px ${DISPLAY}`
+    x.fillText(reaction.note.slice(0, 62), 72, H - 512)
+  }
+
   // The number that matters
   x.fillStyle = '#ffffff'
   x.font = `700 230px ${DISPLAY}`
-  x.textBaseline = 'alphabetic'
   x.fillText(log.distanceMi.toFixed(2), 64, H - 360)
   x.fillStyle = 'rgba(255,255,255,0.55)'
   x.font = `700 54px ${DISPLAY}`

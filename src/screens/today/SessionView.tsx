@@ -184,7 +184,7 @@ export function SessionView({
         )
       })}
 
-      <div className="fixed inset-x-0 bottom-[64px] z-30 border-t border-edge bg-bg/95 px-4 py-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-[84px] z-30 border-t border-edge bg-bg/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-lg gap-2">
           <Btn kind="ghost" className="flex-1" onClick={onSkip}>
             Can't finish

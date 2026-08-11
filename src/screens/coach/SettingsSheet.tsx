@@ -122,6 +122,13 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           label="Auto rest timer"
           sub="Starts when you check off a set. Explosive work gets the full recovery."
         />
+
+        <Toggle
+          on={settings.voiceCoach ?? true}
+          onChange={(v) => update((d) => { d.settings.voiceCoach = v })}
+          label="Voice coach"
+          sub="Spoken rep counting, hold timers, and next-exercise briefings in focus mode."
+        />
       </div>
     </Sheet>
   )

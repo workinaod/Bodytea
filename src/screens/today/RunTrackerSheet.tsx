@@ -11,9 +11,12 @@ import {
   totalDistanceMi,
 } from '../../engine/runs'
 import { buildShareImage, shareRunCard } from '../../engine/shareCard'
+import { reactionForRun, type Reaction } from '../../engine/reactions'
 import { saveRun } from '../../logic/actions'
+import { useAppStore } from '../../store/appStore'
 import { Btn } from '../../components/ui'
 import { RouteMap } from '../../components/RouteMap'
+import { RunReactionCard } from '../../components/RunReactionCard'
 
 type Phase = 'acquiring' | 'live' | 'done' | 'denied'
 
@@ -36,6 +39,8 @@ export function RunTrackerSheet({
   const [elapsed, setElapsed] = useState(0)
   const [, forceRender] = useState(0)
   const [saved, setSaved] = useState<RunLog | null>(null)
+  const [reaction, setReaction] = useState<Reaction | null>(null)
+  const pastRuns = useAppStore((s) => s.data.runs)
   const [cardUrl, setCardUrl] = useState<string | null>(null)
   const [shareNote, setShareNote] = useState<string | null>(null)
   const cardBlobRef = useRef<Blob | null>(null)
@@ -93,10 +98,12 @@ export function RunTrackerSheet({
     if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
     void wakeRef.current?.release?.()
     const log = buildRunLog(uid(), activity, date, startedAtIso.current, elapsed, points)
+    const rx = reactionForRun(log, pastRuns)
     saveRun(log)
     setSaved(log)
+    setReaction(rx)
     setPhase('done')
-    void buildShareImage(log).then((blob) => {
+    void buildShareImage(log, rx).then((blob) => {
       if (!blob) return
       cardBlobRef.current = blob
       setCardUrl(URL.createObjectURL(blob))
@@ -177,14 +184,9 @@ export function RunTrackerSheet({
               {label} banked ✓ — cardio logged for today
             </div>
 
-            {/* The share card — this exact image is what gets posted */}
-            {cardUrl ? (
-              <img src={cardUrl} alt="share card" className="w-full rounded-2xl border border-edge/80" />
-            ) : (
-              <div className="flex aspect-[4/5] w-full items-center justify-center rounded-2xl border border-edge/80 bg-surface text-[12px] text-ink-faint">
-                building your card…
-              </div>
-            )}
+            {/* The live card — reaction plays behind the route; the shared
+                PNG freezes this exact frame */}
+            {reaction && <RunReactionCard log={saved} reaction={reaction} />}
 
             <p className="text-center text-[13px] font-semibold text-ink-dim">
               {saved.distanceMi.toFixed(2)} mi · {fmtDuration(saved.durationSec)} ·{' '}

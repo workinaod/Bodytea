@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ResolvedDay, SessionLog } from '../../types'
 import { getExercise } from '../../plan/exercises'
 import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../../engine/focus'
+import { briefingFor, cadencePlan, timesTrained } from '../../engine/cadence'
+import { cancelSpeech, say, speechInSupported, startEars } from '../../logic/speech'
+import { useAppStore } from '../../store/appStore'
 import { patchSet, toggleExerciseSkipped } from '../../logic/actions'
 import { Stepper } from '../../components/ui'
 import { MuscleMap } from '../../components/MuscleMap'
@@ -39,6 +42,14 @@ export function FocusView({
   const [breakState, setBreakState] = useState<BreakState | null>(null)
   const [videoOpen, setVideoOpen] = useState(false)
   const [voiceOn, setVoiceOn] = useState(false)
+  // Guided flow: every set waits at GO (tap or say it), then the coach
+  // counts the set in rhythm. 'live' = the cadence chain is running.
+  const [phase, setPhase] = useState<'go' | 'live'>('go')
+  const [liveCount, setLiveCount] = useState<string | null>(null)
+  const [caption, setCaption] = useState('')
+  const data = useAppStore((s) => s.data)
+  const update = useAppStore((s) => s.update)
+  const voiceCoach = data.settings.voiceCoach ?? true
 
   const current = currentFocusItem(session)
   const progress = focusProgress(session)
@@ -78,9 +89,41 @@ export function FocusView({
     }
   }, [])
 
+  // ---- Cadence machinery ----
+  const cadenceTimers = useRef<number[]>([])
+  const clearCadence = useCallback(() => {
+    for (const id of cadenceTimers.current) window.clearTimeout(id)
+    cadenceTimers.current = []
+    cancelSpeech()
+  }, [])
+
+  const startSet = useCallback(() => {
+    if (!current) return
+    const exNow = session.exercises[current.exIdx]
+    const defNow = getExercise(exNow.exerciseId)
+    const resolvedNow = day.exercises.find((r) => r.exerciseId === defNow.id)
+    setPhase('live')
+    setLiveCount(null)
+    if (!resolvedNow) return
+    clearCadence()
+    if (!voiceCoach) return
+    for (const ev of cadencePlan(resolvedNow, defNow)) {
+      cadenceTimers.current.push(
+        window.setTimeout(() => {
+          say(ev.say)
+          setCaption(ev.say)
+          if (ev.show) setLiveCount(ev.show)
+        }, ev.atMs),
+      )
+    }
+  }, [current, session, day, voiceCoach, clearCadence])
+
   // ---- Advance ----
+  const autoStartNext = useRef(false)
   const advance = useCallback(() => {
     if (!current) return
+    clearCadence()
+    setLiveCount(null)
     patchSet(session.date, current.exIdx, current.setIdx, { done: true })
     const rest = restAfter(session, current)
     const next = nextFocusItem(session, current)
@@ -95,75 +138,75 @@ export function FocusView({
           ? `Set ${next.setIdx + 1} of ${nextEx.sets.length}`
           : `${nextEx.sets.length} × ${nextEx.sets[0]?.targetReps}`,
       })
+      setPhase('go')
+    } else if (rest <= 15 && next) {
+      // Rapid-fire block: no break, no GO friction — roll straight on
+      autoStartNext.current = true
+    } else {
+      setPhase('go')
     }
-  }, [current, session])
+  }, [current, session, clearCadence])
 
-  // ---- Optional voice control ("next" / "done") ----
+  // New set position: wait at GO — unless a rapid-fire advance asked to roll
+  const posKey = current ? `${current.exIdx}-${current.setIdx}` : 'done'
+  useEffect(() => {
+    if (autoStartNext.current) {
+      autoStartNext.current = false
+      startSet()
+    } else {
+      setPhase('go')
+      setLiveCount(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posKey])
+
+  // Entering a NEW exercise (session start included): speak the briefing —
+  // setup steps while it's new to them, the benefit line once familiar.
+  const announcedEx = useRef<string | null>(null)
+  useEffect(() => {
+    if (!def || breakState) return
+    if (announcedEx.current === def.id) return
+    announcedEx.current = def.id
+    const line = briefingFor(def, timesTrained(data, def.id), data.plan.rationale[def.id])
+    setCaption(line)
+    if (voiceCoach) say(line, { interrupt: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exId, breakState])
+
+  useEffect(() => () => clearCadence(), [clearCadence])
+
+  // ---- Hands-free control: "go / done / skip" and friends ----
   const advanceRef = useRef(advance)
   advanceRef.current = advance
+  const startSetRef = useRef(startSet)
+  startSetRef.current = startSet
   const breakRef = useRef<BreakState | null>(breakState)
   breakRef.current = breakState
-  const recRef = useRef<{ stop: () => void } | null>(null)
+  const phaseRef = useRef(phase)
+  phaseRef.current = phase
 
-  const voiceSupported = useMemo(
-    () =>
-      typeof window !== 'undefined' &&
-      ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window),
-    [],
-  )
+  const voiceSupported = useMemo(() => speechInSupported(), [])
 
   useEffect(() => {
     if (!voiceOn || !voiceSupported) return
-    const w = window as unknown as {
-      SpeechRecognition?: new () => SpeechRecognitionLike
-      webkitSpeechRecognition?: new () => SpeechRecognitionLike
+    const closeBreakAndGo = () => {
+      setBreakState(null)
+      startSetRef.current()
     }
-    interface SpeechRecognitionLike {
-      continuous: boolean
-      interimResults: boolean
-      lang: string
-      onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null
-      onend: (() => void) | null
-      start: () => void
-      stop: () => void
-    }
-    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition
-    if (!Ctor) return
-    let alive = true
-    const rec = new Ctor()
-    rec.continuous = true
-    rec.interimResults = false
-    rec.lang = 'en-US'
-    rec.onresult = (e) => {
-      const last = e.results[e.results.length - 1]
-      const text = (last?.[0]?.transcript ?? '').toLowerCase()
-      if (/\b(next|done|got it)\b/.test(text)) {
-        if (!breakRef.current) advanceRef.current()
-      }
-    }
-    rec.onend = () => {
-      if (alive && voiceOn) {
-        try {
-          rec.start()
-        } catch {
-          /* restart raced */
-        }
-      }
-    }
-    try {
-      rec.start()
-      recRef.current = rec
-    } catch {
-      /* mic denied */
-    }
-    return () => {
-      alive = false
-      try {
-        rec.stop()
-      } catch {
-        /* already stopped */
-      }
-    }
+    const stop = startEars({
+      onGo: () => {
+        if (breakRef.current) closeBreakAndGo()
+        else if (phaseRef.current === 'go') startSetRef.current()
+      },
+      onDone: () => {
+        if (breakRef.current) closeBreakAndGo()
+        else advanceRef.current()
+      },
+      onSkip: () => {
+        if (breakRef.current) closeBreakAndGo()
+      },
+    })
+    return stop
   }, [voiceOn, voiceSupported])
 
   // ---- All done → finish screen ----
@@ -189,7 +232,7 @@ export function FocusView({
   const totalSetsThisEx = ex.sets.length
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-bg pb-[max(env(safe-area-inset-bottom),12px)] pt-[max(env(safe-area-inset-top),12px)]">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-bg pb-[max(env(safe-area-inset-bottom),12px)] pt-[max(env(safe-area-inset-top),12px)]">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4">
         <button onClick={onListView} className="rounded-full bg-surface-2 px-3 py-1.5 text-[11px] font-bold text-ink-dim">
@@ -204,6 +247,13 @@ export function FocusView({
           </div>
         </div>
         <div className="flex gap-1.5">
+          <button
+            onClick={() => update((d) => { d.settings.voiceCoach = !(d.settings.voiceCoach ?? true) })}
+            className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${voiceCoach ? 'bg-accent/20 text-accent-soft' : 'bg-surface-2 text-ink-faint'}`}
+            aria-label="Toggle spoken coaching"
+          >
+            {voiceCoach ? '🔊' : '🔇'}
+          </button>
           {voiceSupported && (
             <button
               onClick={() => setVoiceOn(!voiceOn)}
@@ -326,14 +376,29 @@ export function FocusView({
         </div>
       </div>
 
-      {/* Giant NEXT button */}
+      {/* Coach caption + the giant GO / NEXT button */}
       <div className="px-4 pt-2">
-        <button
-          onClick={advance}
-          className="w-full rounded-2xl bg-accent py-6 text-[19px] font-black tracking-wide text-black shadow-2xl shadow-accent/25 active:scale-[0.985]"
-        >
-          {current.setIdx + 1 === totalSetsThisEx ? 'SET DONE — NEXT' : 'NEXT SET ✓'}
-        </button>
+        {caption && (
+          <p className="mb-2 truncate text-center text-[11.5px] font-semibold text-ink-faint">
+            {liveCount ? <span className="mr-2 font-display text-[15px] font-bold text-accent">{liveCount}</span> : null}
+            {caption}
+          </p>
+        )}
+        {phase === 'go' ? (
+          <button
+            onClick={startSet}
+            className="w-full rounded-2xl bg-lime py-6 text-[19px] font-black tracking-wide text-black shadow-2xl shadow-lime/25 active:scale-[0.985]"
+          >
+            GO — START SET {current.setIdx + 1}
+          </button>
+        ) : (
+          <button
+            onClick={advance}
+            className="w-full rounded-2xl bg-accent py-6 text-[19px] font-black tracking-wide text-black shadow-2xl shadow-accent/25 active:scale-[0.985]"
+          >
+            {current.setIdx + 1 === totalSetsThisEx ? 'SET DONE — NEXT' : 'NEXT SET ✓'}
+          </button>
+        )}
         <div className="mt-2 flex items-center justify-center gap-5 pb-1">
           <button
             onClick={() => toggleExerciseSkipped(session.date, current.exIdx)}
@@ -347,17 +412,32 @@ export function FocusView({
         </div>
       </div>
 
-      {breakState && <BreakScreen brk={breakState} onDone={() => setBreakState(null)} />}
+      {breakState && (
+        <BreakScreen
+          brk={breakState}
+          voice={voiceCoach}
+          onDone={() => {
+            setBreakState(null)
+            startSet()
+          }}
+        />
+      )}
     </div>
   )
 }
 
 // ---------- Break screen: countdown → green READY gate ----------
 
-function BreakScreen({ brk, onDone }: { brk: BreakState; onDone: () => void }) {
+function BreakScreen({ brk, voice, onDone }: { brk: BreakState; voice: boolean; onDone: () => void }) {
   const endsAt = useRef(Date.now() + brk.seconds * 1000)
   const [remaining, setRemaining] = useState(brk.seconds)
   const buzzed = useRef(false)
+
+  // The coach uses the break to set up what's coming
+  useEffect(() => {
+    if (voice) say(`Rest. Next up: ${brk.nextName}, ${brk.nextSetLabel}. Say go or skip when you're ready.`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     const tick = () => {

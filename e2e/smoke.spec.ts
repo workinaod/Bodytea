@@ -52,8 +52,9 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
       await startBtn.click()
     }
 
-    // ---- Focus mode is the default session UI ----
+    // ---- Focus mode is the default session UI: GO gate, then the set ----
     await expect(page.getByText(/Set 1 of/)).toBeVisible()
+    await page.getByRole('button', { name: /^GO — START SET/ }).click()
     const next = page.getByRole('button', { name: /NEXT SET|SET DONE/ })
     await expect(next).toBeVisible()
     await next.click()

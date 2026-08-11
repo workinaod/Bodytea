@@ -43,7 +43,7 @@ test('track a run with GPS: live stats → finish → logged everywhere', async 
   await page.getByRole('button', { name: 'Finish run' }).click()
   await expect(page.getByText(/banked ✓ — cardio logged for today/)).toBeVisible()
   // ~1.04 mi of northward movement
-  await expect(page.getByText(/1\.0\d/)).toBeVisible()
+  await expect(page.getByText(/1\.0\d/).first()).toBeVisible()
   await page.getByRole('button', { name: 'Done', exact: true }).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
