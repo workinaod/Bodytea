@@ -6,7 +6,7 @@ import { base64ToBlob, blobToBase64, PhotoStore, storageUsage } from '../../stor
 import { buildExport, exportFilename, parseEnvelope } from '../../store/backup'
 import { formatShort } from '../../engine/calendar'
 
-/** Export / import — the "easily transferable" promise. */
+/** Export / import, the "easily transferable" promise. */
 export function DataTransferSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const data = useAppStore((s) => s.data)
   const update = useAppStore((s) => s.update)

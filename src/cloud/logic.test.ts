@@ -11,7 +11,7 @@ import {
 import { emptyAppData, type MealDay, type SessionLog } from '../types'
 
 describe('credential derivation', () => {
-  it('derivePassword is FROZEN — this vector must never change', async () => {
+  it('derivePassword is FROZEN, this vector must never change', async () => {
     // Changing the formula would lock every existing account out.
     expect(await derivePassword('15551234567', '123456')).toBe(
       '886ebac92902049adf0f3ac083a8371222565ff712eb9eff93dda2a937f9adeb',

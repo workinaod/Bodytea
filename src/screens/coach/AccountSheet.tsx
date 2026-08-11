@@ -9,7 +9,7 @@ type Cloud = typeof CloudModule
 
 // ============================================================
 // Optional account: phone + PIN, no SMS, no email. The app is
-// 100% usable without one — an account adds cloud backup and
+// 100% usable without one, an account adds cloud backup and
 // the leaderboard. Loaded lazily so local-only users never
 // even download the cloud code path's runtime.
 // ============================================================
@@ -113,7 +113,7 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
               Create my account
             </Btn>
             <Btn kind="subtle" className="w-full py-3.5" onClick={() => { setError(''); setView('signin') }}>
-              I have one — sign in
+              I have one, sign in
             </Btn>
           </>
         )}

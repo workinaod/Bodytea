@@ -28,13 +28,13 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       'Five training days, two true rest days. Power and jumps come early in the week on fresh legs. Strength and hypertrophy come later. This protects your recovery so your vertical goes up, not down, and it survives a DJ gig or a long shift on your feet.',
     ],
     bullets: [
-      'Monday — Acceleration + Two-Foot Power, then lower lifts',
-      'Tuesday — Push (Chest / Shoulders / Triceps) + Shoulder Health',
-      'Wednesday — Lower Strength + Hypertrophy',
-      'Thursday — Mobility + Active Recovery OR Cardio Backup',
-      'Friday — Pull (Back / Biceps / Rear Delts) + Grip + Shoulder Health',
-      'Saturday — Max Speed + One-Foot + Multidirectional, then arms',
-      'Sunday — Rest',
+      'Monday. Acceleration + Two-Foot Power, then lower lifts',
+      'Tuesday. Push (Chest / Shoulders / Triceps) + Shoulder Health',
+      'Wednesday. Lower Strength + Hypertrophy',
+      'Thursday. Mobility + Active Recovery OR Cardio Backup',
+      'Friday. Pull (Back / Biceps / Rear Delts) + Grip + Shoulder Health',
+      'Saturday. Max Speed + One-Foot + Multidirectional, then arms',
+      'Sunday. Rest',
     ],
   },
   {
@@ -42,8 +42,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: 'Speed + Jump Development',
     paragraphs: [
       'Four explosive qualities matter for you: first step, top sprint speed, two-foot jump, and one-foot jump. They split cleanly into two groups, so they live on two different days. The rule that makes it all work: every explosive thing gets done FRESH, before you tire your legs out. Speed and jump work always come first in the session, lifts and arms after.',
-      'Monday — catch force, then produce it. V4 starts with snap-downs to stick (landing is a skill, and it protects everything else), then falling starts, max countermovement jumps, and broad jumps to stick. Acceleration and two-foot power on completely fresh legs. Your squat/RDL/hip thrust strength feeds all of it. This is your natural strength. You are just sharpening it and learning to catch it.',
-      'Saturday — speed, springs, and cuts. Max-velocity and flying sprints build the back half of your sprint. TRUE max effort, full recovery, never tired, which is why they go first. V4 adds the multidirectional layer: lateral bounds to stick and the 5-10-5 shuttle train the sideways force and braking that games actually run on. Then the money jump: the penultimate-step approach converts your speed into height through one long-low, short-quick plant.',
+      'Monday, catch force, then produce it. V4 starts with snap-downs to stick (landing is a skill, and it protects everything else), then falling starts, max countermovement jumps, and broad jumps to stick. Acceleration and two-foot power on completely fresh legs. Your squat/RDL/hip thrust strength feeds all of it. This is your natural strength. You are just sharpening it and learning to catch it.',
+      'Saturday, speed, springs, and cuts. Max-velocity and flying sprints build the back half of your sprint. TRUE max effort, full recovery, never tired, which is why they go first. V4 adds the multidirectional layer: lateral bounds to stick and the 5-10-5 shuttle train the sideways force and braking that games actually run on. Then the money jump: the penultimate-step approach converts your speed into height through one long-low, short-quick plant.',
     ],
   },
   {
@@ -104,9 +104,9 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: 'Time-Crunch Fallback Tiers',
     paragraphs: [
       'Life is going to get in the way. Work, gigs, all of it. These tiers are the plan surviving a busy month instead of dying in week three. Dropping to a lower tier is a PLANNED CHOICE, not a failure. You pick the tier at the start of the week, hit it, and the week counts as a win.',
-      'TIER 1 — Full week (5 days). The plan as written. Run this whenever life allows.',
-      'TIER 2 — Fallback week (3 days). The Saturday session (your athletic progress lives here), lower strength, and upper combined. Space them however the week allows. Steps still count. Skip the formal cardio.',
-      'TIER 3 — Bare minimum (2 days). One explosive session and one full-body lift. You are holding ground, not progressing, until the week clears.',
+      'TIER 1. Full week (5 days). The plan as written. Run this whenever life allows.',
+      'TIER 2. Fallback week (3 days). The Saturday session (your athletic progress lives here), lower strength, and upper combined. Space them however the week allows. Steps still count. Skip the formal cardio.',
+      'TIER 3. Bare minimum (2 days). One explosive session and one full-body lift. You are holding ground, not progressing, until the week clears.',
       'A 3-day week you actually complete beats a 5-day week you abandon on Wednesday. Consistency across a year is the whole game.',
     ],
     bullets: [
@@ -140,7 +140,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
   },
   {
     id: 'nutrition',
-    title: 'Nutrition — The Numbers',
+    title: 'Nutrition. The Numbers',
     paragraphs: [
       'Recomp at your size. Eat more on training days, less on rest days. The protein number is the one you never miss.',
       'Training day: 2,800 kcal · 200 g protein, 300 g carbs, 70-80 g fat. Rest day: 2,500 kcal · 200 g protein, 225 g carbs, 70-80 g fat.',

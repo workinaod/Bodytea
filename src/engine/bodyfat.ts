@@ -1,6 +1,6 @@
 // ============================================================
 // Body-fat estimate from a tape measure (US Navy circumference
-// method). Not lab-grade — nothing at home is — but consistent,
+// method). Not lab-grade, nothing at home is, but consistent,
 // repeatable, and needs only a $3 tape. The app's stance: the
 // TREND is the truth; measure the same way every time.
 // ============================================================

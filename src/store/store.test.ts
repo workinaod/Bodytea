@@ -218,7 +218,7 @@ describe('v9 → v10: meal plan becomes per-user booklet data', () => {
       }
     }
     env.schemaVersion = 9
-    env.data.plan.name = 'Vertical Project — 6-Day'
+    env.data.plan.name = 'Vertical Project · 6-Day'
     env.data.plan.nutrition = { kcalTraining: 2900, kcalRest: 2600 }
     env.data.settings.proteinTargetG = 175
     delete env.data.plan.mealPlan
@@ -249,7 +249,7 @@ describe('v10 → v11: sub-10% body fat joins the owner’s goal', () => {
       data: { plan: Record<string, unknown> & { customTargets: unknown[] } }
     }
     env2.schemaVersion = 10
-    env2.data.plan.name = 'Vertical Project — 6-Day'
+    env2.data.plan.name = 'Vertical Project · 6-Day'
     env2.data.plan.goalStatement = 'dunk by June'
     env2.data.plan.customTargets = []
     const parsed2 = parseEnvelope(JSON.stringify(env2))
@@ -337,7 +337,7 @@ describe('v13 → v14: the basketball voice becomes owner-only', () => {
       data: { plan: Record<string, unknown> }
     }
     env2.schemaVersion = 13
-    env2.data.plan.name = 'Muscle Builder — 4-Day'
+    env2.data.plan.name = 'Muscle Builder. 4-Day'
     delete env2.data.plan.sportMode
     expect(parseEnvelope(JSON.stringify(env2)).data.plan.sportMode).toBe('generic')
   })
@@ -365,7 +365,7 @@ describe('v14 → v15: un-finish the mis-tapped Aug 11 session', () => {
       id: 'dbf1',
       at: '2026-08-11T15:04:01.000Z',
       kind: 'debrief',
-      text: 'Debrief — phantom',
+      text: 'Debrief · phantom',
       debrief: { date: '2026-08-11', title: 'phantom', recap: [], recovery: [], eat: [], sleep: [], tomorrow: '' },
     })
     return env
@@ -425,7 +425,7 @@ describe('v15 → v16: repair lands on the right date (Aug 10) + push purge', ()
       id: 'dbf0',
       at: '2026-08-11T03:24:01.000Z',
       kind: 'debrief',
-      text: 'Debrief — Monday, Aug 10',
+      text: 'Debrief · Monday, Aug 10',
       debrief: { date: '2026-08-10', title: 'phantom', recap: [], recovery: [], eat: [], sleep: [], tomorrow: '' },
     })
     const parsed = parseEnvelope(JSON.stringify(env))
@@ -444,8 +444,47 @@ describe('v15 → v16: repair lands on the right date (Aug 10) + push purge', ()
       text: 'Clock in.',
     })
     const parsed = parseEnvelope(JSON.stringify(env))
-    expect(parsed.data.sessions['2026-08-10']).toBeDefined() // fixture Monday is completed — kept
+    expect(parsed.data.sessions['2026-08-10']).toBeDefined() // fixture Monday is completed, kept
     expect(parsed.data.coach.feed.some((f) => f.situation === 'push')).toBe(false)
     expect(parsed.data.coach.feed.some((f) => f.kind === 'coach' && f.situation === 'session-done')).toBe(true) // other coach items stay
+  })
+})
+
+describe('v17 → v18: stored em dashes are swept clean', () => {
+  function v17Env() {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: ReturnType<typeof fixtureData>
+    }
+    env.schemaVersion = 17
+    return env
+  }
+
+  it('rewrites feed prose, meal labels, plan name and goal statement', () => {
+    const env = v17Env()
+    env.data.coach.feed.push({
+      id: 'em1',
+      at: '2026-08-11T10:00:00.000Z',
+      kind: 'coach',
+      situation: 'comeback',
+      text: "The last session is ancient history — this one's the only one that exists.",
+    })
+    env.data.meals['2026-08-10'] = {
+      date: '2026-08-10',
+      entries: [
+        { id: 'm1', at: '2026-08-10T12:00:00.000Z', label: 'Breakfast — Greek yogurt & berries', proteinG: 30, kcal: 320, source: 'chip', servings: 1 },
+      ],
+      supplements: {},
+    }
+    env.data.plan.name = 'Vertical Project — 6-Day'
+    env.data.plan.goalStatement = 'sub-10% body fat — a build that shows it.'
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.data.coach.feed.find((f) => f.id === 'em1')?.text).toBe(
+      "The last session is ancient history, this one's the only one that exists.",
+    )
+    expect(parsed.data.meals['2026-08-10'].entries[0].label).toBe('Breakfast · Greek yogurt & berries')
+    expect(parsed.data.plan.name).toBe('Vertical Project · 6-Day')
+    expect(parsed.data.plan.goalStatement).toBe('sub-10% body fat, a build that shows it.')
+    expect(JSON.stringify(parsed.data)).not.toContain('—')
   })
 })

@@ -33,7 +33,7 @@ export function pickVariant(
   const idsFor = variants.map((_, i) => `${poolId}:${i}`)
   const unseen = idsFor.findIndex((id) => !shownIds.includes(id))
   if (unseen >= 0) return { text: variants[unseen], shownId: idsFor[unseen] }
-  // all seen — pick the one shown longest ago (earliest position in ring)
+  // all seen, pick the one shown longest ago (earliest position in ring)
   let bestIdx = 0
   let bestPos = Infinity
   idsFor.forEach((id, i) => {
@@ -185,7 +185,7 @@ export function busyButMealsLogged(data: AppData, date: ISODate): boolean {
 
 /**
  * A gig claim is auto-accepted only when a life event was already marked
- * on that day (or the day before — the morning after a late night / a
+ * on that day (or the day before, the morning after a late night / a
  * shift is equally wrecked) in the Week tab. A conflict declared in
  * advance is a fact the app can verify from its own state.
  */

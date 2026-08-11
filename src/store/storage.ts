@@ -82,12 +82,12 @@ export interface ReminderMeta {
   /** An unlocked, unopened milestone review ('3mo' | '6mo' | '1yr'). */
   reviewReadyMark?: string | null
   reviewReadyLabel?: string
-  /** The last mark we pushed a notification for — fires once per mark, ever. */
+  /** The last mark we pushed a notification for, fires once per mark, ever. */
   reviewNotifiedMark?: string | null
   /** Today is the weekly check-in day and no measurement is logged yet. */
   checkinDueToday?: boolean
   checkinNotifiedDate?: string | null
-  /** The Sergeant's 22:00 missed-day word — fires once per missed day. */
+  /** The Sergeant's 22:00 missed-day word, fires once per missed day. */
   missNotifiedDate?: string | null
   /** Rest day + a workout missed this week → the make-up push has a name. */
   makeupTitle?: string | null
@@ -147,7 +147,7 @@ export function validateProofFile(file: { lastModified?: number; type?: string }
 
 // ---------- Photo capture helpers (browser only) ----------
 
-/** Downscale an image file to max 1280px JPEG q0.8 — keeps year-scale storage sane. */
+/** Downscale an image file to max 1280px JPEG q0.8, keeps year-scale storage sane. */
 export async function downscalePhoto(file: Blob): Promise<{ blob: Blob; w: number; h: number }> {
   const url = URL.createObjectURL(file)
   try {

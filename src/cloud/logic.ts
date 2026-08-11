@@ -2,12 +2,12 @@ import type { AppData } from '../types'
 
 // ============================================================
 // Pure cloud logic: credential derivation, input validation,
-// and the first-login adoption decision. No I/O — everything
+// and the first-login adoption decision. No I/O, everything
 // here is unit-testable and shared by sync.ts and the UI.
 // ============================================================
 
 export const SUPABASE_URL = 'https://elnvzitkfwzybkxcjytf.supabase.co'
-// Publishable by design — RLS is the security boundary, not this key.
+// Publishable by design. RLS is the security boundary, not this key.
 export const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbnZ6aXRrZnd6eWJreGNqeXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyODk0NDcsImV4cCI6MjEwMTg2NTQ0N30.0WRwoX9dBRejN7OB4OcZUfvsXHsVkt0ebdjpjlnNnG4'
 
@@ -41,7 +41,7 @@ export function emailFor(digits: string): string {
 }
 
 /**
- * The password GoTrue stores is sha256("bodytea:v1:<digits>:<pin>") —
+ * The password GoTrue stores is sha256("bodytea:v1:<digits>:<pin>"),
  * derived on-device so the raw PIN never leaves the phone. This formula
  * is FROZEN: changing it locks every existing account out.
  */
@@ -67,7 +67,7 @@ export type AdoptionDecision = 'push' | 'pull' | 'conflict'
 
 /**
  * What to do when a sign-in finds both a local and (maybe) a remote copy.
- * `metaLastRemoteExportedAt` is the envelope stamp this device last synced —
+ * `metaLastRemoteExportedAt` is the envelope stamp this device last synced,
  * if the remote still carries it, no other device wrote since, so pushing
  * local is safe. Anything else with real data on both sides is a conflict
  * the user must settle.

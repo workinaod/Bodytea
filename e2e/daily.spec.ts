@@ -5,16 +5,16 @@ test.describe.configure({ mode: 'serial' })
 
 async function quickOnboard(page: Page) {
   await page.getByRole('button', { name: 'Build my plan' }).click()
-  await page.getByRole('button', { name: 'Next — the goal' }).click()
+  await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText('🏀 Dunk a basketball').click()
   await page.getByPlaceholder(/dunk on a 10-ft rim/).fill('dunk on a 10-ft rim by June')
-  await page.getByRole('button', { name: 'Next — my week' }).click()
+  await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '6 days' }).click() // Mon–Sat sessions
-  await page.getByRole('button', { name: 'Next — my gear' }).click()
-  await page.getByRole('button', { name: 'Next — experience' }).click()
-  await page.getByRole('button', { name: 'Next — numbers' }).click()
+  await page.getByRole('button', { name: 'Next: my gear' }).click()
+  await page.getByRole('button', { name: 'Next: experience' }).click()
+  await page.getByRole('button', { name: 'Next: numbers' }).click()
   await page.getByRole('button', { name: 'Generate my booklet' }).click()
-  await page.getByRole('button', { name: "Start Week 1 — let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
 }
 
 test('daily cardio: run outdoors with miles; game day marks played', async ({ page }) => {
@@ -22,7 +22,7 @@ test('daily cardio: run outdoors with miles; game day marks played', async ({ pa
   await page.goto('./')
   await quickOnboard(page)
 
-  // Log an outdoor run — only the run's questions appear
+  // Log an outdoor run, only the run's questions appear
   await page.getByText('Cardio / sport today?').click()
   await page.getByRole('button', { name: /^🏃\s*Run$/ }).click()
   await expect(page.getByText('Indoor or outdoor?')).toBeVisible()
@@ -57,8 +57,8 @@ test('custom life events: add one, pick its days, engine reacts next day', async
 
   await page.getByRole('button', { name: 'Week', exact: true }).click()
   await expect(page.getByText('Life this week')).toBeVisible()
-  // Generated plans start with no events — the empty-state pitch shows
-  await expect(page.getByText(/Add the real-life stuff/)).toBeVisible()
+  // Generated plans start with no events, the empty-state pitch shows
+  await expect(page.getByText(/Late nights, long shifts/)).toBeVisible()
 
   // Create a custom on-feet event and mark it for Monday
   await page.getByRole('button', { name: /Add a life event/ }).click()
@@ -102,17 +102,17 @@ test('same-day trim: work ran long → volume cut today, restorable', async ({ p
   await page.goto('./')
   await quickOnboard(page)
 
-  // The Can't-train flow leads with the trim — still training, just less
+  // The Can't-train flow leads with the trim, still training, just less
   await page.getByRole('button', { name: "Can't train" }).click()
   await page.getByRole('button', { name: /Trim today's load/ }).click()
   await page.getByRole('button', { name: 'Work / busy' }).click()
-  await page.getByRole('button', { name: 'Trim it — still training' }).click()
+  await page.getByRole('button', { name: 'Trim it, still training' }).click()
 
   // The day resolves trimmed, with the escape hatch offered
   await expect(page.getByText(/You called a trimmed day/)).toBeVisible()
   await expect(page.getByText(/Restore the full session/)).toBeVisible()
 
-  // Meeting cancelled — full session comes back
+  // Meeting cancelled, full session comes back
   await page.getByText(/Restore the full session/).click()
   await expect(page.getByText(/You called a trimmed day/)).not.toBeVisible()
 })

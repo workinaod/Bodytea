@@ -3,7 +3,7 @@ import { getExercise } from './exercises'
 import { EXERCISE_MUSCLES } from './muscles'
 
 // ============================================================
-// Routine analysis: honest coach notes on any booklet — used
+// Routine analysis: honest coach notes on any booklet, used
 // when someone plugs in their own routine, and re-run whenever
 // a booklet is edited. Pure over PlanConfig.
 // ============================================================

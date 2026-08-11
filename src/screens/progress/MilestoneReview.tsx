@@ -40,7 +40,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
     <Sheet open onClose={onClose} title={review.label}>
       <div className="space-y-4 pb-8">
         <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-          {formatShort(review.from)} — {formatShort(review.to)}
+          {formatShort(review.from)} · {formatShort(review.to)}
         </div>
 
         {/* The verdict is the headline */}
@@ -79,7 +79,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-2xl border border-edge/80 bg-surface px-4 py-3 text-center">
             <div className="font-display text-[26px] font-bold leading-none">
-              {review.adherencePct !== null ? `${review.adherencePct}%` : '—'}
+              {review.adherencePct !== null ? `${review.adherencePct}%` : ', '}
             </div>
             <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-ink-faint">
               attendance · {review.done + review.partial}/{review.scheduled} sessions
@@ -87,7 +87,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
           </div>
           <div className="rounded-2xl border border-edge/80 bg-surface px-4 py-3 text-center">
             <div className="font-display text-[26px] font-bold leading-none">
-              {review.proteinPct !== null ? `${review.proteinPct}%` : '—'}
+              {review.proteinPct !== null ? `${review.proteinPct}%` : ', '}
             </div>
             <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-ink-faint">
               protein days hit

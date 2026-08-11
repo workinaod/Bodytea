@@ -6,7 +6,7 @@ import { fitBounds, latToWorldY, lngToWorldX } from '../engine/runs'
  * Slippy-map route view with zero dependencies: OSM raster tiles laid
  * as an <img> grid, the track drawn as an SVG polyline on top. Offline
  * (or with tiles blocked) the imgs simply don't paint and the route
- * still draws on the dark field — stats never depend on the map.
+ * still draws on the dark field, stats never depend on the map.
  */
 export function RouteMap({
   points,
@@ -58,7 +58,7 @@ export function RouteMap({
       return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`
     })
     return { zoom, tiles, path, start: px(points[0]), end: px(points[points.length - 1]), single: points.length < 2 }
-    // points is mutated in place during live tracking — length is the
+    // points is mutated in place during live tracking, length is the
     // signal that a new fix landed, so it must be a dependency too.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points, points.length, width, height])

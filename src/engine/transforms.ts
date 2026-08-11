@@ -158,7 +158,7 @@ export function applyLongShiftMonday(exercises: ResolvedExercise[]): ResolvedExe
 }
 
 /**
- * Minimum viable session — the counter-offer the SkipFlow always makes.
+ * Minimum viable session, the counter-offer the SkipFlow always makes.
  * Uses the template's authored recipe; falls back to the first two
  * exercises at 2 sets (cut-from-the-bottom rule, inverted).
  */

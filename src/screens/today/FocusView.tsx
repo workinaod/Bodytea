@@ -16,7 +16,7 @@ import { photosFor } from '../../plan/demoPhotos'
 // ============================================================
 // Focus mode, guided: each set is intro'd (name, set, reps at
 // weight), the weight is confirmed BEFORE the set, ready starts
-// a true 1-second 3-2-1 — then the coach shuts up and lets you
+// a true 1-second 3-2-1, then the coach shuts up and lets you
 // work. Instructions are spoken only when asked, and shortened.
 // ============================================================
 
@@ -49,10 +49,10 @@ function loadLabel(equipment: string): string {
   return 'Added weight'
 }
 
-/** The main details in one breath — cue first, then the first two steps
+/** The main details in one breath, cue first, then the first two steps
     trimmed to their opening clause. Never the write-up verbatim. */
 function shortHowTo(def: ExerciseDef): string {
-  const bits = [def.cue, ...def.steps.slice(0, 2).map((s) => s.split(/[,.;—(]/)[0]?.trim())]
+  const bits = [def.cue, ...def.steps.slice(0, 2).map((s) => s.split(/[,.;, (]/)[0]?.trim())]
   return `${bits.filter(Boolean).join('. ')}.`
 }
 
@@ -219,7 +219,7 @@ export function FocusView({
       const nextDef = getExercise(nextEx.exerciseId)
       const sameExercise = next.exIdx === current.exIdx
       // Weight check-in on the MIDDLE set: by then they know if the load is
-      // off — no reason to wait out the whole exercise. Once per 2 weeks.
+      // off, no reason to wait out the whole exercise. Once per 2 weeks.
       const justEx = session.exercises[current.exIdx]
       const justDef = getExercise(justEx.exerciseId)
       const midSetIdx = Math.max(0, Math.ceil(justEx.sets.length / 2) - 1)
@@ -238,14 +238,14 @@ export function FocusView({
       })
       setPhase('go')
     } else if (rest <= 15 && next) {
-      // Rapid-fire block: no break, no gate friction — roll straight on
+      // Rapid-fire block: no break, no gate friction, roll straight on
       autoStartNext.current = true
     } else {
       setPhase('go')
     }
   }, [current, session, clearTimers])
 
-  // New set position: back to the gate — unless a rapid-fire advance asked to roll
+  // New set position: back to the gate, unless a rapid-fire advance asked to roll
   const posKey = current ? `${current.exIdx}-${current.setIdx}` : 'done'
   useEffect(() => {
     if (autoStartNext.current) {
@@ -259,7 +259,7 @@ export function FocusView({
 
   // ---- The set intro: name, set count, prescribed reps, weight prompt.
   // Spoken once per set position (voice mode), mirrored on screen. NO
-  // instruction reading — that only happens on request.
+  // instruction reading, that only happens on request.
   const introFor = useRef<string | null>(null)
   useEffect(() => {
     if (!def || !set || !current || breakState || phase !== 'go') return
@@ -278,7 +278,7 @@ export function FocusView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posKey, breakState, phase])
 
-  // Instructions only when asked — and shortened, not the write-up
+  // Instructions only when asked, and shortened, not the write-up
   const speakInstructions = useCallback(() => {
     if (!def) return
     const line = shortHowTo(def)
@@ -307,7 +307,7 @@ export function FocusView({
     if (!voiceOn || !voiceSupported) return
     const stop = startEars({
       onGo: () => {
-        if (breakRef.current) setBreakState(null) // back to the gate — weight first
+        if (breakRef.current) setBreakState(null) // back to the gate, weight first
         else if (phaseRef.current === 'go') gateRef.current()
       },
       onDone: () => {
@@ -443,7 +443,7 @@ export function FocusView({
         </div>
       </div>
 
-      {/* Exercise name + prescription — told, not picked */}
+      {/* Exercise name + prescription, told, not picked */}
       <div className="mt-3 px-5 text-center">
         <h2 className="text-[25px] font-black leading-tight tracking-tight">{def.name}</h2>
         <div className="mt-1.5 text-[12px] font-black uppercase tracking-[0.14em] text-ink-dim">
@@ -521,7 +521,7 @@ export function FocusView({
 
       {/* One quiet caption line + the single dominant button */}
       <div className="px-4 pt-2">
-        {/* The gate: weight goes in BEFORE the set — always in view */}
+        {/* The gate: weight goes in BEFORE the set, always in view */}
         {phase === 'go' && isLoaded && (
           <div className="mx-auto mb-2 flex max-w-xs items-center justify-between rounded-2xl border border-accent/30 bg-surface px-4 py-2.5">
             <span className="text-[11px] font-black uppercase tracking-wider text-ink-dim">{loadLabel(def.equipment)}</span>
@@ -535,7 +535,7 @@ export function FocusView({
           </div>
         )}
 
-        {/* Live: a clean working state — timer for timed sets, otherwise quiet */}
+        {/* Live: a clean working state, timer for timed sets, otherwise quiet */}
         {phase === 'live' && (
           <div className="mb-2 text-center">
             {isTimed ? (
@@ -557,14 +557,14 @@ export function FocusView({
               needsWeight ? 'bg-lime/40 shadow-none' : 'bg-lime shadow-lime/25'
             }`}
           >
-            GO — START SET {current.setIdx + 1}
+            GO · START SET {current.setIdx + 1}
           </button>
         ) : (
           <button
             onClick={advance}
             className="w-full rounded-2xl bg-accent py-6 text-[19px] font-black tracking-wide text-black shadow-2xl shadow-accent/25 active:scale-[0.985]"
           >
-            {current.setIdx + 1 === totalSetsThisEx ? 'SET DONE — NEXT' : 'NEXT SET ✓'}
+            {current.setIdx + 1 === totalSetsThisEx ? 'SET DONE. NEXT' : 'NEXT SET ✓'}
           </button>
         )}
         <div className="mt-2 flex items-center justify-center gap-5 pb-1">
@@ -616,7 +616,7 @@ function BreakScreen({
   const [feelDone, setFeelDone] = useState(false)
   const buzzed = useRef(false)
 
-  // Short and factual — the next gate handles weight + ready
+  // Short and factual, the next gate handles weight + ready
   useEffect(() => {
     if (mode === 'voice') say(`Rest. Next: ${brk.nextName}, ${brk.nextSetLabel}.`)
     else if (mode === 'beeps-names') say(brk.nextName)

@@ -6,7 +6,7 @@ import { getExercise } from '../plan/exercises'
 
 // ============================================================
 // Milestone reviews: at 3 months, 6 months, and 1 year the app
-// sits the user down — deltas, before/after photos, and a
+// sits the user down, deltas, before/after photos, and a
 // verdict that weighs GAINS against EFFORT. High effort earns
 // respect even when the numbers stall; low effort gets named
 // even when genetics carried the numbers.

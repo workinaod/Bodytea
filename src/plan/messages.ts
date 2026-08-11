@@ -4,7 +4,7 @@ import type { CoachSituation, CopyFlavor } from '../types'
 // The Sergeant's voice. Variant pools keyed by situation (and
 // escalation level for unproven skips). Placeholders like
 // {count}, {dates}, {streak}, {exercise} are interpolated by
-// the coach engine with live numbers — receipts, not vibes.
+// the coach engine with live numbers, receipts, not vibes.
 //
 // Tone contract:
 // - No proof + skipping  → drill sergeant, escalating with history
@@ -21,7 +21,7 @@ export interface MessagePool {
 }
 
 export const MESSAGE_POOLS: MessagePool[] = [
-  // ---------- Skipping WITHOUT proof — escalation ladder ----------
+  // ---------- Skipping WITHOUT proof, escalation ladder ----------
   {
     id: 'skip-np-0',
     situation: 'skip-no-proof',
@@ -70,7 +70,7 @@ export const MESSAGE_POOLS: MessagePool[] = [
     ],
   },
 
-  // ---------- Skipping WITH proof — respect ----------
+  // ---------- Skipping WITH proof, respect ----------
   {
     id: 'skip-proof',
     situation: 'skip-with-proof',
@@ -345,20 +345,49 @@ export const MOTIVATION_QUOTES: MotivationQuote[] = [
   { text: "You can't hire someone else to do your push-ups for you.", source: 'Jim Rohn' },
   { text: "The pain you feel today will be the strength you feel tomorrow." },
   { text: "Discipline is choosing between what you want now and what you want most.", source: 'Abraham Lincoln (attributed)' },
-  { text: "Somewhere behind the athlete you've become is the little boy who fell in love with the game. Play for him." },
+  { text: "Somewhere behind the athlete you've become is the little kid who fell in love with the game. Play for them." },
   { text: "It's not about having time. It's about making time." },
   { text: "A year from now you may wish you had started today.", source: 'Karen Lamb' },
   { text: "The body achieves what the mind believes." },
-  { text: "Champions aren't made in gyms. Champions are made from something deep inside them — a desire, a dream, a vision.", source: 'Muhammad Ali' },
+  { text: "Champions aren't made in gyms. Champions are made from something deep inside them, a desire, a dream, a vision.", source: 'Muhammad Ali' },
   { text: "Success is usually the culmination of controlling failure.", source: 'Sylvester Stallone' },
   { text: "If you're tired of starting over, stop giving up." },
-  { text: "Everybody wants to be a beast — until it's time to do what real beasts do.", source: 'Eric Thomas' },
+  { text: "Everybody wants to be a beast, until it's time to do what real beasts do.", source: 'Eric Thomas' },
+  { text: "I hated every minute of training, but I said, don't quit. Suffer now and live the rest of your life as a champion.", source: 'Muhammad Ali' },
+  { text: "Some people want it to happen, some wish it would happen, others make it happen.", source: 'Michael Jordan' },
+  { text: "Great things come from hard work and perseverance. No excuses.", source: 'Kobe Bryant' },
+  { text: "I have self-doubt. I have insecurity. I have fear of failure. We all have self-doubt. You don't deny it, but you also don't capitulate to it. You embrace it.", source: 'Kobe Bryant' },
+  { text: "If you don't find the time, if you don't do the work, you don't get the results.", source: 'Arnold Schwarzenegger' },
+  { text: "Success isn't always about greatness. It's about consistency. Consistent hard work leads to success. Greatness will come.", source: 'Dwayne Johnson' },
+  { text: "You must expect great things of yourself before you can do them.", source: 'Michael Jordan' },
+  { text: "It's hard to beat a person who never gives up.", source: 'Babe Ruth' },
+  { text: "I've grown most not from victories, but setbacks.", source: 'Serena Williams' },
+  { text: "The only way to prove that you're a good sport is to lose.", source: 'Ernie Banks' },
+  { text: "Persistence can change failure into extraordinary achievement.", source: 'Matt Biondi' },
+  { text: "You miss 100 percent of the shots you don't take.", source: 'Wayne Gretzky' },
+  { text: "It ain't about how hard you hit. It's about how hard you can get hit and keep moving forward.", source: 'Rocky Balboa' },
+  { text: "Today I will do what others won't, so tomorrow I can accomplish what others can't.", source: 'Jerry Rice' },
+  { text: "The difference between the impossible and the possible lies in a person's determination.", source: 'Tommy Lasorda' },
+  { text: "You have to expect things of yourself before you can do them.", source: 'Michael Jordan' },
+  { text: "Strength does not come from winning. Your struggles develop your strengths.", source: 'Arnold Schwarzenegger' },
+  { text: "Nobody who ever gave his best regretted it.", source: 'George Halas' },
+  { text: "Do something today that your future self will thank you for." },
+  { text: "The clock is running. Make the most of today." },
+  { text: "Motivation gets you started. Habit keeps you going.", source: 'Jim Ryun' },
+  { text: "Sweat is just fat crying." },
+  { text: "You don't have to be extreme, just consistent." },
+  { text: "The gym doesn't care how you feel. It only counts what you do." },
+  { text: "Nobody ever regretted the workout they did. Only the one they skipped." },
+  { text: "Your body can stand almost anything. It's your mind you have to convince." },
+  { text: "Fall in love with the process and the results will come.", source: 'Eric Thomas' },
+  { text: "Small daily improvements are the key to staggering long-term results." },
+  { text: "When you feel like quitting, remember why you started." },
 ]
 
 export interface MotivationVideo {
   title: string
   note: string
-  /** YouTube search query — always resolves, never a dead link. */
+  /** YouTube search query, always resolves, never a dead link. */
   query: string
 }
 

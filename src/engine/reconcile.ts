@@ -5,7 +5,7 @@ import { resolveDay } from './resolveDay'
 // ============================================================
 // Launch reconcile: every past scheduled day with neither a
 // session log nor an excuse becomes a confrontation. Silence
-// is impossible — that's the accountability contract.
+// is impossible, that's the accountability contract.
 // ============================================================
 
 export interface MissedDay {
@@ -74,7 +74,7 @@ export interface MakeupCandidate {
  * The first workout missed THIS week (Monday through yesterday): a
  * scheduled session/mobility day whose log is absent or skipped. A
  * week-scope excuse (travel/sick write-off) suppresses the offer; a
- * day-scope excuse does NOT — the excuse explained the miss, it didn't
+ * day-scope excuse does NOT, the excuse explained the miss, it didn't
  * do the work.
  */
 export function makeupCandidate(data: AppData, today: ISODate): MakeupCandidate | null {
@@ -93,7 +93,7 @@ export function makeupCandidate(data: AppData, today: ISODate): MakeupCandidate 
   return null
 }
 
-/** Group misses by week Monday — used for the bulk "that was a travel week" resolution. */
+/** Group misses by week Monday, used for the bulk "that was a travel week" resolution. */
 export function groupMissesByWeek(misses: MissedDay[]): Map<ISODate, MissedDay[]> {
   const map = new Map<ISODate, MissedDay[]>()
   for (const m of misses) {

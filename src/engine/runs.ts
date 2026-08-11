@@ -2,7 +2,7 @@ import type { AppData, ISODate, RunLog, RunPoint } from '../types'
 import { addDaysISO, mondayOf } from './calendar'
 
 // ============================================================
-// GPS run/ride math — all pure. Points are [lat, lng, elapsedSec].
+// GPS run/ride math, all pure. Points are [lat, lng, elapsedSec].
 // Distance via haversine with junk-fix filtering; pace, splits,
 // and weekly mileage for the Progress chart. Also the Web
 // Mercator projection the route map draws with.
@@ -22,7 +22,7 @@ export function haversineMi(lat1: number, lng1: number, lat2: number, lng2: numb
 
 /**
  * Should this GPS fix be kept? Rejects low-accuracy fixes, teleports
- * (> 45 mph between fixes — nobody runs or city-bikes that), and
+ * (> 45 mph between fixes, nobody runs or city-bikes that), and
  * jitter when standing still (< ~8 m of movement).
  */
 export function acceptFix(
@@ -56,7 +56,7 @@ export function paceSecPerMi(distanceMi: number, durationSec: number): number {
 }
 
 export function fmtPace(secPerMi: number): string {
-  if (!secPerMi) return '—'
+  if (!secPerMi) return ', '
   const m = Math.floor(secPerMi / 60)
   const s = Math.round(secPerMi % 60)
   return `${m}:${String(s).padStart(2, '0')}/mi`
@@ -69,7 +69,7 @@ export function fmtDuration(sec: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`
 }
 
-/** Speed in mph — the natural stat for rides. */
+/** Speed in mph, the natural stat for rides. */
 export function avgMph(distanceMi: number, durationSec: number): number {
   if (durationSec <= 0) return 0
   return Math.round((distanceMi / (durationSec / 3600)) * 10) / 10

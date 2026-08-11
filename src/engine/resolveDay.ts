@@ -25,7 +25,7 @@ import { cardioActivity } from '../plan/cardio'
 
 // ============================================================
 // The pipeline: (date, state) → ResolvedDay.
-// Deterministic and pure — the whole program logic lives here.
+// Deterministic and pure, the whole program logic lives here.
 // Every plan read comes from data.plan (the user's booklet);
 // the engine never touches the static plan modules.
 // ============================================================
@@ -94,7 +94,7 @@ function conditioningLoggedThisWeek(data: AppData, dateISO: ISODate): boolean {
 /**
  * The "at least ONE cardio session" rule, made mandatory. Required on a
  * Tier-1 week when no ball has been logged AND either the forecast says
- * no ball or the week has reached Thursday without a run — until a
+ * no ball or the week has reached Thursday without a run, until a
  * cardio-backup session is completed or scheduled.
  */
 export function cardioRequiredForWeek(data: AppData, dateISO: ISODate): boolean {
@@ -118,7 +118,7 @@ export function cardioRequiredForWeek(data: AppData, dateISO: ISODate): boolean 
   return true
 }
 
-/** Cheap check: is `date` a CNS day for its tier? (no full resolution — avoids recursion) */
+/** Cheap check: is `date` a CNS day for its tier? (no full resolution, avoids recursion) */
 function resolveDayShallowCns(data: AppData, dateISO: ISODate): boolean {
   const week = weekStateFor(data, dateISO)
   const templateId = tierTemplateId(data.plan, week.tier, weekdayOf(dateISO), week)
@@ -173,7 +173,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   }
 
   // --- Scheduled conditioning for this weekday. It RIDES ON TOP of the
-  //     day's session (appended after the main work) — it only becomes
+  //     day's session (appended after the main work), it only becomes
   //     the whole day when the day was empty anyway. Dissolves if ball
   //     actually got played: backups replace ball, never stack on it. ---
   const scheduledCardio =
@@ -184,7 +184,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
         }
       : null
 
-  /** The scheduled conditioning as a whole day — for days that were empty anyway. */
+  /** The scheduled conditioning as a whole day, for days that were empty anyway. */
   const scheduledCardioAsDay = (): ResolvedDay => {
     const { def, opt } = scheduledCardio!
     return {
@@ -216,7 +216,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
 
   // --- Mandatory cardio: Thursday flips from mobility to the backup
   //     chooser ONLY when the user declared a no-ball week (with no
-  //     forecast, late-week no-ball stays a nag — Saturday ball is still
+  //     forecast, late-week no-ball stays a nag. Saturday ball is still
   //     possible in the same-day model) ---
   if (weekday === plan.anchors.conditioningWeekday && week.tier === 1 && week.ballThisWeek === false && cardioRequired && !week.cardio) {
     banners.push({
@@ -229,7 +229,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     return {
       ...base,
       templateId: null,
-      title: ball ? 'Cardio Backup — required' : 'Conditioning — required',
+      title: ball ? 'Cardio Backup, required' : 'Conditioning, required',
       tagline: ball
         ? 'Replaces basketball this week. Option A if tired, Option B if fresh.'
         : "This week's cardio. Option A if tired, Option B if fresh.",
@@ -270,7 +270,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
 
   const template = planTemplate(plan, templateId)
 
-  // A rest-KIND template (e.g. Full Rest Sunday) is an empty day too —
+  // A rest-KIND template (e.g. Full Rest Sunday) is an empty day too,
   // scheduled conditioning becomes the session, it doesn't stack on nothing.
   if (scheduledCardio && template.kind === 'rest') return scheduledCardioAsDay()
 
@@ -305,7 +305,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     })
   }
 
-  // --- Per-date swaps (🔄 on a Today row) — applied before the volume
+  // --- Per-date swaps (🔄 on a Today row), applied before the volume
   //     transforms so deload/readiness/life-event math operates on what
   //     the user will actually do. Prescription (sets/reps) stays: the
   //     substitute fills the same training slot. ---
@@ -421,7 +421,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     })
   }
 
-  // --- Scheduled conditioning stacks AFTER the day's main work — the
+  // --- Scheduled conditioning stacks AFTER the day's main work, the
   //     workout stays; the cardio is added on top, untouched by the
   //     volume transforms above. ---
   if (scheduledCardio) {

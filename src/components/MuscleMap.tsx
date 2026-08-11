@@ -71,7 +71,7 @@ function FrontFigure({ f, showHeart, heartHot }: { f: FillFn; showHeart: boolean
       <path d="M33,30.5 L45.5,25 L45.5,30.5 Z" {...S} {...f('traps')} />
       <path d={`M${mx(33)},30.5 L${mx(45.5)},25 L${mx(45.5)},30.5 Z`} {...S} {...f('traps')} />
 
-      {/* delts — front caps light up for front AND side emphasis */}
+      {/* delts, front caps light up for front AND side emphasis */}
       <ellipse cx="23" cy="34.5" rx="8" ry="6.5" {...S} {...bestOf(f, ['delts-front', 'delts-side'])} />
       <ellipse cx={mx(23)} cy="34.5" rx="8" ry="6.5" {...S} {...bestOf(f, ['delts-front', 'delts-side'])} />
 

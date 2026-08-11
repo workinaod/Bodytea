@@ -18,7 +18,7 @@ import {
 // ============================================================
 // The cloud runtime: optional accounts (phone + PIN) with the
 // whole envelope backed up to the user's own Supabase row.
-// Local-first forever — every write lands in localStorage
+// Local-first forever, every write lands in localStorage
 // synchronously as before; the cloud push is a debounced echo.
 // This module is only ever loaded via dynamic import, so
 // local-only users never even parse it.

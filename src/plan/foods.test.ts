@@ -3,7 +3,7 @@ import { buildMealPlan, type MealsPerDay } from './foods'
 
 const NUTRITION = { kcalTraining: 3000, kcalRest: 2600 }
 
-describe('buildMealPlan — coach-led eating styles', () => {
+describe('buildMealPlan, coach-led eating styles', () => {
   it.each([[2], [3], [4], [5]] as [MealsPerDay][])(
     '%i meals/day: right count and the day still adds up to the targets',
     (n) => {
@@ -60,7 +60,7 @@ describe('diet styles in generated meal plans', () => {
       const plan = buildMealPlan('muscle', 170, NUTRITION, n, 'vegan')
       for (const t of plan.templates) {
         expect(t.detail, `${n}-meal ${t.slot}: ${t.detail}`).not.toMatch(MEAT)
-        // soy milk is fine — strip it before the dairy check
+        // soy milk is fine, strip it before the dairy check
         expect(t.detail.replace(/soy milk/gi, ''), `${n}-meal ${t.slot}: ${t.detail}`).not.toMatch(ANIMAL)
       }
       expect(plan.grocery.find((g) => g.category === 'Protein')!.items.join(' ')).toMatch(/tofu/i)

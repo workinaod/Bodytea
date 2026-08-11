@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { daysBetween, formatShort } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
-import { unprovenExcusesInWindow } from '../../engine/coach'
+
 import { fuelVideosFor, MOTIVATION_QUOTES } from '../../plan/messages'
 import { GUIDE_SECTIONS } from '../../plan/guide'
 import { EXERCISES } from '../../plan/exercises'
@@ -15,7 +15,6 @@ import { ExerciseGuideSheet } from '../today/ExerciseGuideSheet'
 import { SettingsSheet } from './SettingsSheet'
 import { DataTransferSheet } from './DataTransferSheet'
 import { AccountSheet } from './AccountSheet'
-import { ExcuseLedger } from './ExcuseLedger'
 import { BookletScreen } from '../booklet/BookletScreen'
 import type { DebriefData } from '../../types'
 
@@ -23,7 +22,6 @@ export function CoachScreen() {
   const data = useAppStore((s) => s.data)
   const [pushOpen, setPushOpen] = useState(false)
   const [pushLine, setPushLine] = useState('')
-  const [ledgerOpen, setLedgerOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [dataOpen, setDataOpen] = useState(false)
@@ -34,7 +32,6 @@ export function CoachScreen() {
   const [feedCount, setFeedCount] = useState(20)
 
   const today = useToday()
-  const unproven = unprovenExcusesInWindow(data.excuses, today).length
   const backupDays = data.settings.lastExportAt
     ? daysBetween(data.settings.lastExportAt.slice(0, 10), today)
     : null
@@ -95,18 +92,18 @@ export function CoachScreen() {
         </button>
       )}
 
-      {/* Need a push — typography, not a box */}
-      <div className="px-1 pt-3">
+      {/* Need a push, typography, not a box */}
+      <div className="px-2 pt-4 text-center">
         <p className="font-display text-[17px] font-semibold italic leading-snug text-ink">
           “{quote.text}”
         </p>
         {quote.source && (
-          <p className="mt-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">{quote.source}</p>
+          <p className="mt-2 text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-faint">{quote.source}</p>
         )}
         <Btn
           className="mt-4 w-full"
           onClick={() => {
-            // A pep talk on demand — spoken, not written into the Record
+            // A pep talk on demand, spoken, not written into the Record
             setPushLine(coachLineFor('push', { goal: data.plan.goalStatement || 'getting better than yesterday' }))
             setPushOpen(true)
           }}
@@ -115,24 +112,15 @@ export function CoachScreen() {
         </Btn>
       </div>
 
-      {/* Receipts + guide entry points */}
-      <div className="grid grid-cols-2 gap-2">
-        <Card onClick={() => setLedgerOpen(true)} className="!p-4">
-          <div className="text-[13.5px] font-extrabold">Receipts</div>
-          <div className="mt-0.5 text-[11px] text-ink-faint">
-            {data.excuses.length} on record · {unproven} unproven this month
-          </div>
-        </Card>
-        <Card onClick={() => setGuideOpen(true)} className="!p-4">
-          <div className="text-[13.5px] font-extrabold">The Plan</div>
-          <div className="mt-0.5 text-[11px] text-ink-faint">Rules, why it works, exercise library</div>
-        </Card>
-      </div>
+      <Card onClick={() => setGuideOpen(true)} className="!p-4">
+        <div className="text-[13.5px] font-extrabold">The Plan</div>
+        <div className="mt-0.5 text-[11px] text-ink-faint">Rules, why it works, exercise library</div>
+      </Card>
 
       <Card onClick={() => setBookletOpen(true)} className="!p-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[13.5px] font-extrabold">My Booklet — {data.plan.name}</div>
+            <div className="text-[13.5px] font-extrabold">My Booklet · {data.plan.name}</div>
             <div className="mt-0.5 text-[11px] text-ink-faint">
               {data.plan.daysPerWeek} day{data.plan.daysPerWeek === 1 ? '' : 's'} a week · fine-tune everything
             </div>
@@ -141,7 +129,7 @@ export function CoachScreen() {
         </div>
       </Card>
 
-      {/* The record: what actually happened — sessions, adjustments,
+      {/* The record: what actually happened, sessions, adjustments,
           runs/bikes. Pep talks live in the push sheet, not here. */}
       <SectionTitle>The record</SectionTitle>
       <div className="space-y-2">
@@ -156,8 +144,8 @@ export function CoachScreen() {
                 </div>
                 <p className="mt-2 text-[13px] leading-relaxed text-ink">
                   {r.activity === 'bike'
-                    ? `Ride — ${r.distanceMi.toFixed(2)} mi · ${fmtDuration(r.durationSec)} · ${avgMph(r.distanceMi, r.durationSec)} mph avg`
-                    : `Run — ${r.distanceMi.toFixed(2)} mi · ${fmtDuration(r.durationSec)} · ${fmtPace(r.avgPaceSec)}`}
+                    ? `Ride · ${r.distanceMi.toFixed(2)} mi · ${fmtDuration(r.durationSec)} · ${avgMph(r.distanceMi, r.durationSec)} mph avg`
+                    : `Run · ${r.distanceMi.toFixed(2)} mi · ${fmtDuration(r.durationSec)} · ${fmtPace(r.avgPaceSec)}`}
                 </p>
               </Card>
             )
@@ -200,7 +188,7 @@ export function CoachScreen() {
         )}
       </div>
 
-      {/* Push sheet — the line IS the sheet; everything else is a footnote */}
+      {/* Push sheet, the line IS the sheet; everything else is a footnote */}
       <Sheet open={pushOpen} onClose={() => setPushOpen(false)} title="Alright. Listen.">
         <div className="space-y-3 pb-6">
           <div className="relative overflow-hidden rounded-3xl border border-accent/25 bg-gradient-to-b from-surface-2 to-surface px-5 pb-5 pt-6">
@@ -241,11 +229,6 @@ export function CoachScreen() {
             Fine. I'm going.
           </Btn>
         </div>
-      </Sheet>
-
-      {/* Ledger sheet */}
-      <Sheet open={ledgerOpen} onClose={() => setLedgerOpen(false)} title="Receipts">
-        <ExcuseLedger />
       </Sheet>
 
       {/* Guide sheet */}

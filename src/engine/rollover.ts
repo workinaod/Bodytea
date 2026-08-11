@@ -19,7 +19,7 @@ export function msUntilNextMidnight(now: Date): number {
 
 /**
  * Late-night grace: between midnight and 03:00, "yesterday" stays the
- * live day when its work is still in play — an unfinished session keeps
+ * live day when its work is still in play, an unfinished session keeps
  * its clock, and a scheduled day never started can STILL be started (a
  * midnight-to-three workout counts as the day it belongs to). A day
  * that was finished or explicitly skipped rolls over immediately.
@@ -31,11 +31,11 @@ export function lateNightGraceDate(
   now: Date,
 ): ISODate | null {
   if (now.getHours() >= 6) return null
-  if (localISO(now) !== today) return null // clock/state disagree — no grace games
+  if (localISO(now) !== today) return null // clock/state disagree, no grace games
   const yesterday = addDaysISO(today, -1)
   const s = data.sessions[yesterday]
   if (s) {
-    // A session actively in progress keeps its day PAST 3:00 — never
+    // A session actively in progress keeps its day PAST 3:00, never
     // yank the anchor mid-workout. 06:00 is the hard backstop.
     const inProgress = s.status === 'partial' && !!s.startedAt && !s.endedAt
     return inProgress ? yesterday : null

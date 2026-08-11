@@ -6,7 +6,7 @@ import { Btn, Chip } from '../../components/ui'
 import { AccountSheet } from '../coach/AccountSheet'
 
 // ============================================================
-// The Board — global leaderboard, now a subtab of Progress.
+// The Board, global leaderboard, now a subtab of Progress.
 // Your own numbers always render (computed locally, even offline
 // or signed out); the ranked lists come from board_stats and are
 // cached for 5 minutes / kept for offline viewing.
@@ -99,14 +99,14 @@ export function BoardContent() {
         <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-ink-faint">Your numbers</div>
         <div className="grid grid-cols-5 gap-1 text-center">
           <MiniStat label="Streak" value={`${mine.streak}d`} hot={mine.streak >= 7} />
-          <MiniStat label="Consist." value={mine.consistency30 === null ? '—' : `${Math.round(mine.consistency30)}%`} />
-          <MiniStat label="PRs" value={mine.prGain90 === null ? '—' : `${mine.prGain90 > 0 ? '+' : ''}${Math.round(mine.prGain90)}%`} />
-          <MiniStat label="Protein" value={mine.protein30 === null ? '—' : `${Math.round(mine.protein30)}%`} />
+          <MiniStat label="Consist." value={mine.consistency30 === null ? ', ' : `${Math.round(mine.consistency30)}%`} />
+          <MiniStat label="PRs" value={mine.prGain90 === null ? ', ' : `${mine.prGain90 > 0 ? '+' : ''}${Math.round(mine.prGain90)}%`} />
+          <MiniStat label="Protein" value={mine.protein30 === null ? ', ' : `${Math.round(mine.protein30)}%`} />
           <MiniStat label="Total" value={`${mine.sessionsTotal}`} />
         </div>
         {(mine.consistency30 === null || mine.protein30 === null || mine.prGain90 === null) && (
           <p className="mt-2 text-[10.5px] leading-snug text-ink-faint">
-            “—” means not enough data yet. Keep logging, the numbers rank themselves.
+            “, ” means not enough data yet. Keep logging, the numbers rank themselves.
           </p>
         )}
       </div>
@@ -169,7 +169,7 @@ export function BoardContent() {
                 )}
               </div>
 
-              {/* 4..50 — one ladder, not fifty boxes */}
+              {/* 4..50, one ladder, not fifty boxes */}
               <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
                 {rows.slice(3).map((r, i) => (
                   <div
@@ -182,7 +182,7 @@ export function BoardContent() {
                     <div className="min-w-0 flex-1">
                       <div className={`truncate text-[13.5px] font-bold ${r.user_id === uid ? 'text-accent-soft' : ''}`}>
                         @{r.username}
-                        {r.user_id === uid ? ' — you' : ''}
+                        {r.user_id === uid ? ', you' : ''}
                       </div>
                       {r.streak >= 7 && (
                         <div className="text-[10.5px] text-ink-faint">{r.streak}-day streak</div>
@@ -198,13 +198,13 @@ export function BoardContent() {
               {/* Me, when outside the top 50 */}
               {!myRow && (
                 <div className="flex items-center gap-3 rounded-2xl border border-accent/50 bg-accent/10 px-4 py-2.5">
-                  <span className="w-7 shrink-0 font-mono text-[12px] font-bold text-ink-faint">—</span>
+                  <span className="w-7 shrink-0 font-mono text-[12px] font-bold text-ink-faint">, </span>
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] font-bold">You: outside the top 50 (for now)</div>
                     <div className="text-[10.5px] text-ink-faint">Every logged day moves this number.</div>
                   </div>
                   <span className="shrink-0 font-mono text-[14px] font-black text-accent">
-                    {myLocalValue === null ? '—' : fmtValue(category, myLocalValue)}
+                    {myLocalValue === null ? ', ' : fmtValue(category, myLocalValue)}
                   </span>
                 </div>
               )}

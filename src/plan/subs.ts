@@ -75,7 +75,7 @@ export function swapCandidatesFor(
     if (!def) continue
     if (!canDo(cand, owned)) continue
     // An athletic drill keeps its movement kind unless the athletic
-    // library itself vouches for the sub — sprints never become easy
+    // library itself vouches for the sub, sprints never become easy
     // cardio, jumps never become lifts. The curated chains cross kinds
     // on purpose (generation-time equipment fallback); swaps must not.
     if (a && self && def.kind !== self.kind && !qualitySubs.has(cand)) continue

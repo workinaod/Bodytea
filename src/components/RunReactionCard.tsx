@@ -3,7 +3,7 @@ import type { Reaction } from '../engine/reactions'
 import { avgMph, fmtDuration, fmtPace } from '../engine/runs'
 
 // ============================================================
-// The live finish card: a dimensional, animated object — the
+// The live finish card: a dimensional, animated object, the
 // reaction plays BEHIND the route line, the route stays in
 // front, the numbers on top. The shared PNG mirrors this frame.
 // ============================================================
@@ -165,14 +165,14 @@ export function RunReactionCard({ log, reaction }: { log: RunLog; reaction: Reac
           style={{ background: 'radial-gradient(130% 100% at 50% 115%, rgba(0,0,0,0.75), transparent 55%)' }}
         />
 
-        {/* the reaction — BEHIND the route */}
+        {/* the reaction. BEHIND the route */}
         {reaction.tier === 'fireworks' && <FireworksLayer />}
         {reaction.tier === 'disco' && <DiscoLayer />}
         {reaction.tier === 'shooting-star' && <StarsLayer />}
         {reaction.tier === 'first' && <ConfettiLayer />}
         {reaction.tier === 'steady' && <EmberLayer />}
 
-        {/* the route — in front of the show */}
+        {/* the route, in front of the show */}
         {path && (
           <svg viewBox="0 0 100 62" className="absolute inset-x-0 top-[8%] h-[52%] w-full">
             <path d={path} fill="none" stroke="rgba(255,79,48,0.3)" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />

@@ -70,7 +70,7 @@ export function pushCoachMessage(
 }
 
 /**
- * A coach line WITHOUT a Record entry — for on-demand pep talks. The
+ * A coach line WITHOUT a Record entry, for on-demand pep talks. The
  * Record recounts what happened; asking for a push isn't an event.
  * Anti-repeat bookkeeping still applies so lines don't recycle.
  */
@@ -132,8 +132,8 @@ const TRIM_REASON_LABEL: Record<ExcuseReason, string> = {
 
 /**
  * Cut TODAY's load without dropping the week's tier: readiness-style
- * trim (explosive −1/3, lifts light) for one date. Not an excuse — the
- * session still happens — but it goes in the coach feed so patterns
+ * trim (explosive −1/3, lifts light) for one date. Not an excuse, the
+ * session still happens, but it goes in the coach feed so patterns
  * are visible.
  */
 export function trimToday(date: ISODate, reason: ExcuseReason, claimText?: string): void {
@@ -148,7 +148,7 @@ export function trimToday(date: ISODate, reason: ExcuseReason, claimText?: strin
   })
 }
 
-/** Meeting got cancelled after all — put the full session back. */
+/** Meeting got cancelled after all, put the full session back. */
 export function restoreToday(date: ISODate): void {
   store().update((d) => {
     delete d.dayLoad[date]
@@ -284,7 +284,7 @@ export function reopenSession(date: ISODate): void {
 
 /**
  * Fresh clock on a stalled session: same day, same exercises, same
- * prefilled weights — startedAt reset to now, every set unticked.
+ * prefilled weights, startedAt reset to now, every set unticked.
  * Offered only while the athlete never got past the first exercise.
  */
 export function restartSession(date: ISODate): void {
@@ -338,7 +338,7 @@ export function finishSession(date: ISODate): DebriefData {
       id: uid(),
       at: new Date().toISOString(),
       kind: 'debrief',
-      text: `Debrief — ${composed.debrief.title}`,
+      text: `Debrief · ${composed.debrief.title}`,
       debrief: composed.debrief,
     })
   })
@@ -541,7 +541,7 @@ export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: Excus
   })
 
   if (isDrop) {
-    // one live drop message per week — a re-drop replaces, never stacks
+    // one live drop message per week, a re-drop replaces, never stacks
     store().update((d) => pruneTierDropFeed(d, monday))
     if (isPlannedPick) {
       pushCoachMessage('tier-drop-planned', { tier: to }, undefined, excuseId, monday)
@@ -554,7 +554,7 @@ export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: Excus
     )
     if (fallbacks >= 4 && !nagged) pushCoachMessage('chronic-fallback', { count: fallbacks })
   } else {
-    // Revert upward: an untrained drop leaves no record — the messages and
+    // Revert upward: an untrained drop leaves no record, the messages and
     // excuses disappear. Train even once in the dropped tier and it's permanent.
     store().update((d) => {
       if (!trainedInDroppedTier(d, monday)) {
@@ -577,7 +577,7 @@ export function toggleBallToday(date: ISODate): void {
 
 /**
  * Log a cardio/sport entry for a date. Intense sport (running games, a
- * match) also marks the week's "played" date — same engine semantics as
+ * match) also marks the week's "played" date, same engine semantics as
  * the original ball log: conditioning covered, next-day speed protected.
  */
 export function logCardio(
@@ -609,7 +609,7 @@ export function removeCardio(date: ISODate, entryId: string): void {
 }
 
 /**
- * Save a GPS-tracked run/ride AND log its cardio entry in one shot —
+ * Save a GPS-tracked run/ride AND log its cardio entry in one shot,
  * the tracker feeds the same conditioning machinery as a manual log.
  */
 export function saveRun(run: RunLog): void {

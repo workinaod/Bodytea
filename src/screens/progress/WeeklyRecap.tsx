@@ -5,7 +5,7 @@ import { adherenceMap, currentStreak, e1RM, proteinFor } from '../../engine/stat
 import { getExercise } from '../../plan/exercises'
 
 // ============================================================
-// The weekly recap — Wrapped-style story cards after a check-in.
+// The weekly recap. Wrapped-style story cards after a check-in.
 // One big number per card, tap to advance. Celebration where
 // it's earned, honesty where it isn't; never a wall of stats.
 // ============================================================

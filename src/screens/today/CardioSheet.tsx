@@ -8,7 +8,7 @@ import { Sheet } from '../../components/Sheet'
 import { RunTrackerSheet } from './RunTrackerSheet'
 
 // ============================================================
-// Daily cardio: pick what YOU did — run, ride, swim, a game —
+// Daily cardio: pick what YOU did, run, ride, swim, a game,
 // and answer only that activity's questions (indoor/outdoor,
 // miles, minutes, running games vs shooting around), plus
 // whether it was pre- or post-workout.
@@ -70,7 +70,7 @@ export function CardioSheet({
               <div key={e.id} className="flex items-center gap-2.5 rounded-xl border border-edge bg-surface px-3 py-2.5">
                 <span className="text-[16px]">{cardioActivity(e.activityId).emoji}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13.5px] font-bold">{e.label}{e.mode ? ` — ${modeLabel(e.activityId, e.mode)}` : ''}</div>
+                  <div className="text-[13.5px] font-bold">{e.label}{e.mode ? ` · ${modeLabel(e.activityId, e.mode)}` : ''}</div>
                   <div className="text-[11px] text-ink-faint">{describeEntry(e)}</div>
                 </div>
                 <button

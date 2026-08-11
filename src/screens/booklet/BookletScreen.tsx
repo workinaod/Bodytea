@@ -4,6 +4,7 @@ import { useAppStore, uid } from '../../store/appStore'
 import { analyzeRoutine } from '../../plan/analyze'
 import { normalizeBooklet, validateBooklet } from '../../plan/bookletOps'
 import { BookletEditor } from './BookletEditor'
+import { useBodyScrollLock } from '../../components/useBodyScrollLock'
 
 // ============================================================
 // "My booklet": full-screen fine-tune editor over the live plan.
@@ -15,6 +16,9 @@ export function BookletScreen({ onClose }: { onClose: () => void }) {
   const update = useAppStore((s) => s.update)
   const [draft, setDraft] = useState<PlanConfig>(() => structuredClone(plan))
   const [problems, setProblems] = useState<string[]>([])
+  // The page behind must not scroll under the editor (feels like the
+  // screen shrinking on iOS when touch chains through)
+  useBodyScrollLock(true)
 
   const save = () => {
     const errs = validateBooklet(draft)
@@ -36,7 +40,9 @@ export function BookletScreen({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-bg">
+    // Above the tab bar (z-40): a full-screen editing flow with its own
+    // Cancel/Save header needs the whole screen, no nav underneath.
+    <div className="fixed inset-0 z-[60] flex flex-col bg-bg">
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col overflow-hidden px-4 pt-[max(env(safe-area-inset-top),16px)]">
         <div className="flex items-center justify-between pb-3">
           <button onClick={onClose} className="rounded-full bg-surface-2 px-3.5 py-1.5 text-[12px] font-bold text-ink-dim">
@@ -54,11 +60,10 @@ export function BookletScreen({ onClose }: { onClose: () => void }) {
             ))}
           </div>
         )}
-        <div className="min-h-0 flex-1 overflow-y-auto pb-10">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),32px)]">
           <BookletEditor draft={draft} onDraft={(d) => { setDraft(d); setProblems([]) }} />
-          <p className="mt-4 text-[11px] leading-relaxed text-ink-faint">
-            Block rotation, deloads, A/B weeks, and busy-week tiers stay automatic. They rebuild
-            around whatever you change here.
+          <p className="mt-4 text-center text-[11px] leading-relaxed text-ink-faint">
+            Blocks, deloads, A/B weeks and tiers stay automatic around your changes.
           </p>
         </div>
       </div>

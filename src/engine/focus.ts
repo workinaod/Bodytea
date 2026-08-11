@@ -59,7 +59,7 @@ export function setRestSec(def: ReturnType<typeof getExercise>, repsNum?: number
 }
 
 /**
- * Rest seconds owed after completing `item` — typed set rest, but only
+ * Rest seconds owed after completing `item`, typed set rest, but only
  * when something follows (no break screen after the last set).
  */
 export function restAfter(session: SessionLog, item: FocusItem): number {

@@ -14,7 +14,7 @@ import { buildNaodMealPlan } from '../foods'
 // The owner's booklet: NAOD V3 as a PlanConfig. Assembled from
 // the same static modules the app has always shipped, so the
 // preset is byte-equivalent to the original plan by
-// construction — the golden snapshot test enforces it.
+// construction, the golden snapshot test enforces it.
 // ============================================================
 
 /** Debrief/recovery pool per NAOD template (role-keyed pools in plan/debrief.ts). */
@@ -41,7 +41,7 @@ export function buildNaodPreset(): PlanConfig {
     planVersion: 1,
     name: 'NAOD V4',
     goal: 'vertical',
-    goalStatement: 'Consistent dunks, elite speed, and sub-10% body fat — a build that shows it.',
+    goalStatement: 'Consistent dunks, elite speed, and sub-10% body fat. A build that shows it.',
     customTargets: [{ label: 'Body fat', target: 10, unit: '%' }],
     copyFlavor: 'explosive',
     daysPerWeek: 6,

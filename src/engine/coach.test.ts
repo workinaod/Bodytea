@@ -66,7 +66,7 @@ describe('escalation', () => {
     expect(escalationLevel(d.excuses, '2026-08-20')).toBe(0)
     d.excuses.push(excuse('2026-08-11', false))
     expect(escalationLevel(d.excuses, '2026-08-20')).toBe(1)
-    d.excuses.push(excuse('2026-08-14', true)) // proof — doesn't count
+    d.excuses.push(excuse('2026-08-14', true)) // proof, doesn't count
     expect(escalationLevel(d.excuses, '2026-08-20')).toBe(1)
     d.excuses.push(excuse('2026-08-16', false))
     d.excuses.push(excuse('2026-08-18', false))
@@ -167,7 +167,7 @@ describe('proof acceptance rules', () => {
   it('gig claims verify against life events marked in advance (day + day after)', () => {
     const week = { ...defaultWeekState('2026-08-10'), events: { dj: [5 as const] } }
     expect(gigSanctioned(week, '2026-08-14')).toBe(true) // Friday, event day
-    expect(gigSanctioned(week, '2026-08-15')).toBe(true) // Saturday morning after — sanctioned too
+    expect(gigSanctioned(week, '2026-08-15')).toBe(true) // Saturday morning after, sanctioned too
     expect(gigSanctioned(week, '2026-08-12')).toBe(false) // Wednesday, nothing marked
     expect(gigSanctioned(undefined, '2026-08-14')).toBe(false)
     expect(anyGigFlag(week)).toBe(true)
@@ -335,7 +335,7 @@ describe('reconcile', () => {
     expect(misses.map((m) => m.date)).toEqual(['2026-08-14', '2026-08-15'])
   })
 
-  it('leaves yesterday alone before 3am — the late-night window keeps it in play', () => {
+  it('leaves yesterday alone before 3am, the late-night window keeps it in play', () => {
     const d = makeData()
     // Monday missed, viewed from Tuesday 00:30 → not flagged yet…
     expect(findUnexplainedMisses(d, '2026-08-11', 60, new Date(2026, 7, 11, 0, 30))).toEqual([])

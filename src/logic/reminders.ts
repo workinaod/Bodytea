@@ -6,7 +6,7 @@ import { reviewReady } from '../engine/review'
 import { todayISO } from '../engine/calendar'
 
 // ============================================================
-// Training reminders, serverless edition — layered best effort:
+// Training reminders, serverless edition, layered best effort:
 //  1. In-page timers while the app is open/backgrounded (everywhere)
 //  2. Periodic Background Sync via the SW (Android/Chromium installs)
 //  3. App icon badge while today's session is unfinished (iOS + Android)
@@ -61,7 +61,7 @@ export async function syncReminderMeta(): Promise<void> {
   await MetaStore.set(meta).catch(() => {})
 
   // Milestone-review push, page-side (covers platforms without periodic
-  // sync). Once per mark, ever — three notifications a year, tops.
+  // sync). Once per mark, ever, three notifications a year, tops.
   if (
     settings.remindersEnabled &&
     ready &&
@@ -93,7 +93,7 @@ export async function syncReminderMeta(): Promise<void> {
 async function showLocalReminder(title: string, body: string, tag = 'naod-train-reminder'): Promise<void> {
   if (Notification.permission !== 'granted') return
   const reg = await navigator.serviceWorker.getRegistration()
-  await reg?.showNotification(`Bodytea — ${title}`, {
+  await reg?.showNotification(`Bodytea · ${title}`, {
     body,
     tag,
     icon: 'icons/pwa-192.png',
@@ -120,7 +120,7 @@ export function armPageTimers(): void {
         if (t.scheduled && !t.done) {
           void showLocalReminder(t.title, 'Session still open today. Even the 10-minute minimum counts.')
         } else if (t.scheduled && t.done && !t.cardioLogged) {
-          // session's in — the daily cardio question is still open
+          // session's in, the daily cardio question is still open
           void showLocalReminder(
             'Cardio check',
             'Session done ✓. Any cardio today? Run or game, pre or post, log it.',
@@ -143,7 +143,7 @@ export async function enableReminders(): Promise<boolean> {
     d.settings.remindersEnabled = true
   })
 
-  // Periodic background sync — Android/Chromium installed PWAs only
+  // Periodic background sync. Android/Chromium installed PWAs only
   try {
     const reg = (await navigator.serviceWorker.getRegistration()) as
       | (ServiceWorkerRegistration & {
@@ -152,7 +152,7 @@ export async function enableReminders(): Promise<boolean> {
       | undefined
     await reg?.periodicSync?.register('naod-reminder', { minInterval: 3 * 3600_000 })
   } catch {
-    /* not supported — page timers + badge still work */
+    /* not supported, page timers + badge still work */
   }
 
   await syncReminderMeta()

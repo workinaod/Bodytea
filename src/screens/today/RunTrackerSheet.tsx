@@ -21,7 +21,7 @@ import { RunReactionCard } from '../../components/RunReactionCard'
 type Phase = 'acquiring' | 'live' | 'done' | 'denied'
 
 /**
- * Live GPS tracker for outdoor runs and rides — a FULL-SCREEN takeover:
+ * Live GPS tracker for outdoor runs and rides, a FULL-SCREEN takeover:
  * the map on top, the numbers underneath, one finish button. Finishing
  * saves the run AND logs the day's cardio, then rolls a social-ready
  * share card (the preview IS the image that gets shared).
@@ -99,7 +99,7 @@ export function RunTrackerSheet({
   function finish() {
     if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
     void wakeRef.current?.release?.()
-    // False start: nothing moved, seconds on the clock — log NOTHING.
+    // False start: nothing moved, seconds on the clock, log NOTHING.
     if (totalDistanceMi(pointsRef.current) < 0.05 && elapsed < 120) {
       setScrapped(true)
       setPhase('done')
@@ -154,7 +154,7 @@ export function RunTrackerSheet({
 
         {phase === 'live' && (
           <>
-            {/* The map IS the screen — stats ride in a compact band below */}
+            {/* The map IS the screen, stats ride in a compact band below */}
             <div className="mt-1 shrink-0 overflow-hidden rounded-2xl border border-edge/80">
               <RouteMap points={points} live height={Math.max(300, Math.round(window.innerHeight * 0.54))} />
             </div>
@@ -162,7 +162,7 @@ export function RunTrackerSheet({
               <div>
                 <div className="font-display text-[46px] font-bold leading-none tabular-nums">{fmtDuration(elapsed)}</div>
                 <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-faint">
-                  recording — screen stays on
+                  recording, screen stays on
                 </div>
               </div>
               <div className="flex gap-4 text-right">
@@ -202,10 +202,10 @@ export function RunTrackerSheet({
         {phase === 'done' && !scrapped && saved && (
           <div className="space-y-3 pb-4">
             <div className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-accent">
-              {label} banked ✓ — cardio logged for today
+              {label} banked ✓, cardio logged for today
             </div>
 
-            {/* The live card — reaction plays behind the route; the shared
+            {/* The live card, reaction plays behind the route; the shared
                 PNG freezes this exact frame */}
             {reaction && <RunReactionCard log={saved} reaction={reaction} />}
 

@@ -21,7 +21,7 @@ const REASONS: { id: ExcuseReason; label: string }[] = [
 
 /**
  * The forced 3-step flow: reason → proof → counter-offer.
- * No dismiss, no tap-outside — the only exits are decisions.
+ * No dismiss, no tap-outside, the only exits are decisions.
  */
 export function SkipFlow({
   day,
@@ -181,7 +181,7 @@ export function SkipFlow({
                   onCancel()
                 }}
               >
-                Trim it — still training
+                Trim it, still training
               </Btn>
             ) : (
               <Btn className="flex-1" disabled={!reason} onClick={() => setStep(1)}>

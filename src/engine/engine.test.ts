@@ -336,13 +336,13 @@ describe('resolveDay integration', () => {
       ballThisWeek: false,
       cardio: { exerciseId: 'hill-sprint', weekdays: [4, 0] }, // Thu (mobility) + Sun (rest)
     }
-    // Thursday keeps its mobility work — the cardio is appended, not a takeover
+    // Thursday keeps its mobility work, the cardio is appended, not a takeover
     const thu = resolveDay('2026-08-13', data)
     expect(thu.kind).toBe('mobility')
     expect(ids(thu.exercises)).toContain('hill-sprint')
     expect(ids(thu.exercises)[thu.exercises.length - 1]).toBe('hill-sprint')
     expect(thu.banners.some((b) => b.id === 'cardio-stacked')).toBe(true)
-    // Sunday had nothing scheduled — there the cardio IS the day
+    // Sunday had nothing scheduled, there the cardio IS the day
     const sun = resolveDay('2026-08-16', data)
     expect(sun.kind).toBe('cardio-backup')
     expect(ids(sun.exercises)).toEqual(['hill-sprint'])
@@ -524,7 +524,7 @@ describe('stats', () => {
 
   it('computes the current streak over scheduled days', () => {
     const data = makeData()
-    // week 1: log Mon..Sat (Thu is mobility — counts as scheduled)
+    // week 1: log Mon..Sat (Thu is mobility, counts as scheduled)
     for (const [d, t] of [
       ['2026-08-10', 'monday'],
       ['2026-08-11', 'tuesday'],
@@ -603,7 +603,7 @@ describe('per-date exercise swaps (🔄)', () => {
     expect(ids(resolveDay(START, data).exercises)).toContain('countermovement-jump')
   })
 
-  it('applies only on its own date — next week is untouched', () => {
+  it('applies only on its own date, next week is untouched', () => {
     const data = makeData({ swaps: { [START]: { 'countermovement-jump': 'squat-jump' } } })
     const nextMonday = addDaysISO(START, 7)
     const nextIds = ids(resolveDay(nextMonday, data).exercises)
@@ -632,7 +632,7 @@ describe('same-day load trim (work ran long)', () => {
     expect(next.banners.some((b) => b.id === 'day-trimmed')).toBe(false)
   })
 
-  it('never stacks with a readiness downgrade — one cut, not two', () => {
+  it('never stacks with a readiness downgrade, one cut, not two', () => {
     const session: SessionLog = {
       date: START,
       templateId: 'monday',
@@ -671,7 +671,7 @@ describe('session grades', () => {
     ]
     expect(grade(spread(2))).toBe('light') // 2/6 across two exercises
     expect(grade(spread(3))).toBe('half') // 3/6
-    expect(grade(spread(5))).toBe('half') // 5/6 — close, still not done
+    expect(grade(spread(5))).toBe('half') // 5/6, close, still not done
   })
 
   it('full when every set is done; overtime when reps beat the target', () => {

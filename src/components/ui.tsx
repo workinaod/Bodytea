@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { DayBanner } from '../types'
 
 // ============================================================
-// Small shared UI primitives — dark gym theme, thumb-sized.
+// Small shared UI primitives, dark gym theme, thumb-sized.
 // ============================================================
 
 export function Card({
@@ -15,7 +15,7 @@ export function Card({
   onClick?: () => void
 }) {
   // Soft elevation, no outline: borders are opt-in (pass a border color
-  // and the transparent base width picks it up) — boxes stop shouting.
+  // and the transparent base width picks it up), boxes stop shouting.
   return (
     <div
       onClick={onClick}
@@ -28,10 +28,12 @@ export function Card({
 
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
-    <div className="mb-3 mt-9 flex items-baseline justify-between px-1">
+    <div className="mb-3 mt-9 flex items-baseline gap-3 px-1">
       <h2 className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.22em] text-ink-faint">
         {children}
       </h2>
+      {/* hairline rule: headers read as dividers, not floating labels */}
+      <span aria-hidden className="h-px min-w-4 flex-1 self-center bg-edge/70" />
       {right}
     </div>
   )
@@ -79,7 +81,7 @@ export function Btn({
   className?: string
   disabled?: boolean
 }) {
-  // Pills, flat color, no gradients or text shadows — confidence, not chrome.
+  // Pills, flat color, no gradients or text shadows, confidence, not chrome.
   const kinds: Record<string, string> = {
     primary: 'bg-accent text-black font-bold',
     lime: 'bg-lime text-black font-bold',
@@ -186,7 +188,7 @@ export function Stepper({
           inputMode="decimal"
           className="w-full rounded-lg bg-transparent text-center text-[15px] font-extrabold text-ink outline-none"
           value={value === undefined ? '' : String(value)}
-          placeholder="—"
+          placeholder=", "
           onChange={(e) => {
             const n = parseFloat(e.target.value)
             if (!Number.isNaN(n)) onChange(n)

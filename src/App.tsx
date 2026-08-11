@@ -26,9 +26,9 @@ export default function App() {
   const [timerActivity, setTimerActivity] = useState<string | null>(null)
 
   // A live session on the home date folds the tab bar into the glow strip
-  // (only where the session UI actually is — the Today tab).
+  // (only where the session UI actually is, the Today tab).
   const grace = lateNightGraceDate(data, today, new Date())
-  // While the 12–3am window is open nothing else re-renders at 03:00 —
+  // While the 12–3am window is open nothing else re-renders at 03:00,
   // this ticker makes the flip to the new day visible within a minute.
   const [, forceGraceTick] = useState(0)
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function App() {
   const sessionLive = !!live && live.status === 'partial' && !live.endedAt && !!live.startedAt
 
   useEffect(() => {
-    // Cloud sync restores only for devices that have used an account —
+    // Cloud sync restores only for devices that have used an account,
     // local-only users never load (or run) the network code path.
     if (localStorage.getItem('bodytea.sync')) {
       void import('./cloud/sync').then((m) => m.initCloudSync()).catch(() => {})
@@ -80,7 +80,7 @@ export default function App() {
 
   return (
     <div className="mx-auto min-h-dvh max-w-lg px-5 pb-28 pt-[max(env(safe-area-inset-top),16px)]">
-      {/* keyed wrapper: every tab switch rises in — screens feel placed, not
+      {/* keyed wrapper: every tab switch rises in, screens feel placed, not
           swapped. No fill-mode: a retained transform would become the
           containing block for the fixed sheets inside the screens. */}
       <div key={tab} style={{ animation: 'rise 0.24s ease-out' }}>

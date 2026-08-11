@@ -12,9 +12,9 @@ import { TierDropSheet } from './TierDropSheet'
 const WD_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const TIER_INFO: Record<Tier, { name: string; blurb: string }> = {
-  1: { name: 'Tier 1 — Full week', blurb: '5 days, the plan as written. Run this whenever life allows.' },
-  2: { name: 'Tier 2 — Fallback', blurb: '3 days: explosive + lower + upper. When work eats the week.' },
-  3: { name: 'Tier 3 — Bare minimum', blurb: '2 days: one explosive, one full-body. Holding ground.' },
+  1: { name: 'Tier 1 · Full week', blurb: '5 days, the plan as written. Run this whenever life allows.' },
+  2: { name: 'Tier 2 · Fallback', blurb: '3 days: explosive + lower + upper. When work eats the week.' },
+  3: { name: 'Tier 3 · Bare minimum', blurb: '2 days: one explosive, one full-body. Holding ground.' },
 }
 
 export function WeekScreen() {
@@ -69,7 +69,7 @@ export function WeekScreen() {
   function handleTierTap(to: Tier) {
     if (to === tier) return
     if (to > tier) {
-      // EVERY drop goes through the sheet — the written reason is mandatory
+      // EVERY drop goes through the sheet, the written reason is mandatory
       setTierDropTo(to)
     } else {
       changeTier(weekStart, to)
@@ -105,9 +105,9 @@ export function WeekScreen() {
       {/* Tier picker */}
       <SectionTitle>This week's tier {needsPick && <span className="text-danger">· pick it now</span>}</SectionTitle>
       {needsPick && (
-        <div className="border-l-2 border-gold/70 py-1 pl-3 text-[12.5px] font-semibold leading-snug text-gold/95">
-          Pick the tier at the START of the week based on what you honestly have. Don't decide day by day.
-        </div>
+        <p className="py-1 text-center text-[12.5px] font-semibold leading-snug text-gold/95">
+          Pick once, at the start of the week. Go with what you honestly have.
+        </p>
       )}
       <div className="overflow-hidden rounded-2xl border border-edge/80 bg-surface">
         {( [1, 2, 3] as Tier[]).map((t, i) => (
@@ -211,10 +211,10 @@ export function WeekScreen() {
       <div className="space-y-2">
         {data.plan.lifeEvents.length === 0 && (
           <Card className="!py-3.5">
-            <p className="text-[12.5px] leading-relaxed text-ink-dim">
+            <p className="text-center text-[12.5px] leading-relaxed text-ink-dim">
               {ball
-                ? 'Add the real-life stuff that hits your training: a DJ set, a night shift, a closing shift on your feet. Tap the days it happens and the plan bends around it.'
-                : 'Add the real-life stuff that hits your training: work shifts, late nights, whatever leaves you drained. Tap the days it happens and the plan bends around it.'}
+                ? 'A gig, a night shift, a long day on your feet. Tap the days and the plan bends around it.'
+                : 'Late nights, long shifts, whatever drains you. Tap the days and the plan bends around it.'}
             </p>
           </Card>
         )}
@@ -293,7 +293,7 @@ export function WeekScreen() {
       </div>
 
       {/* Day preview sheet */}
-      <Sheet open={!!preview} onClose={() => setPreview(null)} title={preview ? `${formatShort(preview.date)} — ${preview.title}` : ''}>
+      <Sheet open={!!preview} onClose={() => setPreview(null)} title={preview ? `${formatShort(preview.date)} · ${preview.title}` : ''}>
         {preview && (
           <div className="space-y-2 pb-6">
             <p className="text-[12.5px] text-ink-dim">{preview.tagline}</p>

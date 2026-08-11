@@ -60,10 +60,10 @@ function TabButton({ id, label, active, onClick }: { id: TabId; label: string; a
 
 /**
  * Five tabs around a raised center button: the GPS run/ride tracker
- * gets the Strava treatment — one thumb, straight into recording.
+ * gets the Strava treatment, one thumb, straight into recording.
  *
  * While a session is live on the Today tab the whole bar folds into a
- * thin glowing strip at the screen's bottom edge — the session buttons
+ * thin glowing strip at the screen's bottom edge, the session buttons
  * take its place. Tap or swipe the strip up and the real bar slides
  * back over the session row (and tucks away again after a tab pick or
  * a few seconds of quiet).

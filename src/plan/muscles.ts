@@ -1,7 +1,7 @@
 import type { MuscleRegion } from '../components/MuscleMap'
 
 // ============================================================
-// Muscle activation per exercise — drives the MuscleMap visual.
+// Muscle activation per exercise, drives the MuscleMap visual.
 // Primary = the muscles doing the job; secondary = assisting.
 // Cardio uses 'heart' (+ 'full-body' wash).
 // ============================================================

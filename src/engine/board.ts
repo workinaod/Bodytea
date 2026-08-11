@@ -4,7 +4,7 @@ import { adherenceMap, currentStreak, liftSeries, proteinFor, totalSessions } fr
 
 // ============================================================
 // Leaderboard stats, computed purely over AppData. `null` means
-// "unranked — not enough data yet" and is shown as such locally;
+// "unranked, not enough data yet" and is shown as such locally;
 // unranked metrics are pushed as 0 so they sit at the bottom.
 // ============================================================
 

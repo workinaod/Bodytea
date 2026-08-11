@@ -54,7 +54,7 @@ export function TodayScreen() {
 
   const day = useMemo(() => resolveDay(date, data), [date, data])
   const session = data.sessions[date]
-  // A make-up session runs a MISSED day's workout on a rest day — the
+  // A make-up session runs a MISSED day's workout on a rest day, the
   // views need that day's resolution, not the rest day's empty one.
   const viewDay = useMemo(
     () => (session?.makeupFor ? resolveDay(session.makeupFor, data) : day),
@@ -87,7 +87,7 @@ export function TodayScreen() {
     return data.coach.feed.find((f) => f.kind === 'debrief' && f.debrief?.date === date)?.debrief ?? null
   }, [finished, data.coach.feed, date])
 
-  // Day-aware cardio coaching: the chip stays every day — the line under
+  // Day-aware cardio coaching: the chip stays every day, the line under
   // it says whether cardio is smart today and WHEN to put it.
   const cardioTip = useMemo(() => {
     if (day.kind === 'cardio-backup') return null // the day IS the cardio
@@ -111,7 +111,7 @@ export function TodayScreen() {
     setDebrief({ data: d, coachLine: line && line.at.slice(0, 10) === todayISO() ? line.text : undefined })
   }
 
-  // A finish tap with work still on the table needs a real yes — one
+  // A finish tap with work still on the table needs a real yes, one
   // mis-tap must never end the day (learned the hard way).
   const [confirmEnd, setConfirmEnd] = useState(false)
   function requestFinish() {
@@ -165,7 +165,7 @@ export function TodayScreen() {
         <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">{day.tagline}</p>
       </div>
 
-      {/* Actions live at the top — no reaching past the list to start */}
+      {/* Actions live at the top, no reaching past the list to start */}
       {today && !session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
         <div className="flex gap-2 pt-0.5">
           <Btn className="flex-[2]" onClick={handleStart}>
@@ -191,7 +191,7 @@ export function TodayScreen() {
         </button>
       )}
 
-      {/* One-time reminder opt-in — free push, hard-capped at two a day */}
+      {/* One-time reminder opt-in, free push, hard-capped at two a day */}
       {today &&
         !data.settings.remindersEnabled &&
         !remindNudgeGone &&
@@ -500,7 +500,7 @@ export function TodayScreen() {
           </div>
 
           {day.note && (
-            <p className="px-1 text-[12px] leading-relaxed text-ink-faint">{day.note}</p>
+            <p className="px-2 text-center text-[12px] leading-relaxed text-ink-faint">{day.note}</p>
           )}
 
           {!today && (

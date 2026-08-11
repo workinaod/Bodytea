@@ -204,13 +204,20 @@ function DayEditorSheet({
 }) {
   const [pickerOpen, setPickerOpen] = useState(false)
 
-  const entryName = (e: TemplateEntry): { name: string; rotates: boolean } => {
-    if (e.entry === 'fixed') return { name: getExercise(e.exerciseId).name, rotates: false }
+  const entryName = (e: TemplateEntry): { name: string; blockNames?: string[] } => {
+    if (e.entry === 'fixed') return { name: getExercise(e.exerciseId).name }
     if (e.entry === 'slot') {
-      const id = plan.slots[1]?.[e.slot]
-      return { name: id ? getExercise(id).name : e.slot, rotates: true }
+      // Rotating slot: show what every block runs, not just the current one
+      const names = ([1, 2, 3] as const).map((b) => {
+        const id = plan.slots[b]?.[e.slot]
+        return id ? getExercise(id).name : e.slot
+      })
+      const distinct = new Set(names)
+      return distinct.size > 1
+        ? { name: names[0], blockNames: names }
+        : { name: names[0] }
     }
-    return { name: `${getExercise(e.a.exerciseId).name} / ${getExercise(e.b.exerciseId).name}`, rotates: false }
+    return { name: `${getExercise(e.a.exerciseId).name} / ${getExercise(e.b.exerciseId).name}` }
   }
 
   const setEntry = (i: number, patch: Partial<{ sets: number; repText: string }>) => {
@@ -238,8 +245,20 @@ function DayEditorSheet({
               <div key={i} className="rounded-xl border border-edge bg-surface p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="truncate text-[13.5px] font-bold">{info.name}</div>
-                    {info.rotates && <Chip tone="cyan">rotates each block</Chip>}
+                    {info.blockNames ? (
+                      <div className="space-y-0.5">
+                        {info.blockNames.map((n, b) => (
+                          <div key={b} className="flex items-baseline gap-1.5 text-[12.5px]">
+                            <span className="shrink-0 text-[9.5px] font-black uppercase tracking-wide text-cyan">
+                              B{b + 1}
+                            </span>
+                            <span className={`truncate ${b === 0 ? 'font-bold' : 'text-ink-dim'}`}>{n}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="truncate text-[13.5px] font-bold">{info.name}</div>
+                    )}
                   </div>
                   <button
                     onClick={() => onChange({ ...template, entries: template.entries.filter((_, idx) => idx !== i) })}

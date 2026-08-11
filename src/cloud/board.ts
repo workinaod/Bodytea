@@ -7,7 +7,7 @@ import { computeBoardStats } from '../engine/board'
 // Global leaderboard I/O. Push is best-effort and interval-gated;
 // reads carry a 5-minute memory cache plus a localStorage copy so
 // the board still renders offline. Ranks only accounts with ≥3
-// sessions that synced within 45 days — no ghost rows.
+// sessions that synced within 45 days, no ghost rows.
 // ============================================================
 
 export interface BoardRow {

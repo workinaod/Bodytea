@@ -108,7 +108,7 @@ export function composeDebrief(
   return {
     debrief: {
       date: session.date,
-      title: `${formatDayLabel(session.date)} — ${resolved.title}`,
+      title: `${formatDayLabel(session.date)} · ${resolved.title}`,
       recap,
       recovery,
       eat,

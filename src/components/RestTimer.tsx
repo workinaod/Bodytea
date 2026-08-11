@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * Timestamp-based rest timer — survives backgrounding (iOS throttles
+ * Timestamp-based rest timer, survives backgrounding (iOS throttles
  * intervals; we always recompute remaining from the wall clock).
  */
 export function RestTimer({ seconds, onDismiss }: { seconds: number; onDismiss: () => void }) {

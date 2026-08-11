@@ -5,9 +5,9 @@ import type { DietStyle } from '../types'
 // brings their own meal plan (or inherits a generated one), every
 // meal can offer swaps with similar protein + calories built from
 // things people actually have: eggs, bread, rice, chicken, ground
-// beef, tuna cans, yogurt, peanut butter — and for plant-based
+// beef, tuna cans, yogurt, peanut butter, and for plant-based
 // eaters: tofu, tempeh, beans, lentils, soy milk. No exotic
-// ingredients, no AI — a curated list and a distance function.
+// ingredients, no AI, a curated list and a distance function.
 // ============================================================
 
 export type MealSlotKind = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'late'
@@ -15,7 +15,7 @@ export type MealSlotKind = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'late'
 export interface CommonMeal {
   id: string
   name: string
-  /** Plain-English shopping words — everything a normal kitchen stocks. */
+  /** Plain-English shopping words, everything a normal kitchen stocks. */
   ingredients: string[]
   proteinG: number
   kcal: number
@@ -88,7 +88,7 @@ export function slotKindOf(slot: string): MealSlotKind | null {
 
 /**
  * The closest common-household meals to a target's protein + calories.
- * Protein distance is weighted heavier — it's the number the plan
+ * Protein distance is weighted heavier, it's the number the plan
  * actually rides on. Slot-filtered when the slot maps to a kind
  * (widening to the whole list when the slot pool runs thin), and
  * diet-filtered when the user eats vegetarian or vegan.

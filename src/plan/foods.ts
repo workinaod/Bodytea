@@ -49,7 +49,7 @@ export const FOODS: FoodDef[] = [
   { id: 'trail-mix', name: 'Trail mix / nuts', serving: '1 oz', proteinG: 5, kcal: 170, carbsG: 12, fatG: 14, category: 'fat' },
   { id: 'cheese', name: 'Cheese', serving: '1 oz', proteinG: 7, kcal: 110, carbsG: 1, fatG: 9, category: 'fat' },
 
-  // Veg (eat freely — fill half the plate)
+  // Veg (eat freely, fill half the plate)
   { id: 'veg', name: 'Big serving of veg', serving: '1-2 cups', proteinG: 3, kcal: 50, carbsG: 10, fatG: 0, category: 'veg' },
 
   // High-calorie muscle snacks
@@ -58,7 +58,7 @@ export const FOODS: FoodDef[] = [
   { id: 'berries', name: 'Mixed berries', serving: '1 cup', proteinG: 1, kcal: 70, carbsG: 17, fatG: 0, category: 'snack' },
 
   // ---- Library expansion (v10): enough breadth that anyone's real
-  //      diet — vegetarian, budget, takeout-heavy — is loggable in taps.
+  //      diet, vegetarian, budget, takeout-heavy, is loggable in taps.
   // More proteins
   { id: 'shrimp', name: 'Shrimp', serving: '6 oz', proteinG: 34, kcal: 180, carbsG: 0, fatG: 3, category: 'protein' },
   { id: 'tilapia', name: 'Tilapia / cod', serving: '8 oz', proteinG: 45, kcal: 220, carbsG: 0, fatG: 4, category: 'protein' },
@@ -258,7 +258,7 @@ function suggestDetail(proteinG: number, kcal: number, slot: string, diet: DietS
 
 /**
  * A generated day of eating scaled to THIS user's protein target, calorie
- * budget, AND how they actually like to eat — 2 big plates, 3 squares,
+ * budget, AND how they actually like to eat. 2 big plates, 3 squares,
  * 3 + a training snack, or grazing across 5. Fewer meals = bigger meals;
  * every template carries a concrete common-grocery example.
  */

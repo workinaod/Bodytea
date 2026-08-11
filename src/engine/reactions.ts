@@ -2,7 +2,7 @@ import type { RunLog } from '../types'
 
 // ============================================================
 // Post-run reactions: what the finish card celebrates. All
-// tiers are positive or steady — the app never boos. "Good"
+// tiers are positive or steady, the app never boos. "Good"
 // is judged two ways at once: absolute pace bands per distance
 // (what a strong recreational time IS), and the athlete's own
 // history (PRs and longest days).

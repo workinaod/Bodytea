@@ -16,7 +16,7 @@ import { buildMealPlan, type MealsPerDay } from './foods'
 
 // ============================================================
 // The booklet generator: OnboardingAnswers → PlanConfig.
-// Pure and deterministic — same answers, same booklet. Every
+// Pure and deterministic, same answers, same booklet. Every
 // exercise it can ever emit lives in the catalog with a full
 // guide, muscle map, and demo, and is filtered/substituted by
 // the user's equipment so a plan always resolves.
@@ -35,12 +35,12 @@ export interface OnboardingAnswers {
   bodyweightLb: number
   /** Tunes the calorie baseline and defaults the body-fat tape formula. */
   sex?: 'male' | 'female'
-  /** How they actually like to eat — the meal plan is built at this count. */
+  /** How they actually like to eat, the meal plan is built at this count. */
   mealsPerDay?: MealsPerDay
-  /** Their real week (shifts, gigs, kids) — seeded as life events so the
+  /** Their real week (shifts, gigs, kids), seeded as life events so the
    *  coach's notes speak THEIR schedule from day one. */
   lifeSeeds?: { label: string; kind: LifeEventKind }[]
-  /** How they eat — meals, swaps, and grocery lists respect it. */
+  /** How they eat, meals, swaps, and grocery lists respect it. */
   dietStyle?: DietStyle
   /** Skip meal-plan generation; the Meals tab offers setup later. */
   skipMeals?: boolean
@@ -62,7 +62,7 @@ export const FOCUS_LABELS: Record<FocusArea, string> = {
   core: 'Core',
 }
 
-// Ordered candidates per area — the first equipment-legal, not-already-
+// Ordered candidates per area, the first equipment-legal, not-already-
 // programmed pick gets appended as accessory volume (3 × 10-15).
 const FOCUS_ACCESSORIES: Record<FocusArea, string[]> = {
   arms: ['ez-bar-curl', 'hammer-curl', 'incline-db-curl', 'chin-up'],
@@ -84,7 +84,7 @@ const PROFILE_TAGS: Record<OnboardingAnswers['equipProfile'], EquipTag[]> = {
     'box', 'plate', 'machine', 'open-space', 'treadmill', 'hill-stairs',
     'kettlebell', 'med-ball', 'band', 'trap-bar', 'cones', 'hurdle', 'sled',
   ],
-  // Home gym: nothing assumed — the onboarding checklist is the source of
+  // Home gym: nothing assumed, the onboarding checklist is the source of
   // truth for what's actually in the garage. Open space is always free.
   'home-db': ['open-space'],
   minimal: ['open-space'],
@@ -159,7 +159,7 @@ const GOAL_FIRST: Partial<Record<Goal, Partial<Record<string, string>>>> = {
   muscle: { press1: 'incline-db-press', rowVariation: 'one-arm-db-row' },
 }
 
-/** Cheap deterministic string hash (djb2) — powers per-user plan variety. */
+/** Cheap deterministic string hash (djb2), powers per-user plan variety. */
 export function hashStr(s: string): number {
   let h = 5381
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0
@@ -173,7 +173,7 @@ function pickSlots(goal: Goal, owned: Set<EquipTag>, seed = 0): Record<1 | 2 | 3
     const ordered = promoted ? [promoted, ...base.filter((id) => id !== promoted)] : base
     const legal = ordered.filter((id) => canDo(id, owned))
     // Per-user variety: the goal's best pick always anchors block 1, but the
-    // block 2/3 rotation order is seeded by WHO is asking — two people with
+    // block 2/3 rotation order is seeded by WHO is asking, two people with
     // the same goal get different booklets, both quality-legal.
     const rest = legal.slice(1)
     const r = rest.length > 1 ? (seed + hashStr(slot)) % rest.length : 0
@@ -458,7 +458,7 @@ function buildRationale(goal: Goal, goalStatement: string, ids: string[]): Recor
 export function buildNutrition(goal: Goal, bodyweightLb: number, sex?: 'male' | 'female') {
   const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
   // Same protein either way (1 g/lb); the calorie baseline runs a notch
-  // lower for women (bw×14 vs ×15) — standard TDEE difference.
+  // lower for women (bw×14 vs ×15), standard TDEE difference.
   const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50
   const adj: Record<Goal, number> = { muscle: 300, strength: 250, vertical: 200, speed: 150, general: 100, lean: -300 }
   const kcalTraining = base + adj[goal]
@@ -520,7 +520,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     .filter(([, r]) => r === 'power' || r === 'speed')
     .map(([wd]) => Number(wd) as Weekday)
 
-  // Focus areas: append direct accessory volume to the day that fits —
+  // Focus areas: append direct accessory volume to the day that fits,
   // never a max-effort day; the exercise must be equipment-legal and not
   // already programmed there.
   const focusPicks: { area: FocusArea; exerciseId: string }[] = []
@@ -600,7 +600,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
   const nutrition = buildNutrition(a.goal, a.bodyweightLb, a.sex)
 
   // Rep waves: the same lift slot moves through a different scheme each
-  // 4-week block — volume, load, then a goal-flavored finisher.
+  // 4-week block, volume, load, then a goal-flavored finisher.
   const REP_WAVES: Record<Goal, Record<1 | 2 | 3, { repText: string; repsNum: number }>> = {
     muscle: { 1: { repText: '8-12', repsNum: 10 }, 2: { repText: '6-8', repsNum: 7 }, 3: { repText: '10-12', repsNum: 11 } },
     strength: { 1: { repText: '6-8', repsNum: 7 }, 2: { repText: '4-6', repsNum: 5 }, 3: { repText: '3-5', repsNum: 4 } },
@@ -629,7 +629,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
 
   const plan: PlanConfig = {
     planVersion: 1,
-    name: `${GOAL_LABEL[a.goal]} — ${a.daysPerWeek}-Day`,
+    name: `${GOAL_LABEL[a.goal]} · ${a.daysPerWeek}-Day`,
     goal: a.goal,
     goalStatement: a.goalStatement.trim() || GOAL_LABEL[a.goal],
     customTargets: a.customTargets,

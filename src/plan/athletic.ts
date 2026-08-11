@@ -5,7 +5,7 @@
 // gets: qualities, direction, laterality, emphasis, level,
 // impact + CNS cost, freshness, programming defaults, and
 // progression/regression links. Substitutions preserve the
-// PRIMARY quality — a max-velocity slot never becomes cardio.
+// PRIMARY quality, a max-velocity slot never becomes cardio.
 // ============================================================
 
 export type AthleticQuality =
@@ -85,7 +85,7 @@ export interface AthleticMeta {
   impact: 0 | 1 | 2 | 3
   /** 0 low … 3 max (nervous-system cost). */
   cns: 0 | 1 | 2 | 3
-  /** Must be done fresh — never at the end of a fatiguing session. */
+  /** Must be done fresh, never at the end of a fatiguing session. */
   fresh: boolean
   program: AthleticProgram
   /** Easier movements that build toward this one. */

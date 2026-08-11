@@ -352,7 +352,7 @@ export function ProgressScreen() {
       <Sheet
         open={!!openRun}
         onClose={() => setOpenRun(null)}
-        title={openRun ? `${openRun.activity === 'bike' ? 'Ride' : 'Run'} — ${formatShort(openRun.date)}` : ''}
+        title={openRun ? `${openRun.activity === 'bike' ? 'Ride' : 'Run'} · ${formatShort(openRun.date)}` : ''}
       >
         {openRun && (
           <div className="space-y-3 pb-8">
@@ -408,7 +408,7 @@ function CheckinSheet({ open, onClose, onSaved, last }: { open: boolean; onClose
   const fileRef = useRef<HTMLInputElement>(null)
   const angleRef = useRef<'front' | 'side' | 'back'>('front')
 
-  // Re-seed the form (incl. the DATE) each time the sheet opens — the
+  // Re-seed the form (incl. the DATE) each time the sheet opens, the
   // component mounts with the screen, not with the sheet.
   useEffect(() => {
     if (open) setM(fresh())
@@ -568,7 +568,7 @@ function PhotoCompare({ measurements }: { measurements: Measurement[] }) {
             </div>
             <div className="mt-1 flex items-center justify-between">
               <button className="px-2 text-ink-faint" onClick={() => side.set(Math.max(0, side.idx - 1))}>‹</button>
-              <span className="text-[10.5px] font-bold text-ink-dim">{side.m ? formatShort(side.m.date) : '—'}</span>
+              <span className="text-[10.5px] font-bold text-ink-dim">{side.m ? formatShort(side.m.date) : ', '}</span>
               <button className="px-2 text-ink-faint" onClick={() => side.set(Math.min(withPhotos.length - 1, side.idx + 1))}>›</button>
             </div>
           </div>

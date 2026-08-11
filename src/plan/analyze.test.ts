@@ -117,7 +117,7 @@ describe('booklet normalize + validate', () => {
     expect(validateBooklet(plan).some((p) => p.includes('needs at least 2 exercises'))).toBe(true)
   })
 
-  it('normalize regenerates tiers, anchors, tracked lifts — and the plan resolves', () => {
+  it('normalize regenerates tiers, anchors, tracked lifts, and the plan resolves', () => {
     const plan = byorWith([
       { wd: 1, title: 'Power', cns: true, entries: [fixed('box-jump', 4, '3'), fixed('goblet-squat', 4), fixed('pogo-hop', 3, '20')] },
       { wd: 3, title: 'Full', entries: [fixed('db-rdl', 4), fixed('flat-db-press', 3), fixed('one-arm-db-row', 3)] },

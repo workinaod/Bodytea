@@ -1,29 +1,29 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// One serial journey through the core loop — each step depends on the last.
+// One serial journey through the core loop, each step depends on the last.
 test.describe.configure({ mode: 'serial' })
 
 /** Walk the generator onboarding: vertical goal, 6 days, a home gym with DBs + bench + bar. */
 async function onboardGenerated(page: Page) {
   await page.getByRole('button', { name: 'Build my plan' }).click()
-  await page.getByRole('button', { name: 'Next — the goal' }).click()
+  await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText('🏀 Dunk a basketball').click()
   await page.getByPlaceholder(/dunk on a 10-ft rim/).fill('dunk on a 10-ft rim by June')
-  await page.getByRole('button', { name: 'Next — my week' }).click()
+  await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '6 days' }).click()
-  await page.getByRole('button', { name: 'Next — my gear' }).click()
-  // Home gym assumes nothing — the checklist is the source of truth
+  await page.getByRole('button', { name: 'Next: my gear' }).click()
+  // Home gym assumes nothing, the checklist is the source of truth
   await page.getByText('Home gym').click()
   await expect(page.getByText('Check everything you have')).toBeVisible()
   await page.getByText('Dumbbells', { exact: true }).click()
   await page.getByText('Flat bench').click()
   await page.getByText('Pull-up bar', { exact: true }).click()
-  await page.getByRole('button', { name: 'Next — experience' }).click()
-  await page.getByRole('button', { name: 'Next — numbers' }).click()
+  await page.getByRole('button', { name: 'Next: experience' }).click()
+  await page.getByRole('button', { name: 'Next: numbers' }).click()
   await page.getByRole('button', { name: 'Generate my booklet' }).click()
-  await expect(page.getByText('Vertical Project — 6-Day')).toBeVisible()
+  await expect(page.getByText('Vertical Project · 6-Day')).toBeVisible()
   await expect(page.getByText('“dunk on a 10-ft rim by June”')).toBeVisible()
-  await page.getByRole('button', { name: "Start Week 1 — let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
 }
 
 test('full core loop: onboard-generate → session → meals → debrief → export', async ({ page }) => {
@@ -57,10 +57,10 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
     // ---- Focus mode is the default session UI: GO gate, then the set ----
     // (both the prescription line and the intro caption carry "Set 1 of")
     await expect(page.getByText(/Set 1 of/).first()).toBeVisible()
-    // Loaded first exercises demand a weight before GO — enter one like a human
+    // Loaded first exercises demand a weight before GO, enter one like a human
     const weightPlus = page.getByRole('button', { name: '+', exact: true })
     if (await weightPlus.isVisible().catch(() => false)) await weightPlus.click()
-    await page.getByRole('button', { name: /^GO — START SET/ }).click()
+    await page.getByRole('button', { name: /^GO · START SET/ }).click()
     const next = page.getByRole('button', { name: /NEXT SET|SET DONE/ })
     await expect(next).toBeVisible()
     await next.click()
@@ -87,11 +87,11 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
     await page.getByRole('button', { name: 'Done', exact: true }).click()
   }
 
-  // ---- Meals: log-first — the one button opens every path ----
+  // ---- Meals: log-first, the one button opens every path ----
   await page.getByRole('button', { name: 'Meals', exact: true }).click()
   await expect(page.getByText('Protein', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '+ Log food' }).click()
-  await page.locator('button', { hasText: /Breakfast — / }).first().click() // one tap, sheet closes
+  await page.locator('button', { hasText: /Breakfast · / }).first().click() // one tap, sheet closes
   // Generated plan @180 lb → protein target 180 g (1 g/lb)
   await expect(page.locator('text=/4[05] ?\\/ 180/').first()).toBeVisible({ timeout: 5000 })
 
@@ -103,14 +103,14 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.getByPlaceholder('Calories').fill('800')
   await page.getByRole('button', { name: 'Save meal' }).click()
   // The saved meal offers alternatives at matching macros
-  await page.getByText('Meal — Chipotle bowl').click()
+  await page.getByText('Meal · Chipotle bowl').click()
   await expect(page.getByText('Same macros, common groceries')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Use instead' }).first()).toBeVisible()
   await page.getByRole('button', { name: 'Close' }).click()
   // Back on the log view, THEIR meal is now a one-tap log
   await page.getByRole('button', { name: 'Log', exact: true }).click()
   await page.getByRole('button', { name: '+ Log food' }).click()
-  await page.getByText('Meal — Chipotle bowl').click()
+  await page.getByText('Meal · Chipotle bowl').click()
   await expect(page.locator('text=/9[05] ?\\/ 180/').first()).toBeVisible()
 
   // ---- Progress renders ----
@@ -121,7 +121,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.getByText('+ log measurements').click()
   await page.getByText(/Estimate with a tape/).click()
   await page.getByText('Male formula (neck + waist)').click() // height stays at the 70" default
-  await page.getByRole('button', { name: 'Next — first measurement' }).click()
+  await page.getByRole('button', { name: 'Next: first measurement' }).click()
   await expect(page.getByText(/below the Adam’s apple/i)).toBeVisible() // step-by-step guidance
   await page.getByRole('button', { name: 'Next site' }).click() // neck 15" default
   await page.getByRole('button', { name: 'Calculate' }).click() // waist 34" default
@@ -129,7 +129,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.getByRole('button', { name: /Use 17.5% in this check-in/ }).click()
   await page.getByRole('button', { name: 'Save check-in' }).click()
 
-  // Saving rolls the Wrapped-style weekly recap — tap out of the story
+  // Saving rolls the Wrapped-style weekly recap, tap out of the story
   await expect(page.getByText('This week', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '✕' }).click()
 
@@ -154,14 +154,14 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
 })
 
 test('midnight rollover advances the app without a reload', async ({ page }) => {
-  // Wednesday Aug 12 2026, 23:58 local — a heavy lower day
+  // Wednesday Aug 12 2026, 23:58 local, a heavy lower day
   await page.clock.install({ time: new Date(2026, 7, 12, 23, 58) })
   await page.goto('./')
   await onboardGenerated(page)
 
   await expect(page.getByText('Lower Strength', { exact: true })).toBeVisible()
 
-  // Cross midnight: the unstarted day does NOT vanish — the 12–3am
+  // Cross midnight: the unstarted day does NOT vanish, the 12–3am
   // window keeps Wednesday open (and startable) under a grace banner.
   await page.clock.fastForward('00:05:00')
   await expect(page.getByText(/still open until 3 AM/)).toBeVisible({ timeout: 10_000 })

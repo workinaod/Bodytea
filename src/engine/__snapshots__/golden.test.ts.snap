@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`golden: NAOD V4 resolved plan is frozen > tier 1 — full 16-week phase 1`] = `
+exports[`golden: NAOD V4 resolved plan is frozen > tier 1, full 16-week phase 1`] = `
 [
   {
     "ab": "A",
@@ -2325,7 +2325,7 @@ exports[`golden: NAOD V4 resolved plan is frozen > tier 1 — full 16-week phase
 ]
 `;
 
-exports[`golden: NAOD V4 resolved plan is frozen > tier 2 — full 16-week phase 1`] = `
+exports[`golden: NAOD V4 resolved plan is frozen > tier 2, full 16-week phase 1`] = `
 [
   {
     "ab": "A",
@@ -4154,7 +4154,7 @@ exports[`golden: NAOD V4 resolved plan is frozen > tier 2 — full 16-week phase
 ]
 `;
 
-exports[`golden: NAOD V4 resolved plan is frozen > tier 3 — full 16-week phase 1`] = `
+exports[`golden: NAOD V4 resolved plan is frozen > tier 3, full 16-week phase 1`] = `
 [
   {
     "ab": "A",

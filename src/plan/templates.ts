@@ -304,15 +304,15 @@ export const CARDIO_OPTIONS: CardioOption[] = [
 
 export const CARDIO_GROUP_INFO = {
   A: {
-    title: 'Option A — Zone 2 Easy',
+    title: 'Option A · Zone 2 Easy',
     when: "You're tired, sore, recovering, or just want low-stress cardio. Won't interfere with lifting or jumps.",
   },
   B: {
-    title: 'Option B — Higher Intensity',
+    title: 'Option B · Higher Intensity',
     when: 'You have energy and want a harder session. Do this when legs are fresh, never the day before Monday or Saturday.',
   },
   circuit: {
-    title: 'Home Circuits — No equipment',
+    title: 'Home Circuits · No equipment',
     when: 'Weather is bad, no space to run, still want to sweat.',
   },
 } as const

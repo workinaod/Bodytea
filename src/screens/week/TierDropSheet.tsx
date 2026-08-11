@@ -13,7 +13,7 @@ const REASONS: { id: ExcuseReason; label: string }[] = [
 ]
 
 /**
- * Dropping to a lighter tier requires writing WHY — no proof photos,
+ * Dropping to a lighter tier requires writing WHY, no proof photos,
  * no games. The reason goes on the Record (Sergeant tab) in your own
  * words, and disappears only if you revert before training on it.
  */

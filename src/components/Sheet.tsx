@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useBodyScrollLock } from './useBodyScrollLock'
 
 /**
  * Bottom sheet with iOS-proof background scroll lock and
  * swipe-down-to-dismiss. `locked` removes every dismiss affordance
- * (SkipFlow, reconcile) — dragging a locked sheet only rubber-bands.
+ * (SkipFlow, reconcile), dragging a locked sheet only rubber-bands.
  *
  * Touch handling uses native non-passive listeners (React's JSX touch
  * handlers are passive, so preventDefault would be ignored).
@@ -37,28 +38,7 @@ export function Sheet({
   }
 
   // ---- Background scroll lock (survives iOS rubber-banding) ----
-  useEffect(() => {
-    if (!open) return
-    const scrollY = window.scrollY
-    const body = document.body
-    const prev = {
-      position: body.style.position,
-      top: body.style.top,
-      width: body.style.width,
-      overflow: body.style.overflow,
-    }
-    body.style.position = 'fixed'
-    body.style.top = `-${scrollY}px`
-    body.style.width = '100%'
-    body.style.overflow = 'hidden'
-    return () => {
-      body.style.position = prev.position
-      body.style.top = prev.top
-      body.style.width = prev.width
-      body.style.overflow = prev.overflow
-      window.scrollTo(0, scrollY)
-    }
-  }, [open])
+  useBodyScrollLock(open)
 
   // ---- Native drag gesture ----
   useEffect(() => {
@@ -74,7 +54,7 @@ export function Sheet({
     const onStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement
       // Dismiss-drag engages ONLY from the header/handle zone. Buttons in
-      // the header (the X) must keep their taps — never capture them.
+      // the header (the X) must keep their taps, never capture them.
       if (target.closest('button')) return
       state.fromHandle = !!target.closest('[data-sheet-handle]')
       if (!state.fromHandle) return

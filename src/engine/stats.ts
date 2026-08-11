@@ -122,7 +122,7 @@ export function sessionSetsDone(session: SessionLog): { done: number; total: num
 // "Partial" says nothing. Grades say how the day actually went, measured
 // against the session as it was started (post-intensity): extremely light
 // (0-1 exercises touched / under a quarter), light, half, full, and
-// overtime — more work logged than the plan asked for.
+// overtime, more work logged than the plan asked for.
 
 export type SessionGrade = 'extremely-light' | 'light' | 'half' | 'full' | 'overtime'
 
@@ -184,7 +184,7 @@ export function currentStreak(data: AppData, today: ISODate = todayISO()): numbe
       if (log && log.status !== 'skipped') {
         streak++
       } else if (date === today) {
-        // today not logged yet — doesn't break the streak
+        // today not logged yet, doesn't break the streak
       } else if (daysBetween(data.settings.phaseStartDate, date) < 0) {
         break
       } else {
@@ -289,7 +289,7 @@ export function kcalBumpSuggestion(data: AppData): KcalBumpSuggestion | null {
   if (!threeWeeksAgo.length) return null
   const baseline = threeWeeksAgo[threeWeeksAgo.length - 1]
   const weightChange = (last.weightLb ?? 0) - (baseline.weightLb ?? 0)
-  if (weightChange >= 1) return null // scale is creeping up — rule not triggered
+  if (weightChange >= 1) return null // scale is creeping up, rule not triggered
 
   // strength climbing? any tracked lift e1RM +3% over the same window
   let bestGain = 0

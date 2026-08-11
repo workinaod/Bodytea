@@ -342,7 +342,7 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     return env
   },
-  // v3 → v4: plan-as-data — the owner's booklet becomes stored PlanConfig
+  // v3 → v4: plan-as-data, the owner's booklet becomes stored PlanConfig
   // (NAOD preset, byte-equivalent to the old static plan), plus profile,
   // grocery adoption, and display units.
   3: (env) => {
@@ -423,7 +423,7 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     return env
   },
   // v6 → v7: the owner's plan upgrades NAOD V3 → NAOD V4 (research-backed
-  // athletic Monday + Saturday). Only the canonical preset is replaced —
+  // athletic Monday + Saturday). Only the canonical preset is replaced,
   // generated and BYOR plans pass through untouched.
   6: (env) => {
     const e = env as { data?: { plan?: { name?: string } } }
@@ -438,7 +438,7 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     if (e.data) e.data.swaps ??= {}
     return env
   },
-  // v8 → v9: same-day load cuts ("work ran long — trim today")
+  // v8 → v9: same-day load cuts ("work ran long, trim today")
   8: (env) => {
     const e = env as { data?: Record<string, unknown> }
     if (e.data) e.data.dayLoad ??= {}
@@ -471,7 +471,7 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     return env
   },
-  // v10 → v11: the owner set a body-composition goal — sub-10% body fat.
+  // v10 → v11: the owner set a body-composition goal, sub-10% body fat.
   // His plan's goal statement and targets pick it up; body fat becomes a
   // check-in metric for everyone (optional field, no data change needed).
   10: (env) => {
@@ -482,7 +482,7 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     const plan = e.data?.plan
     if (plan?.name?.startsWith('NAOD')) {
-      plan.goalStatement = 'Consistent dunks, elite speed, and sub-10% body fat — a build that shows it.'
+      plan.goalStatement = 'Consistent dunks, elite speed, and sub-10% body fat. A build that shows it.'
       plan.customTargets ??= []
       if (!plan.customTargets.some((t) => t.label.toLowerCase().includes('fat'))) {
         plan.customTargets.push({ label: 'Body fat', target: 10, unit: '%' })
@@ -491,7 +491,7 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     return env
   },
   // v11 → v12: reminders move to 5 AM / 5 PM. Only the shipped defaults
-  // are replaced — times someone set by hand in Settings are theirs.
+  // are replaced, times someone set by hand in Settings are theirs.
   11: (env) => {
     const e = env as { data?: { settings?: { reminderTimes?: string[] } } }
     const t = e.data?.settings?.reminderTimes
@@ -534,7 +534,7 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
   },
   // v14 → v15: repair. Before the quit-confirmation existed, a mis-tap on
   // 2026-08-11 could end a session during the FIRST exercise. Exactly that
-  // shape — ended, still 'partial', nothing logged past exercise one — is
+  // shape, ended, still 'partial', nothing logged past exercise one, is
   // un-finished here: the phantom session and its debrief entry are removed
   // so the day starts clean. Real partials (work past exercise one) keep.
   14: (env) => {
@@ -555,7 +555,7 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     return env
   },
-  // v15 → v16: the v15 repair keyed the wrong date — the mis-tapped
+  // v15 → v16: the v15 repair keyed the wrong date, the mis-tapped
   // finish actually lives under Monday 2026-08-10 (its debrief says so).
   // Re-run the same un-finish for both dates. Also: the Record becomes
   // facts-only, so historical "push me" pep-talk entries are purged.
@@ -590,6 +590,37 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     return env
   },
+  // v17 → v18: em dashes are banned from the app. New copy ships clean;
+  // this sweeps the ones already frozen into stored data (old feed items,
+  // meal labels, plan prose, the seeded goal statement).
+  17: (env) => {
+    const clean = (s: string): string =>
+      s
+        // label separators ("Debrief — Monday", "Breakfast — eggs", "X — 6-Day")
+        .replace(/^([A-Za-z][A-Za-z' -]{1,18}) — /, '$1 · ')
+        .replace(/ — (\d+-Day)/g, ' · $1')
+        // prose: dash before a capital starts a sentence, otherwise a comma
+        .replace(/ — (?=[A-Z0-9“"'])/g, '. ')
+        .replace(/ — /g, ', ')
+        .replace(/(\w)—(\w)/g, '$1, $2')
+        .replace(/— /g, ', ')
+        .replace(/ —/g, ',')
+        .replace(/—/g, ', ')
+    const walk = (v: unknown): unknown => {
+      if (typeof v === 'string') return v.includes('—') ? clean(v) : v
+      if (Array.isArray(v)) {
+        for (let i = 0; i < v.length; i++) v[i] = walk(v[i])
+        return v
+      }
+      if (v && typeof v === 'object') {
+        const o = v as Record<string, unknown>
+        for (const k of Object.keys(o)) o[k] = walk(o[k])
+        return v
+      }
+      return v
+    }
+    return walk(env) as typeof env
+  },
 }
 
 export function migrate(env: unknown): Envelope {
@@ -598,7 +629,7 @@ export function migrate(env: unknown): Envelope {
   }
   let e = env as Record<string, unknown>
   let v = typeof e.schemaVersion === 'number' ? e.schemaVersion : 0
-  if (v === 0) throw new Error('Missing schema version — not a Bodytea backup file')
+  if (v === 0) throw new Error('Missing schema version, not a Bodytea backup file')
   if (v > SCHEMA_VERSION) {
     throw new Error(`This backup is from a newer app version (schema ${v}). Update the app first.`)
   }

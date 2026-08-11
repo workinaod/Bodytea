@@ -3,7 +3,7 @@
 // anti-repeat rotation (see engine/coach.ts pickVariant) so the
 // debrief never reads the same two sessions in a row.
 // Placeholders: {proteinSoFar} {proteinLeft} {kcalLeft}
-// {proteinTarget} {kcalTarget} — interpolated with live numbers.
+// {proteinTarget} {kcalTarget}, interpolated with live numbers.
 // ============================================================
 
 /** Recovery notes keyed by day ROLE (template.debriefKey points here). */
@@ -80,7 +80,7 @@ export const RECOVERY_POOLS: Record<string, string[]> = {
   ],
 }
 
-/** Sleep guidance pool — engine appends a tomorrow-aware line. */
+/** Sleep guidance pool, engine appends a tomorrow-aware line. */
 export const SLEEP_TIPS: string[] = [
   'Target 7.5 to 8 hours tonight. Under 6 is the red line the readiness check watches for. Don’t hand tomorrow a flag.',
   'Sleep is when today’s work becomes muscle. 8 hours is the dose. The last hour phone-free doubles the quality.',
@@ -114,7 +114,7 @@ export const EAT_NOW: { training: string[]; rest: string[] } = {
   ],
 }
 
-/** Extra pool for rest-day (Sunday) cards — no session, still coached. */
+/** Extra pool for rest-day (Sunday) cards, no session, still coached. */
 export const REST_DAY_CARDS: string[] = [
   'Full rest. Eat, sleep, stretch, recover. Steps are fine, lifting is not. Today’s discipline is restraint.',
   'Rest day. The whole week’s adaptation lands today. Do gloriously little and show up Monday dangerous.',

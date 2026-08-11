@@ -1,14 +1,14 @@
 // ============================================================
 // Speech in and out for the voice coach. Output is plain
 // speechSynthesis (universal). Input is (webkit)SpeechRecognition
-// — iOS Safari 14.5+/Chrome; absent → callers fall back to taps.
+//, iOS Safari 14.5+/Chrome; absent → callers fall back to taps.
 // ============================================================
 
 export function speechOutSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
 }
 
-// Pick the most natural voice the device offers — Enhanced/Premium system
+// Pick the most natural voice the device offers. Enhanced/Premium system
 // voices first, then the known-warm names, never the flat robot default.
 let chosenVoice: SpeechSynthesisVoice | null = null
 let voicesHooked = false
@@ -108,7 +108,7 @@ export function speechInSupported(): boolean {
   return recognitionCtor() !== null
 }
 
-// All the common ways people say it — matched on word boundaries.
+// All the common ways people say it, matched on word boundaries.
 const GO_RE = /\b(go|start|begin|ready|yes|yeah|yep|yup|run it|lessgo|less go|let'?s go|lets go|start set)\b/
 const DONE_RE = /\b(done|finished|finish|next|got it|complete|that'?s it|i'?m done|im done)\b/
 const SKIP_RE = /\b(skip( the)?( rest| break)?|pass)\b/
@@ -118,7 +118,7 @@ export interface EarHandlers {
   onGo?: () => void
   onDone?: () => void
   onSkip?: () => void
-  /** "how do I do this / instructions" — coach explains on request only. */
+  /** "how do I do this / instructions", coach explains on request only. */
   onAsk?: () => void
 }
 
@@ -138,7 +138,7 @@ export function startEars(handlers: EarHandlers): () => void {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const heard = (e.results[i][0]?.transcript ?? '').toLowerCase()
       // ASK first ("how do I start this" must explain, not start), then
-      // SKIP, then DONE, then GO — so "i'm done, start the timer"
+      // SKIP, then DONE, then GO, so "i'm done, start the timer"
       // resolves the completion first.
       if (ASK_RE.test(heard)) handlers.onAsk?.()
       else if (SKIP_RE.test(heard)) handlers.onSkip?.()
@@ -151,7 +151,7 @@ export function startEars(handlers: EarHandlers): () => void {
     try {
       rec.start()
     } catch {
-      /* restart can race — next onend retries */
+      /* restart can race, next onend retries */
     }
   }
   rec.onerror = () => {

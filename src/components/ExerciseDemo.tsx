@@ -5,7 +5,7 @@ import type { DemoPhotoSeq } from '../plan/demoPhotos'
 // Animated exercise demo: a stick figure performing the actual
 // movement, drawn with forward kinematics from keyframe poses
 // and tweened on requestAnimationFrame. Everything is inline
-// SVG — works offline, no external assets.
+// SVG, works offline, no external assets.
 //
 // Angle conventions (all degrees, world frame, figure faces +x):
 //   legs/arms  0 = straight down · +90 = horizontal forward ·

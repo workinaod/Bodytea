@@ -1,6 +1,6 @@
 // ============================================================
 // Daily cardio / sport catalog. Every athlete logs what THEY
-// do — runs, rides, swims, games — with the questions that
+// do, runs, rides, swims, games, with the questions that
 // activity actually needs (indoor/outdoor, miles, minutes,
 // games vs shooting around). `sport` + an intense mode marks
 // the day as "played" so the engine treats it like ball:
@@ -11,7 +11,7 @@ export interface CardioActivityDef {
   id: string
   label: string
   emoji: string
-  /** A game-type sport — intense modes mark the week's played dates. */
+  /** A game-type sport, intense modes mark the week's played dates. */
   sport?: boolean
   /** Counts toward the weekly "at least one conditioning session" rule. */
   conditioning?: boolean

@@ -2,7 +2,7 @@ import type { DayAdherence } from '../engine/stats'
 import { formatShort } from '../engine/calendar'
 
 // ============================================================
-// Hand-rolled SVG charts — a line chart and a calendar heatmap
+// Hand-rolled SVG charts, a line chart and a calendar heatmap
 // are all this app needs; no chart library required.
 // ============================================================
 

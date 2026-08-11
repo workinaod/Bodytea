@@ -40,7 +40,7 @@ const GOAL_CHIPS: { label: string; goal: Goal }[] = [
   { label: '🏀 Dunk a basketball', goal: 'vertical' },
 ]
 
-/** Home-gym checklist: nothing is assumed — each item grants its tags. */
+/** Home-gym checklist: nothing is assumed, each item grants its tags. */
 const HOME_CHECKLIST: { tags: EquipTag[]; label: string }[] = [
   { tags: ['dumbbell'], label: 'Dumbbells' },
   { tags: ['barbell', 'plate'], label: 'Barbell + plates' },
@@ -182,7 +182,7 @@ export function Onboarding() {
           id: uid(),
           at,
           kind: 'insight',
-          text: `🗣 On record — why your routine works, in your words: “${plan.whyWorks.trim()}”`,
+          text: `🗣 On record, why your routine works, in your words: “${plan.whyWorks.trim()}”`,
         })
       }
     })
@@ -207,7 +207,7 @@ export function Onboarding() {
 
   /**
    * BYOR: seed the booklet (or overlay the latest goal answers onto an
-   * existing draft — the built week survives a trip back to the goal step).
+   * existing draft, the built week survives a trip back to the goal step).
    */
   function enterBuilder() {
     const seeded = makeEmptyByorPlan({
@@ -313,7 +313,7 @@ export function Onboarding() {
             className="mt-5 w-full rounded-xl border border-edge bg-surface px-4 py-3.5 text-[15px] font-semibold text-ink outline-none focus:border-accent/60"
           />
           <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next — the goal
+            Next: the goal
           </Btn>
         </div>
       )}
@@ -409,7 +409,7 @@ export function Onboarding() {
             onClick={() => (mode === 'byor' ? setStep(6) : next())}
             disabled={(mode === 'byor' ? routineGoals.size === 0 : goalChip === null) || goalStatement.trim().length < 4}
           >
-            {mode === 'byor' ? 'Next — my numbers' : 'Next — my week'}
+            {mode === 'byor' ? 'Next: my numbers' : 'Next: my week'}
           </Btn>
           {((mode === 'byor' ? routineGoals.size === 0 : goalChip === null) || goalStatement.trim().length < 4) && (
             <p className="mt-2 text-center text-[11.5px] text-ink-faint">
@@ -436,7 +436,7 @@ export function Onboarding() {
             ))}
           </div>
 
-          {/* Their real week — seeds life events so every coach note speaks their schedule */}
+          {/* Their real week, seeds life events so every coach note speaks their schedule */}
           <div className="mt-6">
             <div className="text-[14px] font-bold">What else does your week hold?</div>
             <p className="mt-0.5 text-[11.5px] leading-snug text-ink-faint">
@@ -484,7 +484,7 @@ export function Onboarding() {
           </div>
 
           <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next — my gear
+            Next: my gear
           </Btn>
         </div>
       )}
@@ -546,7 +546,7 @@ export function Onboarding() {
             ))}
           </div>
           <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next — experience
+            Next: experience
           </Btn>
         </div>
       )}
@@ -574,7 +574,7 @@ export function Onboarding() {
             ))}
           </div>
           <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next — numbers
+            Next: numbers
           </Btn>
         </div>
       )}
@@ -688,7 +688,7 @@ export function Onboarding() {
           <PermissionsBlock />
 
           <Btn className="mt-6 w-full py-4" onClick={() => (mode === 'byor' ? enterBuilder() : next())}>
-            {mode === 'byor' ? 'Next — build my week' : 'Generate my booklet'}
+            {mode === 'byor' ? 'Next: build my week' : 'Generate my booklet'}
           </Btn>
         </div>
       )}
@@ -749,7 +749,7 @@ export function Onboarding() {
           </p>
 
           <Btn className="mt-5 w-full py-4 text-[16px]" onClick={() => commitPlan(preview.plan, preview.proteinTargetG)}>
-            Start Week 1 — let's work
+            Start Week 1, let's work
           </Btn>
           <Btn
             kind="subtle"
@@ -760,7 +760,7 @@ export function Onboarding() {
               setStep(10)
             }}
           >
-            Fine-tune it first — swap moves, sets, days
+            Fine-tune it first, swap moves, sets, days
           </Btn>
           <button onClick={back} className="mt-3 text-center text-[12px] font-semibold text-ink-faint underline">
             change my answers
@@ -799,7 +799,7 @@ export function Onboarding() {
               else setStep(9)
             }}
           >
-            My routine's in — next
+            My routine's in, next
           </Btn>
         </div>
       )}
@@ -866,7 +866,7 @@ export function Onboarding() {
               )
             }
           >
-            Start Week 1 — let's work
+            Start Week 1, let's work
           </Btn>
           <button onClick={() => setStep(8)} className="mt-3 text-center text-[12px] font-semibold text-ink-faint underline">
             keep editing
@@ -905,7 +905,7 @@ export function Onboarding() {
               commitPlan(normalizeBooklet(tuneDraft), buildNutrition(goal, weight).proteinTargetG)
             }}
           >
-            Lock it in — start Week 1
+            Lock it in, start Week 1
           </Btn>
         </div>
       )}

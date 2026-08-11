@@ -48,7 +48,7 @@ describe('lateNightGraceDate', () => {
     expect(grace).toBe('2026-08-08')
   })
 
-  it('anchors on an UNSTARTED scheduled yesterday — the 12–3am workout counts as its day', () => {
+  it('anchors on an UNSTARTED scheduled yesterday, the 12–3am workout counts as its day', () => {
     const grace = lateNightGraceDate(makeData(), '2026-08-09', new Date(2026, 7, 9, 0, 30))
     expect(grace).toBe('2026-08-08')
   })

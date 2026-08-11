@@ -73,7 +73,7 @@ export function BodyFatEstimator({
               <Stepper value={heightIn} onChange={setHeightIn} step={0.5} suffix="in" width="w-20" />
             </div>
             <Btn className="w-full" disabled={!formula} onClick={saveSetup}>
-              Next — first measurement
+              Next: first measurement
             </Btn>
           </>
         )}

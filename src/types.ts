@@ -1,5 +1,5 @@
 // ============================================================
-// NAOD V3 — domain types. Single source of truth for the whole app.
+// NAOD V3, domain types. Single source of truth for the whole app.
 // Derived values (streaks, escalation, day-type) are computed, never stored.
 // ============================================================
 
@@ -34,7 +34,7 @@ export interface ExerciseDef {
   /** Numbered how-to: setup → movement → breathing/tempo. Plain language. */
   steps: string[]
   targets: ExerciseTargets
-  /** Why it's in YOUR plan — tied to the PDF's stated goals. */
+  /** Why it's in YOUR plan, tied to the PDF's stated goals. */
   why: string
   mistakes: string[]
   /** Short in-session cue line (seeded from the PDF notes). */
@@ -60,7 +60,7 @@ export interface PrescriptionBase {
   sets: number
   /** Display form: "6-8", "max", "30 sec", "15-20 / leg" */
   repText: string
-  /** Numeric reps when repText is a plain count — used to halve rep-only drills. */
+  /** Numeric reps when repText is a plain count, used to halve rep-only drills. */
   repsNum?: number
 }
 
@@ -111,7 +111,7 @@ export interface DayTemplate {
 /** Engine-level training emphasis a plan is built around. */
 export type Goal = 'vertical' | 'speed' | 'muscle' | 'strength' | 'lean' | 'general'
 
-/** What a bring-your-own routine is chasing — multi-select. */
+/** What a bring-your-own routine is chasing, multi-select. */
 export type RoutineGoal = 'muscle' | 'lose-weight' | 'maintain' | 'athletic'
 
 /**
@@ -167,15 +167,15 @@ export interface CustomTarget {
 
 /**
  * Everything that defines a user's booklet. The owner's NAOD V3 preset and
- * every generated plan share this shape; the engine reads ONLY from here —
+ * every generated plan share this shape; the engine reads ONLY from here,
  * never from the static plan modules directly.
  */
 export interface PlanConfig {
   planVersion: 1
-  /** Booklet name shown in the shell ("NAOD V3", "Vertical — 4-Day"). */
+  /** Booklet name shown in the shell ("NAOD V3", "Vertical. 4-Day"). */
   name: string
   goal: Goal
-  /** The user's goal in their own words — threads through copy + rationale. */
+  /** The user's goal in their own words, threads through copy + rationale. */
   goalStatement: string
   /**
    * Bring-your-own-routine: what the routine is chasing (multi-select).
@@ -209,17 +209,17 @@ export interface PlanConfig {
   /** exerciseId → goal-specific "why it's in YOUR plan" (falls back to def.why). */
   rationale: Record<string, string>
   nutrition: { kcalTraining: number; kcalRest: number }
-  /** The eating side of the booklet — per-user, editable (v10+). */
+  /** The eating side of the booklet, per-user, editable (v10+). */
   mealPlan: MealPlanConfig
   /**
    * 'ball' keeps the owner's basketball-first voice; absent/'generic'
    * speaks in sport-neutral conditioning terms. Every generated and
-   * BYOR plan is generic — most people don't hoop.
+   * BYOR plan is generic, most people don't hoop.
    */
   sportMode?: 'ball' | 'generic'
-  /** How this user eats — filters generated meals + swap suggestions. */
+  /** How this user eats, filters generated meals + swap suggestions. */
   dietStyle?: DietStyle
-  /** Training history from onboarding — seeds first-session weights. */
+  /** Training history from onboarding, seeds first-session weights. */
   experience?: 'new' | 'returning' | 'trained'
 }
 
@@ -229,7 +229,7 @@ export interface Profile {
   username?: string
   /** For the tape-measure body-fat estimate (US Navy method). */
   heightIn?: number
-  /** Which Navy formula fits their body — asked once in the estimator. */
+  /** Which Navy formula fits their body, asked once in the estimator. */
   bfFormula?: 'male' | 'female'
 }
 
@@ -307,7 +307,7 @@ export interface ReadinessCheck {
   downgraded: boolean
 }
 
-/** How much the athlete had at start — the plan flexes on the spot. */
+/** How much the athlete had at start, the plan flexes on the spot. */
 export type SessionIntensity = 'full' | 'lighter' | 'minimum'
 
 export interface SessionLog {
@@ -317,11 +317,11 @@ export interface SessionLog {
   startedAt?: string
   endedAt?: string
   readiness?: ReadinessCheck
-  /** Start-time intensity choice — 'lighter'/'minimum' finish as downgraded wins. */
+  /** Start-time intensity choice. 'lighter'/'minimum' finish as downgraded wins. */
   intensity?: SessionIntensity
   /** Rest-day make-up: the missed date whose workout this session ran. */
   makeupFor?: ISODate
-  /** "Running long" cut point — exercises at index >= this were dropped (bottom-first rule). */
+  /** "Running long" cut point, exercises at index >= this were dropped (bottom-first rule). */
   trimmedFromIndex?: number
   exercises: ExerciseLog[]
   notes?: string
@@ -371,11 +371,11 @@ export interface WeekState {
   tierPlacement?: Partial<Record<TierDayRole, Weekday>>
   /** Weekly forecast: playing ball this week? null = unanswered. */
   ballThisWeek: boolean | null
-  /** Days ball was actually played — logged same-day from the Today tab. */
+  /** Days ball was actually played, logged same-day from the Today tab. */
   ballDates: ISODate[]
   /** CNS days whose speed work was swapped out (plan-sanctioned after a hard run). */
   cnsSwapDates: ISODate[]
-  /** Scheduled cardio backup (replaces ball on no-ball weeks) — any number of days. */
+  /** Scheduled cardio backup (replaces ball on no-ball weeks), any number of days. */
   cardio?: { exerciseId: string; weekdays: Weekday[] } | null
   /** Life-event id → weekdays it hits THIS week (defs live in plan.lifeEvents). */
   events: Partial<Record<string, Weekday[]>>
@@ -386,7 +386,7 @@ export interface WeekState {
 
 // ---------- GPS-tracked runs & rides ----------
 
-/** [lat, lng, elapsedSec] — compact enough to live in the envelope. */
+/** [lat, lng, elapsedSec], compact enough to live in the envelope. */
 export type RunPoint = [number, number, number]
 
 export interface RunLog {
@@ -436,7 +436,7 @@ export interface MealEntry {
   servings: number
 }
 
-/** Free string since v10 — users build their own supplement stacks. */
+/** Free string since v10, users build their own supplement stacks. */
 export type SupplementId = string
 
 export interface MealDay {
@@ -472,7 +472,7 @@ export interface GroceryCategory {
 
 /**
  * The eating side of a booklet: one-tap meal templates, the weekly
- * grocery list, the supplement stack, and late-night rules — all
+ * grocery list, the supplement stack, and late-night rules, all
  * per-user data, editable like the training side.
  */
 export interface MealPlanConfig {
@@ -487,7 +487,7 @@ export interface MealPlanConfig {
 export interface Measurement {
   date: ISODate
   weightLb?: number
-  /** Estimated body fat % — consistency of method beats accuracy. */
+  /** Estimated body fat %, consistency of method beats accuracy. */
   bodyFatPct?: number
   /** Tape sites for the Navy estimate (stored so trends stay honest). */
   neckIn?: number
@@ -551,7 +551,7 @@ export interface CoachFeedItem {
   situation?: CoachSituation
   text: string
   excuseId?: string
-  /** Week this item is about (Monday ISO) — lets reverts prune the record. */
+  /** Week this item is about (Monday ISO), lets reverts prune the record. */
   weekISO?: ISODate
   debrief?: DebriefData
 }
@@ -588,7 +588,7 @@ export interface Insight {
 export interface Settings {
   /** Always a Monday (snapped at onboarding). */
   phaseStartDate: ISODate
-  /** The day the app was set up — reconcile never interrogates days before it. */
+  /** The day the app was set up, reconcile never interrogates days before it. */
   installedAt: ISODate
   /** Weekly measurement morning. PDF: "Sunday is good". */
   checkinWeekday: Weekday
@@ -643,7 +643,7 @@ export interface AppData {
   swaps: Record<ISODate, Record<string, string>>
   /**
    * Same-day load cuts ("work ran long"): 'trimmed' applies the
-   * readiness-style downgrade to that date only — explosive volume
+   * readiness-style downgrade to that date only, explosive volume
    * −1/3, lifts light. Cleared automatically by moving on; the full
    * plan returns tomorrow.
    */
@@ -652,7 +652,7 @@ export interface AppData {
   runs: RunLog[]
 }
 
-export const SCHEMA_VERSION = 17
+export const SCHEMA_VERSION = 18
 
 export interface Envelope {
   schemaVersion: number
@@ -723,7 +723,7 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, pla
   }
 }
 
-// Nutrition constants (PDF "THE NUMBERS") — NAOD preset values; the live
+// Nutrition constants (PDF "THE NUMBERS"). NAOD preset values; the live
 // targets an account trains against come from data.plan.nutrition.
 export const KCAL_TRAINING = 2800
 export const KCAL_REST = 2500

@@ -40,7 +40,7 @@ function hydrate(): AppData {
   try {
     return adoptLegacyGrocery(parseEnvelope(raw).data)
   } catch (e) {
-    // Never destroy possibly-recoverable data — park it and start fresh.
+    // Never destroy possibly-recoverable data, park it and start fresh.
     console.error('State failed to load; parking corrupt copy', e)
     try {
       localStorage.setItem(`${STATE_KEY}.corrupt`, raw)

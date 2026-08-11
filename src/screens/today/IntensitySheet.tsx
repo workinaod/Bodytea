@@ -7,7 +7,7 @@ import { useAppStore } from '../../store/appStore'
 
 /**
  * Start gate for non-CNS days: pick how much you've got, one tap starts.
- * The plan flexes on the spot — nobody grinds a full day they don't
+ * The plan flexes on the spot, nobody grinds a full day they don't
  * have, and nobody gets to log a hollow "complete" either.
  */
 export function IntensitySheet({

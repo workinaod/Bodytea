@@ -179,7 +179,7 @@ export function SessionView({
         )
       })}
 
-      {/* The session's own bottom bar sits ON TOP of the nav's slot — only
+      {/* The session's own bottom bar sits ON TOP of the nav's slot, only
           a glowing sliver of the tucked-away nav peeks below it (slide that
           to bring the real nav back) */}
       <div className="fixed inset-x-0 bottom-[calc(max(env(safe-area-inset-bottom),8px)+12px)] z-30 border-t border-edge bg-bg/95 px-4 py-3 backdrop-blur">

@@ -19,10 +19,10 @@ import {
 
 // ============================================================
 // Meals, restructured around three jobs a normal person has:
-//   Today    — log what you actually ate, tick supplements
-//   My plan  — YOUR meals (bring your own), each with common-
+//   Today   , log what you actually ate, tick supplements
+//   My plan . YOUR meals (bring your own), each with common-
 //              grocery alternatives at matching macros
-//   Grocery  — the list that feeds the plan
+//   Grocery , the list that feeds the plan
 // One primary action per view; everything else is one tap deep.
 // ============================================================
 
@@ -168,7 +168,7 @@ export function MealsScreen() {
             )}
           </div>
 
-          {/* Supplements — daily tick-off */}
+          {/* Supplements, daily tick-off */}
           {mealPlan.supplements.length > 0 && (
             <>
               <SectionTitle
@@ -213,7 +213,7 @@ export function MealsScreen() {
 }
 
 // ============================================================
-// Log sheet — every way food gets logged, one place:
+// Log sheet, every way food gets logged, one place:
 // plan meals (one tap), recents, food search, custom numbers.
 // ============================================================
 
@@ -268,7 +268,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
                 <button
                   key={t.id}
                   onClick={() => {
-                    addMealEntry(date, { label: `${t.slot}: ${t.name}`, proteinG: t.proteinG, kcal: t.kcal, source: 'mealTemplate' })
+                    addMealEntry(date, { label: `${t.slot} · ${t.name}`, proteinG: t.proteinG, kcal: t.kcal, source: 'mealTemplate' })
                     onClose()
                   }}
                   className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-surface-2 ${
@@ -277,7 +277,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-[13.5px] font-extrabold">
-                      {t.slot} — {t.name}
+                      {t.slot} · {t.name}
                     </span>
                     {t.detail && <span className="mt-0.5 block truncate text-[11px] leading-snug text-ink-faint">{t.detail}</span>}
                   </span>
@@ -312,7 +312,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
           </div>
         )}
 
-        {/* Single foods — search first, browse as fallback */}
+        {/* Single foods, search first, browse as fallback */}
         <div>
           <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">Single foods</div>
           <input
@@ -374,7 +374,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
           )}
         </div>
 
-        {/* Custom numbers — takeout, restaurant, whatever */}
+        {/* Custom numbers, takeout, restaurant, whatever */}
         <div>
           <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">Anything else</div>
           <div className="space-y-2">
@@ -403,7 +403,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
 }
 
 // ============================================================
-// My plan — the user's meals as first-class data. Tap any meal
+// My plan, the user's meals as first-class data. Tap any meal
 // for common-grocery alternatives at matching macros; bring your
 // own plan by clearing the starter meals and adding yours.
 // ============================================================
@@ -463,7 +463,7 @@ function PlanView({ onEditStack, onSetup }: { onEditStack: () => void; onSetup: 
           >
             <span className="min-w-0">
               <span className="block truncate text-[13.5px] font-extrabold">
-                {t.slot} — {t.name}
+                {t.slot} · {t.name}
               </span>
               {t.detail && <span className="mt-0.5 block truncate text-[11px] text-ink-faint">{t.detail}</span>}
             </span>
@@ -593,7 +593,7 @@ function PlanView({ onEditStack, onSetup }: { onEditStack: () => void; onSetup: 
 }
 
 /**
- * Meal-plan setup, doable any time — the same two questions onboarding
+ * Meal-plan setup, doable any time, the same two questions onboarding
  * asks, for people who skipped them (or want a rebuild).
  */
 function MealPlanSetupSheet({ onClose }: { onClose: () => void }) {
@@ -689,7 +689,7 @@ function MealDetailSheet({
   )
 
   return (
-    <Sheet open onClose={onClose} title={`${meal.slot} — ${meal.name}`}>
+    <Sheet open onClose={onClose} title={`${meal.slot} · ${meal.name}`}>
       <div className="space-y-4 pb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -866,7 +866,7 @@ function SupplementStackSheet({ onClose }: { onClose: () => void }) {
           className="w-full"
           disabled={!name.trim()}
           onClick={() => {
-            add({ id: uid(), name: name.trim(), dose: dose.trim() || '—', when: when.trim() || 'Daily' })
+            add({ id: uid(), name: name.trim(), dose: dose.trim() || ', ', when: when.trim() || 'Daily' })
             setName(''); setDose(''); setWhen('')
           }}
         >
@@ -877,7 +877,7 @@ function SupplementStackSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** The grocery list is plan data too — check off, add, remove. */
+/** The grocery list is plan data too, check off, add, remove. */
 function GroceryList() {
   const groceryPlan = useAppStore((s) => s.data.plan.mealPlan.grocery)
   const checkedList = useAppStore((s) => s.data.grocery)

@@ -131,7 +131,7 @@ export function ReconcileSheet() {
               <div key={m.date} className="rounded-xl border border-edge bg-surface p-3.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[13.5px] font-bold">
-                    {formatShort(m.date)} — {m.title}
+                    {formatShort(m.date)} · {m.title}
                   </span>
                   {m.cns && <Chip tone="cyan">CNS day</Chip>}
                 </div>

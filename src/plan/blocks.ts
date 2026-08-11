@@ -72,7 +72,7 @@ export const SLOT_REPTEXT_OVERRIDES: Record<string, { repText: string; repsNum?:
 }
 
 /**
- * Core movers — NEVER rotate, progress these all year (PDF list).
+ * Core movers. NEVER rotate, progress these all year (PDF list).
  * Used by stats (PR charts) and coach messaging.
  */
 export const CORE_MOVERS = [

@@ -4,11 +4,11 @@ import { addDaysISO } from './calendar'
 import { emptyAppData, defaultWeekState, type AppData } from '../types'
 
 // ============================================================
-// GOLDEN LOCK — the owner-continuity guarantee for the
+// GOLDEN LOCK, the owner-continuity guarantee for the
 // plan-as-data refactor. This snapshots the resolved output of
 // the NAOD V3 plan for every day of the full 16-week phase at
 // every tier. The plan-as-data migration (schema v4, PlanConfig,
-// parameterized engine) must reproduce this output EXACTLY —
+// parameterized engine) must reproduce this output EXACTLY,
 // if this snapshot changes, the owner's booklet changed.
 // ============================================================
 
@@ -50,15 +50,15 @@ function summarize(data: AppData): unknown[] {
 }
 
 describe('golden: NAOD V4 resolved plan is frozen', () => {
-  it('tier 1 — full 16-week phase', () => {
+  it('tier 1, full 16-week phase', () => {
     expect(summarize(dataAtTier(1))).toMatchSnapshot()
   })
 
-  it('tier 2 — full 16-week phase', () => {
+  it('tier 2, full 16-week phase', () => {
     expect(summarize(dataAtTier(2))).toMatchSnapshot()
   })
 
-  it('tier 3 — full 16-week phase', () => {
+  it('tier 3, full 16-week phase', () => {
     expect(summarize(dataAtTier(3))).toMatchSnapshot()
   })
 })

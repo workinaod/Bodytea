@@ -4,7 +4,7 @@ import { avgMph, fmtDuration, fmtPace } from './runs'
 
 // ============================================================
 // The post-run share card: a 1080×1350 social-ready image drawn
-// on canvas — route line, big numbers, brand mark. The in-app
+// on canvas, route line, big numbers, brand mark. The in-app
 // "finish" popup previews this exact image, so what you see is
 // literally what you share.
 // ============================================================
@@ -111,7 +111,7 @@ export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise
   // The celebration sits BEHIND the route
   if (reaction) drawFrozenReaction(x, reaction.tier)
 
-  // The route — the hero of the card
+  // The route, the hero of the card
   const pts = log.points
   if (pts.length >= 2) {
     const lats = pts.map((p) => p[0])
@@ -204,7 +204,7 @@ export async function shareRunCard(log: RunLog, blob: Blob): Promise<'shared' | 
       return 'shared'
     } catch (err) {
       if ((err as { name?: string })?.name === 'AbortError') return 'cancelled'
-      /* real failure — fall through to download */
+      /* real failure, fall through to download */
     }
   }
   const url = URL.createObjectURL(blob)
