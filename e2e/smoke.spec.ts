@@ -57,6 +57,9 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
     // ---- Focus mode is the default session UI: GO gate, then the set ----
     // (both the prescription line and the intro caption carry "Set 1 of")
     await expect(page.getByText(/Set 1 of/).first()).toBeVisible()
+    // Loaded first exercises demand a weight before GO — enter one like a human
+    const weightPlus = page.getByRole('button', { name: '+', exact: true })
+    if (await weightPlus.isVisible().catch(() => false)) await weightPlus.click()
     await page.getByRole('button', { name: /^GO — START SET/ }).click()
     const next = page.getByRole('button', { name: /NEXT SET|SET DONE/ })
     await expect(next).toBeVisible()

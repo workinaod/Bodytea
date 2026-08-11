@@ -146,8 +146,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     banners.push({
       id: 'ball-today',
       text: ball
-        ? "🏀 Ball logged today — that's this week's conditioning. Don't stack extra cardio on top."
-        : "🏃 Hard conditioning logged today — that's this week's conditioning. Don't stack more on top.",
+        ? "🏀 Ball logged today, that's this week's conditioning. Don't stack extra cardio on top."
+        : "🏃 Hard conditioning logged today, that's this week's conditioning. Don't stack more on top.",
       tone: 'success',
     })
     if (!resolveDayShallowCns(data, dateISO) && resolveDayShallowCns(data, addDaysISO(dateISO, 1))) {
@@ -192,8 +192,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
       templateId: null,
       title: def.name,
       tagline: ball
-        ? 'Cardio backup — replaces basketball this week.'
-        : "Conditioning day — this week's cardio, scheduled.",
+        ? 'Cardio backup. Replaces basketball this week.'
+        : "Conditioning day. This week's cardio, scheduled.",
       kind: 'cardio-backup',
       cns: false,
       exercises: [
@@ -207,7 +207,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
         },
       ],
       note: ball
-        ? 'Option A on tired weeks, Option B on fresh weeks. It stands in for ball this week — never stack it on a played day.'
+        ? 'Option A on tired weeks, Option B on fresh weeks. It stands in for ball this week. Never stack it on a played day.'
         : 'Option A on tired weeks, Option B on fresh weeks. One quality session is the goal.',
     }
   }
@@ -222,8 +222,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     banners.push({
       id: 'cardio-required',
       text: ball
-        ? 'No ball logged this week — the backup session is REQUIRED, not optional. Pick one below; it lands after today\'s mobility work (or move it in the Week tab). Log a run and this disappears.'
-        : 'No conditioning yet this week — one session is REQUIRED, not optional. Pick one below (or move it in the Week tab). Log a run, ride, or game and this disappears.',
+        ? 'No ball logged this week, so the backup session is REQUIRED. Pick one below, it lands after today\'s mobility work (or move it in the Week tab). Log a run and this disappears.'
+        : 'No conditioning yet this week, so one session is REQUIRED. Pick one below (or move it in the Week tab). Log a run, ride, or game and this disappears.',
       tone: 'warn',
     })
     return {
@@ -237,7 +237,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
       cns: false,
       exercises: [],
       note: ball
-        ? 'The rule: if no ball that week, do at least ONE of these. They replace ball — never stack them on top.'
+        ? 'The rule: if no ball that week, do at least ONE of these. They replace ball, never stack them on top.'
         : 'The rule: at least ONE real conditioning session every week, whatever your goal. Muscle grows better on a body that can breathe.',
     }
   }
@@ -252,8 +252,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
       banners.push({
         id: 'cardio-nag',
         text: ball
-        ? 'No ball logged this week and no backup scheduled. The rule: at least ONE session — Thursday holds the slot, or pick a day in the Week tab.'
-        : 'No conditioning logged this week and none scheduled. The rule: at least ONE session a week — pick a day in the Week tab or just log a run.',
+        ? 'No ball logged this week and no backup scheduled. The rule: at least ONE session. Thursday holds the slot, or pick a day in the Week tab.'
+        : 'No conditioning logged this week and none scheduled. The rule: at least ONE session a week. Pick a day in the Week tab or just log a run.',
         tone: 'warn',
       })
     }
@@ -279,7 +279,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     if (weekday === 5 && templateId === 'friday') {
       banners.push({
         id: 'fri-pushed',
-        text: 'Pull session pushed to Saturday (DJ Friday rule). Tonight: gig legs count as steps — no extra cardio.',
+        text: 'Pull session pushed to Saturday (DJ Friday rule). Tonight: gig legs count as steps, no extra cardio.',
         tone: 'info',
       })
       return {
@@ -331,7 +331,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     exercises = applyDeload(exercises)
     banners.push({
       id: 'deload',
-      text: 'DELOAD WEEK — sets halved, keep the weights. Leave every session feeling like you could have done more. That’s the point.',
+      text: 'DELOAD WEEK: sets halved, keep the weights. Leave every session feeling like you could do more. That’s the point.',
       tone: 'success',
     })
   }
@@ -342,8 +342,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     banners.push({
       id: `late-night-${ev.id}`,
       text: (template.cns ?? false)
-        ? `🌙 ${ev.label} tonight: do the sprints/jumps EARLY today. If your legs are already dead from standing, skipping the jumps is plan-sanctioned — jumping fatigued teaches bad mechanics.`
-        : `🌙 ${ev.label} tonight: train this MORNING. Never lift heavy on 4 hours of sleep${plan.lifeRules.djWeekend && weekday === 5 ? ' — or push the session to Saturday from the Week tab' : ''}.`,
+        ? `🌙 ${ev.label} tonight: do the sprints/jumps EARLY today. If your legs are already dead from standing, skipping the jumps is plan-sanctioned. Jumping fatigued teaches bad mechanics.`
+        : `🌙 ${ev.label} tonight: train this MORNING. Never lift heavy on 4 hours of sleep${plan.lifeRules.djWeekend && weekday === 5 ? ', or push the session to Saturday from the Week tab' : ''}.`,
       tone: 'warn',
     })
     break // one banner even if several late nights collide
@@ -351,7 +351,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   if (lifeEventsOn(data, yesterdayISO, 'late-night').length > 0 && !lifeEventsOn(data, dateISO, 'late-night').length) {
     banners.push({
       id: 'late-night-after',
-      text: '🌙 Late one last night. If sleep landed under 6 h, flag it in the Week tab — quality beats volume today either way.',
+      text: '🌙 Late one last night. If sleep landed under 6 h, flag it in the Week tab. Quality beats volume today either way.',
       tone: 'info',
     })
   }
@@ -360,14 +360,14 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     exercises = applyLongShiftMonday(exercises)
     banners.push({
       id: 'pre-fatigued',
-      text: `${onFeetYesterday[0].label} yesterday: a jump set dropped — the legs are pre-fatigued. Quality over volume today.`,
+      text: `${onFeetYesterday[0].label} yesterday: a jump set dropped. Legs arrive pre-fatigued, quality over volume today.`,
       tone: 'warn',
     })
   }
   for (const ev of lifeEventsOn(data, dateISO, 'on-feet')) {
     banners.push({
       id: `on-feet-${ev.id}`,
-      text: `🦵 ${ev.label} today — get the session in EARLY if you can. The hours on your feet count as your steps; don't stack extra cardio on top.`,
+      text: `🦵 ${ev.label} today. Get the session in EARLY if you can. Hours on your feet count as steps, don't stack extra cardio on top.`,
       tone: 'info',
     })
     break
@@ -378,7 +378,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   if (isCns && ballYesterday && !week.cnsSwapDates.includes(dateISO)) {
     banners.push({
       id: 'ball-before-cns',
-      text: `${ball ? '🏀' : '🏃'} You ran yesterday. If it was a hard run, today's max-effort speed work is pre-fatigued — swapping it out for lifts only is plan-sanctioned (button below).`,
+      text: `${ball ? '🏀' : '🏃'} You ran yesterday. If it was hard, today's max-effort speed work is pre-fatigued. Swapping it for lifts only is plan-sanctioned (button below).`,
       tone: 'warn',
     })
   }
@@ -387,8 +387,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     banners.push({
       id: 'cns-swapped',
       text: ball
-        ? 'Speed work swapped out today (plan-sanctioned after a hard run). Lifts only — the explosive quality already got trained on the court.'
-        : 'Speed work swapped out today (plan-sanctioned after a hard run). Lifts only — the explosive quality already got its work yesterday.',
+        ? 'Speed work swapped out today (plan-sanctioned after a hard run). Lifts only. The explosive quality already got trained on the court.'
+        : 'Speed work swapped out today (plan-sanctioned after a hard run). Lifts only. The explosive quality already got its work yesterday.',
       tone: 'info',
     })
   }
@@ -416,7 +416,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     exercises = applyReadinessDowngrade(exercises)
     banners.push({
       id: 'day-trimmed',
-      text: '📉 You called a trimmed day: explosive volume −1/3, lifts light. Showing up short beats skipping — full plan returns tomorrow.',
+      text: '📉 You called a trimmed day: explosive volume −1/3, lifts light. Showing up short beats skipping. Full plan returns tomorrow.',
       tone: 'warn',
     })
   }
@@ -440,8 +440,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     banners.push({
       id: 'cardio-stacked',
       text: ball
-        ? `Conditioning rides today's session: ${def.name}, after the main work. It counts as the week's backup — the workout stays.`
-        : `Conditioning scheduled today: ${def.name}, after the main work. It counts as the week's cardio — the workout stays.`,
+        ? `Conditioning rides today's session: ${def.name}, after the main work. It counts as the week's backup. The workout stays.`
+        : `Conditioning scheduled today: ${def.name}, after the main work. It counts as the week's cardio. The workout stays.`,
       tone: 'info',
     })
   }
@@ -453,8 +453,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     banners.push({
       id: 'cardio-nag',
       text: ball
-        ? 'No ball logged this week and no backup scheduled. The rule: at least ONE session — pick one in the Week tab, or log the run you played.'
-        : 'No conditioning this week yet. At least ONE session is the rule — pick a day in the Week tab, or log the run/ride/game that already happened.',
+        ? 'No ball logged this week and no backup scheduled. The rule: at least ONE session. Pick one in the Week tab, or log the run you played.'
+        : 'No conditioning this week yet. At least ONE session is the rule. Pick a day in the Week tab, or log the run/ride/game that already happened.',
       tone: 'warn',
     })
   }
@@ -462,7 +462,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   if (phaseComplete) {
     banners.push({
       id: 'phase-complete',
-      text: `Phase 1 (16 weeks) complete — the program loops (Block ${blockIndex}). It’s a 12-month project: keep climbing.`,
+      text: `Phase 1 (16 weeks) complete. The program loops (Block ${blockIndex}). It’s a 12-month project, keep climbing.`,
       tone: 'success',
     })
   }

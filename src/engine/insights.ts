@@ -79,7 +79,7 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Waist down {drop}" over {weeks} weeks at the same bodyweight. That IS the recomp — the scale staying flat is the design, the tape is the truth.',
+      'Waist down {drop}" over {weeks} weeks at the same bodyweight. That IS the recomp. Flat scale is the design, the tape is the truth.',
       '{drop}" off the waist in {weeks} weeks without losing weight. You\'re trading fat for muscle in real time. The plan calls this exactly right: waist is the metric, not the scale.',
       'Same weight, {drop}" smaller waist since {weeks} weeks ago. This is what "197 turning from kinda-big into clearly-built" looks like in the data.',
     ],
@@ -95,7 +95,7 @@ const RULES: RuleDef[] = [
       return { gain: s.strengthGainPct, change: fmt(s.weightChangeLb) }
     },
     variants: [
-      'Check-in rule triggered: strength up {gain}% but the scale moved just {change} lb over 3+ weeks. The plan says add 150-200 kcal to training days. Do it in Settings — this is fuel, not cheating.',
+      'Check-in rule triggered: strength up {gain}% but the scale moved just {change} lb over 3+ weeks. The plan says add 150-200 kcal to training days. Do it in Settings. This is fuel, not cheating.',
       'Your lifts climbed {gain}% while bodyweight stayed put ({change} lb). Per the plan\'s own rule: bump training days by 150-200 kcal. Recomp is slow; underfueling makes it slower.',
       'Data check: strength +{gain}%, weight {change} lb. The 3-4 week rule says training days get 150-200 more kcal now. The muscle you want has a food bill.',
     ],
@@ -119,7 +119,7 @@ const RULES: RuleDef[] = [
     },
     variants: [
       'Protein target hit {hit} of the last 7 days. The single most important nutrition number, handled. This is the invisible half of every PR.',
-      '{hit}/7 days at {proteinTarget}+ g protein this week. The plan said never miss it — you didn\'t. Muscle retention during a recomp is exactly this.',
+      '{hit}/7 days at {proteinTarget}+ g protein this week. The plan said never miss it, and you didn\'t. This is how muscle survives a recomp.',
       'The week\'s protein ledger: {hit} of 7 on target. Boring, repeatable, undefeated. Keep the streak alive.',
     ],
   },
@@ -141,9 +141,9 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Protein hit only {hit} of the last 7 days. Training tears muscle down; without the {proteinTarget} g it rebuilds at half speed. The shake + Greek yogurt combo closes 50 g in five minutes — no cooking.',
+      'Protein hit only {hit} of the last 7 days. Training tears muscle down; without the {proteinTarget} g it rebuilds at half speed. The shake + Greek yogurt combo closes 50 g in five minutes, no cooking.',
       '{hit}/7 on protein this week. Everything you lifted this week rebuilds slower because of it. Front-load tomorrow: eggs + yogurt at breakfast is 45 g before noon.',
-      'The weak link this week wasn\'t training — it was {hit}/7 on protein. The plan\'s one unbreakable nutrition rule. Fix breakfast and the number fixes itself.',
+      'The weak link this week wasn\'t training, it was {hit}/7 on protein. Fix breakfast and the number fixes itself.',
     ],
   },
 
@@ -168,9 +168,9 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Leg strength up {gain}% this month but the vert hasn\'t moved yet. Normal — strength banks first, elasticity cashes it out. Saturday\'s pogos and approach jumps are the conversion mechanism. Do NOT trim them.',
-      'Squat/hip thrust +{gain}%, vert flat. The force is there; the spring is still being built. This is exactly why the plan protects Saturday — the elastic work turns gym strength into air.',
-      '{gain}% stronger, same jump — for now. Converted jumpers see the strength arrive weeks before the inches. Keep the Saturday quality high and the vert chart catches up.',
+      'Leg strength up {gain}% this month but the vert hasn\'t moved yet. Normal. Strength banks first, elasticity cashes it out. Saturday\'s pogos and approach jumps do the conversion. Do NOT trim them.',
+      'Squat/hip thrust +{gain}%, vert flat. The force is there; the spring is still being built. This is exactly why the plan protects Saturday. The elastic work turns gym strength into air.',
+      '{gain}% stronger, same jump. For now. The strength arrives weeks before the inches. Keep Saturday quality high and the chart catches up.',
     ],
   },
   {
@@ -189,9 +189,9 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Vert / rim touch up {gain}" in {weeks} weeks. That\'s not luck — that\'s Monday force work + Saturday elastic work + actually resting on Sunday. The rim is getting closer on schedule.',
+      'Vert / rim touch up {gain}" in {weeks} weeks. That\'s not luck. That\'s Monday force work + Saturday elastic work + real Sunday rest. The rim is getting closer on schedule.',
       '+{gain}" of air since {weeks} weeks ago. Every falling start, pogo, and hip thrust bought a piece of that. Consistent dunks are a compounding investment and you just saw a dividend.',
-      'The jump chart moved: +{gain}" in {weeks} weeks. Log the next attempts fresh and keep the approach rhythm identical — height loves repetition.',
+      'The jump chart moved: +{gain}" in {weeks} weeks. Log the next attempts fresh and keep the approach rhythm identical. Height loves repetition.',
     ],
   },
   {
@@ -210,7 +210,7 @@ const RULES: RuleDef[] = [
     },
     variants: [
       'Week {weeks} reminder from your own plan: the one-foot jump feels WEAKER than two-foot at first. Normal. The elasticity takes weeks, then for many converted jumpers it passes the two-foot number. Don\'t judge it in month one.',
-      'If the one-foot plant still feels mushy in week {weeks} — that\'s the documented curve, not a verdict. Tendon stiffness compounds quietly. Keep the pogos crisp and the penultimate step LOW.',
+      'One-foot plant still mushy in week {weeks}? That\'s the documented curve, not a verdict. Tendon stiffness compounds quietly. Pogos crisp, penultimate step LOW.',
       'Early-phase check (week {weeks}): one-foot jumping is supposed to feel worse than it will. You keep all your run-up speed once the spring stiffens. The plan literally warned you not to quit in the first month.',
     ],
   },
@@ -238,7 +238,7 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      '{weeks} straight weeks without missing the explosive day — the one the plan says never to drop. That protected streak is the single biggest reason the speed and jump numbers keep moving.',
+      '{weeks} straight weeks without missing the explosive day, the one you never drop. That streak is the biggest reason the speed and jump numbers keep moving.',
       'The explosive session has survived {weeks} consecutive weeks of real life. Most people cut it first and lose it fastest. You\'re doing the exact opposite of most people.',
       '{weeks} weeks of uninterrupted speed work. Elasticity is use-it-or-lose-it and you keep choosing "use it". The vert chart is downstream of this streak.',
     ],
@@ -256,9 +256,9 @@ const RULES: RuleDef[] = [
       return { gain: Math.round(gain) }
     },
     variants: [
-      'Incline press up {gain}% over six weeks. Upper chest is a stated goal and it grows from exactly this — incline volume, progressed. First exercise every Tuesday, doing precisely its job.',
+      'Incline press up {gain}% over six weeks. Upper chest is a stated goal and it grows from exactly this: incline volume, progressed. First exercise every Tuesday, doing its job.',
       '+{gain}% on the incline. The upper-chest shelf you\'re after is built pound by pound on that bench. The chart says the bricks are being laid.',
-      'The incline e1RM climbed {gain}% — that\'s the "big upper chest" line of your goal sheet turning into weight on a dumbbell.',
+      'The incline e1RM climbed {gain}%. That\'s the "big upper chest" goal turning into weight on a dumbbell.',
     ],
   },
   {
@@ -279,8 +279,8 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Pull-up max: {prev} → {now}. Lat WIDTH gets built on that bar — the plan\'s words. The V-taper is a rep count wearing a t-shirt.',
-      '{now} pull-ups, up from {prev} a month ago. Every added rep is added back width. Wide-grip, dead-hang, honest — and climbing.',
+      'Pull-up max: {prev} → {now}. Lat WIDTH gets built on that bar. The V-taper is a rep count wearing a t-shirt.',
+      '{now} pull-ups, up from {prev} a month ago. Every added rep is added back width. Wide-grip, dead-hang, honest, and climbing.',
       'From {prev} to {now} on pull-ups. That\'s the clearest lat-growth signal there is, and it\'s free bodyweight data. Width incoming.',
     ],
   },
@@ -297,9 +297,9 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Arms at {arms}" — {gap}" from the 16" target. Close-grip pressing, twice-weekly curls, and progressive load: the last half-inch is just patience with the same recipe.',
+      'Arms at {arms}", {gap}" from the 16" target. Close-grip pressing, twice-weekly curls, progressive load. The last half-inch is patience with the same recipe.',
       '{arms}" measured. The 16" line is {gap}" away and the curl volume is already in the program. Keep eating; arms are built at dinner too.',
-      'Tape says {arms}". {gap}" to the goal. No changes needed — the EZ curls and close-grip work carry you there if the protein stays at 200.',
+      'Tape says {arms}". {gap}" to the goal. No changes needed. The EZ curls and close-grip work carry you there if protein stays at 200.',
     ],
   },
 
@@ -316,7 +316,7 @@ const RULES: RuleDef[] = [
     },
     variants: [
       '{streak} scheduled sessions in a row, zero missed. Across a year, THIS stat predicts the physique better than any single PR.',
-      'Streak: {streak}. The plan\'s whole thesis is "consistency across a year is the whole game" — you\'re currently the proof.',
+      'Streak: {streak}. The plan\'s whole thesis is "consistency across a year is the whole game". You\'re currently the proof.',
       '{streak} straight. Motivation didn\'t do that; the habit did. Guard it like it\'s a max attempt, because it is one.',
     ],
   },
@@ -339,9 +339,9 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Deload week completed as written ({n} sessions, half volume). New block starts NOW — this is historically where the PRs land. Chase them.',
-      'You actually deloaded instead of sneaking extra sets — rarer than it sounds. The adaptation caught up over the light week; expect the bar to feel suspiciously light this week.',
-      'Fresh block on a real deload. The plan promises "you\'ll often hit new numbers right after" — this week is the collection window.',
+      'Deload week completed as written ({n} sessions, half volume). New block starts NOW. This is where the PRs usually land. Chase them.',
+      'You actually deloaded instead of sneaking extra sets. Rarer than it sounds. Expect the bar to feel suspiciously light this week.',
+      'Fresh block on a real deload. The plan promises "you\'ll often hit new numbers right after". This week is the collection window.',
     ],
   },
 
@@ -362,8 +362,8 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      '{count} flagged short-sleep nights in two weeks. Sleep is where jumps are built and hamstrings are repaired. Whatever is stealing the nights is also taxing the goals — treat bedtime like a session.',
-      'The sleep ledger shows {count} bad nights in 14 days. Under-slept speed work is how hamstrings tear — the plan\'s own warning. Protect two nights this week: before Monday and before Saturday.',
+      '{count} flagged short-sleep nights in two weeks. Sleep is where jumps are built and hamstrings are repaired. Whatever is stealing the nights is also taxing the goals. Treat bedtime like a session.',
+      'The sleep ledger shows {count} bad nights in 14 days. Under-slept speed work is how hamstrings tear. Protect two nights this week: before Monday and before Saturday.',
       '{count} rough nights logged recently. No training tweak fixes chronic short sleep. Pick the earliest realistic bedtime tonight and defend it like a PR attempt.',
     ],
   },
@@ -391,8 +391,8 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Pattern detected: {count} readiness downgrades landed right after gigs this month. The data agrees with the plan — gig legs are real training load. Consider defaulting those weeks\' CNS days a day later.',
-      '{count} CNS days got downgraded after gig nights recently. Not a willpower issue — a scheduling collision. The Week tab can move sessions; use it before the gig, not after.',
+      'Pattern detected: {count} readiness downgrades landed right after gigs this month. The data agrees: gig legs are real training load. Consider pushing those weeks\' CNS days a day later.',
+      '{count} CNS days got downgraded after gig nights recently. Not a willpower issue, a scheduling collision. Move sessions in the Week tab before the gig, not after.',
       'The logs say gigs cost you {count} quality speed days this month. Plan around them like an away game: session in the morning, or shifted a day.',
     ],
   },
@@ -412,9 +412,9 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      '{empty} of the last 7 days have zero meals logged. I can\'t coach what you don\'t log — and the protein target can\'t be "probably fine". The meal chips take literal seconds.',
-      'Food log went dark {empty} days this week. The recomp runs on the {proteinTarget} g number and right now it\'s unverifiable. One tap per meal — that\'s the whole ask.',
-      '{empty} blank food days. If logging feels heavy, use only the big meal chips — five taps covers a whole day. Data in, insight out.',
+      '{empty} of the last 7 days have zero meals logged. I can\'t coach what you don\'t log, and protein can\'t be "probably fine". The meal chips take seconds.',
+      'Food log went dark {empty} days this week. The recomp runs on the {proteinTarget} g number and right now it\'s unverifiable. One tap per meal, that\'s the whole ask.',
+      '{empty} blank food days. If logging feels heavy, use only the big meal chips, five taps covers a whole day. Data in, insight out.',
     ],
   },
 ]

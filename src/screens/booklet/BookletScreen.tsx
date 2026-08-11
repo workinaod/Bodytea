@@ -57,7 +57,7 @@ export function BookletScreen({ onClose }: { onClose: () => void }) {
         <div className="min-h-0 flex-1 overflow-y-auto pb-10">
           <BookletEditor draft={draft} onDraft={(d) => { setDraft(d); setProblems([]) }} />
           <p className="mt-4 text-[11px] leading-relaxed text-ink-faint">
-            Block rotation, deload weeks, A/B alternation, and busy-week tiers stay automatic — they rebuild themselves
+            Block rotation, deloads, A/B weeks, and busy-week tiers stay automatic. They rebuild
             around whatever you change here.
           </p>
         </div>

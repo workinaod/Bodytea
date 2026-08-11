@@ -8,6 +8,8 @@ import { MealsScreen } from './screens/meals/MealsScreen'
 import { ProgressScreen } from './screens/progress/ProgressScreen'
 import { CoachScreen } from './screens/coach/CoachScreen'
 import { RunTrackerSheet } from './screens/today/RunTrackerSheet'
+import { CardioTimerSheet } from './screens/today/CardioTimerSheet'
+import { CARDIO_ACTIVITIES } from './plan/cardio'
 import { Onboarding } from './screens/Onboarding'
 import { ReconcileSheet } from './screens/ReconcileSheet'
 import { dailyCoachSweep } from './logic/actions'
@@ -21,6 +23,7 @@ export default function App() {
   const today = useToday()
   const [tab, setTab] = useState<TabId>('today')
   const [track, setTrack] = useState<'choose' | 'run' | 'bike' | null>(null)
+  const [timerActivity, setTimerActivity] = useState<string | null>(null)
 
   // A live session on the home date folds the tab bar into the glow strip
   // (only where the session UI actually is — the Today tab).
@@ -88,15 +91,12 @@ export default function App() {
         {tab === 'coach' && <CoachScreen />}
       </div>
       <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} session={sessionLive && tab === 'today'} />
-      <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track with GPS">
+      <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track">
         <div className="space-y-2 pb-8">
-          <p className="text-[12.5px] leading-snug text-ink-dim">
-            Live map, time, distance, and pace — finishing logs it as today's cardio automatically.
-          </p>
           {(
             [
-              { id: 'run', label: 'Run', sub: 'pace per mile + splits' },
-              { id: 'bike', label: 'Ride', sub: 'average mph + route' },
+              { id: 'run', label: 'Run', sub: 'GPS: live map, pace, splits' },
+              { id: 'bike', label: 'Ride', sub: 'GPS: live map, mph, route' },
             ] as const
           ).map((a) => (
             <button
@@ -111,10 +111,32 @@ export default function App() {
               <span className="text-[17px] font-bold text-accent">→</span>
             </button>
           ))}
+          <p className="pt-2 text-[11px] font-black uppercase tracking-[0.18em] text-ink-faint">Everything else</p>
+          <div className="grid grid-cols-2 gap-2">
+            {CARDIO_ACTIVITIES.filter((a) => a.id !== 'run' && a.id !== 'bike').map((a) => (
+              <button
+                key={a.id}
+                onClick={() => {
+                  setTrack(null)
+                  setTimerActivity(a.id)
+                }}
+                className="flex items-center gap-2.5 rounded-2xl bg-surface-2 px-3.5 py-3 text-left active:bg-edge"
+              >
+                <span className="text-[18px]">{a.emoji}</span>
+                <span className="text-[13px] font-bold">{a.label}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] leading-snug text-ink-faint">
+            Timed session, logged as today's cardio when you finish.
+          </p>
         </div>
       </Sheet>
       {(track === 'run' || track === 'bike') && (
         <RunTrackerSheet activity={track} date={today} onClose={() => setTrack(null)} />
+      )}
+      {timerActivity && (
+        <CardioTimerSheet activityId={timerActivity} date={today} onClose={() => setTimerActivity(null)} />
       )}
       <ReconcileSheet />
       <UpdateToast />

@@ -85,7 +85,7 @@ async function pushNow(): Promise<void> {
     setStatus(
       navigator.onLine === false
         ? { kind: 'offline', lastSyncAt: loadSyncMeta()?.lastSyncAt ?? null }
-        : { kind: 'error', message: 'Backup failed — will retry.' },
+        : { kind: 'error', message: 'Backup failed, will retry.' },
     )
     return
   }
@@ -182,7 +182,7 @@ async function invokeAuthFn(
 ): Promise<{ ok?: boolean; recoveryCode?: string }> {
   const { data, error } = await supabase().functions.invoke(name, { body })
   if (error) {
-    let message = 'Network problem — try again.'
+    let message = 'Network problem, try again.'
     const ctx = (error as { context?: Response }).context
     if (ctx) {
       try {
@@ -199,7 +199,7 @@ async function invokeAuthFn(
 
 async function afterSignIn(digits: string): Promise<void> {
   const session = (await supabase().auth.getSession()).data.session
-  if (!session) throw new Error('Sign-in did not stick — try again.')
+  if (!session) throw new Error("Sign-in didn't stick, try again.")
   const { data: prof } = await supabase()
     .from('profiles')
     .select('username, phone')
@@ -229,9 +229,9 @@ export async function registerAccount(args: {
     username: args.username,
     password,
   })
-  if (!res.recoveryCode) throw new Error('Registration failed — try again.')
+  if (!res.recoveryCode) throw new Error('Registration failed, try again.')
   const { error } = await supabase().auth.signInWithPassword({ email: emailFor(args.phone), password })
-  if (error) throw new Error('Account created but sign-in failed — use Sign in.')
+  if (error) throw new Error('Account created but sign-in failed. Use Sign in.')
   await afterSignIn(args.phone)
   return { recoveryCode: res.recoveryCode }
 }
@@ -254,9 +254,9 @@ export async function resetPin(args: {
     recoveryCode: args.recoveryCode,
     password,
   })
-  if (!res.recoveryCode) throw new Error('Reset failed — try again.')
+  if (!res.recoveryCode) throw new Error('Reset failed, try again.')
   const { error } = await supabase().auth.signInWithPassword({ email: emailFor(args.phone), password })
-  if (error) throw new Error('PIN reset but sign-in failed — use Sign in.')
+  if (error) throw new Error('PIN reset but sign-in failed. Use Sign in.')
   await afterSignIn(args.phone)
   return { recoveryCode: res.recoveryCode }
 }

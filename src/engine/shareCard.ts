@@ -148,7 +148,7 @@ export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise
   } else {
     x.fillStyle = 'rgba(255,255,255,0.25)'
     x.font = `600 40px ${DISPLAY}`
-    x.fillText('no GPS route — indoor grind', 72, 480)
+    x.fillText('no GPS route · indoor grind', 72, 480)
   }
 
   // Headline + note carry the reaction's voice

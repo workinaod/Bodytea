@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react'
 import type { LifeEventKind, ResolvedDay, Tier, TierDayRole, Weekday } from '../../types'
 import { uid, useAppStore } from '../../store/appStore'
-import { cardioRequiredForWeek, resolveDay } from '../../engine/resolveDay'
+import { resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatShort, mondayOf, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { Card, Chip, SectionTitle, Toggle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
-import { CARDIO_GROUP_INFO } from '../../plan/templates'
-import { getExercise } from '../../plan/exercises'
 import { changeTier } from '../../logic/actions'
 import { TierDropSheet } from './TierDropSheet'
 
@@ -38,7 +36,6 @@ export function WeekScreen() {
   const thisWeek = weekStart === mondayOf(today)
   const needsPick = thisWeek && !week?.tierPickedAt
   const ball = data.plan.sportMode === 'ball'
-  const condPerWeek = { lean: 3, muscle: 2, strength: 2, general: 2, vertical: 1, speed: 1 }[data.plan.goal]
 
   function statusFor(d: ResolvedDay): { dot: string; label: string } {
     const s = data.sessions[d.date]
@@ -294,152 +291,6 @@ export function WeekScreen() {
           sub="Two in a row cuts the next day's volume by a third automatically."
         />
       </div>
-
-      {/* Cardio planner */}
-      <SectionTitle>{ball ? 'Sport / cardio backup' : 'Conditioning'}</SectionTitle>
-      <Card className="space-y-3">
-        <p className="border-l-2 border-cyan/60 py-0.5 pl-3 text-[11.5px] leading-snug text-cyan/90">
-          {ball
-            ? 'Log ball and runs day-of in the Today tab. This is just the backup plan: it sits on top of that day, and hard options stay off max-effort days.'
-            : 'Log cardio day-of in the Today tab. Booking here is the plan-ahead option: it sits on top of that day, and hard options stay off max-effort days.'}
-        </p>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-[13.5px] font-bold">
-              {ball ? 'Expecting ball this week?' : 'Playing a sport this week?'}
-            </div>
-            <div className="text-[10.5px] text-ink-faint">
-              {ball
-                ? 'Log what actually happens day-of: Today tab, cardio button.'
-                : 'Games and hard sessions count as conditioning. Log day-of: Today tab, cardio button.'}
-            </div>
-          </div>
-          <div className="flex gap-1.5">
-            {[true, false].map((v) => (
-              <button
-                key={String(v)}
-                onClick={() => updateWeek(weekStart, (w) => { w.ballThisWeek = v })}
-                className={`rounded-lg px-4 py-2 text-[12px] font-bold ${
-                  week?.ballThisWeek === v ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
-                }`}
-              >
-                {v ? 'Yes' : 'No'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {(week?.ballDates.length ?? 0) > 0 ? (
-          <p className="rounded-xl border border-lime/30 bg-lime/8 px-3 py-2 text-[12px] font-bold text-lime">
-            {ball ? '🏀' : '🏃'} Covered — conditioning logged {week!.ballDates.map((d) => WD_LABEL[weekdayOf(d)]).join(', ')}. No
-            backup owed.
-          </p>
-        ) : (
-          <>
-            <p className={`rounded-xl border px-3 py-2 text-[12px] font-bold ${
-              cardioRequiredForWeek(data, addDaysISO(weekStart, 3))
-                ? 'border-gold/30 bg-gold/8 text-gold'
-                : 'border-edge bg-surface-2 text-ink-dim'
-            }`}>
-              {cardioRequiredForWeek(data, addDaysISO(weekStart, 3))
-                ? week?.cardio
-                  ? "Scheduled ✓. Rides on top of that day's workout, counts as the week's conditioning."
-                  : ball
-                    ? 'REQUIRED: no ball logged → one backup session this week. Thursday holds the slot until you pick.'
-                    : 'REQUIRED: no conditioning yet → at least one session this week. Pick below.'
-                : ball
-                  ? 'If the ball doesn\'t happen, one backup session is the rule. It stands in for ball that week.'
-                  : `Every plan carries cardio: ${condPerWeek} session${condPerWeek > 1 ? 's' : ''} a week for your goal. Sport counts, so do tracked runs and rides.`}
-            </p>
-            {(['A', 'B', 'circuit'] as const).map((g) => (
-              <div key={g}>
-                <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-ink-faint">
-                  {CARDIO_GROUP_INFO[g].title}
-                </div>
-                <div className="mb-0.5 text-[10.5px] text-ink-faint">{CARDIO_GROUP_INFO[g].when}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {data.plan.cardioOptions.filter((c) => c.group === g).map((c) => (
-                    <Chip
-                      key={c.exerciseId}
-                      tone={week?.cardio?.exerciseId === c.exerciseId ? 'accent' : 'default'}
-                      onClick={() =>
-                        updateWeek(weekStart, (w) => {
-                          w.cardio =
-                            w.cardio?.exerciseId === c.exerciseId
-                              ? null
-                              : { exerciseId: c.exerciseId, weekdays: [data.plan.anchors.conditioningWeekday] }
-                        })
-                      }
-                    >
-                      {getExercise(c.exerciseId).name}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
-            ))}
-            {week?.cardio && (() => {
-              // Hard cardio never lands on a max-effort day or the day
-              // before one — the schedule blocks those out itself.
-              const group = data.plan.cardioOptions.find((c) => c.exerciseId === week.cardio!.exerciseId)?.group
-              const intense = group !== 'A'
-              const blocked = new Set<number>()
-              if (intense) {
-                for (const cns of data.plan.anchors.cnsWeekdays) {
-                  blocked.add(cns)
-                  blocked.add((cns + 6) % 7) // the eve of a CNS day
-                }
-              }
-              const picked = week.cardio.weekdays
-              return (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[12.5px] font-bold">On which days?</span>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5, 6, 0].map((d) => {
-                        const isBlocked = blocked.has(d)
-                        const on = picked.includes(d as Weekday)
-                        return (
-                          <button
-                            key={d}
-                            disabled={isBlocked}
-                            onClick={() =>
-                              updateWeek(weekStart, (w) => {
-                                if (!w.cardio) return
-                                const has = w.cardio.weekdays.includes(d as Weekday)
-                                const next = has
-                                  ? w.cardio.weekdays.filter((x) => x !== d)
-                                  : [...w.cardio.weekdays, d as Weekday]
-                                // Unpicking the last day clears the whole schedule
-                                if (next.length === 0) w.cardio = null
-                                else w.cardio.weekdays = next
-                              })
-                            }
-                            className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
-                              isBlocked
-                                ? 'bg-surface text-ink-faint/40 line-through'
-                                : on
-                                  ? 'bg-accent text-black'
-                                  : 'bg-surface-2 text-ink-faint'
-                            }`}
-                          >
-                            {WD_LABEL[d]}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                  {intense && blocked.size > 0 && (
-                    <p className="text-[10.5px] leading-snug text-ink-faint">
-                      Struck days are max-effort days ({data.plan.anchors.cnsWeekdays.map((d) => WD_LABEL[d]).join(', ')})
-                      or the night before one. Hard cardio is blocked there, easy Zone 2 is fine.
-                    </p>
-                  )}
-                </div>
-              )
-            })()}
-          </>
-        )}
-      </Card>
 
       {/* Day preview sheet */}
       <Sheet open={!!preview} onClose={() => setPreview(null)} title={preview ? `${formatShort(preview.date)} — ${preview.title}` : ''}>

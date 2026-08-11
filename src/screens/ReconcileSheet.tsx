@@ -68,7 +68,7 @@ export function ReconcileSheet() {
           </div>
         )}
         <p className="text-[12.5px] leading-snug text-ink-dim">
-          The record only works if it's complete. Close these out — takes seconds each, or write off
+          The record only works if it's complete. Close these out, takes seconds each. Or write off
           a whole week at once.
         </p>
         {proofRejected && (
@@ -91,7 +91,7 @@ export function ReconcileSheet() {
             if (!check.ok) {
               setProofRejected(
                 check.reason === 'stale'
-                  ? `That image is ${check.ageDays} days old — not proof of that week. Resolve it as unproven or find the real screenshot.`
+                  ? `That image is ${check.ageDays} days old, not proof of that week. Resolve it as unproven or find the real screenshot.`
                   : 'Images only. Calendar screenshot, schedule, gig poster.',
               )
               return

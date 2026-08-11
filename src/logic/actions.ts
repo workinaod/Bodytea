@@ -141,7 +141,7 @@ export function trimToday(date: ISODate, reason: ExcuseReason, claimText?: strin
       id: uid(),
       at: new Date().toISOString(),
       kind: 'insight',
-      text: `📉 Trimmed ${date.slice(5)} — ${TRIM_REASON_LABEL[reason]}${claimText?.trim() ? ` (“${claimText.trim()}”)` : ''}. Still training. That's the difference.`,
+      text: `📉 Trimmed ${date.slice(5)}: ${TRIM_REASON_LABEL[reason]}${claimText?.trim() ? ` (“${claimText.trim()}”)` : ''}. Still training. That's the difference.`,
     })
   })
 }

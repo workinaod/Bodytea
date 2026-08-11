@@ -105,7 +105,7 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
         {cloud && view === 'menu' && (
           <>
             <p className="text-[13px] leading-relaxed text-ink-dim">
-              Optional — everything works without one. An account adds a <b className="text-ink">cloud backup</b> of
+              Optional, everything works without one. An account adds a <b className="text-ink">cloud backup</b> of
               your booklet + history and puts you on the <b className="text-ink">leaderboard</b>. Sign-in is your
               number + a PIN. No SMS, no email, nothing to verify.
             </p>
@@ -174,7 +174,7 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
             </Btn>
             {view === 'signin' && (
               <button onClick={() => { setError(''); setView('reset') }} className="w-full text-center text-[12px] font-semibold text-ink-faint underline">
-                Forgot my PIN — I have my recovery code
+                Forgot my PIN, I have my recovery code
               </button>
             )}
             <button onClick={() => { setError(''); setView('menu') }} className="w-full text-center text-[12px] font-semibold text-ink-faint underline">
@@ -202,7 +202,7 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
               Copy it
             </Btn>
             <Btn className="w-full py-3.5" onClick={() => setView('status')}>
-              Saved it — done
+              Saved it, done
             </Btn>
           </>
         )}
@@ -215,10 +215,10 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
               <div className="mt-3 text-[13px] font-semibold">
                 {status.kind === 'idle' && <span className="text-lime">✓ Backed up {ago(status.lastSyncAt)}</span>}
                 {status.kind === 'pending' && <span className="text-cyan">Backing up…</span>}
-                {status.kind === 'offline' && <span className="text-gold">Offline — will back up when you're back</span>}
+                {status.kind === 'offline' && <span className="text-gold">Offline. Will back up when you're back</span>}
                 {status.kind === 'too-large' && <span className="text-danger">Backup too large to upload</span>}
                 {status.kind === 'error' && <span className="text-danger">{status.message}</span>}
-                {status.kind === 'conflict' && <span className="text-gold">Two copies found — pick one below</span>}
+                {status.kind === 'conflict' && <span className="text-gold">Two copies found, pick one below</span>}
                 {status.kind === 'signed-out' && <span className="text-ink-faint">Signed out</span>}
               </div>
             </div>
@@ -230,10 +230,10 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
                   saved {ago(status.remote.exportedAt)}) differs from what's on this phone. Which one is the real you?
                 </p>
                 <Btn className="w-full py-3" disabled={busy} onClick={() => run(() => cloud.resolveConflict('device'))}>
-                  Keep this phone — overwrite cloud
+                  Keep this phone, overwrite cloud
                 </Btn>
                 <Btn kind="subtle" className="w-full py-3" disabled={busy} onClick={() => run(() => cloud.resolveConflict('cloud'))}>
-                  Use the cloud backup — replace this phone
+                  Use the cloud backup, replace this phone
                 </Btn>
               </div>
             )}

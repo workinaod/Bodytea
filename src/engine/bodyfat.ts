@@ -40,7 +40,7 @@ export const TAPE_STEPS: Record<'neck' | 'waist' | 'hip', { title: string; how: 
   neck: {
     title: 'Neck',
     how: [
-      'Stand tall, look straight ahead, shoulders relaxed — not shrugged.',
+      'Stand tall, look straight ahead, shoulders relaxed, not shrugged.',
       'Wrap the tape just BELOW the Adam’s apple, sloping slightly downward toward the front.',
       'Snug against the skin but not squeezing. Don’t flex or swallow while reading it.',
     ],
@@ -49,7 +49,7 @@ export const TAPE_STEPS: Record<'neck' | 'waist' | 'hip', { title: string; how: 
     title: 'Waist',
     how: [
       'Measure at NAVEL height, directly over the belly button.',
-      'Relax the stomach completely — no sucking in, no pushing out. Breathe out normally, then read.',
+      'Relax the stomach completely. No sucking in, no pushing out. Breathe out normally, then read.',
       'Tape level all the way around, snug but never digging in.',
     ],
   },

@@ -25,7 +25,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: 'how-it-works',
     title: 'How the Plan Works',
     paragraphs: [
-      'Five training days, two true rest days. Power and jumps come early in the week on fresh legs. Strength and hypertrophy come later. This protects your recovery so your vertical goes up, not down — and it survives a DJ gig or a long shift on your feet.',
+      'Five training days, two true rest days. Power and jumps come early in the week on fresh legs. Strength and hypertrophy come later. This protects your recovery so your vertical goes up, not down, and it survives a DJ gig or a long shift on your feet.',
     ],
     bullets: [
       'Monday — Acceleration + Two-Foot Power, then lower lifts',
@@ -42,15 +42,15 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: 'Speed + Jump Development',
     paragraphs: [
       'Four explosive qualities matter for you: first step, top sprint speed, two-foot jump, and one-foot jump. They split cleanly into two groups, so they live on two different days. The rule that makes it all work: every explosive thing gets done FRESH, before you tire your legs out. Speed and jump work always come first in the session, lifts and arms after.',
-      'Monday — catch force, then produce it. V4 starts with snap-downs to stick (landing is a skill, and it protects everything else), then falling starts, max countermovement jumps, and broad jumps to stick — acceleration and two-foot power on completely fresh legs. Your squat/RDL/hip thrust strength feeds all of it. This is your natural strength — you are just sharpening it and learning to catch it.',
-      'Saturday — speed, springs, and cuts. Max-velocity and flying sprints build the back half of your sprint — TRUE max effort, full recovery, never tired, which is why they go first. V4 adds the multidirectional layer: lateral bounds to stick and the 5-10-5 shuttle train the sideways force and braking that games actually run on. Then the money jump — the penultimate-step approach converts your speed into height through one long-low, short-quick plant.',
+      'Monday — catch force, then produce it. V4 starts with snap-downs to stick (landing is a skill, and it protects everything else), then falling starts, max countermovement jumps, and broad jumps to stick. Acceleration and two-foot power on completely fresh legs. Your squat/RDL/hip thrust strength feeds all of it. This is your natural strength. You are just sharpening it and learning to catch it.',
+      'Saturday — speed, springs, and cuts. Max-velocity and flying sprints build the back half of your sprint. TRUE max effort, full recovery, never tired, which is why they go first. V4 adds the multidirectional layer: lateral bounds to stick and the 5-10-5 shuttle train the sideways force and braking that games actually run on. Then the money jump: the penultimate-step approach converts your speed into height through one long-low, short-quick plant.',
     ],
   },
   {
     id: 'penultimate',
     title: 'The Penultimate Step',
     paragraphs: [
-      'The single most important piece of the one-foot jump is the penultimate step — the second-to-last step of your run-up. You lower your hips there to load the plant leg, then fire fast off one foot and drive the opposite knee up.',
+      'The single most important piece of the one-foot jump is the penultimate step, the second-to-last step of your run-up. You lower your hips there to load the plant leg, then fire fast off one foot and drive the opposite knee up.',
       'Most converting jumpers stay too upright and lose all their height. Practice the run-up rhythm as much as the strength.',
     ],
   },
@@ -68,14 +68,14 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     paragraphs: [
       'Run each block for 4 weeks, then swap. CORE movers stay fixed the whole year so you can progressively overload them and watch the numbers climb: squat pattern, Romanian deadlift, hip thrust, max-velocity sprints, falling-start sprints, countermovement jumps, approach jumps, pull-ups, overhead press, incline press.',
       'Only the accessories and variations rotate, which keeps things fresh and spreads stress across slightly different angles so the same joints are not grinding the identical groove all year. After Block 3 it loops back to Block 1.',
-      'Rotation is for variety and joint health, not for cutting fatigue. Fatigue is handled by the trimmed volume on each day. Do not add the old exercises back in — the trim is the point.',
+      'Rotation is for variety and joint health, not for cutting fatigue. Fatigue is handled by the trimmed volume on each day. Don't add the old exercises back in. The trim is the point.',
     ],
   },
   {
     id: 'deload',
     title: 'Deload Every 4th Week (Non-negotiable)',
     paragraphs: [
-      'The last week of each 4-week block is a DELOAD. You are running max-effort sprints and jumps twice a week plus lifting plus pickup — without a lighter week the fatigue stacks until you stall or get hurt.',
+      'The last week of each 4-week block is a DELOAD. You are running max-effort sprints and jumps twice a week plus lifting plus pickup. Without a lighter week the fatigue stacks until you stall or get hurt.',
       'Then the new block starts fresh and you will often hit new numbers right after. Deloading is when the adaptation actually catches up.',
     ],
     bullets: [
@@ -90,13 +90,13 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: 'Daily Readiness Check',
     paragraphs: [
       'Before any CNS day (Monday or Saturday), check in with yourself. If two or more of these are true, downgrade the day: drop the sprint/jump volume by a third and keep the lifts light.',
-      'On a max-speed or max-jump day, fast and fresh beats tired and grinding every time. Backing off a fatigued day is not weakness — it is how pros stay healthy enough to train all year.',
+      'On a max-speed or max-jump day, fast and fresh beats tired and grinding every time. Backing off a fatigued day isn't weakness. It's how pros stay healthy enough to train all year.',
     ],
     bullets: [
       'Slept under 6 hours',
       'Resting heart rate feels elevated or you feel wired/run-down',
       'Legs still sore or heavy from the last session',
-      'Genuinely low energy or motivation — not just lazy',
+      'Genuinely low energy or motivation, not just lazy',
     ],
   },
   {
@@ -133,7 +133,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     bullets: [
       'DJ Friday night: move the Friday pull session to that morning, or push it to Saturday as a lighter combined day. Never lift heavy on 4 hours of sleep.',
       'DJ Saturday night: do sprints/jumps earlier in the day, or skip them if your legs are dead from standing. Jumping fatigued teaches bad mechanics.',
-      'Long shift on your feet before Monday: drop a jump set or two — the legs are pre-fatigued.',
+      'Long shift on your feet before Monday: drop a jump set or two. The legs are pre-fatigued.',
       'Two bad sleep nights in a row: cut that day\'s volume by a third. No heroics. The plan resets tomorrow.',
       'A gig or full shift counts toward your daily steps. Do not grind extra cardio on top.',
     ],
@@ -143,9 +143,9 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: 'Nutrition — The Numbers',
     paragraphs: [
       'Recomp at your size. Eat more on training days, less on rest days. The protein number is the one you never miss.',
-      'Training day: 2,800 kcal — 200 g protein, 300 g carbs, 70-80 g fat. Rest day: 2,500 kcal — 200 g protein, 225 g carbs, 70-80 g fat.',
+      'Training day: 2,800 kcal · 200 g protein, 300 g carbs, 70-80 g fat. Rest day: 2,500 kcal · 200 g protein, 225 g carbs, 70-80 g fat.',
       'Check-in rule: if after 3 to 4 weeks the scale is not creeping up while your strength climbs, add 150 to 200 calories to training days. Recomp is slow. Do not panic-cut.',
-      'Late night if hungry — yes: casein shake, cottage cheese, protein pudding, Greek yogurt. No: fast food, pizza, chips, big portions, heavy desserts.',
+      'Late night if hungry? Yes: casein shake, cottage cheese, protein pudding, Greek yogurt. No: fast food, pizza, chips, big portions, heavy desserts.',
     ],
   },
   {

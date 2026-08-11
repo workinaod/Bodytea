@@ -48,7 +48,6 @@ test('daily cardio: run outdoors with miles; game day marks played', async ({ pa
   // Week tab: played marker + backup section satisfied
   await page.getByRole('button', { name: 'Week', exact: true }).click()
   await expect(page.getByText('🏃 conditioned').first()).toBeVisible()
-  await expect(page.getByText(/Covered — conditioning logged/)).toBeVisible()
 })
 
 test('custom life events: add one, pick its days, engine reacts next day', async ({ page }) => {

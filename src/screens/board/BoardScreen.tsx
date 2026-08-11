@@ -92,7 +92,7 @@ export function BoardContent() {
 
   return (
     <div className="space-y-3">
-      <p className="text-[12px] text-ink-faint">Global — every athlete on the app, one ladder.</p>
+      <p className="text-[12px] text-ink-faint">Global. Every athlete on the app, one ladder.</p>
 
       {/* Your numbers always render, account or not */}
       <div className="rounded-2xl border border-edge/80 bg-surface p-3.5">
@@ -106,7 +106,7 @@ export function BoardContent() {
         </div>
         {(mine.consistency30 === null || mine.protein30 === null || mine.prGain90 === null) && (
           <p className="mt-2 text-[10.5px] leading-snug text-ink-faint">
-            “—” = not enough data yet. Keep logging — the numbers rank themselves.
+            “—” means not enough data yet. Keep logging, the numbers rank themselves.
           </p>
         )}
       </div>
@@ -200,7 +200,7 @@ export function BoardContent() {
                 <div className="flex items-center gap-3 rounded-2xl border border-accent/50 bg-accent/10 px-4 py-2.5">
                   <span className="w-7 shrink-0 font-mono text-[12px] font-bold text-ink-faint">—</span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13.5px] font-bold">You — outside the top 50 (for now)</div>
+                    <div className="text-[13.5px] font-bold">You: outside the top 50 (for now)</div>
                     <div className="text-[10.5px] text-ink-faint">Every logged day moves this number.</div>
                   </div>
                   <span className="shrink-0 font-mono text-[14px] font-black text-accent">

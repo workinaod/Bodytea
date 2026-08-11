@@ -66,8 +66,8 @@ export function DataTransferSheet({ open, onClose }: { open: boolean; onClose: (
     <Sheet open={open} onClose={onClose} title="Your data">
       <div className="space-y-4 pb-6">
         <p className="text-[12.5px] leading-snug text-ink-dim">
-          Everything lives on this phone. Exports are a single file you can save anywhere and import
-          on any device — that's the whole transfer story.
+          Everything lives on this phone. Exports are one file you can save anywhere and import
+          on any device. That's the whole transfer story.
         </p>
 
         <div className="rounded-xl border border-edge bg-surface-2 px-3.5 py-3 text-[12px] text-ink-dim">

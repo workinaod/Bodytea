@@ -34,11 +34,11 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
               }
             }}
             label="Training reminders"
-            sub="Max two nudges a day, only on training days with an unfinished session — plus a badge on the app icon until it's done."
+            sub="Max two nudges a day, only while a training day sits unfinished. Plus an app-icon badge until it's done."
           />
           {notifDenied && (
             <p className="mt-1.5 text-[11.5px] font-semibold text-danger">
-              Notifications are blocked{support === 'unsupported' ? ' (not supported here)' : ' — allow them in your browser/app settings, then flip this again'}.
+              Notifications are blocked{support === 'unsupported' ? ' (not supported here)' : '. Allow them in your browser/app settings, then flip this again'}.
             </p>
           )}
           {settings.remindersEnabled && (

@@ -154,19 +154,19 @@ export function buildMilestoneReview(data: AppData, markId: ReviewMark['id'], to
   const vert = deltas.find((d) => d.key === 'vertIn')
 
   if (num(vert?.delta) && vert!.delta! >= 1.5) {
-    lines.push({ tone: 'win', text: `Vert up ${vert!.delta}" — that is not luck, that is force production you built rep by rep.` })
+    lines.push({ tone: 'win', text: `Vert up ${vert!.delta}". Not luck, that's force production you built rep by rep.` })
   }
   if (num(bf?.delta) && bf!.delta! <= -1.5) {
-    lines.push({ tone: 'win', text: `Body fat down ${Math.abs(bf!.delta!)}% while training hard — the hardest combination there is.` })
+    lines.push({ tone: 'win', text: `Body fat down ${Math.abs(bf!.delta!)}% while training hard. The hardest combo there is.` })
   }
   if (num(waist?.delta) && waist!.delta! <= -1) {
-    lines.push({ tone: 'win', text: `Waist down ${Math.abs(waist!.delta!)}" — the recomp is visible on the tape, not just the mirror.` })
+    lines.push({ tone: 'win', text: `Waist down ${Math.abs(waist!.delta!)}". The recomp shows on the tape, not just the mirror.` })
   }
   if (strengthAvgPct !== null && strengthAvgPct >= 8) {
     lines.push({ tone: 'win', text: `Strength up ~${strengthAvgPct}% across your tracked lifts. The base is getting deeper.` })
   }
   if (proteinPct !== null && proteinPct >= 75) {
-    lines.push({ tone: 'win', text: `Protein target hit on ${proteinPct}% of logged days — that discipline is why the muscle stays.` })
+    lines.push({ tone: 'win', text: `Protein target hit on ${proteinPct}% of logged days. That discipline is why the muscle stays.` })
   }
   if (proteinPct !== null && proteinPct < 50) {
     lines.push({ tone: 'callout', text: `Protein hit on only ${proteinPct}% of logged days. Every adaptation you're chasing is built from what you didn't eat. Fix this before touching the training.` })
@@ -179,20 +179,20 @@ export function buildMilestoneReview(data: AppData, markId: ReviewMark['id'], to
   if (adherencePct !== null && adherencePct >= 85 && noBodyMovement && (strengthAvgPct ?? 0) < 5) {
     lines.push({
       tone: 'note',
-      text: 'Attendance was excellent but the needles barely moved — that is not a character problem, it is a levers problem. Look at calories, sleep, and whether the weights actually went up week to week.',
+      text: 'Attendance was excellent but the needles barely moved. Not a character problem, a levers problem. Check calories, sleep, and whether the weights actually went up.',
     })
   }
   if (adherencePct !== null && adherencePct < 60) {
     lines.push({
       tone: 'callout',
-      text: `You made ${adherencePct}% of scheduled sessions. The plan did not fail — attendance did. Everything else in this review is downstream of that number.`,
+      text: `You made ${adherencePct}% of scheduled sessions. The plan didn't fail, attendance did. Everything else here is downstream of that number.`,
     })
   }
   if (inWindow.length < 3) {
-    lines.push({ tone: 'note', text: 'Barely any check-ins this period — the review can only grade what you wrote down. Log weekly and the next one gets sharper.' })
+    lines.push({ tone: 'note', text: 'Barely any check-ins this period. The review can only grade what you wrote down. Log weekly and the next one gets sharper.' })
   }
   if (!beforePhotoId || !afterPhotoId) {
-    lines.push({ tone: 'note', text: 'No before/after photos this period. Take front/side/back at the next check-in — the camera catches what the scale hides.' })
+    lines.push({ tone: 'note', text: 'No before/after photos this period. Take front/side/back at the next check-in. The camera catches what the scale hides.' })
   }
 
   // Opening sentence by effort tier, closing by trajectory.
@@ -200,16 +200,16 @@ export function buildMilestoneReview(data: AppData, markId: ReviewMark['id'], to
   if (adherencePct === null) {
     opening = `${mark.label}: not enough scheduled weeks landed in this window to grade attendance yet.`
   } else if (adherencePct >= 85) {
-    opening = `${mark.label}: ${adherencePct}% attendance. You showed up like it mattered — that is the whole foundation, and you built it.`
+    opening = `${mark.label}: ${adherencePct}% attendance. You showed up like it mattered. That's the whole foundation, and you built it.`
   } else if (adherencePct >= 60) {
-    opening = `${mark.label}: ${adherencePct}% attendance. Real work happened, but there is a gap between the plan and the life — close it and everything below accelerates.`
+    opening = `${mark.label}: ${adherencePct}% attendance. Real work happened, but there's a gap between the plan and the life. Close it and everything below accelerates.`
   } else {
     opening = `${mark.label}: ${adherencePct}% attendance. Read that number twice before reading anything else here.`
   }
   const wins = lines.filter((l) => l.tone === 'win').length
   const closing =
     wins >= 3
-      ? 'Keep the exact same inputs — this is what progress looks like from the inside.'
+      ? 'Keep the exact same inputs. This is what progress looks like from the inside.'
       : wins >= 1
         ? 'The wins are real. Protect the habits that made them and attack ONE weak lever next block.'
         : 'Nothing compounds until the showing-up does. Next review, the first number is the only one being judged.'

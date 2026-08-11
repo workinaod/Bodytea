@@ -93,7 +93,7 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
     notes.push({
       id: 'no-explosive',
       tone: 'warn',
-      text: `Your goal is ${goalWord} but nothing in this routine trains jumping or sprinting itself. Strength feeds the engine — jumps and sprints ARE the engine. Add a jump or sprint drill on a fresh day.`,
+      text: `Your goal is ${goalWord} but nothing in this routine trains jumping or sprinting itself. Strength feeds the engine, but jumps and sprints ARE the engine. Add a jump or sprint drill on a fresh day.`,
     })
   }
   if ((plan.goal === 'muscle' || rg.includes('muscle')) && t.lowerDays === 0) {
@@ -107,13 +107,13 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
     notes.push({
       id: 'recomp',
       tone: 'info',
-      text: 'Muscle up AND weight down at the same time is a recomp — real, but slow. Calories are set near maintenance, the protein target is non-negotiable, and the win condition is strength holding while the scale drifts. Judge it monthly, not daily.',
+      text: 'Muscle up AND weight down at the same time is a recomp. Real, but slow. Calories sit near maintenance, protein is non-negotiable, and the win is strength holding while the scale drifts. Judge it monthly, not daily.',
     })
   } else if (rg.includes('lose-weight')) {
     notes.push({
       id: 'cut-fuel',
       tone: 'info',
-      text: 'Losing weight is won in the kitchen — your calorie target sits below maintenance and the protein floor protects the muscle. This routine’s job is to make the loss read as fat, not strength. Keep the weights heavy; the deficit does the cutting.',
+      text: 'Losing weight is won in the kitchen. Your calorie target sits below maintenance and the protein floor protects the muscle. This routine’s job is to make the loss read as fat, not strength. Keep the weights heavy, the deficit does the cutting.',
     })
   }
   if (rg.length === 1 && rg[0] === 'maintain') {
@@ -132,25 +132,25 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
       notes.push({
         id: 'why-overload',
         tone: 'good',
-        text: 'You said it yourself — the weight keeps going up. That’s progressive overload, the one lever that matters most, and the PR tracker now keeps receipts on it. If the bar ever stalls for a month, that’s your signal, not a mystery.',
+        text: 'You said it yourself: the weight keeps going up. That’s progressive overload, the one lever that matters most, and the PR tracker now keeps receipts on it. If the bar stalls for a month, that’s a signal, not a mystery.',
       })
     } else if (/(consisten|show(ing|ed)? up|every (day|week|session)|habit|stick|never miss|discipline|routine)/.test(w)) {
       notes.push({
         id: 'why-consistency',
         tone: 'good',
-        text: 'You credited showing up — correct. Consistency beats a perfect plan every single time, and your streak is now on your profile where you can’t un-see it. Protect the reason it’s been easy to show up; that’s the actual engine.',
+        text: 'You credited showing up. Correct. Consistency beats a perfect plan every time, and your streak is now on your profile where you can’t un-see it. Protect whatever makes showing up easy. That’s the actual engine.',
       })
     } else if (/(pain|hurt|injur|joint|knee|shoulder|back)/.test(w)) {
       notes.push({
         id: 'why-painfree',
         tone: 'good',
-        text: 'It’s been working because nothing hurts — that’s not luck, that’s exercise selection that fits your body. Rotate carefully: when the app suggests swaps, keep the joint-friendly picks that earned their place.',
+        text: 'It’s been working because nothing hurts. That’s not luck, that’s exercise selection that fits your body. When the app suggests swaps, keep the joint-friendly picks that earned their place.',
       })
     } else {
       notes.push({
         id: 'why-noted',
         tone: 'info',
-        text: `Your read is on record: “${why.length > 90 ? `${why.slice(0, 90)}…` : why}”. The notes here are checked against it — if the structure ever stops backing that story, the coach says so to your face.`,
+        text: `Your read is on record: “${why.length > 90 ? `${why.slice(0, 90)}…` : why}”. The notes here are checked against it. If the structure stops backing that story, the coach says so to your face.`,
       })
     }
   }
@@ -160,13 +160,13 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
     notes.push({
       id: 'zero-pull',
       tone: 'warn',
-      text: 'All press, zero pull. That imbalance is how shoulders start hurting. Match your pressing with rows or pull-ups — the back you build also protects the pressing you love.',
+      text: 'All press, zero pull. That imbalance is how shoulders start hurting. Match your pressing with rows or pull-ups. The back you build protects the pressing you love.',
     })
   } else if (t.pull > 0 && t.push / Math.max(1, t.pull) > 1.6) {
     notes.push({
       id: 'push-heavy',
       tone: 'warn',
-      text: `Pressing outweighs pulling ${t.push} sets to ${t.pull}. Shoulders stay healthy near 1:1 — add rowing volume before it becomes a problem.`,
+      text: `Pressing outweighs pulling ${t.push} sets to ${t.pull}. Shoulders stay healthy near 1:1. Add rowing volume before it becomes a problem.`,
     })
   } else if (t.push > 0 && t.pull > 0) {
     notes.push({
@@ -186,7 +186,7 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
     notes.push({
       id: 'hinge-present',
       tone: 'good',
-      text: 'A real hinge is in the plan — the posterior chain gets its work. That is the most-skipped pattern in home routines and you did not skip it.',
+      text: 'A real hinge is in the plan, so the posterior chain gets its work. The most-skipped pattern in home routines, and you didn’t skip it.',
     })
   }
 
@@ -194,7 +194,7 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
     notes.push({
       id: 'quad-only',
       tone: 'warn',
-      text: 'All quad, no glute/hamstring work. The backside is the athletic side — balance the squatting with hinging or bridging.',
+      text: 'All quad, no glute/hamstring work. The backside is the athletic side. Balance the squatting with hinging or bridging.',
     })
   }
 
@@ -202,7 +202,7 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
     notes.push({
       id: 'no-core',
       tone: 'info',
-      text: 'No direct core work. The trunk transfers every pound of force you produce — two hard sets at the end of a day is enough.',
+      text: 'No direct core work. The trunk transfers every pound of force you produce. Two hard sets at the end of a day is enough.',
     })
   }
 
@@ -219,13 +219,13 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
       notes.push({
         id: `marathon-${d.title}`,
         tone: 'warn',
-        text: `“${d.title}” is ${d.sets} working sets — a marathon. Quality collapses long before the end. Cap a day around 20 hard sets and move the rest elsewhere.`,
+        text: `“${d.title}” is ${d.sets} working sets. That’s a marathon. Quality collapses long before the end. Cap a day around 20 hard sets and move the rest elsewhere.`,
       })
     } else if (d.sets > 0 && d.sets < 6) {
       notes.push({
         id: `snack-${d.title}`,
         tone: 'info',
-        text: `“${d.title}” is only ${d.sets} sets. Fine as a quick day — just know it is a snack, not a meal.`,
+        text: `“${d.title}” is only ${d.sets} sets. Fine as a quick day. Just know it’s a snack, not a meal.`,
       })
     }
   }

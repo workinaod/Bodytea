@@ -34,31 +34,31 @@ export function greatBikeMph(distanceMi: number): number {
 const NOTES: Record<ReactionTier, string[]> = {
   first: [
     'Benchmark set. Everything from here is a comparison you control.',
-    'First one on the books — the hardest run is the one that starts the record.',
+    'First one on the books. The hardest run is the one that starts the record.',
   ],
   'shooting-star': [
-    'Pace AND distance in one outing. That is not a good day — that is a new standard.',
+    'Pace AND distance in one outing. Not a good day, a new standard.',
     'You just moved both goalposts at once. Write this one down.',
   ],
   fireworks: [
     'That pace is legit for this distance. The engine is getting dangerous.',
     'Fast day. The kind future-you points back at.',
-    'That was moving. Recover like it mattered — it did.',
+    'That was moving. Recover like it mattered, because it did.',
   ],
   disco: [
     'That is real distance. The long ones build the base everything else stands on.',
-    'Farther than usual — the map needed a bigger screen today.',
+    'Farther than usual. The map needed a bigger screen today.',
     'Distance day banked. Endurance compounds quietly.',
   ],
   steady: [
     'Money in the bank. Volume now, fireworks later.',
-    'Bad days build the good ones — same shoes tomorrow.',
+    'Bad days build the good ones. Same shoes tomorrow.',
     'Showed up, logged it, moved on. That is the whole sport.',
   ],
 }
 
 const HEADLINES: Record<ReactionTier, string> = {
-  first: 'FIRST ONE — BENCHMARK SET',
+  first: 'FIRST ONE · BENCHMARK SET',
   'shooting-star': 'PR PACE + REAL DISTANCE',
   fireworks: 'FAST FOR THE DISTANCE',
   disco: 'DISTANCE DAY',

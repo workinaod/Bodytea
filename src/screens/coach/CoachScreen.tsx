@@ -111,7 +111,7 @@ export function CoachScreen() {
             setPushOpen(true)
           }}
         >
-          I'm feeling lazy — push me
+          I'm feeling lazy, push me
         </Btn>
       </div>
 
@@ -214,7 +214,7 @@ export function CoachScreen() {
             {data.plan.goalStatement && (
               <div className="mt-4 border-l-2 border-accent/60 pl-3">
                 <div className="text-[9.5px] font-black uppercase tracking-[0.18em] text-ink-faint">
-                  What this is all for — your words
+                  What this is all for, in your words
                 </div>
                 <div className="mt-0.5 text-[13.5px] font-semibold italic text-accent-soft">
                   “{data.plan.goalStatement}”
@@ -318,7 +318,7 @@ function GuideReader({ onOpenExercise }: { onOpenExercise: (id: string) => void 
           className="flex w-full items-center justify-between px-4 py-3 text-left"
           onClick={() => setLibOpen(!libOpen)}
         >
-          <span className="text-[13.5px] font-extrabold text-cyan">Exercise library — every guide</span>
+          <span className="text-[13.5px] font-extrabold text-cyan">Exercise library, every guide</span>
           <span className="text-ink-faint">{libOpen ? '▾' : '▸'}</span>
         </button>
         {libOpen && (

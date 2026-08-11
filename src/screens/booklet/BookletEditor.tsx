@@ -43,7 +43,7 @@ export function BookletEditor({
         p.templates[id] = {
           id,
           title: 'Training Day',
-          tagline: 'Your day — your work.',
+          tagline: 'Your day, your work.',
           kind: 'session',
           entries: [],
           debriefKey: 'generic',
@@ -108,7 +108,7 @@ export function BookletEditor({
               </div>
               <div>
                 <label className="text-[11px] font-black uppercase tracking-wider text-ink-faint">
-                  Why it's been working — your read
+                  Why it's been working, your read
                 </label>
                 <textarea
                   value={draft.whyWorks ?? ''}
@@ -406,7 +406,7 @@ function ExercisePicker({
           </div>
         </div>
         <p className="mb-3 text-[11px] leading-snug text-ink-faint">
-          Every exercise ships with a full guide, demo, and muscle map. Athletic drills carry a level —{' '}
+          Every exercise ships with a full guide, demo, and muscle map. Athletic drills carry a level:{' '}
           <b className="text-lime">F</b>oundation · <b className="text-cyan">I</b>ntermediate ·{' '}
           <b className="text-accent">A</b>dvanced. Progress control → force → elasticity → complexity.
         </p>
