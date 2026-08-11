@@ -40,10 +40,6 @@ export const DEMO_PHOTOS: Record<string, DemoPhotoSeq> = {
     ['Front_Squats_With_Two_Kettlebells-0.webp', 'Racked at the shoulders, elbows high'],
     ['Front_Squats_With_Two_Kettlebells-1.webp', 'Squat tall, below parallel, torso upright'],
   ),
-  'heels-elevated-goblet': seq(
-    ['Goblet_Squat-0.webp', 'Heels on the plate, bell at the chest'],
-    ['Goblet_Squat-1.webp', 'Ride the knees FORWARD, sink deep'],
-  ),
   'romanian-deadlift': seq(
     ['Romanian_Deadlift-1.webp', 'Stand tall, soft knees, bar on the thighs'],
     ['Romanian_Deadlift-0.webp', 'Hips BACK, hamstrings load like bowstrings'],
@@ -59,10 +55,6 @@ export const DEMO_PHOTOS: Record<string, DemoPhotoSeq> = {
   'step-up': seq(
     ['Dumbbell_Step_Ups-1.webp', 'Whole foot on the box, drive through THAT heel'],
     ['Dumbbell_Step_Ups-0.webp', 'Stand fully tall on top, lower back slow'],
-  ),
-  'single-leg-calf-raise': seq(
-    ['Standing_Dumbbell_Calf_Raise-0.webp', 'Heel sinks, pause the deep stretch'],
-    ['Standing_Dumbbell_Calf_Raise-1.webp', 'Drive HIGH onto the big toe'],
   ),
   'hanging-leg-raise': seq(
     ['Hanging_Leg_Raise-0.webp', 'Dead hang, kill the swing'],
@@ -146,10 +138,6 @@ export const DEMO_PHOTOS: Record<string, DemoPhotoSeq> = {
     ['Kneeling_Hip_Flexor-0.webp', 'Half-kneel, back knee tucked into the corner'],
     ['Kneeling_Hip_Flexor-1.webp', 'Glute tight, tuck the pelvis, shift forward'],
   ),
-  'easy-walk': seq(
-    ['Walking_Treadmill-0.webp', 'Conversational pace, this is recovery'],
-    ['Walking_Treadmill-1.webp', 'Relaxed arms, easy rhythm'],
-  ),
 
   // ---- Friday: pull + grip ----
   'pull-up': seq(
@@ -198,14 +186,6 @@ export const DEMO_PHOTOS: Record<string, DemoPhotoSeq> = {
     ['Fast_Skipping-0.webp', 'Skips, springy and light'],
     ['Fast_Skipping-1.webp', 'Knees punch, build the buzz, not fatigue'],
   ),
-  'max-velocity-sprint': seq(
-    ['Wind_Sprints-0.webp', 'TALL, knee punches through'],
-    ['Wind_Sprints-1.webp', 'Strike under the hips, stay LOOSE'],
-  ),
-  'flying-sprint': seq(
-    ['Wind_Sprints-0.webp', 'Build in… then EXPLODE the fly zone'],
-    ['Wind_Sprints-1.webp', 'Fastest strides, loose jaw, loose hands'],
-  ),
 
   // ---- Cardio options ----
   'easy-jog': seq(
@@ -215,18 +195,6 @@ export const DEMO_PHOTOS: Record<string, DemoPhotoSeq> = {
   'brisk-walk': seq(
     ['Walking_Treadmill-0.webp', 'Walk with PURPOSE'],
     ['Walking_Treadmill-1.webp', 'Arms swing, breathing up, conversation possible'],
-  ),
-  'incline-walk': seq(
-    ['Walking_Treadmill-0.webp', 'Crank the incline. NO holding the rails'],
-    ['Walking_Treadmill-1.webp', 'Tall lean into the hill, pump the arms'],
-  ),
-  'hill-sprint': seq(
-    ['Wind_Sprints-0.webp', 'Attack the slope, big knee drive'],
-    ['Wind_Sprints-1.webp', 'Lean into the hill, walk down as your rest'],
-  ),
-  'parking-lot-sprint': seq(
-    ['Wind_Sprints-0.webp', '10–15 seconds ALL OUT'],
-    ['Wind_Sprints-1.webp', 'If it’s not max effort, you’re done'],
   ),
   'stair-run': seq(
     ['Stairmaster-0.webp', 'Up hard, every step drives'],
