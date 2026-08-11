@@ -328,17 +328,44 @@ describe('resolveDay integration', () => {
     expect(day.banners.some((b) => b.id === 'readiness')).toBe(true)
   })
 
-  it('scheduled cardio backup replaces the day', () => {
+  it("scheduled cardio stacks AFTER the day's work; on an empty day it becomes the session", () => {
     const data = makeData()
     const monday = mondayOf(START)
     data.weeks[monday] = {
       ...defaultWeekState(monday),
       ballThisWeek: false,
-      cardio: { exerciseId: 'hill-sprint', weekdays: [4] },
+      cardio: { exerciseId: 'hill-sprint', weekdays: [4, 0] }, // Thu (mobility) + Sun (rest)
     }
+    // Thursday keeps its mobility work — the cardio is appended, not a takeover
     const thu = resolveDay('2026-08-13', data)
-    expect(thu.kind).toBe('cardio-backup')
-    expect(ids(thu.exercises)).toEqual(['hill-sprint'])
+    expect(thu.kind).toBe('mobility')
+    expect(ids(thu.exercises)).toContain('hill-sprint')
+    expect(ids(thu.exercises)[thu.exercises.length - 1]).toBe('hill-sprint')
+    expect(thu.banners.some((b) => b.id === 'cardio-stacked')).toBe(true)
+    // Sunday had nothing scheduled — there the cardio IS the day
+    const sun = resolveDay('2026-08-16', data)
+    expect(sun.kind).toBe('cardio-backup')
+    expect(ids(sun.exercises)).toEqual(['hill-sprint'])
+  })
+
+  it('a finished session on a stacked-cardio day satisfies the weekly rule', () => {
+    const data = makeData()
+    const monday = mondayOf(START)
+    data.weeks[monday] = {
+      ...defaultWeekState(monday),
+      ballThisWeek: false,
+      cardio: { exerciseId: 'hill-sprint', weekdays: [3] }, // Wednesday session day
+    }
+    expect(cardioRequiredForWeek(data, '2026-08-14')).toBe(true)
+    data.sessions['2026-08-12'] = {
+      date: '2026-08-12',
+      templateId: 'wednesday',
+      status: 'completed',
+      startedAt: 'x',
+      endedAt: 'x',
+      exercises: [],
+    }
+    expect(cardioRequiredForWeek(data, '2026-08-14')).toBe(false)
   })
 
   it('tier-1 no-ball week nags on the rest day; tier 2 stays quiet (skip formal cardio)', () => {

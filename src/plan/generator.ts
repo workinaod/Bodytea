@@ -10,7 +10,7 @@ import type {
 } from '../types'
 import { getExercise } from './exercises'
 import { canDo, equipFor, resolveForEquipment } from './equip'
-import { buildMealPlan } from './foods'
+import { buildMealPlan, type MealsPerDay } from './foods'
 
 // ============================================================
 // The booklet generator: OnboardingAnswers → PlanConfig.
@@ -31,6 +31,8 @@ export interface OnboardingAnswers {
   extraEquip: EquipTag[]
   experience: 'new' | 'returning' | 'trained'
   bodyweightLb: number
+  /** How they actually like to eat — the meal plan is built at this count. */
+  mealsPerDay?: MealsPerDay
 }
 
 // ---------- Equipment profiles ----------
@@ -533,7 +535,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     lifeEvents: [],
     rationale: buildRationale(a.goal, a.goalStatement, [...referenced]),
     nutrition: { kcalTraining: nutrition.kcalTraining, kcalRest: nutrition.kcalRest },
-    mealPlan: buildMealPlan(a.goal, nutrition.proteinTargetG, nutrition),
+    mealPlan: buildMealPlan(a.goal, nutrition.proteinTargetG, nutrition, a.mealsPerDay ?? 4),
     sportMode: 'generic',
   }
   return { plan, proteinTargetG: nutrition.proteinTargetG }

@@ -105,11 +105,15 @@ export function cardioRequiredForWeek(data: AppData, dateISO: ISODate): boolean 
   const wd = weekdayOf(dateISO)
   const lateWeek = wd >= data.plan.anchors.conditioningWeekday || wd === 0
   if (week.ballThisWeek !== false && !lateWeek) return false
-  // already satisfied by a completed cardio session this week?
+  // already satisfied by a completed cardio session this week? A finished
+  // session on a day carrying stacked conditioning counts the same way.
   const monday = mondayOf(dateISO)
   for (let i = 0; i < 7; i++) {
-    const s = data.sessions[addDaysISO(monday, i)]
-    if (s && s.templateId === 'cardio' && s.status !== 'skipped') return false
+    const d = addDaysISO(monday, i)
+    const s = data.sessions[d]
+    if (!s || s.status === 'skipped') continue
+    if (s.templateId === 'cardio') return false
+    if (week.cardio && week.cardio.weekdays.includes(weekdayOf(d)) && s.endedAt) return false
   }
   return true
 }
@@ -168,25 +172,28 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     phaseComplete,
   }
 
-  // --- Scheduled cardio backup lands on its chosen weekday ---
-  // (dissolves if ball actually got played — backups replace ball, never stack)
-  if (week.cardio && week.cardio.weekdays.includes(weekday) && week.ballDates.length === 0) {
-    const opt = plan.cardioOptions.find((c) => c.exerciseId === week.cardio!.exerciseId)
-    const def = getExercise(week.cardio.exerciseId)
-    if (weekday === plan.anchors.conditioningWeekday) {
-      banners.push({
-        id: 'cardio-replaces-mobility',
-        text: ball
-          ? 'Cardio backup replaces mobility today — it stands in for basketball this week, not on top of it.'
-          : 'Conditioning replaces mobility today — it IS this week\'s cardio, not extra on top of it.',
-        tone: 'info',
-      })
-    }
+  // --- Scheduled conditioning for this weekday. It RIDES ON TOP of the
+  //     day's session (appended after the main work) — it only becomes
+  //     the whole day when the day was empty anyway. Dissolves if ball
+  //     actually got played: backups replace ball, never stack on it. ---
+  const scheduledCardio =
+    week.cardio && week.cardio.weekdays.includes(weekday) && week.ballDates.length === 0
+      ? {
+          def: getExercise(week.cardio.exerciseId),
+          opt: plan.cardioOptions.find((c) => c.exerciseId === week.cardio!.exerciseId),
+        }
+      : null
+
+  /** The scheduled conditioning as a whole day — for days that were empty anyway. */
+  const scheduledCardioAsDay = (): ResolvedDay => {
+    const { def, opt } = scheduledCardio!
     return {
       ...base,
       templateId: null,
       title: def.name,
-      tagline: ball ? 'Cardio backup — replaces basketball this week.' : 'Conditioning day — this week\'s cardio, scheduled.',
+      tagline: ball
+        ? 'Cardio backup — replaces basketball this week.'
+        : "Conditioning day — this week's cardio, scheduled.",
       kind: 'cardio-backup',
       cns: false,
       exercises: [
@@ -199,7 +206,9 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
           repText: opt?.repText ?? '1 session',
         },
       ],
-      note: 'Option A on tired weeks, Option B on fresh weeks. These replace ball when you can’t play — never stack them on top.',
+      note: ball
+        ? 'Option A on tired weeks, Option B on fresh weeks. It stands in for ball this week — never stack it on a played day.'
+        : 'Option A on tired weeks, Option B on fresh weeks. One quality session is the goal.',
     }
   }
 
@@ -213,7 +222,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     banners.push({
       id: 'cardio-required',
       text: ball
-        ? 'No ball logged this week — the backup session is REQUIRED, not optional. Pick one below; it replaces mobility today (or move it in the Week tab). Log a run and this disappears.'
+        ? 'No ball logged this week — the backup session is REQUIRED, not optional. Pick one below; it lands after today\'s mobility work (or move it in the Week tab). Log a run and this disappears.'
         : 'No conditioning yet this week — one session is REQUIRED, not optional. Pick one below (or move it in the Week tab). Log a run, ride, or game and this disappears.',
       tone: 'warn',
     })
@@ -237,6 +246,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
 
   // --- Rest day (includes tier 2/3 non-training days) ---
   if (!templateId) {
+    // Scheduled conditioning on an empty day: the cardio IS the session.
+    if (scheduledCardio) return scheduledCardioAsDay()
     if (cardioRequired && !week.cardio) {
       banners.push({
         id: 'cardio-nag',
@@ -258,6 +269,10 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   }
 
   const template = planTemplate(plan, templateId)
+
+  // A rest-KIND template (e.g. Full Rest Sunday) is an empty day too —
+  // scheduled conditioning becomes the session, it doesn't stack on nothing.
+  if (scheduledCardio && template.kind === 'rest') return scheduledCardioAsDay()
 
   // --- DJ Friday: pull pushed to Saturday (owner life-rule) ---
   if (plan.lifeRules.djWeekend && week.friPushedToSat) {
@@ -403,6 +418,31 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
       id: 'day-trimmed',
       text: '📉 You called a trimmed day: explosive volume −1/3, lifts light. Showing up short beats skipping — full plan returns tomorrow.',
       tone: 'warn',
+    })
+  }
+
+  // --- Scheduled conditioning stacks AFTER the day's main work — the
+  //     workout stays; the cardio is added on top, untouched by the
+  //     volume transforms above. ---
+  if (scheduledCardio) {
+    const { def, opt } = scheduledCardio
+    exercises = [
+      ...exercises,
+      {
+        exerciseId: def.id,
+        name: def.name,
+        kind: def.kind,
+        restSec: def.restSec,
+        sets: 1,
+        repText: opt?.repText ?? '1 session',
+      },
+    ]
+    banners.push({
+      id: 'cardio-stacked',
+      text: ball
+        ? `Conditioning rides today's session: ${def.name}, after the main work. It counts as the week's backup — the workout stays.`
+        : `Conditioning scheduled today: ${def.name}, after the main work. It counts as the week's cardio — the workout stays.`,
+      tone: 'info',
     })
   }
 

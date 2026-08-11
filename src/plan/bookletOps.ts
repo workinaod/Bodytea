@@ -2,7 +2,7 @@ import type { CustomTarget, DayTemplate, Goal, PlanConfig, RoutineGoal, Template
 import { getExercise, EXERCISES } from './exercises'
 import { equipFor } from './equip'
 import { pickCardio, rationaleFor } from './generator'
-import { buildMealPlan } from './foods'
+import { buildMealPlan, type MealsPerDay } from './foods'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -62,6 +62,7 @@ export function makeEmptyByorPlan(args: {
   goalStatement: string
   customTargets: CustomTarget[]
   bodyweightLb: number
+  mealsPerDay?: MealsPerDay
   whyWorks?: string
 }): { plan: PlanConfig; proteinTargetG: number } {
   const owned = new Set<EquipTag>(['none', ...ALL_TAGS])
@@ -94,7 +95,7 @@ export function makeEmptyByorPlan(args: {
       lifeEvents: [],
       rationale: {},
       nutrition: { kcalTraining: n.kcalTraining, kcalRest: n.kcalRest },
-      mealPlan: buildMealPlan(goal, n.proteinTargetG, n),
+      mealPlan: buildMealPlan(goal, n.proteinTargetG, n, args.mealsPerDay ?? 4),
       sportMode: 'generic',
     },
   }

@@ -297,6 +297,11 @@ export function WeekScreen() {
       {/* Cardio planner */}
       <SectionTitle>{ball ? 'Sport / cardio backup' : 'Conditioning'}</SectionTitle>
       <Card className="space-y-3">
+        <p className="border-l-2 border-cyan/60 py-0.5 pl-3 text-[11.5px] leading-snug text-cyan/90">
+          {ball
+            ? "This section plans the week's conditioning when ball might not happen. Pick a backup and its days — it's ADDED after that day's workout (the workout stays), and doing it satisfies the weekly cardio rule."
+            : "This section plans the week's cardio. Pick a session and its days — it's ADDED after that day's workout (the workout stays), and doing it satisfies the weekly rule."}
+        </p>
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[13.5px] font-bold">
@@ -337,12 +342,12 @@ export function WeekScreen() {
             }`}>
               {cardioRequiredForWeek(data, addDaysISO(weekStart, 3))
                 ? week?.cardio
-                  ? 'Scheduled ✓ — it counts as the week\'s conditioning, never extra on top.'
+                  ? 'Scheduled ✓ — it rides on top of that day\'s workout and counts as the week\'s conditioning.'
                   : ball
                     ? 'REQUIRED: no ball logged → one backup session this week. Thursday holds the slot until you pick.'
                     : 'REQUIRED: no conditioning yet → at least one session this week. Pick below.'
                 : ball
-                  ? 'If the ball doesn\'t happen, one backup session is the rule. It replaces ball, never stacks on top.'
+                  ? 'If the ball doesn\'t happen, one backup session is the rule — it stands in for ball that week.'
                   : `Every plan carries cardio — ${condPerWeek} session${condPerWeek > 1 ? 's' : ''} a week for your goal. Sport counts; so do tracked runs and rides.`}
             </p>
             {(['A', 'B', 'circuit'] as const).map((g) => (
@@ -358,7 +363,10 @@ export function WeekScreen() {
                       tone={week?.cardio?.exerciseId === c.exerciseId ? 'accent' : 'default'}
                       onClick={() =>
                         updateWeek(weekStart, (w) => {
-                          w.cardio = w.cardio?.exerciseId === c.exerciseId ? null : { exerciseId: c.exerciseId, weekdays: [4] }
+                          w.cardio =
+                            w.cardio?.exerciseId === c.exerciseId
+                              ? null
+                              : { exerciseId: c.exerciseId, weekdays: [data.plan.anchors.conditioningWeekday] }
                         })
                       }
                     >
@@ -400,7 +408,9 @@ export function WeekScreen() {
                                 const next = has
                                   ? w.cardio.weekdays.filter((x) => x !== d)
                                   : [...w.cardio.weekdays, d as Weekday]
-                                w.cardio.weekdays = next.length ? next : w.cardio.weekdays
+                                // Unpicking the last day clears the whole schedule
+                                if (next.length === 0) w.cardio = null
+                                else w.cardio.weekdays = next
                               })
                             }
                             className={`h-8 w-9 rounded-lg text-[11px] font-bold ${

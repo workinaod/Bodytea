@@ -1,4 +1,5 @@
 import type { Goal, MealPlanConfig, MealTemplateDef, SupplementDef, SupplementId } from '../types'
+import { mealAlternatives } from './mealAlts'
 
 // ============================================================
 // Nutrition data from the NAOD V3 PDF. Protein numbers are the
@@ -214,46 +215,82 @@ export function buildNaodMealPlan(): MealPlanConfig {
 const r5 = (n: number) => Math.max(5, Math.round(n / 5) * 5)
 const r25 = (n: number) => Math.max(100, Math.round(n / 25) * 25)
 
+export type MealsPerDay = 2 | 3 | 4 | 5
+
+/** How each eating style divides the day. Percent pairs sum to 100/100. */
+const MEAL_SPLITS: Record<
+  MealsPerDay,
+  { slot: string; restSlot?: string; name: string; pPct: number; kPct: number }[]
+> = {
+  2: [
+    { slot: 'Meal 1', name: 'First plate — make it big', pPct: 0.45, kPct: 0.45 },
+    { slot: 'Meal 2', name: 'The anchor — biggest of the day', pPct: 0.55, kPct: 0.55 },
+  ],
+  3: [
+    { slot: 'Breakfast', name: 'High-protein start', pPct: 0.3, kPct: 0.3 },
+    { slot: 'Lunch', name: 'Protein + carbs plate', pPct: 0.3, kPct: 0.32 },
+    { slot: 'Dinner', name: 'The anchor meal', pPct: 0.4, kPct: 0.38 },
+  ],
+  4: [
+    { slot: 'Breakfast', name: 'High-protein start', pPct: 0.25, kPct: 0.24 },
+    { slot: 'Lunch', name: 'Protein + carbs plate', pPct: 0.3, kPct: 0.28 },
+    { slot: 'Pre / Post', restSlot: 'Snack', name: 'Training-window fuel', pPct: 0.15, kPct: 0.16 },
+    { slot: 'Dinner', name: 'The anchor meal', pPct: 0.3, kPct: 0.32 },
+  ],
+  5: [
+    { slot: 'Breakfast', name: 'High-protein start', pPct: 0.2, kPct: 0.2 },
+    { slot: 'Snack 1', name: 'Protein snack', pPct: 0.15, kPct: 0.14 },
+    { slot: 'Lunch', name: 'Protein + carbs plate', pPct: 0.25, kPct: 0.24 },
+    { slot: 'Snack 2', name: 'Second protein snack', pPct: 0.15, kPct: 0.14 },
+    { slot: 'Dinner', name: 'The anchor meal', pPct: 0.25, kPct: 0.28 },
+  ],
+}
+
+/** A concrete "here's what that looks like" line from common groceries. */
+function suggestDetail(proteinG: number, kcal: number, slot: string): string {
+  const alt = mealAlternatives({ proteinG, kcal, slot }, 1)[0]
+  if (!alt) return 'Any combo that hits the number.'
+  const gap = kcal - alt.kcal
+  const pad =
+    gap > 250 ? ' + a side to fill it out (toast, rice, fruit — whatever fits)' : gap < -200 ? ', portioned down to fit' : ''
+  return `E.g. ${alt.name.toLowerCase()}: ${alt.ingredients.join(' + ')}${pad}. Or anything else that hits the number.`
+}
+
 /**
- * A generated day of eating scaled to THIS user's protein target and
- * calorie budget — meal names stay generic ("any combo that hits the
- * number") so the templates describe a structure, not one man's fridge.
- * Protein split: 25 / 30 / 15 / 30. Kcal split: 24 / 28 / 16 / 32.
+ * A generated day of eating scaled to THIS user's protein target, calorie
+ * budget, AND how they actually like to eat — 2 big plates, 3 squares,
+ * 3 + a training snack, or grazing across 5. Fewer meals = bigger meals;
+ * every template carries a concrete common-grocery example.
  */
 export function buildMealPlan(
   goal: Goal,
   proteinTargetG: number,
   nutrition: { kcalTraining: number; kcalRest: number },
+  mealsPerDay: MealsPerDay = 4,
 ): MealPlanConfig {
   const p = Math.max(100, proteinTargetG || 160)
-  const lean = goal === 'lean'
-  const mk = (
-    id: string,
-    dayType: 'training' | 'rest',
-    slot: string,
-    name: string,
-    detail: string,
-    pPct: number,
-    kcalDay: number,
-    kPct: number,
-  ): MealTemplateDef => ({
-    id, dayType, slot, name, detail,
-    proteinG: r5(p * pPct),
-    kcal: r25(kcalDay * kPct),
-  })
-  const kt = nutrition.kcalTraining
-  const kr = nutrition.kcalRest
+  const tail = goal === 'lean' ? ' Protein first — the calorie number is a ceiling, not a target to beat.' : ''
+
+  const templates: MealTemplateDef[] = []
+  for (const dayType of ['training', 'rest'] as const) {
+    const kcalDay = dayType === 'training' ? nutrition.kcalTraining : nutrition.kcalRest
+    MEAL_SPLITS[mealsPerDay].forEach((s, i) => {
+      const proteinG = r5(p * s.pPct)
+      const kcal = r25(kcalDay * s.kPct)
+      const slot = dayType === 'rest' && s.restSlot ? s.restSlot : s.slot
+      templates.push({
+        id: `g-${dayType === 'training' ? 't' : 'r'}-${mealsPerDay}-${i}`,
+        dayType,
+        slot,
+        name: s.name,
+        detail: suggestDetail(proteinG, kcal, slot) + tail,
+        proteinG,
+        kcal,
+      })
+    })
+  }
   return {
-    templates: [
-      mk('g-t-breakfast', 'training', 'Breakfast', 'High-protein start', 'Eggs + toast, Greek yogurt bowl, or protein oatmeal — anything that hits the number.', 0.25, kt, 0.24),
-      mk('g-t-lunch', 'training', 'Lunch', 'Protein + carbs plate', 'A palm-and-a-half of protein, a big scoop of rice/potatoes/pasta, veg on the side.', 0.3, kt, 0.28),
-      mk('g-t-shake', 'training', 'Pre / Post', 'Training-window fuel', 'Shake + fruit around the session. Cheapest protein of the day.', 0.15, kt, 0.16),
-      mk('g-t-dinner', 'training', 'Dinner', 'The anchor meal', 'Meat/fish/tofu + starch + vegetables. Eat like it matters — it does.', 0.3, kt, 0.32),
-      mk('g-r-breakfast', 'rest', 'Breakfast', 'High-protein start', lean ? 'Egg whites + fruit, yogurt bowl — lighter on rest days.' : 'Eggs, yogurt bowl, or oats + scoop.', 0.25, kr, 0.24),
-      mk('g-r-lunch', 'rest', 'Lunch', 'Protein-forward plate', 'Protein first, smaller starch than training days, plenty of veg.', 0.3, kr, 0.28),
-      mk('g-r-snack', 'rest', 'Snack', 'Protein snack', 'Cottage cheese, jerky, shake, or skyr — keep the number moving.', 0.15, kr, 0.16),
-      mk('g-r-dinner', 'rest', 'Dinner', 'The anchor meal', 'Same anchor, lighter starch. Protein never drops on rest days.', 0.3, kr, 0.32),
-    ],
+    templates,
     grocery: [
       { category: 'Protein', items: ['Your 2-3 staple proteins (chicken, beef, fish, tofu…)', 'Eggs', 'Greek yogurt or skyr', 'Whey or plant protein', 'Cottage cheese'] },
       { category: 'Carbs', items: ['Rice or potatoes (big bag)', 'Oats', 'Bread or tortillas', 'Fruit for the week', 'Pasta or quinoa'] },

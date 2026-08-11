@@ -89,6 +89,7 @@ export function Onboarding() {
   const [profile, setProfile] = useState<'gym' | 'home-db' | 'minimal'>('gym')
   const [extras, setExtras] = useState<Set<EquipTag>>(new Set())
   const [experience, setExperience] = useState<'new' | 'returning' | 'trained'>('returning')
+  const [mealsPerDay, setMealsPerDay] = useState<2 | 3 | 4 | 5>(4)
   const [weight, setWeight] = useState(180)
   const [vert, setVert] = useState(0)
   const [pickedStart, setPickedStart] = useState(mondayOf(todayISO()))
@@ -109,8 +110,9 @@ export function Onboarding() {
       extraEquip: [...extras],
       experience,
       bodyweightLb: weight,
+      mealsPerDay,
     }
-  }, [goal, goalStatement, target1, days, profile, extras, experience, weight])
+  }, [goal, goalStatement, target1, days, profile, extras, experience, weight, mealsPerDay])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
@@ -188,6 +190,7 @@ export function Onboarding() {
       goalStatement,
       customTargets: answers.customTargets,
       bodyweightLb: weight,
+      mealsPerDay,
     })
     setByorDraft((prev) =>
       prev
@@ -470,6 +473,32 @@ export function Onboarding() {
             <div className="flex items-center justify-between">
               <span className="text-[14px] font-bold">Bodyweight</span>
               <Stepper value={weight} onChange={setWeight} step={1} suffix="lb" width="w-20" />
+            </div>
+            <div>
+              <span className="text-[14px] font-bold">How do you actually eat?</span>
+              <p className="mt-0.5 text-[11px] leading-snug text-ink-faint">
+                Your meal plan is built around this — fewer meals just means bigger ones. Protein stays the same.
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                {(
+                  [
+                    [2, '2 big meals'],
+                    [3, '3 square meals'],
+                    [4, '3 meals + a snack'],
+                    [5, 'Grazer — 5 small'],
+                  ] as const
+                ).map(([n, label]) => (
+                  <button
+                    key={n}
+                    onClick={() => setMealsPerDay(n)}
+                    className={`rounded-xl border px-3 py-2.5 text-[12.5px] font-bold ${
+                      mealsPerDay === n ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-surface-2 text-ink-dim'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[14px] font-bold">Standing reach / vert touch <span className="text-[11px] text-ink-faint">(optional)</span></span>
