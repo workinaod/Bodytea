@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Btn } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
-import { normalizePhone, validPin, validUsername, type SyncMeta } from '../../cloud/logic'
+import { normalizePhone, pinProblem, validPinForSignIn, validUsername, type SyncMeta } from '../../cloud/logic'
 import type * as CloudModule from '../../cloud/sync'
 import type { SyncStatus } from '../../cloud/sync'
 
@@ -69,7 +69,8 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
     run(async () => {
       if (!cloud || !digits) throw new Error('Enter a real phone number.')
       if (!validUsername(uname)) throw new Error('Username: 3–16 lowercase letters, numbers, or underscores.')
-      if (!validPin(pin)) throw new Error('PIN: 4–8 digits.')
+      const bad = pinProblem(pin)
+      if (bad) throw new Error(bad)
       if (pin !== pin2) throw new Error('PINs do not match.')
       const { recoveryCode } = await cloud.registerAccount({ phone: digits, username: uname, pin })
       setIssuedCode(recoveryCode)
@@ -79,7 +80,9 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
   const submitSignIn = () =>
     run(async () => {
       if (!cloud || !digits) throw new Error('Enter a real phone number.')
-      if (!validPin(pin)) throw new Error('PIN: 4–8 digits.')
+      // Sign-in stays permissive: accounts made under the old 4-digit
+      // rule still have to be able to get in.
+      if (!validPinForSignIn(pin)) throw new Error('PIN: 4 to 8 digits.')
       await cloud.signIn({ phone: digits, pin })
       setView('status')
     })
@@ -87,7 +90,8 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
   const submitReset = () =>
     run(async () => {
       if (!cloud || !digits) throw new Error('Enter a real phone number.')
-      if (!validPin(pin)) throw new Error('New PIN: 4–8 digits.')
+      const badNew = pinProblem(pin)
+      if (badNew) throw new Error(badNew)
       if (pin !== pin2) throw new Error('PINs do not match.')
       const { recoveryCode } = await cloud.resetPin({ phone: digits, recoveryCode: recovery, newPin: pin })
       setIssuedCode(recoveryCode)
@@ -149,7 +153,9 @@ export function AccountSheet({ open, onClose }: { open: boolean; onClose: () => 
             <input
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-              placeholder={view === 'reset' ? 'New PIN (4–8 digits)' : 'PIN (4–8 digits)'}
+              placeholder={
+                view === 'signin' ? 'PIN' : view === 'reset' ? 'New PIN (6 to 8 digits)' : 'PIN (6 to 8 digits)'
+              }
               inputMode="numeric"
               type="password"
               className={field}

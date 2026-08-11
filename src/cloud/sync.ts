@@ -8,6 +8,8 @@ import {
   ENVELOPE_MAX_BYTES,
   decideAdoption,
   derivePassword,
+  derivePasswordV1,
+  derivePasswordV2,
   emailFor,
   isPristine,
   loadSyncMeta,
@@ -236,9 +238,38 @@ export async function registerAccount(args: {
   return { recoveryCode: res.recoveryCode }
 }
 
+/**
+ * Sign in, upgrading the account's key derivation on the way through.
+ *
+ * v2 is tried first, so an already-upgraded account costs one request.
+ * If that fails we try the frozen v1 formula; a v1 success means this
+ * account predates the upgrade, and since we are now authenticated we can
+ * quietly re-key it to v2. Nobody is prompted and nobody is locked out.
+ *
+ * If the re-key fails (offline, token expired) the account simply stays
+ * v1 and the next sign-in tries again, so this is self-healing rather
+ * than a one-shot migration.
+ */
 export async function signIn(args: { phone: string; pin: string }): Promise<void> {
-  const password = await derivePassword(args.phone, args.pin)
-  const { error } = await supabase().auth.signInWithPassword({ email: emailFor(args.phone), password })
+  const email = emailFor(args.phone)
+  const auth = supabase().auth
+
+  const v2 = await derivePasswordV2(args.phone, args.pin)
+  let { error } = await auth.signInWithPassword({ email, password: v2 })
+
+  if (error) {
+    const v1 = await derivePasswordV1(args.phone, args.pin)
+    const legacy = await auth.signInWithPassword({ email, password: v1 })
+    error = legacy.error
+    if (!error) {
+      const { error: rekey } = await auth.updateUser({ password: v2 })
+      // A failed re-key is not a failed sign-in. They are in; try again later.
+      if (rekey) console.warn('PIN re-key deferred:', rekey.message)
+    }
+  }
+
+  // One message for every failure mode. Telling someone "no such account"
+  // turns a phone number into an oracle for who has one.
   if (error) throw new Error('Wrong number or PIN.')
   await afterSignIn(args.phone)
 }
