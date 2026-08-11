@@ -22,7 +22,6 @@ export interface CardioActivityDef {
 
 export const CARDIO_ACTIVITIES: CardioActivityDef[] = [
   { id: 'run', label: 'Run', emoji: '🏃', conditioning: true, asks: { where: true, miles: true, minutes: true } },
-  { id: 'run-club', label: 'Run club', emoji: '👟', conditioning: true, asks: { miles: true, minutes: true } },
   { id: 'bike', label: 'Bike', emoji: '🚴', conditioning: true, asks: { where: true, miles: true, minutes: true } },
   { id: 'swim', label: 'Swim', emoji: '🏊', conditioning: true, asks: { minutes: true } },
   {

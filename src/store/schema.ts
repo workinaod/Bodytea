@@ -99,6 +99,7 @@ export const planConfigSchema = z.object({
   sportMode: z.enum(['ball', 'generic']).optional(),
   dietStyle: z.enum(['omnivore', 'vegetarian', 'vegan']).optional(),
   experience: z.enum(['new', 'returning', 'trained']).optional(),
+  goalAnswers: z.record(z.string(), z.string()).optional(),
   mealPlan: z.object({
     templates: z.array(
       z.object({

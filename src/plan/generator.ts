@@ -46,6 +46,8 @@ export interface OnboardingAnswers {
   skipMeals?: boolean
   /** Up to two body areas that get guaranteed direct weekly work. */
   focusAreas?: FocusArea[]
+  /** One-tap answers to the goal follow-up questions (GOAL_FOLLOWUPS). */
+  goalAnswers?: Record<string, string>
 }
 
 // ---------- Focus areas: direct work the user explicitly asked for ----------
@@ -455,18 +457,137 @@ function buildRationale(goal: Goal, goalStatement: string, ids: string[]): Recor
 
 // ---------- Nutrition ----------
 
-export function buildNutrition(goal: Goal, bodyweightLb: number, sex?: 'male' | 'female') {
+export function buildNutrition(
+  goal: Goal,
+  bodyweightLb: number,
+  sex?: 'male' | 'female',
+  ans: Record<string, string> = {},
+) {
   const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
   // Same protein either way (1 g/lb); the calorie baseline runs a notch
   // lower for women (bw×14 vs ×15), standard TDEE difference.
   const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50
   const adj: Record<Goal, number> = { muscle: 300, strength: 250, vertical: 200, speed: 150, general: 100, lean: -300 }
-  const kcalTraining = base + adj[goal]
+  let kcalTraining = base + adj[goal]
+  // Follow-up answers sharpen the number. A 30+ lb cut needs a real
+  // deficit; a desk-bound day burns less than the formula assumes.
+  if (goal === 'lean') {
+    if (ans['lose-amount'] === '30+ lb') kcalTraining -= 150
+    else if (ans['lose-amount'] === '15 to 30 lb') kcalTraining -= 75
+    if (ans['day-movement'] === 'Mostly sitting') kcalTraining -= 50
+    kcalTraining = Math.max(1700, kcalTraining)
+  }
+  if (goal === 'muscle' && ans['gain-amount'] === 'As much as possible') kcalTraining += 100
   return {
     proteinTargetG: Math.min(260, Math.max(120, Math.round(bw))),
     kcalTraining,
     kcalRest: kcalTraining - 300,
   }
+}
+
+// ---------- Goal follow-ups: the coach's extra questions ----------
+// "Gain 20 lbs of muscle" alone can't build a great plan. One tap per
+// question, every answer changes numbers or strategy. Never more than
+// three, nobody gets lost before day one.
+
+export interface GoalFollowup {
+  id: string
+  q: string
+  options: string[]
+}
+
+export const GOAL_FOLLOWUPS: Record<Goal, GoalFollowup[]> = {
+  lean: [
+    { id: 'lose-amount', q: 'How much are you looking to lose?', options: ['Under 15 lb', '15 to 30 lb', '30+ lb'] },
+    { id: 'food-struggle', q: 'Biggest food struggle?', options: ['Snacking', 'Portions', 'Sugar & drinks', 'Late-night eating'] },
+    { id: 'day-movement', q: 'Outside the gym, your day is', options: ['Mostly sitting', 'On my feet', 'Pretty active'] },
+  ],
+  muscle: [
+    { id: 'gain-amount', q: 'How much muscle are you after?', options: ['10 lb', '20 lb', 'As much as possible'] },
+    { id: 'appetite', q: 'How is your appetite?', options: ['Hard to eat enough', 'Normal', 'Always hungry'] },
+    { id: 'sleep', q: 'Sleep on most nights?', options: ['Under 6 h', '6 to 7 h', '8+ h'] },
+  ],
+  strength: [
+    { id: 'lift-focus', q: 'Which lift matters most?', options: ['Squat', 'Bench', 'Deadlift', 'All of them'] },
+    { id: 'maxes', q: 'Know your current maxes?', options: ['Yes', 'Roughly', 'No idea'] },
+  ],
+  vertical: [
+    { id: 'vert-now', q: 'Where is your vertical now?', options: ['Touch the rim', 'Close to it', 'Not close yet'] },
+    { id: 'jump-history', q: 'Jump training before?', options: ['Never', 'Some', 'A lot'] },
+  ],
+  speed: [
+    { id: 'speed-now', q: 'Full sprint lately feels', options: ['Smooth', 'Stiff', 'Have not sprinted in years'] },
+    { id: 'surface', q: 'Somewhere to sprint nearby?', options: ['Field or track', 'Street or park', 'Treadmill only'] },
+  ],
+  general: [
+    { id: 'matters-most', q: 'What matters most?', options: ['More energy', 'Look better', 'Health numbers', 'All of it'] },
+    { id: 'day-movement', q: 'Outside the gym, your day is', options: ['Mostly sitting', 'On my feet', 'Pretty active'] },
+  ],
+}
+
+/**
+ * The plan's thinking, written out. Weight loss gets the full metabolic
+ * picture (insulin, inflammation, gut health), not just a calorie number.
+ * Shown on the booklet preview and pinned to the Record on day one.
+ */
+export function deepGoalStrategy(
+  goal: Goal,
+  ans: Record<string, string>,
+  n: { kcalTraining: number; kcalRest: number; proteinTargetG: number },
+): string[] {
+  const out: string[] = []
+  if (goal === 'lean') {
+    out.push(
+      `Training days run ${n.kcalTraining} kcal, rest days ${n.kcalRest}. A deficit your body can hold for months without rebounding.`,
+      `Protein holds at ${n.proteinTargetG} g so what you lose is fat, not muscle. Protein-first meals also keep insulin calm, and calm insulin is when fat actually burns.`,
+      'The deeper game: whole foods over packaged ones to cool inflammation, fiber and fermented foods for your gut, and a 10-minute walk after meals to flatten the sugar spike.',
+    )
+    if (ans['food-struggle'] === 'Late-night eating')
+      out.push('Your leak is late night. Meals front-load earlier so the 11pm pull loses its grip, and the late-night list keeps only safe picks.')
+    if (ans['food-struggle'] === 'Sugar & drinks')
+      out.push('Liquid sugar is the fastest insulin spike there is. Swap the drinks first and half the deficit handles itself.')
+    if (ans['food-struggle'] === 'Snacking')
+      out.push('Snacking usually means meals run too small. Yours are built bigger and protein-heavy so grazing loses its pull.')
+    if (ans['food-struggle'] === 'Portions')
+      out.push('Portions are pre-decided here: every meal carries its numbers. Eat what is written, skip the guessing.')
+    if (ans['day-movement'] === 'Mostly sitting')
+      out.push('Desk days burn less than formulas assume, so your target sits a notch lower and daily walks count as real training.')
+  } else if (goal === 'muscle') {
+    out.push(
+      `A controlled surplus (${n.kcalTraining} kcal on training days) plus ${n.proteinTargetG} g protein. Big enough to build, small enough to stay lean.`,
+      'Muscle is built on progression: when a weight feels easy, the next session loads heavier. The check-ins handle that automatically.',
+    )
+    if (ans['appetite'] === 'Hard to eat enough')
+      out.push('Eating enough is your real bottleneck, so lean on the calorie-dense picks in your meal plan and liquid calories like shakes and milk.')
+    if (ans['sleep'] === 'Under 6 h')
+      out.push('Under 6 hours of sleep quietly caps muscle growth and spikes hunger hormones. Treat 7+ as part of the program.')
+  } else if (goal === 'strength') {
+    out.push(
+      'Strength is a skill: the same big lifts come back week after week so your nervous system learns them cold.',
+      `Protein at ${n.proteinTargetG} g and a small surplus keep the engine fed without adding a gut.`,
+    )
+    if (ans['maxes'] === 'No idea')
+      out.push('No maxes needed. The first two weeks find your working weights, then the numbers climb from there.')
+    if (ans['lift-focus'] && ans['lift-focus'] !== 'All of them')
+      out.push(`${ans['lift-focus']} leads its day every week. Priority lifts come first when you are freshest.`)
+  } else if (goal === 'vertical' || goal === 'speed') {
+    out.push(
+      'Explosive work is nervous-system work: max-effort days stay short and sharp, never ground into fatigue.',
+      'Strength days build the engine, jump and sprint days teach it to fire. Both live in your week.',
+    )
+    if (ans['jump-history'] === 'Never' || ans['speed-now'] === 'Have not sprinted in years')
+      out.push('Starting volume is deliberately low. Tendons adapt slower than muscles, and rushing this is how people get hurt.')
+    if (ans['surface'] === 'Treadmill only')
+      out.push('Treadmill sprints work fine to start. When you can, find open ground: real acceleration is a different animal.')
+  } else {
+    out.push(
+      'Consistency beats intensity for this goal: the plan is sized so an average week is actually finishable.',
+      `Protein at ${n.proteinTargetG} g and daily movement do more for energy and health markers than any single workout.`,
+    )
+    if (ans['day-movement'] === 'Mostly sitting')
+      out.push('The biggest win outside the gym: break up sitting. Short walks count, and the plan reminds you.')
+  }
+  return out
 }
 
 const GOAL_LABEL: Record<Goal, string> = {
@@ -480,7 +601,7 @@ const GOAL_LABEL: Record<Goal, string> = {
 
 // ---------- The generator ----------
 
-export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinTargetG: number } {
+export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinTargetG: number; strategy: string[] } {
   const owned = ownedTags(a)
   const family = FAMILY[a.goal]
   const layout = LAYOUTS[family][a.daysPerWeek]
@@ -597,7 +718,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
       .filter((id) => ['lift', 'core', 'carry'].includes(getExercise(id).kind)),
   )]
 
-  const nutrition = buildNutrition(a.goal, a.bodyweightLb, a.sex)
+  const nutrition = buildNutrition(a.goal, a.bodyweightLb, a.sex, a.goalAnswers ?? {})
 
   // Rep waves: the same lift slot moves through a different scheme each
   // 4-week block, volume, load, then a goal-flavored finisher.
@@ -655,6 +776,11 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     sportMode: 'generic',
     dietStyle: a.dietStyle ?? 'omnivore',
     experience: a.experience,
+    goalAnswers: a.goalAnswers,
   }
-  return { plan, proteinTargetG: nutrition.proteinTargetG }
+  return {
+    plan,
+    proteinTargetG: nutrition.proteinTargetG,
+    strategy: deepGoalStrategy(a.goal, a.goalAnswers ?? {}, nutrition),
+  }
 }

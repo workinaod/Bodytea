@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildNutrition, generatePlan, ownedTags, type OnboardingAnswers } from './generator'
+import { buildNutrition, deepGoalStrategy, generatePlan, ownedTags, type OnboardingAnswers } from './generator'
 import { canDo } from './equip'
 import { EXERCISES } from './exercises'
 import { planConfigSchema } from '../store/schema'
@@ -228,5 +228,44 @@ describe('block periodization + sex-aware nutrition', () => {
     const f = buildNutrition('muscle', 160, 'female')
     expect(f.kcalTraining).toBeLessThan(m.kcalTraining)
     expect(f.proteinTargetG).toBe(m.proteinTargetG)
+  })
+})
+
+describe('goal follow-ups deepen the plan', () => {
+  it('a bigger cut and a desk job lower the lean calorie target', () => {
+    const base = buildNutrition('lean', 200)
+    const deep = buildNutrition('lean', 200, undefined, {
+      'lose-amount': '30+ lb',
+      'day-movement': 'Mostly sitting',
+    })
+    expect(deep.kcalTraining).toBe(base.kcalTraining - 200)
+    expect(deep.kcalRest).toBeGreaterThanOrEqual(1400)
+  })
+
+  it('lean strategy covers insulin, inflammation and gut, plus the tap answers', () => {
+    const n = buildNutrition('lean', 200)
+    const s = deepGoalStrategy('lean', { 'food-struggle': 'Late-night eating' }, n).join(' ')
+    expect(s).toContain('insulin')
+    expect(s).toContain('inflammation')
+    expect(s).toContain('gut')
+    expect(s).toContain('late night')
+    expect(s).not.toContain('—')
+  })
+
+  it('answers ride along on the generated plan', () => {
+    const a: OnboardingAnswers = {
+      goal: 'lean',
+      goalStatement: 'lose 30 lb by summer',
+      customTargets: [],
+      daysPerWeek: 4,
+      equipProfile: 'gym',
+      extraEquip: [],
+      experience: 'returning',
+      bodyweightLb: 220,
+      goalAnswers: { 'lose-amount': '30+ lb' },
+    }
+    const { plan, strategy } = generatePlan(a)
+    expect(plan.goalAnswers?.['lose-amount']).toBe('30+ lb')
+    expect(strategy.length).toBeGreaterThanOrEqual(3)
   })
 })

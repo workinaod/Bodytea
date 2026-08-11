@@ -12,7 +12,7 @@ const LIFE_CHIPS: { id: string; chip: string; label: string; kind: LifeEventKind
 import { mondayOf, todayISO, formatShort, addDaysISO } from '../engine/calendar'
 import { useAppStore, uid } from '../store/appStore'
 import { saveMeasurement } from '../logic/actions'
-import { generatePlan, buildNutrition, FOCUS_LABELS, type FocusArea, type OnboardingAnswers } from '../plan/generator'
+import { generatePlan, buildNutrition, FOCUS_LABELS, GOAL_FOLLOWUPS, type FocusArea, type OnboardingAnswers } from '../plan/generator'
 import { byorNutrition, makeEmptyByorPlan, normalizeBooklet, validateBooklet, ROUTINE_GOAL_LABELS } from '../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../plan/analyze'
 import { BookletEditor } from './booklet/BookletEditor'
@@ -93,6 +93,7 @@ export function Onboarding() {
   const [routineGoals, setRoutineGoals] = useState<Set<RoutineGoal>>(new Set())
   const [whyWorks, setWhyWorks] = useState('')
   const [goalStatement, setGoalStatement] = useState('')
+  const [goalAnswers, setGoalAnswers] = useState<Record<string, string>>({})
   const [target1, setTarget1] = useState<{ label: string; target: string; unit: string }>({ label: '', target: '', unit: '' })
   const [days, setDays] = useState<3 | 4 | 5 | 6>(4)
   const [profile, setProfile] = useState<'gym' | 'home-db' | 'minimal'>('gym')
@@ -120,6 +121,7 @@ export function Onboarding() {
     return {
       goal,
       goalStatement: goalStatement.trim(),
+      goalAnswers,
       customTargets,
       daysPerWeek: days,
       equipProfile: profile,
@@ -136,7 +138,7 @@ export function Onboarding() {
       focusAreas: [...focusAreas],
       sex: sex ?? undefined,
     }
-  }, [goal, goalStatement, target1, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, skipMeals, focusAreas, sex])
+  }, [goal, goalStatement, goalAnswers, target1, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, skipMeals, focusAreas, sex])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
@@ -162,7 +164,7 @@ export function Onboarding() {
     setExtras((prev) => new Set([...prev].filter((t) => visible.has(t))))
   }
 
-  function commitPlan(plan: PlanConfig, proteinTargetG: number, notes: RoutineNote[] = []) {
+  function commitPlan(plan: PlanConfig, proteinTargetG: number, notes: RoutineNote[] = [], strategy: string[] = []) {
     const start = mondayOf(pickedStart)
     void navigator.storage?.persist?.().catch(() => {})
     update((d) => {
@@ -176,6 +178,10 @@ export function Onboarding() {
       const at = new Date().toISOString()
       for (const n of notes.slice(0, 4)) {
         d.coach.feed.unshift({ id: uid(), at, kind: 'insight', text: `📓 Routine notes: ${n.text}` })
+      }
+      // The plan's strategy, pinned to the Record on day one
+      for (const s of strategy.slice(0, 3).reverse()) {
+        d.coach.feed.unshift({ id: uid(), at, kind: 'insight', text: `🧠 ${s}` })
       }
       if (plan.whyWorks?.trim()) {
         d.coach.feed.unshift({
@@ -350,6 +356,38 @@ export function Onboarding() {
             className="mt-2 w-full resize-none rounded-xl border border-edge bg-surface px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:border-accent/60"
           />
           <p className="mt-1 text-[11px] text-ink-faint">This phrase follows you through the whole app. Make it yours.</p>
+
+          {/* The coach's follow-ups: "gain 20 lbs" alone can't build a
+              great plan. One tap each, every answer shapes the build. */}
+          {mode !== 'byor' && goalChip !== null && (
+            <div className="mt-5 rounded-2xl bg-surface p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-accent">Coach follow-ups</p>
+              <p className="mt-0.5 text-[11px] text-ink-faint">One tap each. Every answer changes how your plan gets built.</p>
+              {GOAL_FOLLOWUPS[goal].map((fq) => (
+                <div key={fq.id} className="mt-3.5">
+                  <p className="text-[12.5px] font-bold">{fq.q}</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {fq.options.map((o) => (
+                      <Chip
+                        key={o}
+                        tone={goalAnswers[fq.id] === o ? 'accent' : 'default'}
+                        onClick={() =>
+                          setGoalAnswers((p) => {
+                            const n = { ...p }
+                            if (n[fq.id] === o) delete n[fq.id]
+                            else n[fq.id] = o
+                            return n
+                          })
+                        }
+                      >
+                        {o}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Optional: a number to beat</p>
           <div className="mt-2 flex gap-2">
@@ -743,12 +781,30 @@ export function Onboarding() {
             </Card>
           </div>
 
-          <p className="mt-3 text-[12px] leading-relaxed text-ink-dim">
+          {/* The plan's thinking, spelled out. Deep beats generic. */}
+          {preview.strategy.length > 0 && (
+            <div className="mt-3 rounded-2xl bg-surface p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">How this plan thinks</p>
+              <ul className="mt-2 space-y-2">
+                {preview.strategy.map((s, i) => (
+                  <li key={i} className="flex gap-2 text-[12.5px] leading-snug text-ink-dim">
+                    <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-gold/70" />
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="mt-3 text-center text-[12px] leading-relaxed text-ink-dim">
             4-week blocks with a built-in deload · exercises AND rep schemes rotate every block · A/B weeks ·
             busy-week fallback tiers · every movement with photo demos and muscle maps · a coach that keeps receipts.
           </p>
 
-          <Btn className="mt-5 w-full py-4 text-[16px]" onClick={() => commitPlan(preview.plan, preview.proteinTargetG)}>
+          <Btn
+            className="mt-5 w-full py-4 text-[16px]"
+            onClick={() => commitPlan(preview.plan, preview.proteinTargetG, [], preview.strategy)}
+          >
             Start Week 1, let's work
           </Btn>
           <Btn

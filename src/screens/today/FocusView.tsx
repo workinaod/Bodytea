@@ -53,7 +53,7 @@ function loadLabel(equipment: string): string {
     trimmed to their opening clause. Never the write-up verbatim. */
 function shortHowTo(def: ExerciseDef): string {
   const bits = [def.cue, ...def.steps.slice(0, 2).map((s) => s.split(/[,.;, (]/)[0]?.trim())]
-  return `${bits.filter(Boolean).join('. ')}.`
+  return `${bits.filter((b): b is string => !!b).map((b) => b.replace(/\.+$/, '')).join('. ')}.`
 }
 
 export function FocusView({
@@ -77,6 +77,7 @@ export function FocusView({
   // 'go' = the ready gate (weight confirm), 'live' = they're working
   const [phase, setPhase] = useState<'go' | 'live'>('go')
   const [caption, setCaption] = useState('')
+  const [howToOpen, setHowToOpen] = useState(false)
   const data = useAppStore((s) => s.data)
   const update = useAppStore((s) => s.update)
   // Four sound levels: full voice / beeps + next-exercise name / beeps / silent
@@ -273,7 +274,8 @@ export function FocusView({
     const weightBit = isLoaded && set.weightLb !== undefined ? ` at ${set.weightLb} pounds` : ''
     const intro = `${def.name}. Set ${current.setIdx + 1} of ${ex?.sets.length}: ${repsBit}${weightBit}.`
     const prompt = isLoaded ? `${loadLabel(def.equipment)} first, then say ready.` : 'Say ready when set.'
-    setCaption(`${intro} ${prompt}`)
+    // Spoken only. The screen already shows all of this (name, set line,
+    // weight card), so no caption: screen-followers don't need an echo.
     if (soundRef.current === 'voice') say(`${intro} ${prompt}`, { interrupt: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posKey, breakState, phase])
@@ -446,7 +448,7 @@ export function FocusView({
       {/* Exercise name + prescription, told, not picked */}
       <div className="mt-3 px-5 text-center">
         <h2 className="text-[25px] font-black leading-tight tracking-tight">{def.name}</h2>
-        <div className="mt-1.5 text-[12px] font-black uppercase tracking-[0.14em] text-ink-dim">
+        <div className="mt-1.5 text-[15.5px] font-black uppercase tracking-[0.1em] text-ink-dim">
           Set {current.setIdx + 1} of {totalSetsThisEx}
           <span className="text-accent-soft"> · {set.targetReps}{!isTimed && !/rep/i.test(set.targetReps) ? ' reps' : ''}</span>
           {resolved?.lightMode && <span className="text-gold"> · light</span>}
@@ -506,7 +508,7 @@ export function FocusView({
           </div>
 
           <ol className="mt-3 space-y-2">
-            {def.steps.slice(0, def.videoId ? 3 : 4).map((s, i) => (
+            {def.steps.slice(0, 3).map((s, i) => (
               <li key={i} className="flex gap-2.5 text-[13px] leading-snug text-ink-dim">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[10.5px] font-black text-accent">
                   {i + 1}
@@ -567,17 +569,20 @@ export function FocusView({
             {current.setIdx + 1 === totalSetsThisEx ? 'SET DONE. NEXT' : 'NEXT SET ✓'}
           </button>
         )}
-        <div className="mt-2 flex items-center justify-center gap-5 pb-1">
+        <div className="mt-2.5 flex items-center justify-center gap-2 pb-1">
           {staleOnFirst && (
-            <button onClick={restartFresh} className="text-[11.5px] font-semibold text-cyan underline">
-              ↻ restart with fresh time
+            <button onClick={restartFresh} className="rounded-full bg-surface-2 px-4 py-2.5 text-[12px] font-bold text-cyan active:scale-95">
+              ↻ Fresh time
             </button>
           )}
-          <button onClick={speakInstructions} className="text-[11.5px] font-semibold text-ink-faint underline">
-            how do I do this?
+          <button
+            onClick={() => setHowToOpen(true)}
+            className="rounded-full bg-surface-2 px-4 py-2.5 text-[12px] font-bold text-ink-dim active:scale-95"
+          >
+            How do I do this?
           </button>
-          <button onClick={onSkip} className="text-[11.5px] font-semibold text-danger underline">
-            can't finish
+          <button onClick={onSkip} className="rounded-full bg-danger/15 px-4 py-2.5 text-[12px] font-bold text-danger active:scale-95">
+            Can't finish
           </button>
         </div>
       </div>
@@ -594,6 +599,71 @@ export function FocusView({
           }
         />
       )}
+      {howToOpen && <HowToSlides def={def} onClose={() => setHowToOpen(false)} />}
+    </div>
+  )
+}
+
+// ---------- "How do I do this?": one step per screen, swipe-simple ----------
+
+function HowToSlides({ def, onClose }: { def: ExerciseDef; onClose: () => void }) {
+  const [i, setI] = useState(0)
+  const slides = useMemo(() => {
+    const s = def.steps.map((text, n) => ({ tag: `Step ${n + 1}`, text, tone: 'text-accent' }))
+    for (const m of def.mistakes.slice(0, 2)) s.push({ tag: "Don't", text: m, tone: 'text-danger' })
+    if (def.cue) s.push({ tag: 'Remember', text: def.cue, tone: 'text-gold' })
+    return s
+  }, [def])
+  const last = i === slides.length - 1
+  const slide = slides[i]
+
+  return (
+    <div className="fixed inset-0 z-[70] flex flex-col bg-bg px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-[max(env(safe-area-inset-top),14px)]">
+      <div className="flex items-center justify-between py-1">
+        <div className="min-w-0 truncate pr-3 text-[13px] font-bold uppercase tracking-[0.14em] text-ink-dim">
+          {def.name}
+        </div>
+        <button
+          aria-label="Close"
+          onClick={onClose}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink-dim"
+        >
+          <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="mt-2">
+        <ExerciseDemo spec={demoFor(def.id)} photos={photosFor(def.id)} />
+      </div>
+
+      {/* the slide: one idea at a time, big enough to read mid-set */}
+      <div className="flex flex-1 flex-col items-center justify-center px-2 text-center">
+        <div className={`text-[11px] font-black uppercase tracking-[0.22em] ${slide.tone}`}>{slide.tag}</div>
+        <p className="mt-3 text-[19px] font-bold leading-snug">{slide.text}</p>
+      </div>
+
+      <div className="mb-3 flex items-center justify-center gap-1.5">
+        {slides.map((_, n) => (
+          <span key={n} className={`h-1.5 rounded-full transition-all ${n === i ? 'w-5 bg-accent' : 'w-1.5 bg-edge'}`} />
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setI((n) => Math.max(0, n - 1))}
+          disabled={i === 0}
+          className="flex-1 rounded-2xl bg-surface-2 py-4 text-[14px] font-black text-ink-dim disabled:opacity-30"
+        >
+          Back
+        </button>
+        <button
+          onClick={() => (last ? onClose() : setI((n) => n + 1))}
+          className="flex-[2] rounded-2xl bg-accent py-4 text-[14px] font-black text-black"
+        >
+          {last ? 'Got it' : 'Next'}
+        </button>
+      </div>
     </div>
   )
 }

@@ -221,6 +221,8 @@ export interface PlanConfig {
   dietStyle?: DietStyle
   /** Training history from onboarding, seeds first-session weights. */
   experience?: 'new' | 'returning' | 'trained'
+  /** One-tap goal follow-up answers, the coach's extra context. */
+  goalAnswers?: Record<string, string>
 }
 
 export interface Profile {
