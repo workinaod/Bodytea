@@ -78,6 +78,9 @@ export const planConfigSchema = z.object({
   tierDefaultPlacement: z.record(z.string(), z.record(z.string(), weekday)),
   slots: z.record(z.string(), z.record(z.string(), z.string())),
   slotRepOverrides: z.record(z.string(), z.object({ repText: z.string(), repsNum: z.number().optional() })),
+  slotRepsByBlock: z
+    .record(z.string(), z.record(z.string(), z.object({ repText: z.string(), repsNum: z.number().optional() })))
+    .optional(),
   cardioOptions: z.array(
     z.object({ exerciseId: z.string(), repText: z.string(), group: z.enum(['A', 'B', 'circuit']) }),
   ),

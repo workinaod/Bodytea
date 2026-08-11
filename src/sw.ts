@@ -35,6 +35,7 @@ interface ReminderMeta {
   reviewNotifiedMark?: string | null
   checkinDueToday?: boolean
   checkinNotifiedDate?: string | null
+  missNotifiedDate?: string | null
 }
 
 function readMeta(): Promise<ReminderMeta | null> {
@@ -114,6 +115,33 @@ async function maybeNotify(): Promise<void> {
     })
     await writeMeta(meta, { checkinNotifiedDate: today0 })
     meta.checkinNotifiedDate = today0
+  }
+
+  // The Sergeant's 22:00 word on a missed day — one note, and a job to do
+  // right there on the floor. Fires once per missed day, ever.
+  if (
+    meta.todayScheduled &&
+    !meta.todayDone &&
+    now0.getHours() >= 22 &&
+    meta.missNotifiedDate !== today0 &&
+    meta.todayDate === today0
+  ) {
+    const LINES = [
+      "Missed today. The day isn't over: 30 sit-ups, right now, wherever you are. Then we're square — tomorrow the real work resumes.",
+      'Today got away from you. Fine. 20 push-ups before bed — missing a session is survivable, missing the standard is not.',
+      'No session logged. One-minute plank, right now. The plan forgives a day; it never forgets a pattern.',
+      'The workout did not happen. So: 25 bodyweight squats before you sleep. Show tomorrow-you that today-you still showed up.',
+    ]
+    let h = 0
+    for (const ch of today0) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+    await self.registration.showNotification('The Sergeant', {
+      body: LINES[h % LINES.length],
+      tag: 'naod-missed',
+      icon: 'icons/pwa-192.png',
+      badge: 'icons/pwa-192.png',
+    })
+    await writeMeta(meta, { missNotifiedDate: today0 })
+    meta.missNotifiedDate = today0
   }
 
   if (!meta.todayScheduled) return

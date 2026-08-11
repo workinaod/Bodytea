@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/appStore'
 import { daysBetween, formatShort } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { unprovenExcusesInWindow } from '../../engine/coach'
-import { MOTIVATION_QUOTES, MOTIVATION_VIDEOS } from '../../plan/messages'
+import { fuelVideosFor, MOTIVATION_QUOTES } from '../../plan/messages'
 import { GUIDE_SECTIONS } from '../../plan/guide'
 import { EXERCISES } from '../../plan/exercises'
 import { Btn, Card, Chip, SectionTitle } from '../../components/ui'
@@ -180,7 +180,7 @@ export function CoachScreen() {
           </div>
           <SectionTitle>Fuel (videos)</SectionTitle>
           <div className="space-y-2">
-            {MOTIVATION_VIDEOS.map((v) => (
+            {fuelVideosFor(data.plan.copyFlavor).map((v) => (
               <a
                 key={v.title}
                 href={`https://www.youtube.com/results?search_query=${encodeURIComponent(v.query)}`}

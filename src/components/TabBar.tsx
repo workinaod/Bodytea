@@ -1,4 +1,4 @@
-export type TabId = 'today' | 'week' | 'meals' | 'progress'
+export type TabId = 'today' | 'week' | 'meals' | 'progress' | 'coach'
 
 const ICONS: Record<TabId, (active: boolean) => JSX.Element> = {
   today: (a) => (
@@ -23,6 +23,13 @@ const ICONS: Record<TabId, (active: boolean) => JSX.Element> = {
       <path d="M4 20V10M10 20V4M16 20v-6M21 20H3" strokeLinejoin="round" />
     </svg>
   ),
+  coach: (a) => (
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round">
+      <path d="M8 3h8l2 4-6 3-6-3 2-4ZM12 10v4" strokeLinejoin="round" />
+      <path d="M7 21a5 5 0 0 1 10 0" />
+      <circle cx="12" cy="16" r="2.5" />
+    </svg>
+  ),
 }
 
 const LEFT: { id: TabId; label: string }[] = [
@@ -32,6 +39,7 @@ const LEFT: { id: TabId; label: string }[] = [
 const RIGHT: { id: TabId; label: string }[] = [
   { id: 'meals', label: 'Meals' },
   { id: 'progress', label: 'Progress' },
+  { id: 'coach', label: 'Coach' },
 ]
 
 function TabButton({ id, label, active, onClick }: { id: TabId; label: string; active: boolean; onClick: () => void }) {

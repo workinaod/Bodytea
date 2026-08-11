@@ -103,6 +103,7 @@ export function Onboarding() {
   const [customLife, setCustomLife] = useState('')
   const [customLifeKind, setCustomLifeKind] = useState<LifeEventKind>('late-night')
   const [dietStyle, setDietStyle] = useState<DietStyle>('omnivore')
+  const [sex, setSex] = useState<'male' | 'female' | null>(null)
   const [skipMeals, setSkipMeals] = useState(false)
   const [focusAreas, setFocusAreas] = useState<Set<FocusArea>>(new Set())
   const [weight, setWeight] = useState(180)
@@ -133,8 +134,9 @@ export function Onboarding() {
       dietStyle,
       skipMeals,
       focusAreas: [...focusAreas],
+      sex: sex ?? undefined,
     }
-  }, [goal, goalStatement, target1, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, skipMeals, focusAreas])
+  }, [goal, goalStatement, target1, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, skipMeals, focusAreas, sex])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
@@ -170,6 +172,7 @@ export function Onboarding() {
       d.plan = plan
       d.settings.proteinTargetG = proteinTargetG
       d.profile.displayName = displayName.trim() || undefined
+      if (sex) d.profile.bfFormula = sex
       const at = new Date().toISOString()
       for (const n of notes.slice(0, 4)) {
         d.coach.feed.unshift({ id: uid(), at, kind: 'insight', text: `📓 Routine notes: ${n.text}` })
@@ -585,6 +588,30 @@ export function Onboarding() {
               <span className="text-[14px] font-bold">Bodyweight</span>
               <Stepper value={weight} onChange={setWeight} step={1} suffix="lb" width="w-20" />
             </div>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[14px] font-bold">Sex</span>
+                <p className="text-[10.5px] leading-snug text-ink-faint">Tunes calories + the body-fat tape formula. Optional.</p>
+              </div>
+              <div className="flex gap-1.5">
+                {(
+                  [
+                    ['male', 'Male'],
+                    ['female', 'Female'],
+                  ] as const
+                ).map(([v, label]) => (
+                  <button
+                    key={v}
+                    onClick={() => setSex((prev) => (prev === v ? null : v))}
+                    className={`rounded-lg px-3.5 py-2 text-[12px] font-bold ${
+                      sex === v ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               <span className="text-[14px] font-bold">How do you actually eat?</span>
               <p className="mt-0.5 text-[11px] leading-snug text-ink-faint">
@@ -717,8 +744,8 @@ export function Onboarding() {
           </div>
 
           <p className="mt-3 text-[12px] leading-relaxed text-ink-dim">
-            4-week blocks with a built-in deload · exercise rotation every block · A/B weeks · busy-week fallback tiers ·
-            every movement with photo demos and muscle maps · a coach that keeps receipts.
+            4-week blocks with a built-in deload · exercises AND rep schemes rotate every block · A/B weeks ·
+            busy-week fallback tiers · every movement with photo demos and muscle maps · a coach that keeps receipts.
           </p>
 
           <Btn className="mt-5 w-full py-4 text-[16px]" onClick={() => commitPlan(preview.plan, preview.proteinTargetG)}>

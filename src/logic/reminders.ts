@@ -50,6 +50,7 @@ export async function syncReminderMeta(): Promise<void> {
     reviewNotifiedMark: prev?.reviewNotifiedMark ?? null,
     checkinDueToday,
     checkinNotifiedDate: prev?.checkinNotifiedDate ?? null,
+    missNotifiedDate: prev?.missNotifiedDate ?? null,
   }
   await MetaStore.set(meta).catch(() => {})
 

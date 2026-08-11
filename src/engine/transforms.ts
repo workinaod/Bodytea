@@ -78,11 +78,11 @@ export function buildFromTemplate(
       const exerciseId = slots[entry.slot]
       if (!exerciseId || seen.has(exerciseId)) continue
       const override = plan.slotRepOverrides[exerciseId]
-      // Per-day slot schemes (e.g. Wed calf 4x20) win over generic overrides
-      // only when the exercise's own scheme fits; overrides exist for
-      // exercises whose scheme shape differs (holds, non-per-side).
-      const repText = override?.repText ?? entry.repText
-      const repsNum = override ? override.repsNum : entry.repsNum
+      // Block rep waves (periodized plans) outrank exercise-shape overrides,
+      // which outrank the template's default scheme.
+      const byBlock = plan.slotRepsByBlock?.[entry.slot]?.[blockIndex]
+      const repText = byBlock?.repText ?? override?.repText ?? entry.repText
+      const repsNum = byBlock ? byBlock.repsNum : override ? override.repsNum : entry.repsNum
       push(makeResolved(exerciseId, entry.sets, repText, repsNum, entry.slot))
     } else {
       // A/B alternation; if this week's pick collides with an already-placed

@@ -139,26 +139,28 @@ export function RunTrackerSheet({
 
         {phase === 'live' && (
           <>
-            {/* The map is the view — everything else sits under it */}
+            {/* The map IS the screen — stats ride in a compact band below */}
             <div className="mt-1 shrink-0 overflow-hidden rounded-2xl border border-edge/80">
-              <RouteMap points={points} live height={Math.max(260, Math.round(window.innerHeight * 0.38))} />
+              <RouteMap points={points} live height={Math.max(300, Math.round(window.innerHeight * 0.54))} />
             </div>
-            <div className="flex flex-1 flex-col justify-center py-3 text-center">
-              <div className="font-display text-[64px] font-bold leading-none tabular-nums">{fmtDuration(elapsed)}</div>
-              <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-ink-faint">
-                recording — screen stays on
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <div className="rounded-2xl border border-edge/80 bg-surface px-2 py-4">
-                  <div className="font-display text-[34px] font-bold leading-none">{distance.toFixed(2)}</div>
-                  <div className="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-faint">miles</div>
+            <div className="flex flex-1 items-center justify-between gap-3 py-3">
+              <div>
+                <div className="font-display text-[46px] font-bold leading-none tabular-nums">{fmtDuration(elapsed)}</div>
+                <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-faint">
+                  recording — screen stays on
                 </div>
-                <div className="rounded-2xl border border-edge/80 bg-surface px-2 py-4">
-                  <div className="font-display text-[34px] font-bold leading-none">
+              </div>
+              <div className="flex gap-4 text-right">
+                <div>
+                  <div className="font-display text-[26px] font-bold leading-none">{distance.toFixed(2)}</div>
+                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">mi</div>
+                </div>
+                <div>
+                  <div className="font-display text-[26px] font-bold leading-none">
                     {activity === 'bike' ? avgMph(distance, elapsed) : fmtPace(pace).replace('/mi', '')}
                   </div>
-                  <div className="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-faint">
-                    {activity === 'bike' ? 'mph avg' : 'avg pace'}
+                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">
+                    {activity === 'bike' ? 'mph' : 'pace'}
                   </div>
                 </div>
               </div>

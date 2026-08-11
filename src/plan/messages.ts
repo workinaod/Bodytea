@@ -1,4 +1,4 @@
-import type { CoachSituation } from '../types'
+import type { CoachSituation, CopyFlavor } from '../types'
 
 // ============================================================
 // The Sergeant's voice. Variant pools keyed by situation (and
@@ -362,11 +362,33 @@ export interface MotivationVideo {
   query: string
 }
 
-export const MOTIVATION_VIDEOS: MotivationVideo[] = [
+const CORE_VIDEOS: MotivationVideo[] = [
   { title: 'Rise and grind', note: 'Classic workout motivation to get you off the couch.', query: 'best gym motivation speech workout' },
-  { title: 'Dunk journey fuel', note: 'Guys documenting the grind from first rim graze to first dunk.', query: 'my dunk journey progression first dunk' },
-  { title: 'Speed is a skill', note: 'Sprint training motivation and what max effort really looks like.', query: 'sprint training motivation athletes' },
   { title: 'Discipline over motivation', note: 'For the days when motivation is nowhere to be found.', query: 'discipline over motivation speech' },
   { title: 'The 1% better mindset', note: 'Consistency and small wins compounding over a year.', query: 'atomic habits 1 percent better every day' },
-  { title: 'Recomp reality check', note: 'Why body recomposition is slow and how people actually did it.', query: 'body recomposition transformation 1 year natural' },
 ]
+
+// The fuel matches the mission: dunk journeys for the vertical chasers,
+// transformations for physique goals, hybrid grind for everyone else.
+const FLAVOR_VIDEOS: Record<CopyFlavor, MotivationVideo[]> = {
+  explosive: [
+    { title: 'Dunk journey fuel', note: 'Guys documenting the grind from first rim graze to first dunk.', query: 'my dunk journey progression first dunk' },
+    { title: 'Speed is a skill', note: 'Sprint training motivation and what max effort really looks like.', query: 'sprint training motivation athletes' },
+    { title: 'Bounce science', note: 'How real vertical jump programs are built — and why yours looks like this.', query: 'vertical jump training explained science' },
+  ],
+  physique: [
+    { title: 'One-year naturals', note: 'Honest 12-month transformations — what a year of showing up buys.', query: 'natural body transformation 1 year gym' },
+    { title: 'Eat big, lift big', note: 'Why the kitchen builds what the gym only sketches.', query: 'eating for muscle growth explained' },
+    { title: 'Recomp reality check', note: 'Why body recomposition is slow and how people actually did it.', query: 'body recomposition transformation 1 year natural' },
+  ],
+  general: [
+    { title: 'Hybrid athlete life', note: 'Strong AND conditioned — people training for everything at once.', query: 'hybrid athlete training motivation' },
+    { title: 'Consistency wins', note: 'Ordinary people, extraordinary streaks.', query: 'gym consistency transformation motivation' },
+    { title: 'Recomp reality check', note: 'Why body recomposition is slow and how people actually did it.', query: 'body recomposition transformation 1 year natural' },
+  ],
+}
+
+/** The pep-talk video shelf, personalized to this user's plan flavor. */
+export function fuelVideosFor(flavor: CopyFlavor): MotivationVideo[] {
+  return [...FLAVOR_VIDEOS[flavor], ...CORE_VIDEOS]
+}

@@ -87,6 +87,8 @@ export interface ReminderMeta {
   /** Today is the weekly check-in day and no measurement is logged yet. */
   checkinDueToday?: boolean
   checkinNotifiedDate?: string | null
+  /** The Sergeant's 22:00 missed-day word — fires once per missed day. */
+  missNotifiedDate?: string | null
 }
 
 export const MetaStore = {

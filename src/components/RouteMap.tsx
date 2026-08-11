@@ -20,8 +20,17 @@ export function RouteMap({
   live?: boolean
 }) {
   const view = useMemo(() => {
-    if (points.length < 2) return null
-    const { zoom, originX, originY } = fitBounds(points, width, height)
+    if (points.length < 1) return null
+    // One fix is enough for a map: synthesize a small bounds box around it
+    // so the tiles load the neighborhood immediately, marker on the spot.
+    const boundsPts: RunPoint[] =
+      points.length >= 2
+        ? points
+        : [
+            [points[0][0] - 0.0025, points[0][1] - 0.0025, 0],
+            [points[0][0] + 0.0025, points[0][1] + 0.0025, 0],
+          ]
+    const { zoom, originX, originY } = fitBounds(boundsPts, width, height)
     const scale = 256 * 2 ** zoom
     const tiles: { x: number; y: number; left: number; top: number }[] = []
     const maxTile = 2 ** zoom
@@ -48,7 +57,7 @@ export function RouteMap({
       const { x, y } = px(p)
       return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`
     })
-    return { zoom, tiles, path, start: px(points[0]), end: px(points[points.length - 1]) }
+    return { zoom, tiles, path, start: px(points[0]), end: px(points[points.length - 1]), single: points.length < 2 }
     // points is mutated in place during live tracking — length is the
     // signal that a new fix landed, so it must be a dependency too.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,16 +91,28 @@ export function RouteMap({
         ))}
       </div>
       <svg className="absolute inset-0 h-full w-full">
-        <polyline
-          points={view.path.join(' ')}
-          fill="none"
-          stroke="var(--color-accent)"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx={view.start.x} cy={view.start.y} r="5" fill="var(--color-lime)" stroke="#000" strokeWidth="1.5" />
-        <circle cx={view.end.x} cy={view.end.y} r="5" fill="var(--color-accent)" stroke="#000" strokeWidth="1.5" />
+        {view.single ? (
+          // You-are-here: standard blue-dot treatment, pulsing while live
+          <>
+            <circle cx={view.start.x} cy={view.start.y} r="16" fill="var(--color-cyan)" opacity="0.25">
+              {live && <animate attributeName="r" values="12;22;12" dur="2s" repeatCount="indefinite" />}
+            </circle>
+            <circle cx={view.start.x} cy={view.start.y} r="7" fill="var(--color-cyan)" stroke="#fff" strokeWidth="2.5" />
+          </>
+        ) : (
+          <>
+            <polyline
+              points={view.path.join(' ')}
+              fill="none"
+              stroke="var(--color-accent)"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx={view.start.x} cy={view.start.y} r="5" fill="var(--color-lime)" stroke="#000" strokeWidth="1.5" />
+            <circle cx={view.end.x} cy={view.end.y} r="6.5" fill="var(--color-accent)" stroke="#fff" strokeWidth="2" />
+          </>
+        )}
       </svg>
       <div className="absolute bottom-1 right-2 text-[8.5px] text-ink-faint/70">© OpenStreetMap</div>
     </div>

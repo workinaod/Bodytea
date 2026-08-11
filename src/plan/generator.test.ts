@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generatePlan, ownedTags, type OnboardingAnswers } from './generator'
+import { buildNutrition, generatePlan, ownedTags, type OnboardingAnswers } from './generator'
 import { canDo } from './equip'
 import { EXERCISES } from './exercises'
 import { planConfigSchema } from '../store/schema'
@@ -191,5 +191,42 @@ describe('focus areas + diet + skippable meals', () => {
     expect(plan.dietStyle).toBe('vegan')
     expect(plan.mealPlan.templates).toEqual([])
     expect(plan.mealPlan.grocery.find((g) => g.category === 'Protein')!.items.join(' ')).toMatch(/tofu/i)
+  })
+})
+
+describe('block periodization + sex-aware nutrition', () => {
+  const base2: Omit<OnboardingAnswers, 'goal'> = {
+    goalStatement: 'test',
+    customTargets: [],
+    daysPerWeek: 4,
+    equipProfile: 'gym',
+    extraEquip: [],
+    experience: 'returning',
+    bodyweightLb: 180,
+  }
+
+  it('rep schemes wave across the three blocks for main lift slots', () => {
+    const { plan } = generatePlan({ ...base2, goal: 'strength' })
+    const w = plan.slotRepsByBlock!.squatVariation!
+    expect(w[1]!.repText).not.toBe(w[2]!.repText)
+    expect(w[2]!.repText).not.toBe(w[3]!.repText)
+    for (const s of ['press1', 'rowVariation', 'hamstring']) expect(plan.slotRepsByBlock![s]).toBeTruthy()
+  })
+
+  it('two different people, same goal → different block-2 exercise picks somewhere', () => {
+    const a = generatePlan({ ...base2, goal: 'muscle', goalStatement: 'gain 20 pounds muscle' }).plan
+    const b = generatePlan({ ...base2, goal: 'muscle', goalStatement: 'put on size for football', bodyweightLb: 205 }).plan
+    const diff = Object.keys(a.slots[2]).some((s) => a.slots[2][s] !== b.slots[2][s])
+    expect(diff).toBe(true)
+    // determinism: same person → same booklet
+    const a2 = generatePlan({ ...base2, goal: 'muscle', goalStatement: 'gain 20 pounds muscle' }).plan
+    expect(a.slots).toEqual(a2.slots)
+  })
+
+  it('female baseline runs a notch lower on calories, protein unchanged', () => {
+    const m = buildNutrition('muscle', 160, 'male')
+    const f = buildNutrition('muscle', 160, 'female')
+    expect(f.kcalTraining).toBeLessThan(m.kcalTraining)
+    expect(f.proteinTargetG).toBe(m.proteinTargetG)
   })
 })

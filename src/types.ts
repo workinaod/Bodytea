@@ -195,6 +195,8 @@ export interface PlanConfig {
   /** block → slotId → exerciseId */
   slots: Record<1 | 2 | 3, Record<SlotId, string>>
   slotRepOverrides: Record<string, { repText: string; repsNum?: number }>
+  /** Block-periodized rep waves: slot → block position (1|2|3) → scheme. */
+  slotRepsByBlock?: Record<string, Partial<Record<1 | 2 | 3, { repText: string; repsNum?: number }>>>
   cardioOptions: CardioOption[]
   trackedLifts: { exerciseId: string; label: string }[]
   coreMovers: string[]

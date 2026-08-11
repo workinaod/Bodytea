@@ -33,6 +33,8 @@ export interface OnboardingAnswers {
   extraEquip: EquipTag[]
   experience: 'new' | 'returning' | 'trained'
   bodyweightLb: number
+  /** Tunes the calorie baseline and defaults the body-fat tape formula. */
+  sex?: 'male' | 'female'
   /** How they actually like to eat — the meal plan is built at this count. */
   mealsPerDay?: MealsPerDay
   /** Their real week (shifts, gigs, kids) — seeded as life events so the
@@ -453,9 +455,11 @@ function buildRationale(goal: Goal, goalStatement: string, ids: string[]): Recor
 
 // ---------- Nutrition ----------
 
-export function buildNutrition(goal: Goal, bodyweightLb: number) {
+export function buildNutrition(goal: Goal, bodyweightLb: number, sex?: 'male' | 'female') {
   const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
-  const base = Math.round((bw * 15) / 50) * 50
+  // Same protein either way (1 g/lb); the calorie baseline runs a notch
+  // lower for women (bw×14 vs ×15) — standard TDEE difference.
+  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50
   const adj: Record<Goal, number> = { muscle: 300, strength: 250, vertical: 200, speed: 150, general: 100, lean: -300 }
   const kcalTraining = base + adj[goal]
   return {
@@ -593,7 +597,21 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
       .filter((id) => ['lift', 'core', 'carry'].includes(getExercise(id).kind)),
   )]
 
-  const nutrition = buildNutrition(a.goal, a.bodyweightLb)
+  const nutrition = buildNutrition(a.goal, a.bodyweightLb, a.sex)
+
+  // Rep waves: the same lift slot moves through a different scheme each
+  // 4-week block — volume, load, then a goal-flavored finisher.
+  const REP_WAVES: Record<Goal, Record<1 | 2 | 3, { repText: string; repsNum: number }>> = {
+    muscle: { 1: { repText: '8-12', repsNum: 10 }, 2: { repText: '6-8', repsNum: 7 }, 3: { repText: '10-12', repsNum: 11 } },
+    strength: { 1: { repText: '6-8', repsNum: 7 }, 2: { repText: '4-6', repsNum: 5 }, 3: { repText: '3-5', repsNum: 4 } },
+    lean: { 1: { repText: '8-12', repsNum: 10 }, 2: { repText: '6-10', repsNum: 8 }, 3: { repText: '12-15', repsNum: 13 } },
+    general: { 1: { repText: '8-10', repsNum: 9 }, 2: { repText: '6-8', repsNum: 7 }, 3: { repText: '10-12', repsNum: 11 } },
+    vertical: { 1: { repText: '6-8', repsNum: 7 }, 2: { repText: '4-6', repsNum: 5 }, 3: { repText: '6-8', repsNum: 7 } },
+    speed: { 1: { repText: '6-8', repsNum: 7 }, 2: { repText: '4-6', repsNum: 5 }, 3: { repText: '6-8', repsNum: 7 } },
+  }
+  const slotRepsByBlock = Object.fromEntries(
+    ['squatVariation', 'press1', 'rowVariation', 'hamstring'].map((s) => [s, REP_WAVES[a.goal]]),
+  )
 
   const rationale = buildRationale(a.goal, a.goalStatement, [...referenced])
   for (const f of focusPicks) {
@@ -624,6 +642,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     tierDefaultPlacement,
     slots,
     slotRepOverrides: {},
+    slotRepsByBlock,
     cardioOptions,
     trackedLifts,
     coreMovers,

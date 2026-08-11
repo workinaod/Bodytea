@@ -37,21 +37,6 @@ export async function buildShareImage(log: RunLog): Promise<Blob | null> {
   bloom.addColorStop(1, 'rgba(255,79,48,0)')
   x.fillStyle = bloom
   x.fillRect(0, 0, W, H)
-  x.strokeStyle = 'rgba(255,255,255,0.045)'
-  x.lineWidth = 2
-  for (let i = 1; i < 8; i++) {
-    x.beginPath()
-    x.moveTo((W / 8) * i, 0)
-    x.lineTo((W / 8) * i, H)
-    x.stroke()
-  }
-  for (let i = 1; i < 10; i++) {
-    x.beginPath()
-    x.moveTo(0, (H / 10) * i)
-    x.lineTo(W, (H / 10) * i)
-    x.stroke()
-  }
-
   // Brand + context
   x.textBaseline = 'top'
   x.fillStyle = '#ff4f30'
