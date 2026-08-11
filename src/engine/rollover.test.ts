@@ -58,10 +58,13 @@ describe('lateNightGraceDate', () => {
     expect(lateNightGraceDate(makeData(), '2026-08-10', new Date(2026, 7, 10, 0, 30))).toBeNull()
   })
 
-  it('ends at 03:00', () => {
-    const data = makeData({ '2026-08-08': inProgress })
-    expect(lateNightGraceDate(data, '2026-08-09', new Date(2026, 7, 9, 3, 1))).toBeNull()
+  it('unstarted days close at 03:00; an in-progress session holds until 06:00', () => {
+    // never started → 3:01 is too late to begin it as yesterday
     expect(lateNightGraceDate(makeData(), '2026-08-09', new Date(2026, 7, 9, 3, 1))).toBeNull()
+    // actively training across 3am → the anchor must NOT flip mid-workout
+    const data = makeData({ '2026-08-08': inProgress })
+    expect(lateNightGraceDate(data, '2026-08-09', new Date(2026, 7, 9, 3, 1))).toBe('2026-08-08')
+    expect(lateNightGraceDate(data, '2026-08-09', new Date(2026, 7, 9, 6, 1))).toBeNull()
   })
 
   it('does not apply when the session is finished or skipped', () => {

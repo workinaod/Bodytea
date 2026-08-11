@@ -30,14 +30,18 @@ export function lateNightGraceDate(
   today: ISODate,
   now: Date,
 ): ISODate | null {
-  if (now.getHours() >= 3) return null
+  if (now.getHours() >= 6) return null
   if (localISO(now) !== today) return null // clock/state disagree — no grace games
   const yesterday = addDaysISO(today, -1)
   const s = data.sessions[yesterday]
   if (s) {
+    // A session actively in progress keeps its day PAST 3:00 — never
+    // yank the anchor mid-workout. 06:00 is the hard backstop.
     const inProgress = s.status === 'partial' && !!s.startedAt && !s.endedAt
     return inProgress ? yesterday : null
   }
+  // Never started: startable as its own day only inside the 12–3 window
+  if (now.getHours() >= 3) return null
   const resolved = resolveDay(yesterday, data)
   return resolved.kind === 'session' || resolved.kind === 'mobility' ? yesterday : null
 }
