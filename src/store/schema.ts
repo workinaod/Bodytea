@@ -623,6 +623,29 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     }
     return walk(env) as typeof env
   },
+  // v18 → v19: everyone except the owner starts over on the new
+  // onboarding. The generator learned a lot since these plans were
+  // built (goal follow-ups that change real numbers, the endurance
+  // family, seeded starting weights, deep-goal strategy), and old
+  // booklets carry none of it. Flipping `onboarded` sends them back
+  // through the wizard; nothing they logged is deleted, so sessions,
+  // meals, runs, photos and measurements all survive the rebuild.
+  // The owner's NAOD booklet is hand-built and golden-locked, so it
+  // is left exactly as it is.
+  18: (env) => {
+    const e = env as {
+      data?: {
+        plan?: { name?: string; sportMode?: string }
+        settings?: { onboarded?: boolean }
+      }
+    }
+    const plan = e.data?.plan
+    const isOwner = plan?.sportMode === 'ball' || !!plan?.name?.startsWith('NAOD')
+    if (e.data?.settings && !isOwner) {
+      e.data.settings.onboarded = false
+    }
+    return env
+  },
 }
 
 export function migrate(env: unknown): Envelope {

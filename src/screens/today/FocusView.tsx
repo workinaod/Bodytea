@@ -274,7 +274,9 @@ export function FocusView({
         : `${set.targetReps.replace(/[-–]/, ' to ')} reps`
     const weightBit = isLoaded && set.weightLb !== undefined ? ` at ${set.weightLb} pounds` : ''
     const intro = `${def.name}. Set ${current.setIdx + 1} of ${ex?.sets.length}: ${repsBit}${weightBit}.`
-    const prompt = isLoaded ? `${loadLabel(def.equipment)} first, then say ready.` : 'Say ready when set.'
+    // The weight card is right there on screen and already filled in, so
+    // the voice does not narrate it. One closing line, both ways to start.
+    const prompt = "Tap go or tell me when you're ready."
     // Spoken only. The screen already shows all of this (name, set line,
     // weight card), so no caption: screen-followers don't need an echo.
     if (soundRef.current === 'voice') say(`${intro} ${prompt}`, { interrupt: true })

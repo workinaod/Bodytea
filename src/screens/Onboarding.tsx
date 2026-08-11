@@ -25,6 +25,25 @@ import { enableReminders } from '../logic/reminders'
 // previews the generated week before committing.
 // ============================================================
 
+/** Best-guess training category from a free-typed goal, so ANY goal picks
+    its engine automatically. Returns a GOAL_CHIPS index, or null. */
+function inferGoal(text: string): number | null {
+  const t = text.toLowerCase()
+  if (t.length < 4) return null
+  const pick = (g: Goal) => {
+    const i = GOAL_CHIPS.findIndex((c) => c.goal === g)
+    return i === -1 ? null : i
+  }
+  if (/dunk|vertical|jump higher|bounce|rim/.test(t)) return pick('vertical')
+  if (/marathon|\b5 ?k|\b10 ?k|ultra|\b50 ?k|\b100 ?k|\b50 ?mi|triathlon|endurance|run (a|my|further)|race/.test(t)) return pick('endurance')
+  if (/sprint|faster|speed|40 ?yard|agility/.test(t)) return pick('speed')
+  if (/lose|cut|lean|shred|fat|slim|abs|toned?/.test(t)) return pick('lean')
+  if (/muscle|bulk|bigger|mass|gain \d+|jacked|physique/.test(t)) return pick('muscle')
+  if (/strength|stronger|bench|squat|deadlift|\b\d{3}\b|1 ?rm|powerlift/.test(t)) return pick('strength')
+  if (/health|energy|fit|shape|moving|active/.test(t)) return pick('general')
+  return null
+}
+
 const GOAL_CHIPS: { label: string; goal: Goal }[] = [
   { label: '💪 Build muscle', goal: 'muscle' },
   { label: '🔥 Lose weight', goal: 'lean' },
@@ -81,6 +100,11 @@ const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export function Onboarding() {
   const update = useAppStore((s) => s.update)
+  // Someone with history who lands here was reset onto the new engine
+  // (schema v19). Say so, so it never reads as lost data.
+  const rebuilding = useAppStore(
+    (st) => Object.keys(st.data.sessions).length > 0 || st.data.measurements.length > 0,
+  )
   const [step, setStep] = useState(0)
   const [mode, setMode] = useState<'gen' | 'byor'>('gen')
   const [byorDraft, setByorDraft] = useState<PlanConfig | null>(null)
@@ -281,23 +305,29 @@ export function Onboarding() {
         <div className="flex flex-1 flex-col justify-center">
           <div className="text-[13px] font-black uppercase tracking-[0.3em] text-accent">Bodytea</div>
           <h1 className="mt-2 text-[40px] font-black leading-[1.05] tracking-tight">
-            Your goal.
+            Name any goal.
             <br />
-            Your booklet.
-            <br />
-            No excuses.
+            Get the exact plan.
           </h1>
           <p className="mt-4 text-[14.5px] leading-relaxed text-ink-dim">
-            Two minutes of straight answers gets you a coach, not another app:
+            Dunk. First ultra. 20 lb of muscle. Lose 40. Bench 225. Whatever it is,
+            two minutes of straight answers builds a detailed plan for exactly that:
           </p>
           <div className="mt-3 space-y-2 border-l-2 border-edge pl-3 text-[13px] leading-snug text-ink-dim">
-            <p>A training booklet built around YOUR goal, gear, and week. Photo demos and muscle maps on every movement.</p>
+            <p>Workouts, weights, reps, and rest built around YOUR goal, gear, and week. Video, photo demos, and muscle maps on every movement.</p>
             <p>Meals sized to how you actually eat: 2 big plates or 5 small, with common-grocery swaps.</p>
             <p>GPS run &amp; ride tracking, PRs, streaks, a global leaderboard, and 3 / 6 / 12-month reviews.</p>
             <p>A sergeant that bends the plan around real life and accepts calendar proof, nothing less.</p>
           </div>
+          {rebuilding && (
+            <p className="mt-5 rounded-2xl bg-white/[0.05] px-4 py-3 text-[12.5px] leading-snug text-ink-dim ring-1 ring-white/[0.05]">
+              <span className="font-bold text-accent-soft">Your plan is being rebuilt.</span> The engine got a lot
+              smarter: goal follow-ups that change real numbers, starting weights, race training. Answer again and
+              you get the better version. Every session, meal, run and measurement you logged is untouched.
+            </p>
+          )}
           <Btn className="mt-8 w-full py-4 text-[16px]" onClick={() => { setMode('gen'); next() }}>
-            Build my plan
+            {rebuilding ? 'Rebuild my plan' : 'Build my plan'}
           </Btn>
           <Btn kind="subtle" className="mt-3 w-full py-4" onClick={() => { setMode('byor'); next() }}>
             I already have a routine
@@ -347,15 +377,25 @@ export function Onboarding() {
                   </Chip>
                 ))}
           </div>
-          <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Now say it in YOUR words</p>
+          <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Now say it in YOUR words. Anything.</p>
           <textarea
             value={goalStatement}
-            onChange={(e) => setGoalStatement(e.target.value)}
-            placeholder={'"dunk on a 10-ft rim by June"  ·  "squat 315"  ·  "visible abs"'}
+            onChange={(e) => {
+              setGoalStatement(e.target.value)
+              // The typed goal is the source of truth: infer the training
+              // category from it so any goal Just Works without hunting chips
+              if (goalChip === null) {
+                const g = inferGoal(e.target.value)
+                if (g !== null) setGoalChip(g)
+              }
+            }}
+            placeholder={'"dunk on a 10-ft rim"  ·  "run my first 50K"  ·  "lose 40 lb"  ·  "bench 225"'}
             rows={2}
             className="mt-2 w-full resize-none rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:ring-accent/45"
           />
-          <p className="mt-1 text-[11px] text-ink-faint">This phrase follows you through the whole app. Make it yours.</p>
+          <p className="mt-1 text-[11px] text-ink-faint">
+            The whole plan gets built around this exact sentence. The chips above just tell the engine which training style carries it.
+          </p>
 
           {/* The coach's follow-ups: "gain 20 lbs" alone can't build a
               great plan. One tap each, every answer shapes the build. */}

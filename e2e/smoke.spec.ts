@@ -30,7 +30,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.goto('./')
 
   // ---- Onboarding v2 generates a personal booklet ----
-  await expect(page.getByText('Your goal.')).toBeVisible()
+  await expect(page.getByText('Name any goal.')).toBeVisible()
   await onboardGenerated(page)
 
   // ---- Today renders a resolved day ----

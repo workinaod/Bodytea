@@ -534,7 +534,7 @@ export const GOAL_FOLLOWUPS: Record<Goal, GoalFollowup[]> = {
     { id: 'barrier', q: 'What usually kills the streak?', options: ['Time', 'Energy', 'Boredom', 'Soreness'] },
   ],
   endurance: [
-    { id: 'race-distance', q: 'What are you training for?', options: ['5K or 10K', 'Half marathon', 'Marathon', 'No race yet'] },
+    { id: 'race-distance', q: 'What are you training for?', options: ['5K', '10K', 'Half marathon', 'Marathon', 'Ultra (50K+)', 'No race yet'] },
     { id: 'weekly-miles', q: 'Running now, per week?', options: ['Under 10 mi', '10 to 25 mi', '25+ mi'] },
     { id: 'race-when', q: 'When is it?', options: ['Inside 3 months', '3 to 6 months', 'No date yet'] },
   ],
@@ -680,8 +680,10 @@ const STRATEGY: Record<Goal, StrategyBuilder> = {
       out.push('The marathon is won by the long run: one a week, growing toward 20 mi. Every run you track here gets a goal check against that build.')
     if (ans['race-distance'] === 'Half marathon')
       out.push('The half rewards steady volume: a weekly long run toward 11 mi and honest easy pace everywhere else.')
-    if (ans['race-distance'] === '5K or 10K')
+    if (ans['race-distance'] === '5K' || ans['race-distance'] === '10K')
       out.push('Short races are speed on top of base: mostly easy miles, one sharper session a week once the base is in.')
+    if (ans['race-distance'] === 'Ultra (50K+)')
+      out.push('Ultras are eating and walking contests with running in between: time on feet beats pace, and practicing fueling every long run is non-negotiable.')
     if (ans['weekly-miles'] === 'Under 10 mi')
       out.push('Base first: add about 10% a week, never more. Tissue adapts slower than lungs, and rushing mileage is how shins and knees quit.')
     if (ans['race-when'] === 'Inside 3 months')

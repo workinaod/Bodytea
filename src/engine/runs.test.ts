@@ -147,3 +147,25 @@ describe('runGoalReview', () => {
     expect(runGoalReview(d, log)).toBeNull()
   })
 })
+
+describe('every race length resolves', () => {
+  const log = { id: 'r', activity: 'run' as const, date: '2026-08-12', startedAt: 't', durationSec: 2400, distanceMi: 4, avgPaceSec: 600, splits: [], points: [] }
+  const at = (statement: string) => {
+    const d = emptyAppData('2026-08-10', '2026-08-10')
+    d.plan.goal = 'endurance'
+    d.plan.goalStatement = statement
+    d.runs.push(log)
+    return runGoalReview(d, log)!
+  }
+  it('resolves ultras, halves, and short races from typed goals', () => {
+    expect(at('run my first 50k ultra').title).toBe('Ultra check-in')
+    expect(at('sub 2 half marathon').title).toBe('Half marathon check-in')
+    expect(at('crush a 10k this fall').title).toBe('10K check-in')
+    expect(at('first 5k with my daughter').title).toBe('5K check-in')
+  })
+  it('the ultra build asks for more than a marathon build', () => {
+    const ultra = at('100 mile ultra')
+    expect(ultra.rows.some((r) => r.label === 'Race' && r.value.includes('31'))).toBe(true)
+    expect(ultra.notes.join(' ')).toContain('48 mi')
+  })
+})

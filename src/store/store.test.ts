@@ -488,3 +488,49 @@ describe('v17 → v18: stored em dashes are swept clean', () => {
     expect(JSON.stringify(parsed.data)).not.toContain('—')
   })
 })
+
+describe('v18 → v19: everyone but the owner restarts onboarding', () => {
+  function v18Env() {
+    const env = JSON.parse(serializeState(fixtureData())) as {
+      schemaVersion: number
+      data: ReturnType<typeof fixtureData>
+    }
+    env.schemaVersion = 18
+    return env
+  }
+
+  it("keeps the owner's NAOD booklet and onboarded state untouched", () => {
+    const env = v18Env()
+    env.data.plan.name = 'NAOD V4'
+    env.data.plan.sportMode = 'ball'
+    env.data.settings.onboarded = true
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.data.settings.onboarded).toBe(true)
+    expect(parsed.data.plan.name).toBe('NAOD V4')
+  })
+
+  it('sends a generated-plan user back through onboarding', () => {
+    const env = v18Env()
+    env.data.plan.name = 'Vertical Project · 6-Day'
+    env.data.plan.sportMode = 'generic'
+    env.data.settings.onboarded = true
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(parsed.data.settings.onboarded).toBe(false)
+  })
+
+  it('never deletes what they logged', () => {
+    const env = v18Env()
+    env.data.plan.sportMode = 'generic'
+    env.data.plan.name = 'Cut Engine · 4-Day'
+    const before = {
+      sessions: Object.keys(env.data.sessions).length,
+      measurements: env.data.measurements.length,
+      feed: env.data.coach.feed.length,
+    }
+    expect(before.sessions).toBeGreaterThan(0)
+    const parsed = parseEnvelope(JSON.stringify(env))
+    expect(Object.keys(parsed.data.sessions).length).toBe(before.sessions)
+    expect(parsed.data.measurements.length).toBe(before.measurements)
+    expect(parsed.data.coach.feed.length).toBe(before.feed)
+  })
+})

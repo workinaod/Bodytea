@@ -224,6 +224,7 @@ export interface RunGoalReview {
 }
 
 const RACES: { key: RegExp; label: string; mi: number; peakLong: number; peakWeek: number }[] = [
+  { key: /ultra|50\s?k|100\s?k|50\s?mi|100\s?mi/i, label: 'Ultra', mi: 31, peakLong: 26, peakWeek: 48 },
   { key: /half\s*-?\s*marathon|13\.1/i, label: 'Half marathon', mi: 13.1, peakLong: 11, peakWeek: 22 },
   { key: /marathon|26\.2/i, label: 'Marathon', mi: 26.2, peakLong: 20, peakWeek: 36 },
   { key: /10\s*k/i, label: '10K', mi: 6.2, peakLong: 5, peakWeek: 15 },
