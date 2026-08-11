@@ -41,7 +41,7 @@ test('bring your own routine: build week → notes → track it', async ({ page 
     await page.getByRole('button', { name: new RegExp(name) }).first().click()
   }
   await page.getByRole('button', { name: 'Done with this day' }).click()
-  await expect(page.getByText('Full Body A')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Full Body A/ })).toBeVisible()
   await expect(page.getByText('3 exercises')).toBeVisible()
 
   // The coach asks WHY it's been working before writing notes
@@ -74,12 +74,12 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await expect(page.getByText('Split Squat')).toBeVisible()
 
   // Notes + their on-record claim landed in the coach feed
-  await page.getByRole('button', { name: 'Coach', exact: true }).click()
+  await page.getByRole('button', { name: 'The Sergeant' }).click()
   await expect(page.getByText(/Routine notes:/).first()).toBeVisible()
   await expect(page.getByText(/On record — why your routine works/)).toBeVisible()
   await page.getByText(/My Booklet — My Routine/).click()
   await expect(page.getByRole('heading', { name: 'My Booklet' })).toBeVisible()
-  await expect(page.getByText('Full Body A')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Full Body A/ })).toBeVisible()
   await page.getByRole('button', { name: 'Cancel' }).click()
   await expect(page.getByRole('heading', { name: 'My Booklet' })).not.toBeVisible()
 })
@@ -107,6 +107,6 @@ test('generated booklet: fine-tune before starting', async ({ page }) => {
   await page.getByRole('button', { name: 'Lock it in — start Week 1' }).click()
 
   await expect(page.getByText(/Week 1/).first()).toBeVisible()
-  await page.getByRole('button', { name: 'Coach', exact: true }).click()
+  await page.getByRole('button', { name: 'The Sergeant' }).click()
   await expect(page.getByText(/My Booklet — My Dunk Plan/)).toBeVisible()
 })

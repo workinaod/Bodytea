@@ -19,6 +19,12 @@ export default function App() {
   const today = useToday()
   const [tab, setTab] = useState<TabId>('today')
   const [track, setTrack] = useState<'choose' | 'run' | 'bike' | null>(null)
+  const [coachOpen, setCoachOpen] = useState(false)
+  // The Sergeant bubble steps aside mid-workout and mid-tracking
+  const sessionLive = useAppStore((s) => {
+    const se = s.data.sessions[today]
+    return !!se && se.status === 'partial' && !se.endedAt
+  })
 
   useEffect(() => {
     // Cloud sync restores only for devices that have used an account —
@@ -64,9 +70,38 @@ export default function App() {
       {tab === 'week' && <WeekScreen />}
       {tab === 'meals' && <MealsScreen />}
       {tab === 'progress' && <ProgressScreen />}
-      {tab === 'coach' && <CoachScreen />}
 
       <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} />
+
+      {/* The Sergeant lives in a corner bubble — one tap from anywhere */}
+      {!coachOpen && !sessionLive && track === null && (
+        <button
+          aria-label="The Sergeant"
+          onClick={() => setCoachOpen(true)}
+          className="fixed bottom-[92px] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-edge bg-surface shadow-[0_10px_28px_-10px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur active:scale-95"
+        >
+          <svg viewBox="0 0 24 24" className="h-6 w-6 text-ink-dim" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M8 3h8l2 4-6 3-6-3 2-4ZM12 10v4" strokeLinejoin="round" />
+            <path d="M7 21a5 5 0 0 1 10 0" />
+            <circle cx="12" cy="16" r="2.5" />
+          </svg>
+        </button>
+      )}
+      {coachOpen && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-bg">
+          <div className="mx-auto max-w-lg px-4 pb-16 pt-[max(env(safe-area-inset-top),16px)]">
+            <div className="mb-2 flex justify-end">
+              <button
+                onClick={() => setCoachOpen(false)}
+                className="rounded-full bg-surface-2 px-4 py-1.5 text-[12.5px] font-bold text-ink-dim"
+              >
+                ✕ close
+              </button>
+            </div>
+            <CoachScreen />
+          </div>
+        </div>
+      )}
       <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track with GPS">
         <div className="space-y-2 pb-8">
           <p className="text-[12.5px] leading-snug text-ink-dim">

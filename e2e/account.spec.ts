@@ -20,7 +20,7 @@ test('account sheet: cloud module lazy-loads and the signed-out flow renders', a
   await page.getByRole('button', { name: 'Generate my booklet' }).click()
   await page.getByRole('button', { name: "Start Week 1 — let's work" }).click()
 
-  await page.getByRole('button', { name: 'Coach', exact: true }).click()
+  await page.getByRole('button', { name: 'The Sergeant' }).click()
   await page.getByRole('button', { name: '☁︎' }).click()
 
   // Signed-out menu (cloud chunk loaded, session restore ran, no session)

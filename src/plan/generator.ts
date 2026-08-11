@@ -157,15 +157,28 @@ const GOAL_FIRST: Partial<Record<Goal, Partial<Record<string, string>>>> = {
   muscle: { press1: 'incline-db-press', rowVariation: 'one-arm-db-row' },
 }
 
-function pickSlots(goal: Goal, owned: Set<EquipTag>): Record<1 | 2 | 3, Record<string, string>> {
+/** Cheap deterministic string hash (djb2) — powers per-user plan variety. */
+export function hashStr(s: string): number {
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0
+  return h
+}
+
+function pickSlots(goal: Goal, owned: Set<EquipTag>, seed = 0): Record<1 | 2 | 3, Record<string, string>> {
   const out: Record<1 | 2 | 3, Record<string, string>> = { 1: {}, 2: {}, 3: {} }
   for (const [slot, base] of Object.entries(POOLS)) {
     const promoted = GOAL_FIRST[goal]?.[slot]
     const ordered = promoted ? [promoted, ...base.filter((id) => id !== promoted)] : base
     const legal = ordered.filter((id) => canDo(id, owned))
+    // Per-user variety: the goal's best pick always anchors block 1, but the
+    // block 2/3 rotation order is seeded by WHO is asking — two people with
+    // the same goal get different booklets, both quality-legal.
+    const rest = legal.slice(1)
+    const r = rest.length > 1 ? (seed + hashStr(slot)) % rest.length : 0
+    const varied = [legal[0], ...rest.slice(r), ...rest.slice(0, r)]
     // Terminal bodyweight entries guarantee legal.length >= 1 for any gear.
     for (const block of [1, 2, 3] as const) {
-      out[block][slot] = legal[(block - 1) % legal.length]
+      out[block][slot] = varied[(block - 1) % varied.length]
     }
   }
   return out
@@ -526,10 +539,17 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
       )
     if (!pick) continue
     host.entries = [...host.entries, { entry: 'fixed', exerciseId: pick, sets: 3, repText: '10-15', repsNum: 12 }]
+    if (!host.title.includes(FOCUS_LABELS[area])) {
+      host.title = `${host.title} · ${FOCUS_LABELS[area]} focus`
+    }
     focusPicks.push({ area, exerciseId: pick })
   }
 
-  const slots = pickSlots(a.goal, owned)
+  // The person IS the seed: same goal, different human → different booklet.
+  const seed = hashStr(
+    `${a.goalStatement}|${a.bodyweightLb}|${(a.focusAreas ?? []).join(',')}|${a.daysPerWeek}|${a.experience}`,
+  )
+  const slots = pickSlots(a.goal, owned, seed)
   const cardioOptions = pickCardio(owned)
 
   // Everything the plan references (for rationale + tracked lifts)
