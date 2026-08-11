@@ -448,9 +448,13 @@ export function FocusView({
           </ol>
         </div>
 
-        {/* The gate: weight goes in BEFORE the set. Reps are the plan's call. */}
+      </div>
+
+      {/* One quiet caption line + the single dominant button */}
+      <div className="px-4 pt-2">
+        {/* The gate: weight goes in BEFORE the set — always in view */}
         {phase === 'go' && isLoaded && (
-          <div className="mx-auto mt-3 flex max-w-xs items-center justify-between rounded-2xl border border-accent/30 bg-surface px-4 py-3">
+          <div className="mx-auto mb-2 flex max-w-xs items-center justify-between rounded-2xl border border-accent/30 bg-surface px-4 py-2.5">
             <span className="text-[11px] font-black uppercase tracking-wider text-ink-dim">Your weight</span>
             <Stepper
               value={set.weightLb}
@@ -464,9 +468,9 @@ export function FocusView({
 
         {/* Live: a clean working state — timer for timed sets, otherwise quiet */}
         {phase === 'live' && (
-          <div className="mt-4 text-center">
+          <div className="mb-2 text-center">
             {isTimed ? (
-              <div className="font-display text-[56px] font-black leading-none tabular-nums text-accent">{liveSec}s</div>
+              <div className="font-display text-[44px] font-black leading-none tabular-nums text-accent">{liveSec}s</div>
             ) : (
               <div className="text-[11px] font-black uppercase tracking-[0.22em] text-ink-faint">
                 working — tap or say done when finished
@@ -474,10 +478,6 @@ export function FocusView({
             )}
           </div>
         )}
-      </div>
-
-      {/* One quiet caption line + the single dominant button */}
-      <div className="px-4 pt-2">
         {caption && (
           <p className="mb-1.5 truncate text-center text-[12px] font-semibold text-ink-faint">{caption}</p>
         )}
