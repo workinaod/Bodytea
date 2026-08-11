@@ -48,7 +48,9 @@ export function CoachScreen() {
   const record = useMemo(() => {
     const rows = [
       ...data.coach.feed.map((f) => ({ rowKind: 'feed' as const, at: f.at, f })),
-      ...data.runs.map((r) => ({ rowKind: 'run' as const, at: r.startedAt, r })),
+      ...data.runs
+        .filter((r) => r.distanceMi >= 0.05 && r.durationSec >= 120)
+        .map((r) => ({ rowKind: 'run' as const, at: r.startedAt, r })),
     ]
     return rows.sort((a, b) => (a.at > b.at ? -1 : 1))
   }, [data.coach.feed, data.runs])

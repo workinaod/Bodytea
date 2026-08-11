@@ -607,14 +607,14 @@ export function chooseCardio(date: ISODate, exerciseId: string): void {
 
 // ---------- Reconcile resolutions ----------
 
-export function resolveMissAsTrained(date: ISODate, templateId: string | null): void {
+export function resolveMissAsTrained(date: ISODate, templateId: string | null, ownWorkout = false): void {
   store().update((d) => {
     d.sessions[date] = {
       date,
       templateId: templateId ?? 'unknown',
       status: 'completed',
       exercises: [],
-      notes: 'Logged retroactively (no set data)',
+      notes: ownWorkout ? 'Own workout, logged after the fact' : 'Logged after the fact, no set data',
     }
   })
   pushCoachMessage('comeback')

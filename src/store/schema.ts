@@ -579,6 +579,15 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     if (feed) e.data!.coach!.feed = feed.filter((f) => f.situation !== 'push')
     return env
   },
+  // v16 → v17: false-start GPS logs (a few seconds, no distance) recorded
+  // before the guard existed say nothing about training. Purge them.
+  16: (env) => {
+    const e = env as { data?: { runs?: { distanceMi?: number; durationSec?: number }[] } }
+    if (e.data?.runs) {
+      e.data.runs = e.data.runs.filter((r) => (r.distanceMi ?? 0) >= 0.05 && (r.durationSec ?? 0) >= 120)
+    }
+    return env
+  },
 }
 
 export function migrate(env: unknown): Envelope {

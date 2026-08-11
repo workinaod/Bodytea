@@ -3,6 +3,7 @@ import type { ResolvedDay, SessionLog } from '../../types'
 import { getExercise } from '../../plan/exercises'
 import { Btn, Chip, Stepper } from '../../components/ui'
 import { RestTimer } from '../../components/RestTimer'
+import { setRestSec } from '../../engine/focus'
 import { patchSet, restartSession, trimFromExercise } from '../../logic/actions'
 import { useAppStore } from '../../store/appStore'
 
@@ -164,7 +165,7 @@ export function SessionView({
                         const next = !set.done
                         patchSet(session.date, exIdx, setIdx, { done: next })
                         if (next && restEnabled && def.restSec > 0) {
-                          setTimer({ key: Date.now(), seconds: def.restSec })
+                          setTimer({ key: Date.now(), seconds: setRestSec(def, set.reps) })
                         }
                       }}
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-lg font-black transition-colors ${

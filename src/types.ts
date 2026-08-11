@@ -648,7 +648,7 @@ export interface AppData {
   runs: RunLog[]
 }
 
-export const SCHEMA_VERSION = 16
+export const SCHEMA_VERSION = 17
 
 export interface Envelope {
   schemaVersion: number

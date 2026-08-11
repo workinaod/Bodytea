@@ -73,8 +73,9 @@ export function Sheet({
 
     const onStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement
-      // Dismiss-drag engages ONLY from the header/handle zone — content
-      // touches scroll the content, nothing else.
+      // Dismiss-drag engages ONLY from the header/handle zone. Buttons in
+      // the header (the X) must keep their taps — never capture them.
+      if (target.closest('button')) return
       state.fromHandle = !!target.closest('[data-sheet-handle]')
       if (!state.fromHandle) return
       state.startY = e.touches[0].clientY
@@ -146,10 +147,18 @@ export function Sheet({
             {title ? <h3 className="text-[17px] font-black tracking-tight">{title}</h3> : <span />}
             {!locked && (
               <button
+                aria-label="Close"
                 onClick={onClose}
-                className="rounded-full bg-surface-2 px-3 py-1 text-[12px] font-bold text-ink-dim"
+                onTouchEnd={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  onClose()
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-ink-dim"
               >
-                Close
+                <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
               </button>
             )}
           </div>

@@ -46,12 +46,12 @@ describe('focus queue', () => {
     expect(focusQueue(s).every((i) => i.exIdx === 0)).toBe(true)
   })
 
-  it('rest applies between items but never after the last one', () => {
+  it('rest is typed: full recovery between jump sets, a bit more on transitions, none after the last', () => {
     const s = session()
-    // between box-jump sets → box-jump's rest
-    expect(restAfter(s, { exIdx: 0, setIdx: 0 })).toBe(180)
-    // between exercises → the completed exercise's rest
-    expect(restAfter(s, { exIdx: 0, setIdx: 1 })).toBe(180)
+    // between box-jump sets → explosive work gets full CNS recovery
+    expect(restAfter(s, { exIdx: 0, setIdx: 0 })).toBe(120)
+    // between exercises → transition adds a little
+    expect(restAfter(s, { exIdx: 0, setIdx: 1 })).toBe(150)
     // after the final set → no break screen
     expect(restAfter(s, { exIdx: 2, setIdx: 0 })).toBe(0)
     expect(nextFocusItem(s, { exIdx: 2, setIdx: 0 })).toBeNull()

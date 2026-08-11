@@ -32,6 +32,7 @@ const REASONS: { id: ExcuseReason; label: string }[] = [
 export function ReconcileSheet() {
   const data = useAppStore((s) => s.data)
   const today = useToday()
+  const [confirmTrained, setConfirmTrained] = useState<string | null>(null)
   // Minute tick so the 12–3am suppression lifts at 03:00 without a reload
   const [minute, setMinute] = useState(() => Math.floor(Date.now() / 60_000))
   useEffect(() => {
@@ -145,9 +146,22 @@ export function ReconcileSheet() {
                     </Chip>
                   ))}
                 </div>
+                {confirmTrained === m.date ? (
+                  <div className="mt-2.5">
+                    <p className="mb-1.5 text-[12px] font-semibold text-ink-dim">Did you follow the plan?</p>
+                    <div className="flex gap-1.5">
+                      <Btn kind="subtle" className="flex-1 !px-2 !py-2 text-[11.5px]" onClick={() => resolveMissAsTrained(m.date, m.templateId)}>
+                        Followed the plan
+                      </Btn>
+                      <Btn kind="ghost" className="flex-1 !px-2 !py-2 text-[11.5px]" onClick={() => resolveMissAsTrained(m.date, m.templateId, true)}>
+                        Did my own thing
+                      </Btn>
+                    </div>
+                  </div>
+                ) : (
                 <div className="mt-2.5 flex gap-1.5">
-                  <Btn kind="subtle" className="flex-1 !px-2 !py-2 text-[11.5px]" onClick={() => resolveMissAsTrained(m.date, m.templateId)}>
-                    I trained — log it
+                  <Btn kind="subtle" className="flex-1 !px-2 !py-2 text-[11.5px]" onClick={() => setConfirmTrained(m.date)}>
+                    I trained, log it
                   </Btn>
                   <Btn
                     kind="ghost"
@@ -169,6 +183,7 @@ export function ReconcileSheet() {
                     Skipped, no proof
                   </Btn>
                 </div>
+                )}
               </div>
             ))}
           </div>
