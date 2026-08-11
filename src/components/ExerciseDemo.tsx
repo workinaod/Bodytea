@@ -367,7 +367,18 @@ function FigureDemo({ spec, compact = false, className = '' }: { spec: DemoSpec;
     <div className={className}>
       <div className="relative mx-auto w-full text-ink" style={{ maxWidth: compact ? undefined : 230 }}>
         <svg viewBox={`0 ${view.y.toFixed(1)} 100 ${view.h.toFixed(1)}`} className="w-full" role="img" aria-label="Animated movement demo">
-          {spec.ground !== false && <line x1={6} y1={90} x2={94} y2={90} className="stroke-ink-faint/40" strokeWidth={1.4} strokeLinecap="round" />}
+          {spec.ground !== false && (
+            <>
+              <defs>
+                <linearGradient id="demo-ground" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stopColor="currentColor" stopOpacity="0" />
+                  <stop offset="0.5" stopColor="currentColor" stopOpacity="0.35" />
+                  <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <line x1={4} y1={90} x2={96} y2={90} stroke="url(#demo-ground)" strokeWidth={2} strokeLinecap="round" />
+            </>
+          )}
           {spec.scene.map((s, i) =>
             s.kind === 'seg' ? (
               <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} strokeWidth={s.w} className={tone(s.tone)} strokeLinecap="round" />
@@ -377,15 +388,15 @@ function FigureDemo({ spec, compact = false, className = '' }: { spec: DemoSpec;
           )}
 
           {/* far-side limbs */}
-          <g stroke="currentColor" strokeOpacity={0.35} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <g stroke="currentColor" strokeOpacity={0.28} strokeWidth={4.4} strokeLinecap="round" strokeLinejoin="round" fill="none">
             <polyline ref={legBRef} />
             <polyline ref={armBRef} />
           </g>
           {/* torso + head */}
-          <line ref={torsoRef} stroke="currentColor" strokeWidth={3.6} strokeLinecap="round" />
+          <line ref={torsoRef} stroke="currentColor" strokeWidth={5.2} strokeLinecap="round" />
           <circle ref={headRef} r={HEAD_R} fill="currentColor" />
           {/* near-side limbs */}
-          <g stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <g stroke="currentColor" strokeWidth={4.4} strokeLinecap="round" strokeLinejoin="round" fill="none">
             <polyline ref={legFRef} />
             <polyline ref={armFRef} />
           </g>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ExerciseDef, ISODate, ResolvedDay, SessionLog } from '../../types'
 import { getExercise } from '../../plan/exercises'
+import { videoFor } from '../../plan/videos'
 import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../../engine/focus'
 import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../logic/speech'
 import { useAppStore } from '../../store/appStore'
@@ -345,6 +346,7 @@ export function FocusView({
   }
 
   const totalSetsThisEx = ex.sets.length
+  const vid = videoFor(def)
   // Loaded movements need a real weight before the set can start
   const needsWeight =
     isLoaded &&
@@ -458,12 +460,12 @@ export function FocusView({
       {/* Middle: reference material (screen-followers live here) */}
       <div className="mx-4 mt-3 flex-1 overflow-y-auto">
         <div className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
-          {def.videoId ? (
+          {vid ? (
             videoOpen ? (
               <div className="overflow-hidden rounded-xl">
                 <iframe
                   className="aspect-video w-full"
-                  src={`https://www.youtube-nocookie.com/embed/${def.videoId}?autoplay=1`}
+                  src={`https://www.youtube-nocookie.com/embed/${vid}?autoplay=1`}
                   title="How to"
                   allow="autoplay; encrypted-media; picture-in-picture"
                   allowFullScreen
@@ -472,7 +474,7 @@ export function FocusView({
             ) : (
               <button onClick={() => setVideoOpen(true)} className="relative block w-full overflow-hidden rounded-xl">
                 <img
-                  src={`https://i.ytimg.com/vi/${def.videoId}/hqdefault.jpg`}
+                  src={`https://i.ytimg.com/vi/${vid}/hqdefault.jpg`}
                   alt="How to do it"
                   className="aspect-video w-full object-cover opacity-85"
                   loading="lazy"
@@ -486,29 +488,15 @@ export function FocusView({
                 </span>
               </button>
             )
-          ) : (
-            // No verified clip for this one: hand them a solid search
-            // instead of leaving the session videoless.
-            <a
-              href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${def.name} exercise form`)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mb-1 flex items-center justify-center gap-1.5 rounded-xl bg-white/[0.05] py-2.5 text-[12px] font-bold text-ink-dim active:bg-white/[0.1]"
-            >
-              <svg viewBox="0 0 24 24" className="h-[13px] w-[13px] fill-accent">
-                <path d="M8 5v14l11-7L8 5Z" />
-              </svg>
-              Watch it done
-            </a>
-          )}
+          ) : null}
 
           {def.cue && (
-            <div className={`${def.videoId ? 'mt-3' : ''} px-1 pb-1 text-center text-[13px] font-bold leading-snug text-gold`}>
+            <div className={`${vid ? 'mt-3' : ''} px-1 pb-1 text-center text-[13px] font-bold leading-snug text-gold`}>
               {def.cue}
             </div>
           )}
 
-          <div className={`${def.videoId || def.cue ? 'mt-3' : ''} flex items-center gap-2`}>
+          <div className={`${vid || def.cue ? 'mt-3' : ''} flex items-center gap-2`}>
             <div className="min-w-0 flex-1">
               <ExerciseDemo compact spec={demoFor(def.id)} photos={photosFor(def.id)} />
             </div>

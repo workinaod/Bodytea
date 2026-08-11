@@ -39,7 +39,7 @@ export const ALL_REGIONS: MuscleRegion[] = [
 
 type FillFn = (r: MuscleRegion) => { fill: string; opacity: number }
 
-const BASE = { fill: 'var(--color-surface-2)', opacity: 1 }
+const BASE = { fill: 'rgba(255,255,255,0.10)', opacity: 1 }
 const PRIMARY = { fill: 'var(--color-accent)', opacity: 0.95 }
 const SECONDARY = { fill: 'var(--color-accent)', opacity: 0.35 }
 const FULLBODY = { fill: 'var(--color-accent)', opacity: 0.5 }
@@ -54,8 +54,28 @@ function makeFill(primary: MuscleRegion[], secondary: MuscleRegion[]): FillFn {
   }
 }
 
-const S = { stroke: 'var(--color-edge)', strokeWidth: 0.8 }
-const OUTLINE = { fill: 'none', stroke: 'var(--color-ink-faint)', strokeWidth: 0.9, opacity: 0.55 }
+const S = { stroke: 'var(--color-bg)', strokeWidth: 1 }
+/** One soft body behind the regions: the figure reads as a person,
+    the muscle shapes read as anatomy on it, not floating robot parts. */
+function Silhouette() {
+  return (
+    <g fill="rgba(255,255,255,0.05)">
+      <circle cx="50" cy="12" r="8.6" />
+      <rect x="45" y="18" width="10" height="9" rx="3" />
+      {/* torso: shoulders taper to waist, then hips */}
+      <path d="M30.5,29 C36,25.5 64,25.5 69.5,29 C72,34 71,44 68.5,52 C66.5,60 64.5,70 63.5,80 C63,86 62,90 60,93 L40,93 C38,90 37,86 36.5,80 C35.5,70 33.5,60 31.5,52 C29,44 28,34 30.5,29 Z" />
+      {/* arms */}
+      <path d="M22.5,29.5 C27,31 27.5,37 26,44 L21.5,62 C20.5,70 19,80 17,87 C16,90.5 15,91.5 13.5,90.5 C11.5,89 10.5,86 11,82 L13,61 C13.5,52 14,42 16,35 C17.5,30.5 20,28.5 22.5,29.5 Z" />
+      <path d="M77.5,29.5 C73,31 72.5,37 74,44 L78.5,62 C79.5,70 81,80 83,87 C84,90.5 85,91.5 86.5,90.5 C88.5,89 89.5,86 89,82 L87,61 C86.5,52 86,42 84,35 C82.5,30.5 80,28.5 77.5,29.5 Z" />
+      {/* legs */}
+      <path d="M40,93 C41.5,105 41,120 40.5,133 C40,145 39.5,160 39.5,172 C39.5,180 38.5,185 36.5,186 L34,186 C32.5,184 32,178 32.5,170 C33,158 32.5,146 32,134 C31.5,120 31,104 33,93 Z" />
+      <path d="M60,93 C58.5,105 59,120 59.5,133 C60,145 60.5,160 60.5,172 C60.5,180 61.5,185 63.5,186 L66,186 C67.5,184 68,178 67.5,170 C67,158 67.5,146 68,134 C68.5,120 69,104 67,93 Z" />
+      {/* feet */}
+      <rect x="30" y="183.5" width="13" height="7.5" rx="3.4" />
+      <rect x="57" y="183.5" width="13" height="7.5" rx="3.4" />
+    </g>
+  )
+}
 
 /** Mirror an x coordinate around the figure's center line. */
 const mx = (x: number) => 100 - x
@@ -63,10 +83,7 @@ const mx = (x: number) => 100 - x
 function FrontFigure({ f, showHeart, heartHot }: { f: FillFn; showHeart: boolean; heartHot: boolean }) {
   return (
     <svg viewBox="0 0 100 200" className="h-full w-auto">
-      {/* head + neck (outline only) */}
-      <circle cx="50" cy="12" r="8" {...OUTLINE} />
-      <rect x="45.5" y="19.5" width="9" height="6" rx="2" {...OUTLINE} />
-
+      <Silhouette />
       {/* traps (front slivers) */}
       <path d="M33,30.5 L45.5,25 L45.5,30.5 Z" {...S} {...f('traps')} />
       <path d={`M${mx(33)},30.5 L${mx(45.5)},25 L${mx(45.5)},30.5 Z`} {...S} {...f('traps')} />
@@ -101,8 +118,6 @@ function FrontFigure({ f, showHeart, heartHot }: { f: FillFn; showHeart: boolean
       {/* forearms */}
       <rect x="11.5" y="62.5" width="8.5" height="22" rx="4" {...S} {...f('forearms')} />
       <rect x={mx(20)} y="62.5" width="8.5" height="22" rx="4" {...S} {...f('forearms')} />
-      <circle cx="15.5" cy="89" r="3.4" {...OUTLINE} />
-      <circle cx={mx(15.5)} cy="89" r="3.4" {...OUTLINE} />
 
       {/* abs (segmented) */}
       <rect x="42.5" y="55" width="15" height="27" rx="3.5" {...S} {...f('abs')} />
@@ -125,16 +140,11 @@ function FrontFigure({ f, showHeart, heartHot }: { f: FillFn; showHeart: boolean
       {/* quads */}
       <rect x="32.5" y="95" width="13" height="46" rx="6.2" {...S} {...f('quads')} />
       <rect x={mx(45.5)} y="95" width="13" height="46" rx="6.2" {...S} {...f('quads')} />
-      <circle cx="39" cy="145.5" r="3.8" {...OUTLINE} />
-      <circle cx={mx(39)} cy="145.5" r="3.8" {...OUTLINE} />
 
       {/* tibialis (front shin) */}
       <rect x="35" y="151" width="6.5" height="30" rx="3.2" {...S} {...f('tibialis')} />
       <rect x={mx(41.5)} y="151" width="6.5" height="30" rx="3.2" {...S} {...f('tibialis')} />
 
-      {/* feet */}
-      <rect x="33" y="183.5" width="11" height="7" rx="3" {...OUTLINE} />
-      <rect x={mx(44)} y="183.5" width="11" height="7" rx="3" {...OUTLINE} />
     </svg>
   )
 }
@@ -142,9 +152,7 @@ function FrontFigure({ f, showHeart, heartHot }: { f: FillFn; showHeart: boolean
 function BackFigure({ f }: { f: FillFn }) {
   return (
     <svg viewBox="0 0 100 200" className="h-full w-auto">
-      <circle cx="50" cy="12" r="8" {...OUTLINE} />
-      <rect x="45.5" y="19.5" width="9" height="6" rx="2" {...OUTLINE} />
-
+      <Silhouette />
       {/* traps kite */}
       <path d="M50,23.5 L31,33.5 L50,54 L69,33.5 Z" {...S} {...f('traps')} />
 
@@ -170,8 +178,6 @@ function BackFigure({ f }: { f: FillFn }) {
       {/* forearms */}
       <rect x="11.5" y="62.5" width="8.5" height="22" rx="4" {...S} {...f('forearms')} />
       <rect x={mx(20)} y="62.5" width="8.5" height="22" rx="4" {...S} {...f('forearms')} />
-      <circle cx="15.5" cy="89" r="3.4" {...OUTLINE} />
-      <circle cx={mx(15.5)} cy="89" r="3.4" {...OUTLINE} />
 
       {/* glutes */}
       <path d="M35.5,84 C32.8,91 34.5,99 43,101 C47.5,100.5 48.8,95 48.5,89 C45.5,84.5 39,82.5 35.5,84 Z" {...S} {...f('glutes')} />

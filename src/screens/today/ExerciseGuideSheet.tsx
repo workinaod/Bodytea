@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { videoFor } from '../../plan/videos'
 import { Sheet } from '../../components/Sheet'
 import { Chip } from '../../components/ui'
 import { MuscleMap } from '../../components/MuscleMap'
@@ -156,7 +157,7 @@ export function ExerciseGuideSheet({
           <h4 className="mb-2 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
             Watch it done
           </h4>
-          <YouTubeEmbed videoId={def.videoId} query={def.videoQuery} />
+          <YouTubeEmbed videoId={videoFor(def)} query={def.videoQuery} />
         </section>
 
         <div className="text-[11px] text-ink-faint">
