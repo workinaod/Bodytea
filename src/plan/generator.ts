@@ -228,7 +228,7 @@ const RECIPES: Record<Role, Recipe> = {
   },
   speed: {
     title: 'Speed + Reactive',
-    tagline: 'Top-end speed and elastic bounce — the week’s fastest work.',
+    tagline: 'Top-end speed and elastic bounce. The week’s fastest work.',
     cns: true,
     kind: 'session',
     debriefKey: 'speed',
@@ -254,7 +254,7 @@ const RECIPES: Record<Role, Recipe> = {
       sl('calf', 4, '12', 12),
       sl('coreB', 3, '12', 12),
     ],
-    note: 'Heavy, not reckless — a rep or two always left in the tank.',
+    note: 'Heavy, not reckless. A rep or two always left in the tank.',
   },
   push: {
     title: 'Push + Shoulders',
@@ -282,7 +282,7 @@ const RECIPES: Record<Role, Recipe> = {
       fx('rear-delt-raise', 3, '12-15'),
       fx('farmer-carry', 3, '40 sec'),
     ],
-    note: 'Full stretch at the bottom of every pull — half reps build ego, not backs.',
+    note: 'Full stretch at the bottom of every pull. Half reps build ego, not backs.',
   },
   upperMix: {
     title: 'Upper Body',
@@ -299,7 +299,7 @@ const RECIPES: Record<Role, Recipe> = {
   },
   fullBody: {
     title: 'Full Body',
-    tagline: 'Squat, hinge, press, pull — the whole machine in one session.',
+    tagline: 'Squat, hinge, press, pull. The whole machine in one session.',
     kind: 'session',
     debriefKey: 'lower',
     entries: [
@@ -404,34 +404,34 @@ export function pickCardio(owned: Set<EquipTag>): CardioOption[] {
 
 const RATIONALE_TEMPLATES: Record<Goal, string[]> = {
   vertical: [
-    '{name} builds {quality} — a direct deposit toward "{goal}". Every quality rep here shows up in your bounce.',
+    '{name} builds {quality}, a direct deposit toward "{goal}". Every quality rep here shows up in your bounce.',
     'Your jump is only as good as what {name} trains: {quality}. That is why it earned a spot in your booklet.',
-    '{name} is in YOUR plan because "{goal}" runs on {quality} — skip it and the goal gets further away.',
+    '{name} is in YOUR plan because "{goal}" runs on {quality}. Skip it and the goal gets further away.',
   ],
   speed: [
-    '{name} feeds {quality} — the engine behind "{goal}". Fast is built here, not wished for.',
+    '{name} feeds {quality}, the engine behind "{goal}". Fast is built here, not wished for.',
     'Speed leaks wherever {quality} is weak. {name} plugs that leak for "{goal}".',
     '{name} made your booklet because "{goal}" is won on {quality}.',
   ],
   muscle: [
-    '{name} drives {quality} — the growth stimulus "{goal}" needs. Log it, add load, repeat.',
+    '{name} drives {quality}, the growth stimulus "{goal}" needs. Log it, add load, repeat.',
     'Muscle is built by progressive work like {name}. {quality} today, visible change at the check-ins.',
-    '{name} is in YOUR plan because "{goal}" is earned set by set — this one counts.',
+    '{name} is in YOUR plan because "{goal}" is earned set by set. This one counts.',
   ],
   strength: [
-    '{name} builds {quality} — raw strength that compounds toward "{goal}".',
+    '{name} builds {quality}, raw strength that compounds toward "{goal}".',
     'Every heavy, honest set of {name} moves "{goal}" closer. {quality} is the currency.',
     '{name} earned its slot: "{goal}" demands {quality}, and nothing trains it better with your gear.',
   ],
   lean: [
-    '{name} keeps muscle on while the deficit does its work — {quality} protects "{goal}".',
+    '{name} keeps muscle on while the deficit does its work. {quality} protects "{goal}".',
     'Cutting without training like {name} burns muscle, not fat. {quality} keeps "{goal}" on track.',
     '{name} is here because "{goal}" looks right only if you keep the engine: {quality}.',
   ],
   general: [
-    '{name} trains {quality} — a pillar of being dangerous at anything. "{goal}" gets closer every session.',
+    '{name} trains {quality}, a pillar of being dangerous at anything. "{goal}" gets closer every session.',
     'All-around athletes are built on {quality}. {name} is your rep for it.',
-    '{name} is in YOUR plan because "{goal}" needs the complete package — this covers {quality}.',
+    '{name} is in YOUR plan because "{goal}" needs the complete package. This covers {quality}.',
   ],
 }
 
@@ -616,7 +616,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
   const rationale = buildRationale(a.goal, a.goalStatement, [...referenced])
   for (const f of focusPicks) {
     rationale[f.exerciseId] =
-      `${getExercise(f.exerciseId).name} is here because you asked for direct ${FOCUS_LABELS[f.area].toLowerCase()} work — the plan guarantees it every week.`
+      `${getExercise(f.exerciseId).name} is here because you asked for direct ${FOCUS_LABELS[f.area].toLowerCase()} work. The plan guarantees it every week.`
   }
 
   const mealPlanFull = buildMealPlan(
@@ -654,6 +654,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     mealPlan: a.skipMeals ? { ...mealPlanFull, templates: [] } : mealPlanFull,
     sportMode: 'generic',
     dietStyle: a.dietStyle ?? 'omnivore',
+    experience: a.experience,
   }
   return { plan, proteinTargetG: nutrition.proteinTargetG }
 }

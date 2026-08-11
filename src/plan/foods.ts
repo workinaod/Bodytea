@@ -223,8 +223,8 @@ const MEAL_SPLITS: Record<
   { slot: string; restSlot?: string; name: string; pPct: number; kPct: number }[]
 > = {
   2: [
-    { slot: 'Meal 1', name: 'First plate — make it big', pPct: 0.45, kPct: 0.45 },
-    { slot: 'Meal 2', name: 'The anchor — biggest of the day', pPct: 0.55, kPct: 0.55 },
+    { slot: 'Meal 1', name: 'First plate, make it big', pPct: 0.45, kPct: 0.45 },
+    { slot: 'Meal 2', name: 'The anchor, biggest of the day', pPct: 0.55, kPct: 0.55 },
   ],
   3: [
     { slot: 'Breakfast', name: 'High-protein start', pPct: 0.3, kPct: 0.3 },
@@ -252,7 +252,7 @@ function suggestDetail(proteinG: number, kcal: number, slot: string, diet: DietS
   if (!alt) return 'Any combo that hits the number.'
   const gap = kcal - alt.kcal
   const pad =
-    gap > 250 ? ' + a side to fill it out (toast, rice, fruit — whatever fits)' : gap < -200 ? ', portioned down to fit' : ''
+    gap > 250 ? ' + a side to fill it out (toast, rice, fruit, whatever fits)' : gap < -200 ? ', portioned down to fit' : ''
   return `E.g. ${alt.name.toLowerCase()}: ${alt.ingredients.join(' + ')}${pad}. Or anything else that hits the number.`
 }
 
@@ -270,7 +270,7 @@ export function buildMealPlan(
   dietStyle: DietStyle = 'omnivore',
 ): MealPlanConfig {
   const p = Math.max(100, proteinTargetG || 160)
-  const tail = goal === 'lean' ? ' Protein first — the calorie number is a ceiling, not a target to beat.' : ''
+  const tail = goal === 'lean' ? ' Protein first. The calorie number is a ceiling, not a target to beat.' : ''
 
   const templates: MealTemplateDef[] = []
   for (const dayType of ['training', 'rest'] as const) {

@@ -68,7 +68,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     paragraphs: [
       'Run each block for 4 weeks, then swap. CORE movers stay fixed the whole year so you can progressively overload them and watch the numbers climb: squat pattern, Romanian deadlift, hip thrust, max-velocity sprints, falling-start sprints, countermovement jumps, approach jumps, pull-ups, overhead press, incline press.',
       'Only the accessories and variations rotate, which keeps things fresh and spreads stress across slightly different angles so the same joints are not grinding the identical groove all year. After Block 3 it loops back to Block 1.',
-      'Rotation is for variety and joint health, not for cutting fatigue. Fatigue is handled by the trimmed volume on each day. Don't add the old exercises back in. The trim is the point.',
+      "Rotation is for variety and joint health, not for cutting fatigue. Fatigue is handled by the trimmed volume on each day. Don't add the old exercises back in. The trim is the point.",
     ],
   },
   {
@@ -90,7 +90,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: 'Daily Readiness Check',
     paragraphs: [
       'Before any CNS day (Monday or Saturday), check in with yourself. If two or more of these are true, downgrade the day: drop the sprint/jump volume by a third and keep the lifts light.',
-      'On a max-speed or max-jump day, fast and fresh beats tired and grinding every time. Backing off a fatigued day isn't weakness. It's how pros stay healthy enough to train all year.',
+      "On a max-speed or max-jump day, fast and fresh beats tired and grinding every time. Backing off a fatigued day isn't weakness. It's how pros stay healthy enough to train all year.",
     ],
     bullets: [
       'Slept under 6 hours',

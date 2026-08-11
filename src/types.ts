@@ -219,6 +219,8 @@ export interface PlanConfig {
   sportMode?: 'ball' | 'generic'
   /** How this user eats — filters generated meals + swap suggestions. */
   dietStyle?: DietStyle
+  /** Training history from onboarding — seeds first-session weights. */
+  experience?: 'new' | 'returning' | 'trained'
 }
 
 export interface Profile {

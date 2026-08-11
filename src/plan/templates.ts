@@ -31,7 +31,7 @@ export const TEMPLATES: Record<string, DayTemplate> = {
         { exerciseId: 'countermovement-jump', sets: 2, repText: '3', repsNum: 3 },
       ],
     },
-    note: 'V4 order is deliberate: catch force first (snap-downs), then produce it — starts, max jumps, broad jumps — all FRESH with full recovery. The lifts stay MODERATE and explosive, 2-3 reps in the tank; Wednesday is the heavy leg day. Stop any explosive drill the moment height or speed drops.',
+    note: 'V4 order is deliberate: catch force first (snap-downs), then produce it (starts, max jumps, broad jumps), all FRESH with full recovery. Lifts stay MODERATE and explosive, 2-3 reps in the tank. Wednesday is the heavy leg day. Stop any explosive drill the moment height or speed drops.',
   },
 
   tuesday: {
@@ -55,7 +55,7 @@ export const TEMPLATES: Record<string, DayTemplate> = {
         { exerciseId: 'standing-ohp', sets: 2, repText: '6-10' },
       ],
     },
-    note: 'Incline first every week — upper chest is a stated goal and it grows from incline volume. Rotator cuff work at the end keeps shoulders healthy.',
+    note: 'Incline first every week. Upper chest is a stated goal and it grows from incline volume. Rotator cuff work at the end keeps shoulders healthy.',
   },
 
   wednesday: {
@@ -78,7 +78,7 @@ export const TEMPLATES: Record<string, DayTemplate> = {
         { exerciseId: 'hip-thrust', sets: 2, repText: '8-10' },
       ],
     },
-    note: 'Placed 2 days before sprints so your legs are fresh Saturday. Hip thrust: shoulders on the bench, bar across hips on a pad — huge for vertical and glute size.',
+    note: 'Placed 2 days before sprints so your legs are fresh Saturday. Hip thrust: shoulders on the bench, bar across hips on a pad. Huge for vertical and glute size.',
   },
 
   thursday: {
@@ -103,7 +103,7 @@ export const TEMPLATES: Record<string, DayTemplate> = {
         { exerciseId: 'dead-hang', sets: 2, repText: '30 sec' },
       ],
     },
-    note: 'Ankle and hip range directly raise your jump and protect the plant leg. This is recovery — keep it light and never grind it.',
+    note: 'Ankle and hip range directly raise your jump and protect the plant leg. This is recovery. Keep it light and never grind it.',
   },
 
   friday: {
@@ -138,7 +138,7 @@ export const TEMPLATES: Record<string, DayTemplate> = {
   saturday: {
     id: 'saturday',
     title: 'Max Speed + One-Foot + Multidirectional',
-    tagline: 'Top speed, springs, cuts, and the money jump — all max intent, all fresh.',
+    tagline: 'Top speed, springs, cuts, and the money jump. All max intent, all fresh.',
     kind: 'session',
     cns: true,
     entries: [
@@ -161,7 +161,7 @@ export const TEMPLATES: Record<string, DayTemplate> = {
         { exerciseId: 'penultimate-approach-jump', sets: 1, repText: '4', repsNum: 4 },
       ],
     },
-    note: 'Sprints TRUE max effort, full recovery — walk back plus 60-90 sec, never tired. New in V4: lateral bounds and the 5-10-5 make Saturday multidirectional, and the penultimate-step approach converts your speed into height. Stop any drill the moment speed, height, or crispness drops.',
+    note: 'Sprints TRUE max effort, full recovery: walk back plus 60-90 sec, never tired. New in V4: lateral bounds and the 5-10-5 make Saturday multidirectional, and the penultimate-step approach converts your speed into height. Stop any drill the moment speed, height, or crispness drops.',
   },
 
   sunday: {
@@ -236,7 +236,7 @@ export const TEMPLATES: Record<string, DayTemplate> = {
         { exerciseId: 'pull-up', sets: 2, repText: 'max' },
       ],
     },
-    note: "Brutal week mode. You're holding ground, not progressing, until the week clears — and that's the assignment.",
+    note: "Brutal week mode. You're holding ground, not progressing, until the week clears. That's the assignment.",
   },
   't3-explosive': {
     id: 't3-explosive',
@@ -309,7 +309,7 @@ export const CARDIO_GROUP_INFO = {
   },
   B: {
     title: 'Option B — Higher Intensity',
-    when: 'You have energy and want a harder session. Do this when legs are fresh — never the day before Monday or Saturday.',
+    when: 'You have energy and want a harder session. Do this when legs are fresh, never the day before Monday or Saturday.',
   },
   circuit: {
     title: 'Home Circuits — No equipment',

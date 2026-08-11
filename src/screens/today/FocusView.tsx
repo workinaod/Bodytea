@@ -218,11 +218,15 @@ export function FocusView({
       const nextEx = session.exercises[next.exIdx]
       const nextDef = getExercise(nextEx.exerciseId)
       const sameExercise = next.exIdx === current.exIdx
-      // Weight check-in: loaded lift, not asked in 2 weeks → chips in the break
-      const justDef = getExercise(session.exercises[current.exIdx].exerciseId)
+      // Weight check-in on the MIDDLE set: by then they know if the load is
+      // off — no reason to wait out the whole exercise. Once per 2 weeks.
+      const justEx = session.exercises[current.exIdx]
+      const justDef = getExercise(justEx.exerciseId)
+      const midSetIdx = Math.max(0, Math.ceil(justEx.sets.length / 2) - 1)
       const askFeel =
         (justDef.kind === 'lift' || justDef.kind === 'carry') &&
         /dumbbell|barbell|kettlebell|ez bar|trap bar|plate|weighted/i.test(justDef.equipment) &&
+        current.setIdx === midSetIdx &&
         !feelAskedRecently(data.sessions, justDef.id, session.date)
       setBreakState({
         seconds: rest,

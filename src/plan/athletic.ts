@@ -303,7 +303,7 @@ export const ATHLETIC: Record<string, AthleticMeta> = {
   'single-leg-bound': M({
     qualities: ['elastic-reactive', 'horizontal-power'], direction: 'horizontal', laterality: 'unilateral', footing: 'one-foot', emphasis: 'reactive',
     level: 'advanced', impact: 3, cns: 3, fresh: true,
-    program: { sets: '2-3', reps: '3-4 / leg', restSec: 180, intensity: 'elite drill — earn it' },
+    program: { sets: '2-3', reps: '3-4 / leg', restSec: 180, intensity: 'elite drill, earn it' },
     regressions: ['power-bound', 'single-leg-pogo'],
     warning: 'Only after months of pogos, bounds, and single-leg landing work. Grass or turf preferred.',
   }),
@@ -366,7 +366,7 @@ export const ATHLETIC: Record<string, AthleticMeta> = {
   'depth-jump': M({
     qualities: ['elastic-reactive', 'vertical-power'], direction: 'vertical', laterality: 'bilateral', footing: 'two-foot', emphasis: 'reactive',
     level: 'advanced', impact: 3, cns: 3, fresh: true,
-    program: { sets: '2-3', reps: '3', restSec: 180, intensity: 'shock method — tiny doses' },
+    program: { sets: '2-3', reps: '3', restSec: 180, intensity: 'shock method, tiny doses' },
     regressions: ['depth-drop', 'snap-down-rebound', 'low-hurdle-hop'],
     warning: 'Advanced only: months of landing + hurdle-hop base first. Modest box, short ground time, tiny volume.',
   }),
@@ -551,7 +551,7 @@ export const ATHLETIC: Record<string, AthleticMeta> = {
   'jump-squat': M({
     qualities: ['explosive-strength', 'vertical-power'], direction: 'vertical', laterality: 'bilateral', footing: 'two-foot', emphasis: 'concentric',
     level: 'intermediate', impact: 2, cns: 2, fresh: true,
-    program: { sets: '3', reps: '3-5', restSec: 120, intensity: 'light — speed is king' },
+    program: { sets: '3', reps: '3-5', restSec: 120, intensity: 'light, speed is king' },
     regressions: ['countermovement-jump'], progressions: ['trap-bar-jump'],
   }),
   'kb-swing': M({

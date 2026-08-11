@@ -14,6 +14,8 @@ import type {
 } from '../types'
 import { DEFAULT_SUPPLEMENTS, defaultWeekState } from '../types'
 import { isIntenseSport } from '../plan/cardio'
+import { getExercise } from '../plan/exercises'
+import { suggestedStartWeight } from '../engine/startWeight'
 import { flushPersist, uid, useAppStore } from '../store/appStore'
 import { downscalePhoto, PhotoStore } from '../store/storage'
 import { planTemplate, resolveDay } from '../engine/resolveDay'
@@ -173,7 +175,18 @@ function prefillFor(date: ISODate, exerciseId: string): { weightLb?: number; rep
       }
     }
   }
-  return {}
+  // No history yet: seed from bodyweight + training background so day one
+  // never opens on an empty stepper. From here the feel check-in takes over.
+  const data = store().data
+  let bw: number | undefined
+  for (let i = data.measurements.length - 1; i >= 0; i--) {
+    if (data.measurements[i].weightLb !== undefined) {
+      bw = data.measurements[i].weightLb
+      break
+    }
+  }
+  const seeded = suggestedStartWeight(getExercise(exerciseId), bw ?? 175, data.plan.experience ?? 'returning')
+  return seeded !== null ? { weightLb: seeded } : {}
 }
 
 /** Mid-rest weight check-in, asked at most once per exercise every 2 weeks. */
