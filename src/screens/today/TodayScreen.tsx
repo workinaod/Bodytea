@@ -92,11 +92,11 @@ export function TodayScreen() {
   const cardioTip = useMemo(() => {
     if (day.kind === 'cardio-backup') return null // the day IS the cardio
     const tomorrowCns = resolveDay(addDaysISO(date, 1), data).cns
-    if (day.cns) return "Cardio only AFTER today's session — speed work needs fresh legs."
-    if (tomorrowCns) return 'Keep cardio easy (zone 2) — tomorrow is a max-effort day.'
-    if (day.kind === 'rest') return 'Rest from lifting — easy cardio still counts.'
-    if (day.kind === 'mobility') return 'Good day for conditioning — pair it with the mobility work.'
-    return 'Cardio welcome — after the lifts beats before.'
+    if (day.cns) return "Cardio only AFTER today's session. Speed work needs fresh legs."
+    if (tomorrowCns) return 'Keep cardio easy (zone 2). Tomorrow is a max-effort day.'
+    if (day.kind === 'rest') return 'Rest from lifting. Easy cardio still counts.'
+    if (day.kind === 'mobility') return 'Good day for conditioning. Pair it with the mobility work.'
+    return 'Cardio welcome. After the lifts beats before.'
   }, [day, date, data])
 
   function handleStart() {
@@ -146,8 +146,8 @@ export function TodayScreen() {
       {graceDate && date === graceDate && (
         <div className="border-l-2 border-cyan/60 py-1 pl-3 text-[12.5px] leading-snug text-cyan/90">
           {session
-            ? `After midnight — still finishing yesterday's session. It logs under ${formatDayLabel(graceDate)}.`
-            : `After midnight — ${formatDayLabel(graceDate)}'s session is still open until 3 AM. Start it now and it logs under ${formatDayLabel(graceDate)}.`}
+            ? `After midnight. Still finishing yesterday's session, it logs under ${formatDayLabel(graceDate)}.`
+            : `After midnight. ${formatDayLabel(graceDate)}'s session is still open until 3 AM. Start now and it logs under ${formatDayLabel(graceDate)}.`}
         </div>
       )}
 
@@ -277,7 +277,7 @@ export function TodayScreen() {
             <div className="text-[11px] font-black uppercase tracking-wider text-accent">Make-up day</div>
             <p className="mt-1 text-[13px] leading-snug text-ink-dim">
               You missed <span className="font-bold text-ink">{makeup.title}</span> this week. Off day, open
-              window — run it now and the week stays whole.
+              window. Run it now and the week stays whole.
             </p>
             <Btn
               className="mt-2.5 w-full"
@@ -297,7 +297,7 @@ export function TodayScreen() {
         <Card className="border-danger/30">
           <p className="text-[13.5px] font-bold text-danger">Day skipped.</p>
           <p className="mt-1 text-[12.5px] text-ink-dim">
-            It's on the record. The comeback session is tomorrow's job — protein is still today's.
+            It's on the record. The comeback is tomorrow's job. Protein is still today's.
           </p>
         </Card>
       )}
@@ -307,22 +307,22 @@ export function TodayScreen() {
         const strong = grade === 'full' || grade === 'overtime'
         const line =
           grade === 'overtime'
-            ? 'Overtime — more than the plan asked. Logged.'
+            ? 'Overtime. More than the plan asked. Logged.'
             : grade === 'full'
               ? session!.status === 'downgraded-completed'
-                ? 'Full session on a downgraded day — honestly logged.'
+                ? 'Full session on a downgraded day. Honestly logged.'
                 : 'Session complete.'
               : grade === 'half'
                 ? 'Half session logged.'
                 : grade === 'light'
                   ? 'Light day logged.'
-                  : 'Extremely light — barely on the board, but on it.'
+                  : 'Extremely light. Barely on the board, but on it.'
         return (
           <Card className={strong ? 'border-lime/30' : 'border-gold/30'}>
             <p className={`text-[14px] font-bold ${strong ? 'text-lime' : 'text-gold'}`}>{line}</p>
             {session!.makeupFor && (
               <p className="mt-0.5 text-[11.5px] text-ink-faint">
-                Make-up for {formatDayLabel(session!.makeupFor)} — the week stays whole.
+                Make-up for {formatDayLabel(session!.makeupFor)}. The week stays whole.
               </p>
             )}
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
@@ -386,7 +386,7 @@ export function TodayScreen() {
                 const total = session.exercises.reduce((n, e) => n + e.sets.length, 0)
                 const done = session.exercises.reduce((n, e) => n + e.sets.filter((x) => x.done).length, 0)
                 const label = GRADE_LABEL[sessionGrade(session)].toLowerCase()
-                return `${done} of ${total} sets are in. Ending now grades the day ${label} — not a completion.`
+                return `${done} of ${total} sets are in. Ending now grades the day ${label}, not a completion.`
               })()}
             </p>
             <div className="mt-4 flex flex-col gap-2">
@@ -394,13 +394,13 @@ export function TodayScreen() {
                 className="w-full rounded-xl bg-accent py-3 text-[14px] font-black text-black active:scale-[0.98]"
                 onClick={() => setConfirmEnd(false)}
               >
-                No — keep training
+                No, keep training
               </button>
               <button
                 className="w-full rounded-xl border border-danger/40 bg-surface-2 py-3 text-[13px] font-bold text-danger active:scale-[0.98]"
                 onClick={handleFinish}
               >
-                Yes, quit — log what's done
+                Yes, quit and log what's done
               </button>
             </div>
           </div>
@@ -434,8 +434,8 @@ export function TodayScreen() {
             </Card>
           ))}
           <p className="px-1 text-[11.5px] leading-snug text-ink-faint">
-            Pick one — it becomes today's session. Logged a run instead? Tap the cardio chip above and
-            this requirement clears itself.
+            Pick one and it becomes today's session. Already logged a run? Tap the cardio chip above and
+            this clears itself.
           </p>
         </div>
       )}
@@ -505,7 +505,7 @@ export function TodayScreen() {
 
           {!today && (
             <p className="px-1 text-center text-[11.5px] text-ink-faint">
-              Preview only — sessions start on their day.
+              Preview only. Sessions start on their day.
             </p>
           )}
         </>

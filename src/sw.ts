@@ -82,7 +82,7 @@ const NUDGES = [
   'Session still open. The plan works when you do.',
   'Your workout is waiting. Ten minutes gets the minimum done.',
   'Still nothing logged today. The Sergeant is watching the clock.',
-  "Training day. Future-you already said yes — go.",
+  'Training day. Future-you already said yes. Go.',
   'The streak survives on days exactly like this one.',
 ]
 
@@ -96,7 +96,7 @@ async function maybeNotify(): Promise<void> {
     await self.registration.showNotification(
       `Bodytea — ${meta.reviewReadyLabel || 'Milestone review'} is ready`,
       {
-        body: 'Deltas, before/after, and the honest read on gains vs effort. Two minutes — you earned the look.',
+        body: 'Deltas, before/after, and the honest read on gains vs effort. Two minutes. You earned the look.',
         tag: 'naod-review-ready',
         icon: 'icons/pwa-192.png',
         badge: 'icons/pwa-192.png',
@@ -129,10 +129,10 @@ async function maybeNotify(): Promise<void> {
     meta.todayDate === today0
   ) {
     const LINES = [
-      "Missed today. The day isn't over: 30 sit-ups, right now, wherever you are. Then we're square — tomorrow the real work resumes.",
-      'Today got away from you. Fine. 20 push-ups before bed — missing a session is survivable, missing the standard is not.',
-      'No session logged. One-minute plank, right now. The plan forgives a day; it never forgets a pattern.',
-      'The workout did not happen. So: 25 bodyweight squats before you sleep. Show tomorrow-you that today-you still showed up.',
+      "Missed today. Day's not over though: 30 sit-ups, right now, wherever you are. Then we're square.",
+      "Today got away from you. Fine. 20 push-ups before bed. A missed session is survivable, a dropped standard isn't.",
+      'No session logged. One-minute plank, right now. I forgive a day, I never forget a pattern.',
+      "The workout didn't happen. So: 25 squats before bed. Show tomorrow-you that today-you still showed up.",
     ]
     let h = 0
     for (const ch of today0) h = (h * 31 + ch.charCodeAt(0)) >>> 0
@@ -156,7 +156,7 @@ async function maybeNotify(): Promise<void> {
     meta.todayDate === today0
   ) {
     await self.registration.showNotification('Bodytea — Make-up day', {
-      body: `You missed ${meta.makeupTitle} this week. Off day, open window — let's make it up today.`,
+      body: `You missed ${meta.makeupTitle} this week. Off day, open window. Let's make it up today.`,
       tag: 'naod-makeup-week',
       icon: 'icons/pwa-192.png',
       badge: 'icons/pwa-192.png',
@@ -185,7 +185,7 @@ async function maybeNotify(): Promise<void> {
 
   const cardioNudge = meta.todayDone && meta.cardioLoggedToday === false
   const body = cardioNudge
-    ? 'Session done ✓ — was there cardio today? Pre or post, run or game: log what happened.'
+    ? 'Session done ✓. Any cardio today? Run or game, pre or post, log it.'
     : NUDGES[now.getDate() % NUDGES.length]
   await self.registration.showNotification(
     cardioNudge ? 'Bodytea — Cardio check' : `Bodytea — ${meta.todayTitle}`,

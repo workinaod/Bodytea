@@ -141,7 +141,7 @@ export function FocusView({
         // visual count only if they came through the gate.
         liveStartRef.current = Date.now()
         if (!chained) {
-          const words = ['3…', '2…', '1…', 'Go — work.']
+          const words = ['3…', '2…', '1…', 'Go. Work.']
           liveStartRef.current = Date.now() + 3000
           words.forEach((w, i) => {
             timers.current.push(window.setTimeout(() => setCaption(w), i * 1000))
@@ -157,7 +157,7 @@ export function FocusView({
         [0, '3…', 600],
         [1000, '2…', 600],
         [2000, '1…', 600],
-        [3000, 'Go — work.', 1000],
+        [3000, 'Go. Work.', 1000],
       ]
       for (const [t, word, freq] of steps) {
         timers.current.push(
@@ -188,7 +188,7 @@ export function FocusView({
     setBreakState(null)
     setPhase('go')
     setNowTick(Date.now())
-    setCaption('Fresh clock. Take it from the top — set one.')
+    setCaption('Fresh clock. Take it from the top. Set one.')
   }, [clearTimers, session.date])
 
   // ---- Advance ----
@@ -245,7 +245,7 @@ export function FocusView({
         ? `${set.reps} reps`
         : `${set.targetReps.replace(/[-–]/, ' to ')} reps`
     const weightBit = isLoaded && set.weightLb !== undefined ? ` at ${set.weightLb} pounds` : ''
-    const intro = `${def.name}. Set ${current.setIdx + 1} of ${ex?.sets.length} — ${repsBit}${weightBit}.`
+    const intro = `${def.name}. Set ${current.setIdx + 1} of ${ex?.sets.length}: ${repsBit}${weightBit}.`
     const prompt = isLoaded ? `${loadLabel(def.equipment)} first, then say ready.` : 'Say ready when set.'
     setCaption(`${intro} ${prompt}`)
     if (soundRef.current === 'voice') say(`${intro} ${prompt}`, { interrupt: true })
@@ -302,7 +302,7 @@ export function FocusView({
       <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-bg px-6 text-center">
         <div className="text-[13px] font-black uppercase tracking-[0.2em] text-lime">Session complete</div>
         <h2 className="mt-2 text-[32px] font-black leading-tight">{progress.done} sets. Done.</h2>
-        <p className="mt-2 text-[13.5px] text-ink-dim">The work is banked — the debrief has your recovery orders.</p>
+        <p className="mt-2 text-[13.5px] text-ink-dim">Work banked. The debrief has your recovery orders.</p>
         <button
           onClick={onFinish}
           className="mt-8 w-full max-w-sm rounded-2xl bg-lime py-5 text-[17px] font-black text-black shadow-2xl shadow-lime/20 active:scale-[0.98]"
@@ -422,7 +422,7 @@ export function FocusView({
         <h2 className="text-[25px] font-black leading-tight tracking-tight">{def.name}</h2>
         <div className="mt-1.5 text-[12px] font-black uppercase tracking-[0.14em] text-ink-dim">
           Set {current.setIdx + 1} of {totalSetsThisEx}
-          <span className="text-accent-soft"> — {set.targetReps}{!isTimed && !/rep/i.test(set.targetReps) ? ' reps' : ''}</span>
+          <span className="text-accent-soft"> · {set.targetReps}{!isTimed && !/rep/i.test(set.targetReps) ? ' reps' : ''}</span>
           {resolved?.lightMode && <span className="text-gold"> · light</span>}
         </div>
       </div>
@@ -516,7 +516,7 @@ export function FocusView({
               <div className="font-display text-[44px] font-black leading-none tabular-nums text-accent">{liveSec}s</div>
             ) : (
               <div className="text-[11px] font-black uppercase tracking-[0.22em] text-ink-faint">
-                working — tap or say done when finished
+                working · tap or say done when finished
               </div>
             )}
           </div>

@@ -41,24 +41,24 @@ export function composeDebrief(
   // ---- Recap ----
   const recap: string[] = []
   const { done, total } = sessionSetsDone(session)
-  if (total > 0) recap.push(`${done}/${total} sets — graded ${GRADE_LABEL[sessionGrade(session)].toLowerCase()}.`)
-  if (session.makeupFor) recap.push(`Make-up for ${session.makeupFor.slice(5)} — the missed day got its work.`)
+  if (total > 0) recap.push(`${done}/${total} sets, graded ${GRADE_LABEL[sessionGrade(session)].toLowerCase()}.`)
+  if (session.makeupFor) recap.push(`Make-up for ${session.makeupFor.slice(5)}. The missed day got its work.`)
   const tonnage = sessionTonnage(session)
   if (tonnage > 0) recap.push(`${tonnage.toLocaleString()} lb moved across the session.`)
   const prs = detectPRs(data, session)
   for (const pr of prs) {
     recap.push(
       pr.kind === 'e1rm'
-        ? `PR: ${pr.name} — est. 1RM ${pr.value} lb (was ${pr.prev}).`
-        : `PR: ${pr.name} — ${pr.value} reps (was ${pr.prev}).`,
+        ? `${pr.name} PR: est. 1RM ${pr.value} lb (was ${pr.prev}).`
+        : `${pr.name} PR: ${pr.value} reps (was ${pr.prev}).`,
     )
   }
   const streak = currentStreak(data, today)
   if (streak >= 2) recap.push(`Streak: ${streak} scheduled days without a miss.`)
   if (session.readiness?.downgraded)
-    recap.push('Trained on a downgraded day — showing up smaller beats not showing up. Correct call.')
+    recap.push('Trained on a downgraded day. Showing up smaller beats not showing up. Right call.')
   if (session.trimmedFromIndex !== undefined)
-    recap.push('Ran long and cut from the bottom — exactly the right way to trim.')
+    recap.push('Ran long, cut from the bottom. Exactly the right way to trim.')
 
   // ---- Insights (data first) ----
   const insights = generateInsights(data, today).slice(0, 2)
@@ -91,7 +91,7 @@ export function composeDebrief(
   const sleep = [take('sleep', SLEEP_TIPS)]
   if (tomorrow.cns) {
     sleep.push(
-      `Tomorrow is ${tomorrow.title} — a CNS day. Short sleep tonight = readiness flags tomorrow. Protect the night.`,
+      `Tomorrow is ${tomorrow.title}, a CNS day. Short sleep tonight means readiness flags tomorrow. Protect the night.`,
     )
   } else if (tomorrow.kind === 'session') {
     sleep.push(`Tomorrow: ${tomorrow.title}. Sleep is the first exercise of that session.`)

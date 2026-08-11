@@ -71,7 +71,7 @@ export async function syncReminderMeta(): Promise<void> {
   ) {
     await showLocalReminder(
       `${ready.label} is ready`,
-      'Deltas, before/after, and the honest read on gains vs effort. Two minutes — you earned the look.',
+      'Deltas, before/after, and the honest read on gains vs effort. Two minutes. You earned the look.',
       'naod-review-ready',
     ).catch(() => {})
     await MetaStore.set({ ...meta, reviewNotifiedMark: ready.id }).catch(() => {})
@@ -123,7 +123,7 @@ export function armPageTimers(): void {
           // session's in — the daily cardio question is still open
           void showLocalReminder(
             'Cardio check',
-            'Session done ✓ — was there cardio today? Pre or post, run or game: log what happened.',
+            'Session done ✓. Any cardio today? Run or game, pre or post, log it.',
             'naod-cardio-nudge',
           )
         }
