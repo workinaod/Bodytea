@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildNutrition, deepGoalStrategy, generatePlan, ownedTags, type OnboardingAnswers } from './generator'
+import { buildNutrition, deepGoalStrategy, generatePlan, GOAL_FOLLOWUPS, ownedTags, type OnboardingAnswers } from './generator'
 import { canDo } from './equip'
 import { EXERCISES } from './exercises'
 import { planConfigSchema } from '../store/schema'
@@ -267,5 +267,56 @@ describe('goal follow-ups deepen the plan', () => {
     const { plan, strategy } = generatePlan(a)
     expect(plan.goalAnswers?.['lose-amount']).toBe('30+ lb')
     expect(strategy.length).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe('the deep-goal framework covers every goal family', () => {
+  const GOALS = ['lean', 'muscle', 'strength', 'vertical', 'speed', 'general'] as const
+
+  it('every goal asks 3 follow-ups and answers deepen the strategy', () => {
+    const n = buildNutrition('general', 180)
+    for (const g of GOALS) {
+      expect(GOAL_FOLLOWUPS[g].length).toBe(3)
+      const base = deepGoalStrategy(g, {}, n)
+      expect(base.length).toBeGreaterThanOrEqual(3)
+      // answering every question adds personal lines (up to the cap)
+      const all: Record<string, string> = {}
+      for (const fq of GOAL_FOLLOWUPS[g]) all[fq.id] = fq.options[0]
+      const deep = deepGoalStrategy(g, all, n)
+      expect(deep.length).toBeGreaterThanOrEqual(base.length)
+      // never drown the preview
+      expect(deep.length).toBeLessThanOrEqual(6)
+      // zero em dashes in any combination
+      for (const fq of GOAL_FOLLOWUPS[g])
+        for (const o of fq.options)
+          expect(deepGoalStrategy(g, { [fq.id]: o }, n).join(' ')).not.toContain('—')
+    }
+  })
+
+  it('strength strategy adapts to training age', () => {
+    const n = buildNutrition('strength', 190)
+    expect(deepGoalStrategy('strength', { 'training-age': '3+ years' }, n).join(' ')).toContain('waves')
+    expect(deepGoalStrategy('strength', { 'training-age': 'Under a year' }, n).join(' ')).toContain('golden window')
+  })
+
+  it('a never-jumped athlete gets a genuinely lighter explosive start', () => {
+    const base: OnboardingAnswers = {
+      goal: 'vertical',
+      goalStatement: 'dunk by summer',
+      customTargets: [],
+      daysPerWeek: 6,
+      equipProfile: 'gym',
+      extraEquip: [],
+      experience: 'new',
+      bodyweightLb: 175,
+    }
+    const std = generatePlan(base).plan
+    const gentle = generatePlan({ ...base, goalAnswers: { 'jump-history': 'Never' } }).plan
+    const countSets = (p: typeof std) =>
+      Object.values(p.templates)
+        .flatMap((t) => t.entries)
+        .reduce((s, e) => (e.entry === 'fixed' ? s + e.sets : s), 0)
+    expect(countSets(gentle)).toBeLessThan(countSets(std))
+    expect(deepGoalStrategy('vertical', { 'jump-history': 'Never' }, buildNutrition('vertical', 175)).join(' ')).toContain('set lighter')
   })
 })

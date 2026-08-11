@@ -510,38 +510,42 @@ export const GOAL_FOLLOWUPS: Record<Goal, GoalFollowup[]> = {
   strength: [
     { id: 'lift-focus', q: 'Which lift matters most?', options: ['Squat', 'Bench', 'Deadlift', 'All of them'] },
     { id: 'maxes', q: 'Know your current maxes?', options: ['Yes', 'Roughly', 'No idea'] },
+    { id: 'training-age', q: 'How long under a barbell?', options: ['Under a year', '1 to 3 years', '3+ years'] },
   ],
   vertical: [
     { id: 'vert-now', q: 'Where is your vertical now?', options: ['Touch the rim', 'Close to it', 'Not close yet'] },
     { id: 'jump-history', q: 'Jump training before?', options: ['Never', 'Some', 'A lot'] },
+    { id: 'limiting', q: 'What feels missing?', options: ['Strength', 'Bounce', 'Not sure'] },
   ],
   speed: [
     { id: 'speed-now', q: 'Full sprint lately feels', options: ['Smooth', 'Stiff', 'Have not sprinted in years'] },
     { id: 'surface', q: 'Somewhere to sprint nearby?', options: ['Field or track', 'Street or park', 'Treadmill only'] },
+    { id: 'speed-context', q: 'Speed for what?', options: ['Team sport bursts', 'Straight-line speed', 'Feeling athletic'] },
   ],
   general: [
     { id: 'matters-most', q: 'What matters most?', options: ['More energy', 'Look better', 'Health numbers', 'All of it'] },
     { id: 'day-movement', q: 'Outside the gym, your day is', options: ['Mostly sitting', 'On my feet', 'Pretty active'] },
+    { id: 'barrier', q: 'What usually kills the streak?', options: ['Time', 'Energy', 'Boredom', 'Soreness'] },
   ],
 }
 
-/**
- * The plan's thinking, written out. Weight loss gets the full metabolic
- * picture (insulin, inflammation, gut health), not just a calorie number.
- * Shown on the booklet preview and pinned to the Record on day one.
- */
-export function deepGoalStrategy(
-  goal: Goal,
-  ans: Record<string, string>,
-  n: { kcalTraining: number; kcalRest: number; proteinTargetG: number },
-): string[] {
-  const out: string[] = []
-  if (goal === 'lean') {
-    out.push(
+// ---------- The deep-goal framework ----------
+// Every goal family gets the same treatment weight loss got first: the
+// real physiology written in plain language, sharpened by the follow-up
+// answers, and honest about what the plan actually does. One builder
+// per goal; adding depth to a goal (or a new goal) happens here.
+
+type NutritionNums = { kcalTraining: number; kcalRest: number; proteinTargetG: number }
+type StrategyBuilder = (ans: Record<string, string>, n: NutritionNums) => string[]
+
+const STRATEGY: Record<Goal, StrategyBuilder> = {
+  lean: (ans, n) => {
+    const out = [
       `Training days run ${n.kcalTraining} kcal, rest days ${n.kcalRest}. A deficit your body can hold for months without rebounding.`,
       `Protein holds at ${n.proteinTargetG} g so what you lose is fat, not muscle. Protein-first meals also keep insulin calm, and calm insulin is when fat actually burns.`,
+      'Lifting through a cut is not optional: muscle is where blood sugar gets stored and burned, and keeping it is what keeps the weight off after.',
       'The deeper game: whole foods over packaged ones to cool inflammation, fiber and fermented foods for your gut, and a 10-minute walk after meals to flatten the sugar spike.',
-    )
+    ]
     if (ans['food-struggle'] === 'Late-night eating')
       out.push('Your leak is late night. Meals front-load earlier so the 11pm pull loses its grip, and the late-night list keeps only safe picks.')
     if (ans['food-struggle'] === 'Sugar & drinks')
@@ -552,42 +556,117 @@ export function deepGoalStrategy(
       out.push('Portions are pre-decided here: every meal carries its numbers. Eat what is written, skip the guessing.')
     if (ans['day-movement'] === 'Mostly sitting')
       out.push('Desk days burn less than formulas assume, so your target sits a notch lower and daily walks count as real training.')
-  } else if (goal === 'muscle') {
-    out.push(
+    return out
+  },
+
+  muscle: (ans, n) => {
+    const out = [
       `A controlled surplus (${n.kcalTraining} kcal on training days) plus ${n.proteinTargetG} g protein. Big enough to build, small enough to stay lean.`,
-      'Muscle is built on progression: when a weight feels easy, the next session loads heavier. The check-ins handle that automatically.',
-    )
+      'Muscle grows from tension plus progression: the same lifts come back a little heavier or a rep better. The weight check-ins drive that automatically.',
+      `Protein lands harder spread out: roughly ${Math.round(n.proteinTargetG / 4 / 5) * 5} g per meal keeps building all day instead of one giant dinner.`,
+      'The growing happens between sessions. Sleep is when growth hormone peaks, and the plan spaces muscle groups so each one recovers before it gets hit again.',
+    ]
     if (ans['appetite'] === 'Hard to eat enough')
       out.push('Eating enough is your real bottleneck, so lean on the calorie-dense picks in your meal plan and liquid calories like shakes and milk.')
+    if (ans['appetite'] === 'Always hungry')
+      out.push('A big appetite makes bulking easy and staying lean hard. Keep the surplus at the number, not at the appetite.')
     if (ans['sleep'] === 'Under 6 h')
       out.push('Under 6 hours of sleep quietly caps muscle growth and spikes hunger hormones. Treat 7+ as part of the program.')
-  } else if (goal === 'strength') {
-    out.push(
-      'Strength is a skill: the same big lifts come back week after week so your nervous system learns them cold.',
+    if (ans['gain-amount'] === 'As much as possible')
+      out.push('Max growth still has a speed limit: about half a pound a week of actual muscle. The extra calories are in your numbers; patience is on you.')
+    return out
+  },
+
+  strength: (ans, n) => {
+    const out = [
+      'Strength is a skill before it is a size: the same big lifts return week after week so your nervous system learns to fire everything at once.',
+      'Heavy but never to failure: one or two reps always left in the tank keeps every rep fast and clean. Grinding maxes teaches bad patterns.',
       `Protein at ${n.proteinTargetG} g and a small surplus keep the engine fed without adding a gut.`,
-    )
+    ]
+    if (ans['training-age'] === 'Under a year')
+      out.push('Your first year is the golden window: strength can climb almost every session. The plan rides that as long as it lasts.')
+    if (ans['training-age'] === '3+ years')
+      out.push('Past the early window strength moves in waves, not lines. The blocks and deloads in your plan are what make the wave rise.')
     if (ans['maxes'] === 'No idea')
-      out.push('No maxes needed. The first two weeks find your working weights, then the numbers climb from there.')
+      out.push('No maxes needed. The first two weeks find your working weights through the check-ins, then the numbers climb from there.')
     if (ans['lift-focus'] && ans['lift-focus'] !== 'All of them')
       out.push(`${ans['lift-focus']} leads its day every week. Priority lifts come first when you are freshest.`)
-  } else if (goal === 'vertical' || goal === 'speed') {
-    out.push(
-      'Explosive work is nervous-system work: max-effort days stay short and sharp, never ground into fatigue.',
-      'Strength days build the engine, jump and sprint days teach it to fire. Both live in your week.',
-    )
-    if (ans['jump-history'] === 'Never' || ans['speed-now'] === 'Have not sprinted in years')
-      out.push('Starting volume is deliberately low. Tendons adapt slower than muscles, and rushing this is how people get hurt.')
+    return out
+  },
+
+  vertical: (ans) => {
+    const out = [
+      'A vertical is rate of force: how much you can put into the ground in a quarter of a second. Everything here feeds that.',
+      'Two engines: strength days build force, jump days teach your legs to release it fast. Skipping either caps the other.',
+      'Landings are half the workout. Soft, quiet landings build the tendon stiffness that actually returns energy at takeoff.',
+    ]
+    if (ans['limiting'] === 'Strength')
+      out.push('You feel the strength gap, so the lifting days are your growth edge. Treat them like the main event.')
+    if (ans['limiting'] === 'Bounce')
+      out.push('Strong but not springy: the jump and sprint days are your edge. Arrive fresh for them, always.')
+    if (ans['limiting'] === 'Not sure')
+      out.push('The first block tests both sides. Watch where your numbers move fastest; that is your edge.')
+    if (ans['jump-history'] === 'Never')
+      out.push('Jump volume starts a set lighter than standard. Tendons adapt slower than muscles, and rushing that is how people get hurt.')
+    if (ans['vert-now'] === 'Touch the rim')
+      out.push('You are inches away. The last inches come from speed and stiffness, not from more grinding.')
+    return out
+  },
+
+  speed: (ans) => {
+    const out = [
+      'Nothing trains speed like sprinting. The plan sprints you fresh, short, and sharp, never ground into fatigue.',
+      'Full recovery between reps is the point, not a break from it: walk back, reset, go again at true max.',
+      'Hamstrings are the engine at top speed. The lifting days load them on purpose, and gradual sprint exposure is what keeps them healthy.',
+    ]
+    if (ans['speed-context'] === 'Team sport bursts')
+      out.push('Games are won in the first ten yards, so acceleration work gets the priority in your week.')
+    if (ans['speed-context'] === 'Straight-line speed')
+      out.push('Top speed is posture and rhythm. The max-velocity days matter most; treat them like game day.')
+    if (ans['speed-context'] === 'Feeling athletic')
+      out.push('Expect the first difference in how you move, not on a stopwatch. Fast feet change how everything else feels.')
+    if (ans['speed-now'] === 'Have not sprinted in years')
+      out.push('Sprint volume starts a set lighter than standard. Years off means the tissue needs a runway before true max efforts.')
+    if (ans['speed-now'] === 'Stiff')
+      out.push('Stiff at speed usually means range. The mobility work in your week is not filler; it is where the stride opens up.')
     if (ans['surface'] === 'Treadmill only')
-      out.push('Treadmill sprints work fine to start. When you can, find open ground: real acceleration is a different animal.')
-  } else {
-    out.push(
-      'Consistency beats intensity for this goal: the plan is sized so an average week is actually finishable.',
+      out.push('Treadmill sprints work to start. When you can, find open ground: real acceleration is a different animal.')
+    return out
+  },
+
+  general: (ans, n) => {
+    const out = [
+      'Strength and cardio fitness are two of the strongest health markers there are. This plan trains both on purpose.',
+      'Muscle is metabolic armor: it stores and burns blood sugar and keeps insulin in check as you age.',
       `Protein at ${n.proteinTargetG} g and daily movement do more for energy and health markers than any single workout.`,
-    )
+    ]
+    if (ans['matters-most'] === 'Look better')
+      out.push('Visible change follows a boring loop: protein, progressive lifts, sleep. The mirror starts moving around week six.')
+    if (ans['matters-most'] === 'Health numbers')
+      out.push('Blood pressure, resting heart rate, blood sugar: all of them respond to exactly this mix of lifting, cardio, and walking.')
+    if (ans['matters-most'] === 'More energy')
+      out.push('Energy follows training, not the other way around. Give it two weeks of showing up and the afternoons change.')
+    if (ans['barrier'] === 'Time')
+      out.push('Sessions are sized for a real day, and busy weeks drop to a smaller tier instead of dropping to zero.')
+    if (ans['barrier'] === 'Boredom')
+      out.push('Exercises rotate every block exactly so this never goes stale.')
+    if (ans['barrier'] === 'Soreness')
+      out.push('Soreness fades as you adapt. Volume builds block by block so it never buries you.')
+    if (ans['barrier'] === 'Energy')
+      out.push('Start lighter than pride wants. The intensity options at session start exist for low days; use them and keep the streak.')
     if (ans['day-movement'] === 'Mostly sitting')
-      out.push('The biggest win outside the gym: break up sitting. Short walks count, and the plan reminds you.')
-  }
-  return out
+      out.push('The biggest win outside the gym: break up the sitting. Short walks count, and the plan nudges you.')
+    return out
+  },
+}
+
+/**
+ * The plan's thinking, written out per goal: real physiology, sharpened
+ * by the follow-up answers. Shown on the booklet preview and pinned to
+ * the Record on day one. Capped so nobody drowns in bullets.
+ */
+export function deepGoalStrategy(goal: Goal, ans: Record<string, string>, n: NutritionNums): string[] {
+  return STRATEGY[goal](ans, n).slice(0, 6)
 }
 
 const GOAL_LABEL: Record<Goal, string> = {
@@ -624,6 +703,25 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
   if (explosive) {
     if (!templates.speed) templates.speed = buildTemplate('speed', RECIPES.speed, owned, a.experience)
     templates['t3-explosive'] = buildTemplate('t3-explosive', RECIPES.speed, owned, a.experience, 4)
+  }
+
+  // Deep-goal answer → real programming: someone new to jumping or years
+  // off sprinting starts every jump/sprint movement one set lighter.
+  // Tendons adapt slower than muscles; the strategy notes say this and
+  // the plan actually does it.
+  const gentleExplosive =
+    explosive &&
+    (a.goalAnswers?.['jump-history'] === 'Never' ||
+      a.goalAnswers?.['speed-now'] === 'Have not sprinted in years')
+  if (gentleExplosive) {
+    for (const t of Object.values(templates)) {
+      if (t.kind !== 'session') continue
+      t.entries = t.entries.map((e) => {
+        if (e.entry !== 'fixed' || e.sets < 3) return e
+        const kind = getExercise(e.exerciseId).kind
+        return kind === 'jump' || kind === 'sprint' ? { ...e, sets: e.sets - 1 } : e
+      })
+    }
   }
 
   const tierRoleTemplates: PlanConfig['tierRoleTemplates'] = explosive
