@@ -3,7 +3,7 @@ import type { ResolvedDay, SessionLog } from '../../types'
 import { getExercise } from '../../plan/exercises'
 import { Btn, Chip, Stepper } from '../../components/ui'
 import { RestTimer } from '../../components/RestTimer'
-import { patchSet, toggleExerciseSkipped, trimFromExercise } from '../../logic/actions'
+import { patchSet, restartSession, trimFromExercise } from '../../logic/actions'
 import { useAppStore } from '../../store/appStore'
 
 function fmtElapsed(startedAt?: string): string {
@@ -39,6 +39,12 @@ export function SessionView({
   const totalSets = session.exercises.reduce((n, e) => n + e.sets.length, 0)
   const doneSets = session.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0)
 
+  // Never got past the first exercise and 30+ min on the clock → offer a
+  // clean restart with fresh time (same session, sets unticked).
+  const firstUnpassed = session.exercises.findIndex((e) => e.sets.some((s) => !s.done))
+  const startedMs = session.startedAt ? Date.parse(session.startedAt) : 0
+  const staleOnFirst = firstUnpassed === 0 && startedMs > 0 && Date.now() - startedMs >= 30 * 60_000
+
   return (
     <div className="space-y-3 pb-40">
       <div className="flex items-center justify-between px-1">
@@ -52,6 +58,15 @@ export function SessionView({
           />
         </div>
       </div>
+
+      {staleOnFirst && (
+        <button
+          onClick={() => restartSession(session.date)}
+          className="w-full rounded-xl border border-cyan/30 bg-cyan/8 px-3.5 py-2.5 text-left text-[12.5px] font-bold leading-snug text-cyan"
+        >
+          ↻ Still on the first exercise with the clock running — restart with fresh time
+        </button>
+      )}
 
       {session.exercises.map((ex, exIdx) => {
         const def = getExercise(ex.exerciseId)
@@ -162,22 +177,16 @@ export function SessionView({
                     </button>
                   </div>
                 ))}
-                <div className="flex justify-between pt-1">
-                  <button
-                    onClick={() => toggleExerciseSkipped(session.date, exIdx)}
-                    className="text-[11.5px] font-semibold text-ink-faint underline"
-                  >
-                    {ex.skipped ? 'un-skip exercise' : 'skip this exercise'}
-                  </button>
-                  {exIdx > 0 && (
+                {exIdx > 0 && (
+                  <div className="flex justify-end pt-1">
                     <button
                       onClick={() => trimFromExercise(session.date, exIdx)}
                       className="text-[11.5px] font-semibold text-gold underline"
                     >
                       {session.trimmedFromIndex === exIdx ? 'restore the tail' : 'running long — cut from here down'}
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -138,6 +138,7 @@ const sessionSchema = z.object({
       downgraded: z.boolean(),
     })
     .optional(),
+  intensity: z.enum(['full', 'lighter', 'minimum']).optional(),
   trimmedFromIndex: z.number().optional(),
   exercises: z.array(
     z.object({

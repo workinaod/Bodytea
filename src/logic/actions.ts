@@ -8,6 +8,7 @@ import type {
   Measurement,
   PhotoMeta,
   RunLog,
+  SessionIntensity,
   SessionLog,
   Tier,
 } from '../types'
@@ -156,11 +157,23 @@ function prefillFor(date: ISODate, exerciseId: string): { weightLb?: number; rep
   return {}
 }
 
-export function startSession(date: ISODate, readinessFlags?: [boolean, boolean, boolean, boolean]): void {
+export function startSession(
+  date: ISODate,
+  readinessFlags?: [boolean, boolean, boolean, boolean],
+  intensity: SessionIntensity = 'full',
+): void {
   const data = store().data
   const resolved = resolveDay(date, data)
-  const downgraded = (readinessFlags?.filter(Boolean).length ?? 0) >= 2
-  const exercises = downgraded ? applyReadinessDowngrade(resolved.exercises) : resolved.exercises
+  const downgraded = (readinessFlags?.filter(Boolean).length ?? 0) >= 2 || intensity === 'lighter'
+  let exercises = downgraded ? applyReadinessDowngrade(resolved.exercises) : resolved.exercises
+  if (intensity === 'minimum') {
+    // The bare-minimum counter-offer, chosen up front instead of mid-excuse:
+    // the template's authored recipe, or the first two movements at ≤2 sets.
+    const template = resolved.templateId ? planTemplate(data.plan, resolved.templateId) : null
+    exercises = template
+      ? minimumViableFor(template, resolved.exercises).exercises
+      : resolved.exercises.slice(0, 2).map((r) => ({ ...r, sets: Math.min(r.sets, 2) }))
+  }
 
   const skeleton: SessionLog = {
     date,
@@ -168,6 +181,7 @@ export function startSession(date: ISODate, readinessFlags?: [boolean, boolean, 
     status: 'partial',
     startedAt: new Date().toISOString(),
     readiness: readinessFlags ? { flags: readinessFlags, downgraded } : undefined,
+    intensity: intensity === 'full' ? undefined : intensity,
     exercises: exercises.map((r) => {
       const pre = prefillFor(date, r.exerciseId)
       return {
@@ -199,10 +213,18 @@ export function patchSet(
   })
 }
 
-export function toggleExerciseSkipped(date: ISODate, exIdx: number): void {
+/**
+ * Fresh clock on a stalled session: same day, same exercises, same
+ * prefilled weights — startedAt reset to now, every set unticked.
+ * Offered only while the athlete never got past the first exercise.
+ */
+export function restartSession(date: ISODate): void {
   store().update((d) => {
-    const ex = d.sessions[date]?.exercises[exIdx]
-    if (ex) ex.skipped = !ex.skipped
+    const s = d.sessions[date]
+    if (!s) return
+    s.startedAt = new Date().toISOString()
+    delete s.endedAt
+    for (const ex of s.exercises) for (const set of ex.sets) set.done = false
   })
 }
 
@@ -224,7 +246,8 @@ export function finishSession(date: ISODate): DebriefData {
     )
     const allDone = considered.length > 0 && considered.every((e) => e.sets.every((x) => x.done))
     s.endedAt = new Date().toISOString()
-    s.status = s.readiness?.downgraded
+    const eased = s.readiness?.downgraded || (s.intensity !== undefined && s.intensity !== 'full')
+    s.status = eased
       ? allDone
         ? 'downgraded-completed'
         : 'partial'

@@ -303,6 +303,9 @@ export interface ReadinessCheck {
   downgraded: boolean
 }
 
+/** How much the athlete had at start — the plan flexes on the spot. */
+export type SessionIntensity = 'full' | 'lighter' | 'minimum'
+
 export interface SessionLog {
   date: ISODate
   templateId: string
@@ -310,6 +313,8 @@ export interface SessionLog {
   startedAt?: string
   endedAt?: string
   readiness?: ReadinessCheck
+  /** Start-time intensity choice — 'lighter'/'minimum' finish as downgraded wins. */
+  intensity?: SessionIntensity
   /** "Running long" cut point — exercises at index >= this were dropped (bottom-first rule). */
   trimmedFromIndex?: number
   exercises: ExerciseLog[]

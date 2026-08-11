@@ -41,7 +41,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
     .catch(() => false)
 
   if (!isRest) {
-    // ---- Start session (readiness gate on CNS days) ----
+    // ---- Start session (readiness gate on CNS days, intensity gate otherwise) ----
     const readinessBtn = page.getByRole('button', { name: /Readiness check → start/ })
     const startBtn = page.getByRole('button', { name: 'Start session', exact: true })
     if (await readinessBtn.isVisible().catch(() => false)) {
@@ -50,6 +50,8 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
       await page.getByRole('button', { name: /^Start session$/ }).click()
     } else {
       await startBtn.click()
+      await expect(page.getByText('How much do you have today?')).toBeVisible()
+      await page.getByRole('button', { name: /^Full session/ }).click()
     }
 
     // ---- Focus mode is the default session UI: GO gate, then the set ----

@@ -5,7 +5,7 @@ import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../..
 import { briefingFor, cadencePlan, timesTrained } from '../../engine/cadence'
 import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../logic/speech'
 import { useAppStore } from '../../store/appStore'
-import { patchSet, toggleExerciseSkipped } from '../../logic/actions'
+import { patchSet, restartSession } from '../../logic/actions'
 import { Stepper } from '../../components/ui'
 import { MuscleMap } from '../../components/MuscleMap'
 import { ExerciseDemo } from '../../components/ExerciseDemo'
@@ -181,6 +181,28 @@ export function FocusView({
 
   // Drift watch: if the athlete keeps finishing way off the count, nudge the knob
   const driftRef = useRef<number[]>([])
+
+  // Stalled-start watch: still on the FIRST exercise with 30+ min on the
+  // clock → offer a clean restart with fresh time (nothing else changes).
+  const [nowTick, setNowTick] = useState(() => Date.now())
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 30_000)
+    return () => window.clearInterval(id)
+  }, [])
+  const startedMs = session.startedAt ? Date.parse(session.startedAt) : 0
+  const staleOnFirst =
+    current !== null && current.exIdx === 0 && startedMs > 0 && nowTick - startedMs >= 30 * 60_000
+
+  const restartFresh = useCallback(() => {
+    clearCadence()
+    restartSession(session.date)
+    setBreakState(null)
+    setPhase('go')
+    setLiveCount(null)
+    driftRef.current = []
+    setNowTick(Date.now())
+    setCaption('Fresh clock. Take it from the top — set one.')
+  }, [clearCadence, session.date])
 
   // ---- Advance ----
   const autoStartNext = useRef(false)
@@ -519,12 +541,11 @@ export function FocusView({
           </button>
         )}
         <div className="mt-2 flex items-center justify-center gap-5 pb-1">
-          <button
-            onClick={() => toggleExerciseSkipped(session.date, current.exIdx)}
-            className="text-[11.5px] font-semibold text-ink-faint underline"
-          >
-            skip exercise
-          </button>
+          {staleOnFirst && (
+            <button onClick={restartFresh} className="text-[11.5px] font-semibold text-cyan underline">
+              ↻ restart with fresh time
+            </button>
+          )}
           <button onClick={onSkip} className="text-[11.5px] font-semibold text-danger underline">
             can't finish
           </button>

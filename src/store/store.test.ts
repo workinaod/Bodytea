@@ -15,6 +15,14 @@ function fixtureData() {
       { exerciseId: 'goblet-squat', sets: [{ targetReps: '6-8', weightLb: 80, reps: 8, done: true }] },
     ],
   }
+  // A start-time intensity choice rides on the log and must round-trip
+  data.sessions['2026-08-12'] = {
+    date: '2026-08-12',
+    templateId: 'wednesday',
+    status: 'downgraded-completed',
+    intensity: 'minimum',
+    exercises: [{ exerciseId: 'goblet-squat', sets: [{ targetReps: '6-8', reps: 8, done: true }] }],
+  }
   data.excuses.push({
     id: 'x1',
     at: '2026-08-11T10:00:00.000Z',

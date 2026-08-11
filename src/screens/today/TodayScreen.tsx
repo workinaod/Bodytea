@@ -16,6 +16,7 @@ import { swapCandidatesFor } from '../../plan/subs'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
 import { ReadinessSheet } from './ReadinessSheet'
+import { IntensitySheet } from './IntensitySheet'
 import { SkipFlow } from './SkipFlow'
 import { DebriefSheet } from './DebriefSheet'
 import { ExerciseGuideSheet } from './ExerciseGuideSheet'
@@ -28,6 +29,7 @@ export function TodayScreen() {
   // null = follow the live day; set only by explicit ‹ › navigation
   const [selected, setSelected] = useState<string | null>(null)
   const [readinessOpen, setReadinessOpen] = useState(false)
+  const [intensityOpen, setIntensityOpen] = useState(false)
   const [skipOpen, setSkipOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'focus' | 'list'>('focus')
   const [guideId, setGuideId] = useState<string | null>(null)
@@ -86,9 +88,7 @@ export function TodayScreen() {
 
   function handleStart() {
     if (day.cns) setReadinessOpen(true)
-    else {
-      startSession(date)
-    }
+    else setIntensityOpen(true)
   }
 
   function handleFinish() {
@@ -400,9 +400,18 @@ export function TodayScreen() {
       <ReadinessSheet
         open={readinessOpen}
         onClose={() => setReadinessOpen(false)}
-        onStart={(flags) => {
+        onStart={(flags, intensity) => {
           setReadinessOpen(false)
-          startSession(date, flags)
+          startSession(date, flags, intensity)
+        }}
+      />
+      <IntensitySheet
+        open={intensityOpen}
+        day={day}
+        onClose={() => setIntensityOpen(false)}
+        onStart={(intensity) => {
+          setIntensityOpen(false)
+          startSession(date, undefined, intensity)
         }}
       />
       {skipOpen && (
