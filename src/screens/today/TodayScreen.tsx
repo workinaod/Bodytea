@@ -247,7 +247,7 @@ export function TodayScreen() {
             <Chip tone={cardioEntries.length > 0 ? 'lime' : 'default'} onClick={() => setCardioOpen(true)}>
               {cardioEntries.length > 0
                 ? `${cardioActivity(cardioEntries[0].activityId).emoji} Cardio logged ✓ (${cardioEntries.length})`
-                : 'Cardio / sport today?'}
+                : 'Cardio today?'}
             </Chip>
             {canSwapCns && !session && (
               <Chip tone={cnsSwapped ? 'gold' : 'cyan'} onClick={() => toggleCnsSwap(date)}>
@@ -351,7 +351,6 @@ export function TodayScreen() {
         <FocusView
           day={viewDay}
           session={session}
-          onOpenGuide={setGuideId}
           onFinish={requestFinish}
           onSkip={() => setSkipOpen(true)}
           onListView={() => setViewMode('list')}

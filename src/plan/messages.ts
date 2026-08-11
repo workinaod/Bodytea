@@ -256,23 +256,39 @@ export const MESSAGE_POOLS: MessagePool[] = [
   },
 
   // ---------- "Need a push" ----------
+  // Every line here is a scene, a roast, or a punch. Abstractions died:
+  // "Today is one brick, lay it" is a metaphor and it landed as nothing,
+  // while "there's always a beach day, a pool day, a wedding" is a picture
+  // of a real afternoon and it lands. No proverbs, no gym-poster wisdom.
+  //
+  // Deliberately no {goal} interpolation: the push sheet already prints
+  // the goal statement in a quote block right under the line, so a line
+  // that also quotes it says the same thing twice.
   {
     id: 'push',
     situation: 'push',
     variants: [
+      // Desire, concrete
       "Be honest: half the reason anyone trains is to look good naked. That's not shallow, that's fuel. Use it.",
       "There's always a beach day, a pool day, a wedding. Your body gets seen. Train for the day it does.",
-      "Somebody with your exact schedule and your exact excuses is training right now. They'll look like it.",
+      'Summer is a receipt. It shows everyone exactly what you did all winter.',
+      "There's a version of you that walks into a room different. He's 45 minutes away, four days a week.",
+      "Nobody has ever taken their shirt off and wished they'd skipped more.",
+      "You already know what you'd look like if you never missed a week. That's the whole point.",
       'Sweatpants forgive everything. Summer forgives nothing.',
-      "You've got 40 minutes of scrolling in you tonight and we both know it. Spend it under a bar instead.",
+      // Funny, direct
+      "You've watched three hours of other people working out this week. Bold strategy.",
+      'The couch is undefeated against you. Today would be a good day to end that streak.',
+      "Your gym bag has been in the car for two days like you're holding it hostage.",
+      "You'll do a 12-hour shift for somebody else. Give yourself 45 minutes.",
+      'Rest day was yesterday. And the day before. I keep receipts, remember.',
       "Nobody ever got in shape holding a phone. Put me down and go.",
-      "Today's session takes less time than the story you'd tell about why you skipped it.",
-      'The gym does not care how you show up. Show up ugly, leave dangerous.',
-      'Motivation shows up around set two. Start without it.',
-      'Start bad. Finish anyway.',
-      "You don't need a good day. You need a logged one.",
-      'Train tired. Tired reps count the same.',
-      'Today is one brick. Lay it.',
+      // Short, impactful
+      "Nobody is coming. It's you or it's nothing.",
+      "Everybody wants it. Almost nobody goes. That's the entire gap.",
+      "Excuses don't burn calories.",
+      'You want it, or you want the reasons. Not both.',
+      "Somebody with your exact schedule and your exact excuses is training right now. They'll look like it.",
       "Skip today and nothing happens. That's the trap. Nothing keeps happening.",
     ],
   },

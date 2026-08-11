@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DemoPhotoSeq } from '../plan/demoPhotos'
+import type { DemoEase, DemoPose, DemoSpec } from '../plan/demoTypes'
+export type { DemoEase, DemoFrame, DemoHeld, DemoPose, DemoSpec, SceneItem } from '../plan/demoTypes'
 
 // ============================================================
 // Animated exercise demo: a stick figure performing the actual
@@ -13,53 +15,6 @@ import type { DemoPhotoSeq } from '../plan/demoPhotos'
 //   torso      0 = upright · + = leaning forward
 //   feet       0 = toe flat forward · + = toe pressing down
 // ============================================================
-
-export interface DemoPose {
-  hx: number // hip x
-  hy: number // hip y
-  torso: number
-  head: number // extra head tilt relative to torso
-  thighF: number
-  shinF: number
-  footF: number
-  thighB: number
-  shinB: number
-  footB: number
-  armF: number
-  foreF: number
-  armB: number
-  foreB: number
-}
-
-export type DemoEase = 'inout' | 'out' | 'in' | 'linear'
-
-/** Segment: tween FROM the previous frame TO `p` over `d` ms, then pause `hold`. */
-export interface DemoFrame {
-  p: DemoPose
-  d: number
-  hold: number
-  label: string | null
-  ease: DemoEase
-}
-
-export type DemoHeld =
-  | { kind: 'none' }
-  | { kind: 'db'; at: 'wrists' | 'wristF' | 'wristB' | 'wristMid' | 'kneeF' }
-  | { kind: 'plate'; at: 'chest' }
-  | { kind: 'barbell'; at: 'wristMid' | 'backNeck' | 'hips' }
-  | { kind: 'towel'; barY: number }
-
-export type SceneItem =
-  | { kind: 'seg'; x1: number; y1: number; x2: number; y2: number; w: number; tone?: 'faint' | 'accent' }
-  | { kind: 'rect'; x: number; y: number; w: number; h: number; tone?: 'faint' | 'accent' }
-
-export interface DemoSpec {
-  frames: DemoFrame[]
-  held: DemoHeld
-  scene: SceneItem[]
-  /** Draw the default ground line (default true). */
-  ground?: boolean
-}
 
 // ---- Skeleton proportions (viewBox units) ----
 const TH = 16 // thigh

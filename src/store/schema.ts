@@ -28,6 +28,7 @@ const settingsSchema = z.object({
   voiceCoach: z.boolean().optional(),
   soundMode: z.enum(['voice', 'beeps-names', 'beeps', 'silent']).optional(),
   cadenceSpeed: z.number().min(0.5).max(2).optional(),
+  voiceTipSeen: z.boolean().optional(),
 })
 
 // ---------- Plan config (the booklet) ----------

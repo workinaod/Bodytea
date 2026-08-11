@@ -10,7 +10,7 @@ import { CoachScreen } from './screens/coach/CoachScreen'
 import { RunTrackerSheet } from './screens/today/RunTrackerSheet'
 import { CardioTimerSheet } from './screens/today/CardioTimerSheet'
 import { CARDIO_ACTIVITIES } from './plan/cardio'
-import { Onboarding } from './screens/Onboarding'
+import { Onboarding } from './screens/onboarding'
 import { ReconcileSheet } from './screens/ReconcileSheet'
 import { dailyCoachSweep } from './logic/actions'
 import { refreshReminders, syncReminderMeta } from './logic/reminders'
@@ -93,24 +93,25 @@ export default function App() {
       <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} session={sessionLive && tab === 'today'} />
       <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track">
         <div className="space-y-2 pb-8">
-          {(
-            [
-              { id: 'run', label: 'Run', sub: 'GPS: live map, pace, splits' },
-              { id: 'bike', label: 'Ride', sub: 'GPS: live map, mph, route' },
-            ] as const
-          ).map((a) => (
-            <button
-              key={a.id}
-              onClick={() => setTrack(a.id)}
-              className="flex w-full items-center justify-between rounded-2xl bg-white/[0.07] px-4 py-4 text-left active:bg-white/[0.09]"
-            >
-              <span>
-                <span className="block text-[15px] font-extrabold">{a.label}</span>
-                <span className="mt-0.5 block text-[11.5px] text-ink-faint">{a.sub}</span>
-              </span>
-              <span className="text-[17px] font-bold text-accent">→</span>
-            </button>
-          ))}
+          {/* The two GPS activities: big, centred, and raised off the sheet.
+              Nothing to read, one thing to hit. */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {(
+              [
+                { id: 'run', label: 'Run', emoji: '🏃' },
+                { id: 'bike', label: 'Ride', emoji: '🚴' },
+              ] as const
+            ).map((a) => (
+              <button
+                key={a.id}
+                onClick={() => setTrack(a.id)}
+                className="press flex flex-col items-center justify-center gap-1.5 rounded-3xl bg-gradient-to-b from-white/[0.13] to-white/[0.05] py-6 shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_10px_24px_-12px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.09]"
+              >
+                <span className="text-[26px] leading-none">{a.emoji}</span>
+                <span className="text-heading font-extrabold">{a.label}</span>
+              </button>
+            ))}
+          </div>
           <p className="pt-2 text-[11px] font-black uppercase tracking-[0.18em] text-ink-faint">Everything else</p>
           <div className="grid grid-cols-2 gap-2">
             {CARDIO_ACTIVITIES.filter((a) => a.id !== 'run' && a.id !== 'bike').map((a) => (

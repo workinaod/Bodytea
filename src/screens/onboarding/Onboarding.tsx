@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { CustomTarget, DietStyle, EquipTag, Goal, LifeEventKind, PlanConfig, RoutineGoal, Weekday } from '../types'
+import type { CustomTarget, DietStyle, EquipTag, Goal, LifeEventKind, PlanConfig, RoutineGoal, Weekday } from '../../types'
 
 // The real-life checklist: each pick seeds a life event with a label the
 // engine's notes will use, so the coaching speaks this user's schedule.
@@ -9,15 +9,16 @@ const LIFE_CHIPS: { id: string; chip: string; label: string; kind: LifeEventKind
   { id: 'on-feet', chip: '🦵 On my feet at work', label: 'On-feet shift', kind: 'on-feet' },
   { id: 'kids', chip: '👶 Up nights with kids', label: 'Up with the kids', kind: 'late-night' },
 ]
-import { mondayOf, todayISO, formatShort, addDaysISO } from '../engine/calendar'
-import { useAppStore, uid } from '../store/appStore'
-import { saveMeasurement } from '../logic/actions'
-import { generatePlan, buildNutrition, FOCUS_LABELS, GOAL_FOLLOWUPS, type FocusArea, type OnboardingAnswers } from '../plan/generator'
-import { byorNutrition, makeEmptyByorPlan, normalizeBooklet, validateBooklet, ROUTINE_GOAL_LABELS } from '../plan/bookletOps'
-import { analyzeRoutine, type RoutineNote } from '../plan/analyze'
-import { BookletEditor } from './booklet/BookletEditor'
-import { Btn, Card, Chip, Stepper } from '../components/ui'
-import { enableReminders } from '../logic/reminders'
+import { mondayOf, todayISO, formatShort, addDaysISO } from '../../engine/calendar'
+import { useAppStore, uid } from '../../store/appStore'
+import { saveMeasurement } from '../../logic/actions'
+import { generatePlan, buildNutrition, FOCUS_LABELS, GOAL_FOLLOWUPS, type FocusArea, type OnboardingAnswers } from '../../plan/generator'
+import { byorNutrition, makeEmptyByorPlan, normalizeBooklet, validateBooklet, ROUTINE_GOAL_LABELS } from '../../plan/bookletOps'
+import { analyzeRoutine, type RoutineNote } from '../../plan/analyze'
+import { BookletEditor } from '../booklet/BookletEditor'
+import { Btn, Card, Chip, Stepper } from '../../components/ui'
+import { enableReminders } from '../../logic/reminders'
+import { Welcome, type QuickGoal } from './Welcome'
 
 // ============================================================
 // Onboarding v2: a goal-driven wizard that generates the user's
@@ -57,6 +58,16 @@ const GOAL_CHIPS: { label: string; goal: Goal }[] = [
   { label: '🎯 All-around athlete', goal: 'general' },
   { label: '⬆️ Jump higher', goal: 'vertical' },
   { label: '🏀 Dunk a basketball', goal: 'vertical' },
+]
+
+// Five goals with nothing in common, so the welcome screen demonstrates
+// the app's range instead of asserting it. `chip` indexes GOAL_CHIPS.
+const QUICK_GOALS: QuickGoal[] = [
+  { label: '🏀 Dunk a basketball', statement: 'dunk on a 10-ft rim', chip: 11 },
+  { label: '🔥 Lose 40 lb', statement: 'lose 40 lb', chip: 1 },
+  { label: '🏃 First marathon', statement: 'finish my first marathon', chip: 8 },
+  { label: '🏋️ Bench 225', statement: 'bench 225', chip: 2 },
+  { label: '🫀 Get my energy back', statement: 'get my energy back', chip: 4 },
 ]
 
 /** Home-gym checklist: nothing is assumed, each item grants its tags. */
@@ -306,40 +317,26 @@ export function Onboarding() {
       )}
 
       {step === 0 && (
-        <div className="flex flex-1 flex-col justify-center">
-          <div className="text-[13px] font-black uppercase tracking-[0.3em] text-accent">Bodytea</div>
-          <h1 className="mt-2 text-[40px] font-black leading-[1.05] tracking-tight">
-            Name any goal.
-            <br />
-            Get the exact plan.
-          </h1>
-          <p className="mt-4 text-[14.5px] leading-relaxed text-ink-dim">
-            Dunk. First ultra. 20 lb of muscle. Lose 40. Bench 225. Whatever it is,
-            two minutes of straight answers builds a detailed plan for exactly that:
-          </p>
-          <div className="mt-3 space-y-2 border-l-2 border-edge pl-3 text-[13px] leading-snug text-ink-dim">
-            <p>Workouts, weights, reps, and rest built around YOUR goal, gear, and week. Video, photo demos, and muscle maps on every movement.</p>
-            <p>Meals sized to how you actually eat: 2 big plates or 5 small, with common-grocery swaps.</p>
-            <p>GPS run &amp; ride tracking, PRs, streaks, a global leaderboard, and 3 / 6 / 12-month reviews.</p>
-            <p>A sergeant that bends the plan around real life and accepts calendar proof, nothing less.</p>
-          </div>
-          {rebuilding && (
-            <p className="mt-5 rounded-2xl bg-white/[0.05] px-4 py-3 text-[12.5px] leading-snug text-ink-dim ring-1 ring-white/[0.05]">
-              <span className="font-bold text-accent-soft">Your plan is being rebuilt.</span> The engine got a lot
-              smarter: goal follow-ups that change real numbers, starting weights, race training. Answer again and
-              you get the better version. Every session, meal, run and measurement you logged is untouched.
-            </p>
-          )}
-          <Btn className="mt-8 w-full py-4 text-[16px]" onClick={() => { setMode('gen'); next() }}>
-            {rebuilding ? 'Rebuild my plan' : 'Build my plan'}
-          </Btn>
-          <Btn kind="subtle" className="mt-3 w-full py-4" onClick={() => { setMode('byor'); next() }}>
-            I already have a routine
-          </Btn>
-          <p className="mt-2 text-center text-[11.5px] text-ink-faint">
-            Bring your own. The app maps it, tracks it, and gives you straight notes on it.
-          </p>
-        </div>
+        <Welcome
+          rebuilding={rebuilding}
+          quickGoals={QUICK_GOALS}
+          onPickGoal={(g) => {
+            // Seed the goal so the tap is a head start, not just a page turn.
+            // Both stay editable at the goal step.
+            setMode('gen')
+            setGoalChip(g.chip)
+            setGoalStatement(g.statement)
+            next()
+          }}
+          onBuild={() => {
+            setMode('gen')
+            next()
+          }}
+          onOwnRoutine={() => {
+            setMode('byor')
+            next()
+          }}
+        />
       )}
 
       {step === 1 && (

@@ -1,4 +1,4 @@
-import type { DemoEase, DemoFrame, DemoHeld, DemoPose, DemoSpec, SceneItem } from '../components/ExerciseDemo'
+import type { DemoEase, DemoFrame, DemoHeld, DemoPose, DemoSpec, SceneItem } from './demoTypes'
 
 // ============================================================
 // Animated movement demos, one hand-tuned keyframe sequence

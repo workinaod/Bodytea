@@ -26,9 +26,10 @@ test('track a run with GPS: live stats → finish → logged everywhere', async 
   await quickOnboard(page)
 
   // Today → cardio → Run → live tracker
-  await page.getByText('Cardio / sport today?').click()
+  await page.getByText('Cardio today?').click()
+  // Track → Run goes straight into the recorder, no form in between
+  await page.getByRole('button', { name: 'Track it Start now' }).click()
   await page.getByRole('button', { name: /^🏃\s*Run$/ }).click()
-  await page.getByText('Track it live with GPS').click()
 
   // First fix arrives from the mocked position → recording starts
   await expect(page.getByText(/recording, screen stays on/)).toBeVisible({ timeout: 10000 })

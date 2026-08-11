@@ -1,42 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { Glyph } from './glyphs'
 
 export type TabId = 'today' | 'week' | 'meals' | 'progress' | 'coach'
-
-const ICONS: Record<TabId, (active: boolean) => JSX.Element> = {
-  today: (a) => (
-    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round">
-      <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z" strokeLinejoin="round" fill={a ? 'var(--color-accent)' : 'none'} />
-    </svg>
-  ),
-  week: (a) => (
-    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round">
-      <rect x="3" y="5" width="18" height="16" rx="3" />
-      <path d="M3 10h18M8 3v4M16 3v4" />
-      {a && <circle cx="12" cy="15" r="2" fill="var(--color-accent)" stroke="none" />}
-    </svg>
-  ),
-  meals: (a) => (
-    // Fork and a real, closed-blade knife
-    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
-      <path d="M7 2v20" />
-      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
-    </svg>
-  ),
-  progress: (a) => (
-    // Bars climb left to right: progress goes UP
-    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round">
-      <path d="M4 20v-5M10 20V9M16 20V4M21 20H3" strokeLinejoin="round" />
-    </svg>
-  ),
-  coach: (a) => (
-    // The Sergeant's whistle
-    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke={a ? 'var(--color-accent)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9.5 9H20a1.5 1.5 0 0 1 1.5 1.5v1.2a1.5 1.5 0 0 1-1.1 1.45L15 14.4A5.5 5.5 0 1 1 9.5 9Z" />
-      <circle cx="9.5" cy="14.5" r="1.6" fill={a ? 'var(--color-accent)' : 'none'} />
-    </svg>
-  ),
-}
 
 const LEFT: { id: TabId; label: string }[] = [
   { id: 'today', label: 'Today' },
@@ -56,7 +21,7 @@ function TabButton({ id, label, active, onClick }: { id: TabId; label: string; a
         active ? 'bg-accent/12 text-accent' : 'text-ink-faint active:text-ink-dim'
       }`}
     >
-      {ICONS[id](active)}
+      <Glyph name={id} active={active} />
       <span className={`text-[9.5px] font-bold ${active ? 'text-accent' : ''}`}>{label}</span>
     </button>
   )

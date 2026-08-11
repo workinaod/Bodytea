@@ -1,4 +1,4 @@
-import type { MuscleRegion } from '../components/MuscleMap'
+import type { MuscleRegion } from './muscleRegions'
 
 // ============================================================
 // Muscle activation per exercise, drives the MuscleMap visual.

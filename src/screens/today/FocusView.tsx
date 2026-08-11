@@ -60,14 +60,12 @@ function shortHowTo(def: ExerciseDef): string {
 export function FocusView({
   day,
   session,
-  onOpenGuide,
   onFinish,
   onSkip,
   onListView,
 }: {
   day: ResolvedDay
   session: SessionLog
-  onOpenGuide: (id: string) => void
   onFinish: () => void
   onSkip: () => void
   onListView: () => void
@@ -86,6 +84,17 @@ export function FocusView({
   const [soundOpen, setSoundOpen] = useState(false)
   const soundRef = useRef(soundMode)
   soundRef.current = soundMode
+
+  // The voice nudge: once per user, not once per session. Held in local
+  // state as well so dismissing it is instant rather than store-round-trip.
+  const [voiceTip, setVoiceTip] = useState(!data.settings.voiceTipSeen)
+  const dismissVoiceTip = () => {
+    if (!voiceTip) return
+    setVoiceTip(false)
+    update((d) => {
+      d.settings.voiceTipSeen = true
+    })
+  }
 
   // Flipping the sound down mid-sentence must actually silence it
   useEffect(() => {
@@ -148,6 +157,11 @@ export function FocusView({
   }, [phase, isTimed])
   const liveSec = phase === 'live' && liveStartRef.current > 0 ? Math.max(0, Math.floor((Date.now() - liveStartRef.current) / 1000)) : 0
   void liveTick
+
+  // Work starting is the nudge's cue to leave: it has done its job.
+  useEffect(() => {
+    if (phase === 'live') dismissVoiceTip()
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startSet = useCallback(
     (chained = false) => {
@@ -432,22 +446,39 @@ export function FocusView({
           </div>
           {voiceSupported && (
             <button
-              onClick={() => setVoiceOn(!voiceOn)}
-              aria-label="Voice control"
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold ${voiceOn ? 'bg-lime text-black' : 'bg-white/[0.07] text-ink-dim'}`}
+              onClick={() => {
+                setVoiceOn(!voiceOn)
+                dismissVoiceTip()
+              }}
+              aria-label={voiceOn ? 'Voice control on' : 'Voice control'}
+              className={`press grid h-8 w-8 place-items-center rounded-full ${voiceOn ? 'bg-lime text-black' : 'bg-white/[0.07] text-ink-dim'}`}
             >
-              <svg viewBox="0 0 24 24" className="h-[13px] w-[13px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" className="h-[15px] w-[15px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" />
                 <path d="M5 11a7 7 0 0 0 14 0M12 18v3.5" />
               </svg>
-              {voiceOn ? 'on' : 'voice'}
             </button>
           )}
-          <button onClick={() => onOpenGuide(def.id)} className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[11px] font-black text-cyan">
-            ?
-          </button>
         </div>
       </div>
+
+      {/* Shown once, ever: tap it away, or start a set and it goes. Sits in
+          normal flow under the mic so it points at the button it is about
+          without ever covering the lift being described. */}
+      {voiceSupported && voiceTip && (
+        <div className="mt-2 flex justify-end px-4">
+          <button
+            onClick={dismissVoiceTip}
+            className="breathe-in relative rounded-2xl bg-lime px-3 py-1.5 text-[11.5px] font-bold text-black shadow-lg shadow-lime/25"
+          >
+            <span
+              aria-hidden
+              className="absolute -top-1 right-3.5 h-2.5 w-2.5 rotate-45 rounded-[2px] bg-lime"
+            />
+            Use voice commands
+          </button>
+        </div>
+      )}
 
       {/* Exercise name + prescription, told, not picked */}
       <div className="mt-3 px-5 text-center">

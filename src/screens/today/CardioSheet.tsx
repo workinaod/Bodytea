@@ -6,12 +6,19 @@ import { logCardio, removeCardio } from '../../logic/actions'
 import { Btn, Chip, Stepper } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { RunTrackerSheet } from './RunTrackerSheet'
+import { CardioTimerSheet } from './CardioTimerSheet'
 
 // ============================================================
-// Daily cardio: pick what YOU did, run, ride, swim, a game,
-// and answer only that activity's questions (indoor/outdoor,
-// miles, minutes, running games vs shooting around), plus
-// whether it was pre- or post-workout.
+// Daily cardio, in two directions.
+//
+// LOG IT: it already happened. Pick what you did and answer only
+// that activity's questions (indoor/outdoor, miles, minutes,
+// running games vs shooting around), plus pre- or post-workout.
+//
+// TRACK IT: it is about to happen. Picking the activity opens the
+// recorder for it right there, GPS for a run or a ride and a timer
+// for everything else, and it logs itself when you finish. No dead
+// ends: every activity leads somewhere from either direction.
 // ============================================================
 
 const NO_ENTRIES: CardioEntry[] = []
@@ -29,7 +36,9 @@ export function CardioSheet({
 }) {
   const entries = useAppStore((s) => s.data.cardio[date]) ?? NO_ENTRIES
   const [picked, setPicked] = useState<string | null>(null)
+  const [intent, setIntent] = useState<'log' | 'track' | null>(null)
   const [tracking, setTracking] = useState<'run' | 'bike' | null>(null)
+  const [timing, setTiming] = useState<string | null>(null)
   const [when, setWhen] = useState<CardioWhen>(hasSession ? 'post' : 'solo')
   const [where, setWhere] = useState<'indoor' | 'outdoor'>('outdoor')
   const [miles, setMiles] = useState(2)
@@ -39,10 +48,28 @@ export function CardioSheet({
 
   const def = picked ? cardioActivity(picked) : null
 
-  const reset = () => {
+  /** Clear the form but stay in this direction, so logging two things in a row is two taps. */
+  const resetForm = () => {
     setPicked(null)
     setMode(null)
     setCustomLabel('')
+  }
+
+  /** All the way back to the start, for closing the sheet. */
+  const reset = () => {
+    resetForm()
+    setIntent(null)
+  }
+
+  /** Picking an activity means different things depending on the direction. */
+  const choose = (id: string) => {
+    if (intent === 'track') {
+      if (id === 'run' || id === 'bike') setTracking(id)
+      else setTiming(id)
+      return
+    }
+    setPicked(id)
+    setMode(cardioActivity(id).modes?.[0]?.id ?? null)
   }
 
   const save = () => {
@@ -57,11 +84,11 @@ export function CardioSheet({
       ...(def.modes && mode ? { mode } : {}),
     }
     logCardio(date, entry)
-    reset()
+    resetForm()
   }
 
   return (
-    <Sheet open={open} onClose={() => { reset(); onClose() }} title="Cardio / sport">
+    <Sheet open={open} onClose={() => { reset(); onClose() }} title="Cardio">
       <div className="space-y-4 pb-8">
         {/* Already logged today */}
         {entries.length > 0 && !picked && (
@@ -84,18 +111,48 @@ export function CardioSheet({
           </div>
         )}
 
-        {/* Step 1: what was it? */}
-        {!picked && (
+        {/* Step 1: already done, or about to happen? */}
+        {!picked && !intent && (
+          <div className="grid grid-cols-2 gap-2.5">
+            {(
+              [
+                { id: 'log', emoji: '✍️', label: 'Log it', sub: 'Already done' },
+                { id: 'track', emoji: '⏱', label: 'Track it', sub: 'Start now' },
+              ] as const
+            ).map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setIntent(c.id)}
+                className="press flex flex-col items-center justify-center gap-1 rounded-3xl bg-gradient-to-b from-white/[0.13] to-white/[0.05] py-6 shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_10px_24px_-12px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.09]"
+              >
+                <span className="text-[24px] leading-none">{c.emoji}</span>
+                <span className="text-heading font-extrabold">{c.label}</span>
+                <span className="text-micro font-bold tracking-normal text-ink-faint">{c.sub}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Step 2: which activity? Same grid either way. */}
+        {!picked && intent && (
           <>
-            <p className="text-[12px] font-black uppercase tracking-wider text-ink-faint">
-              {entries.length ? 'Log another' : 'What did you do?'}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="eyebrow text-ink-faint">
+                {intent === 'track' ? 'Track what?' : entries.length ? 'Log another' : 'What did you do?'}
+              </p>
+              <button
+                onClick={() => setIntent(null)}
+                className="press ml-auto rounded-full bg-white/[0.07] px-3 py-1 text-micro font-bold tracking-normal text-ink-dim"
+              >
+                back
+              </button>
+            </div>
             <div className="grid grid-cols-3 gap-1.5">
               {CARDIO_ACTIVITIES.map((a) => (
                 <button
                   key={a.id}
-                  onClick={() => { setPicked(a.id); setMode(a.modes?.[0]?.id ?? null) }}
-                  className="rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-2 py-3 text-center active:border-accent/50"
+                  onClick={() => choose(a.id)}
+                  className="press rounded-xl bg-white/[0.05] px-2 py-3 text-center ring-1 ring-white/[0.05]"
                 >
                   <div className="text-[20px]">{a.emoji}</div>
                   <div className="mt-0.5 text-[11px] font-bold leading-tight">{a.label}</div>
@@ -103,8 +160,9 @@ export function CardioSheet({
               ))}
             </div>
             <p className="text-[11px] leading-snug text-ink-faint">
-              Games and hard runs count as this week's conditioning automatically. The plan protects
-              the next day's speed work.
+              {intent === 'track'
+                ? 'Run and ride record GPS, pace and splits. Everything else runs a timer. Either way it logs itself when you finish.'
+                : "Games and hard runs count as this week's conditioning automatically. The plan protects the next day's speed work."}
             </p>
           </>
         )}
@@ -115,7 +173,7 @@ export function CardioSheet({
             <div className="flex items-center gap-2">
               <span className="text-[22px]">{def.emoji}</span>
               <span className="text-[16px] font-black">{def.label}</span>
-              <button onClick={reset} className="ml-auto rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold text-ink-dim">
+              <button onClick={resetForm} className="ml-auto rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold text-ink-dim">
                 change
               </button>
             </div>
@@ -219,6 +277,16 @@ export function CardioSheet({
           date={date}
           onClose={() => {
             setTracking(null)
+            reset()
+          }}
+        />
+      )}
+      {timing && (
+        <CardioTimerSheet
+          activityId={timing}
+          date={date}
+          onClose={() => {
+            setTiming(null)
             reset()
           }}
         />
