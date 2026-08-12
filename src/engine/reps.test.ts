@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { emptyAppData, defaultWeekState, type AppData, type SessionLog, type Tier } from '../types'
 import { resolveDay } from './resolveDay'
 import { addDaysISO } from './calendar'
-import { parseRepRange, repLabel, repTargetFor } from './reps'
+import { loadStepLb, parseRepRange, repLabel, repStepFor, repTargetFor } from './reps'
 
 // ============================================================
 // "WHY ARE YOU STILL GIVING REP RANGES I TOLD YOU TO STOP THAT."
@@ -134,5 +134,62 @@ describe('no day the app hands out shows a range', () => {
       '3x15',
       '2x12',
     ])
+  })
+})
+
+// ============================================================
+// The wrap, and what it costs.
+//
+// Climbing the reps and resetting to the bottom is only half of
+// double progression. The other half is that the LOAD goes up at
+// the wrap, and for a while nothing did it, so the prescription
+// cycled 8 to 12 and back to 8 at the same weight forever.
+// ============================================================
+
+describe('repStepFor: the wrap that hands the next step to the bar', () => {
+  const RANGE = { low: 8, high: 12 }
+
+  it('does not wrap while there are reps left to climb', () => {
+    const d = data()
+    past(d, addDaysISO(START, -7), 'flat-db-press', 8, true)
+    const step = repStepFor(d, 'flat-db-press', RANGE, START)
+    expect(step.reps).toBe(9)
+    expect(step.wrapped).toBe(false)
+  })
+
+  it('wraps to the bottom, and says so, once the top is cleared', () => {
+    const d = data()
+    past(d, addDaysISO(START, -7), 'flat-db-press', 12, true)
+    const step = repStepFor(d, 'flat-db-press', RANGE, START)
+    expect(step.reps).toBe(8)
+    expect(step.wrapped).toBe(true)
+  })
+
+  it('holds, and does not wrap, when the top was not cleared', () => {
+    const d = data()
+    past(d, addDaysISO(START, -7), 'flat-db-press', 12, false)
+    const step = repStepFor(d, 'flat-db-press', RANGE, START)
+    expect(step.reps).toBe(12)
+    expect(step.wrapped).toBe(false)
+  })
+
+  it('starting fresh is the bottom of the range, and is not a wrap', () => {
+    expect(repStepFor(data(), 'flat-db-press', RANGE, START)).toEqual({ reps: 8, wrapped: false })
+  })
+})
+
+describe('loadStepLb', () => {
+  it('gives the legs a bigger step, because 5 lb on a squat is noise', () => {
+    expect(loadStepLb('goblet-squat')).toBe(10)
+    expect(loadStepLb('romanian-deadlift')).toBe(10)
+  })
+
+  it('keeps upper body at 5', () => {
+    expect(loadStepLb('flat-db-press')).toBe(5)
+    expect(loadStepLb('db-lateral-raise')).toBe(5)
+  })
+
+  it('falls back to the small step for an exercise it does not know', () => {
+    expect(loadStepLb('not-a-real-exercise')).toBe(5)
   })
 })

@@ -185,7 +185,7 @@ export function startSession(
     intensity: intensity === 'full' ? undefined : intensity,
     makeupFor,
     exercises: exercises.map((r) => {
-      const pre = prefillFor(date, r.exerciseId)
+      const pre = prefillFor(date, r.exerciseId, { repRange: r.repRange })
       return {
         exerciseId: r.exerciseId,
         fromSlot: r.fromSlot,

@@ -22,7 +22,7 @@ import {
 } from './transforms'
 import { trimForVolume, type VolumeCut } from './volume'
 import { capAccessorySets, orderSession } from './sequence'
-import { repLabel } from './reps'
+import { parseRepRange, repLabel } from './reps'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
 
@@ -471,10 +471,18 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   // reads the rep range to tell a light 12-rep accessory from a real
   // lift, so collapsing first would make an incline press that has
   // progressed to 12 reps look like isolation and sort it to the back.
-  exercises = exercises.map((e) => ({
-    ...e,
-    repText: repLabel(e.repText, data, e.exerciseId, dateISO),
-  }))
+  // The range is kept alongside the collapsed number, because the
+  // collapse is lossy and the LOAD side needs what it loses: "12" on
+  // its own cannot tell you 12 was the top of the range, which is the
+  // moment the next step belongs on the bar instead of the reps.
+  exercises = exercises.map((e) => {
+    const range = parseRepRange(e.repText)
+    return {
+      ...e,
+      repText: repLabel(e.repText, data, e.exerciseId, dateISO),
+      ...(range ? { repRange: range } : {}),
+    }
+  })
 
   if (scheduledCardio) {
     const { def, opt } = scheduledCardio

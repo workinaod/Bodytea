@@ -46,9 +46,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   'plan/athleticExercises.ts': 1250,
   'plan/demos.ts': 900,
   'plan/athletic.ts': 735,
-  // Activity shapes moved to activityTypes.ts, then the logged-session
-  // shapes to sessionTypes.ts; the allowance follows each time.
-  'types.ts': 670,
+  // Activity shapes moved to activityTypes.ts, the logged-session shapes
+  // to sessionTypes.ts, the engine's day output to resolvedTypes.ts; the
+  // allowance follows each time.
+  'types.ts': 632,
   // Real splits owed, in plan order.
   'screens/onboarding/Onboarding.tsx': 1095,
   'screens/meals/MealsScreen.tsx': 980,

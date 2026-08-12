@@ -237,46 +237,8 @@ export interface Profile {
 
 // ---------- Resolved day (engine output) ----------
 
-export interface ResolvedExercise extends PrescriptionBase {
-  exerciseId: string
-  name: string
-  kind: ExerciseKind
-  restSec: number
-  perSide?: boolean
-  fromSlot?: SlotId
-  /** Readiness/gig downgrade: keep it light, leave 3 in the tank. */
-  lightMode?: boolean
-  /** Set when a per-date swap replaced this exercise (original id). */
-  swappedFrom?: string
-}
-
-export interface DayBanner {
-  id: string
-  text: string
-  tone: 'info' | 'warn' | 'success'
-}
-
-export interface ResolvedDay {
-  date: ISODate
-  weekday: Weekday
-  /** 1-based week number since phase start. */
-  weekIndex: number
-  weekInBlock: 1 | 2 | 3 | 4
-  blockIndex: 1 | 2 | 3
-  abWeek: 'A' | 'B'
-  isDeload: boolean
-  tier: Tier
-  templateId: string | null
-  title: string
-  tagline: string
-  kind: DayKind
-  cns: boolean
-  banners: DayBanner[]
-  exercises: ResolvedExercise[]
-  note?: string
-  /** True from week 17 on (Phase 1 done, program loops). */
-  phaseComplete: boolean
-}
+// Moved to resolvedTypes.ts; the allowance here followed it down.
+export * from './resolvedTypes'
 
 // ---------- Logged state ----------
 

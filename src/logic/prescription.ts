@@ -2,6 +2,7 @@ import type { ISODate } from '../types'
 import { getExercise } from '../plan/exercises'
 import { suggestedStartWeight } from '../engine/startWeight'
 import { useAppStore } from '../store/appStore'
+import { loadStepLb, repStepFor, type RepRange } from '../engine/reps'
 
 // ============================================================
 // What load and how many reps go in front of you.
@@ -22,9 +23,26 @@ const store = () => useAppStore.getState()
  * The weight (and last rep count) to open a set with, read back
  * out of history rather than stored, so there is one source of
  * truth and no offset map to keep in sync.
+ *
+ * `repRange` is what closes double progression. engine/reps.ts
+ * climbs the reps and wraps back to the bottom of the range when
+ * the top is cleared, on the stated understanding that the load
+ * goes up instead. Nothing was raising the load, so the
+ * prescription cycled 8 to 12 and back to 8 at the same weight,
+ * forever. The wrap is the signal, and this is where it is paid.
  */
-export function prefillFor(date: ISODate, exerciseId: string): { weightLb?: number; reps?: number } {
-  const sessions = Object.values(store().data.sessions)
+export function prefillFor(
+  date: ISODate,
+  exerciseId: string,
+  opts: { repRange?: RepRange } = {},
+): { weightLb?: number; reps?: number } {
+  const data = store().data
+  const step =
+    opts.repRange && repStepFor(data, exerciseId, opts.repRange, date).wrapped
+      ? loadStepLb(exerciseId)
+      : 0
+
+  const sessions = Object.values(data.sessions)
     .filter((s) => s.date < date && s.status !== 'skipped')
     .sort((a, b) => (a.date > b.date ? -1 : 1))
   for (const s of sessions) {
@@ -33,17 +51,19 @@ export function prefillFor(date: ISODate, exerciseId: string): { weightLb?: numb
     const done = log.sets.filter((x) => x.done && x.weightLb !== undefined)
     if (done.length) {
       const best = done.reduce((a, b) => ((a.weightLb ?? 0) >= (b.weightLb ?? 0) ? a : b))
-      // The feel check-in steers the next prescription: easy climbs, hard backs off
-      const bump = log.feel === 'easy' ? 5 : log.feel === 'hard' ? -5 : 0
+      // The legacy per-exercise feel check-in: easy climbs, hard backs off.
+      // It only applies when the range did NOT just wrap, or a good week
+      // would be paid twice, once in reps and once again in load.
+      const bump = step > 0 ? 0 : log.feel === 'easy' ? 5 : log.feel === 'hard' ? -5 : 0
       return {
-        weightLb: best.weightLb !== undefined ? Math.max(0, best.weightLb + bump) : undefined,
+        weightLb:
+          best.weightLb !== undefined ? Math.max(0, best.weightLb + bump + step) : undefined,
         reps: best.reps,
       }
     }
   }
   // No history yet: seed from bodyweight + training background so day one
   // never opens on an empty stepper. From here the feel check-in takes over.
-  const data = store().data
   let bw: number | undefined
   for (let i = data.measurements.length - 1; i >= 0; i--) {
     if (data.measurements[i].weightLb !== undefined) {

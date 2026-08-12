@@ -1,4 +1,5 @@
 import type { AppData, ISODate } from '../types'
+import { musclesFor } from '../plan/muscles'
 
 // ============================================================
 // One rep number, never a range.
@@ -66,20 +67,34 @@ function clearedTarget(sets: { done: boolean; reps?: number }[], target: number)
   return done.every((s) => s.reps === undefined || s.reps >= target)
 }
 
+export interface RepStep {
+  /** The single number to show today. */
+  reps: number
+  /**
+   * True when the reps just wrapped from the top of the range back
+   * to the bottom. Double progression only means something if the
+   * LOAD goes up at that moment: without it the prescription cycles
+   * 8 to 12 and back to 8 at the same weight forever, which is a
+   * treadmill wearing the costume of a progression.
+   */
+  wrapped: boolean
+}
+
 /**
- * The single number to show for this exercise today.
+ * One step of double progression, and whether that step was the
+ * wrap that hands the next move to the barbell.
  *
  * Walks back to the last session that trained it, reads what was
- * prescribed then, and moves one step: cleared it, add a rep;
- * already at the top, reset to the bottom because the weight is
- * going up instead; did not clear it, hold.
+ * prescribed then, and moves once: cleared it, add a rep; already
+ * at the top, reset to the bottom and flag the load; did not clear
+ * it, hold.
  */
-export function repTargetFor(
+export function repStepFor(
   data: AppData,
   exerciseId: string,
   range: RepRange,
   before: ISODate,
-): number {
+): RepStep {
   const history = Object.values(data.sessions)
     .filter((s) => s.date < before && s.status !== 'skipped')
     .sort((a, b) => (a.date > b.date ? -1 : 1))
@@ -90,11 +105,43 @@ export function repTargetFor(
     const prescribed = Number((log.sets[0]?.targetReps ?? '').match(/^\d+/)?.[0])
     if (!Number.isFinite(prescribed)) continue
     const last = Math.min(Math.max(prescribed, range.low), range.high)
-    if (!clearedTarget(log.sets, last)) return last
+    if (!clearedTarget(log.sets, last)) return { reps: last, wrapped: false }
     // Top of the range means the next step is load, not reps.
-    return last >= range.high ? range.low : last + 1
+    return last >= range.high
+      ? { reps: range.low, wrapped: true }
+      : { reps: last + 1, wrapped: false }
   }
-  return range.low // never trained it: start at the load end
+  return { reps: range.low, wrapped: false } // never trained it: start at the load end
+}
+
+/** The rep number alone, for the places that only print it. */
+export function repTargetFor(
+  data: AppData,
+  exerciseId: string,
+  range: RepRange,
+  before: ISODate,
+): number {
+  return repStepFor(data, exerciseId, range, before).reps
+}
+
+/**
+ * How much load one step is worth, which is not one number.
+ *
+ * 5 lb on a lateral raise is a different demand from 5 lb on a
+ * squat, and on the big lower-body lifts 5 lb is inside the noise
+ * of how well you slept. The legs get 10.
+ */
+const LOWER_BODY: ReadonlySet<string> = new Set([
+  'quads',
+  'hamstrings',
+  'glutes',
+  'calves',
+  'adductors',
+])
+
+export function loadStepLb(exerciseId: string): number {
+  const primary = musclesFor(exerciseId).primary
+  return primary.some((r) => LOWER_BODY.has(r)) ? 10 : 5
 }
 
 /**
