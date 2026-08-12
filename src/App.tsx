@@ -102,9 +102,11 @@ export default function App() {
       <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} session={sessionLive && tab === 'today'} />
       <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track">
         <div className="space-y-2 pb-8">
-          {/* The GPS activities: big, centred, and raised off the sheet.
-              Nothing to read, one thing to hit. */}
-          <div className="grid grid-cols-2 gap-2.5">
+          {/* The GPS four in one raised band. Adding Hike as a fourth big
+              card made this a 2x2 that swallowed the sheet and pushed
+              everything else off the screen. One row keeps them primary
+              without making them the whole page. */}
+          <div className="grid grid-cols-4 gap-2">
             {(
               [
                 { id: 'run', label: 'Run', emoji: '🏃' },
@@ -116,10 +118,10 @@ export default function App() {
               <button
                 key={a.id}
                 onClick={() => setTrack(a.id)}
-                className="press flex flex-col items-center justify-center gap-1.5 rounded-3xl bg-gradient-to-b from-white/[0.13] to-white/[0.05] py-6 shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_10px_24px_-12px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.09]"
+                className="press flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-b from-white/[0.13] to-white/[0.05] py-3.5 shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_8px_20px_-12px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.09]"
               >
-                <span className="text-[24px] leading-none">{a.emoji}</span>
-                <span className="text-body font-extrabold">{a.label}</span>
+                <span className="text-[21px] leading-none">{a.emoji}</span>
+                <span className="text-[11.5px] font-extrabold">{a.label}</span>
               </button>
             ))}
           </div>
