@@ -58,10 +58,20 @@ export function ExerciseBrief({
 
         {/* The blind */}
         <div
-          className="grid shrink-0 transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+          // `flex-1 min-h-0` while open is what BOUNDS this block to the
+          // space the screen actually has. Without it the how-to sized
+          // itself to its own content, overflowed the column, and painted
+          // straight over the weight stepper below: the stepper looked
+          // washed out because the steps were sitting on top of it, and
+          // it could not be tapped for the same reason.
+          className={`grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            rolled ? 'shrink-0' : 'min-h-0 flex-1'
+          }`}
           style={{ gridTemplateRows: rolled ? '0fr' : '1fr' }}
         >
-          <div className="min-h-0 overflow-hidden">
+          {/* Scrolls again. Any non-visible overflow still clips for the
+              roll-up, so `auto` collapses exactly like `hidden` did. */}
+          <div className="min-h-0 overflow-y-auto overscroll-contain">
         <div className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
           {vid ? (
             videoOpen ? (
