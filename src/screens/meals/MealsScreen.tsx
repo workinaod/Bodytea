@@ -8,6 +8,7 @@ import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor,
 import { macroTargets } from '../../plan/sportsNutrition'
 import { buildMealPlan, FOODS, SUPPLEMENT_CATALOG, type MealsPerDay } from '../../plan/foods'
 import { mealAlternatives } from '../../plan/mealAlts'
+import { cookingFor, cookingLine } from '../../plan/cooking'
 import { Btn, Card, Chip, DayArrow, Ring, ScreenHeader, SectionTitle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import {
@@ -751,6 +752,14 @@ function MealDetailSheet({
                   </span>
                 </div>
                 <p className="mt-0.5 text-[11.5px] leading-snug text-ink-faint">{a.ingredients.join(' · ')}</p>
+                {/* The line that decides whether this happens tonight.
+                    "Same macros" is the easy half; the hard half is that
+                    it is 7pm and somebody is tired. */}
+                {cookingFor(a.id) && (
+                  <p className="mt-1 text-[11px] font-semibold text-lime/80">
+                    {cookingLine(cookingFor(a.id)!)}
+                  </p>
+                )}
                 <div className="mt-2 flex gap-2">
                   <button
                     className="flex-1 rounded-lg border border-accent/35 bg-accent/10 py-2 text-[12px] font-bold text-accent-soft"

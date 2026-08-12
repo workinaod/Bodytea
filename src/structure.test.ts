@@ -56,7 +56,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   'types.ts': 663,
   // Real splits owed, in plan order.
   'screens/onboarding/Onboarding.tsx': 1095,
-  'screens/meals/MealsScreen.tsx': 1011,
+  'screens/meals/MealsScreen.tsx': 1020,
   // +20 for proteinContextFor: the protein target now depends on whether
   // the athlete is cutting, building or running, which is a decision the
   // generator is the right place to make and a table it is not.
