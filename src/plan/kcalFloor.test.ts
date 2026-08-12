@@ -1,5 +1,7 @@
+// Run `node scripts/poison.mjs` to re-verify these tests actually bite:
+// it reintroduces each bug one at a time and asserts the suite goes red.
 import { describe, expect, it } from 'vitest'
-import { MIN_KCAL_REST, MIN_KCAL_TRAINING, flooredTargets } from './kcalFloor'
+import { MIN_KCAL_REST, MIN_KCAL_TRAINING, REST_DAY_DROP, flooredTargets } from './kcalFloor'
 import { byorNutrition } from './bookletOps'
 import { buildNutrition } from './generator'
 
@@ -18,6 +20,15 @@ describe('nobody gets prescribed a crash diet', () => {
     // 4,000 maintenance: a 2,000 target clears the 1,500 minimum easily and
     // is still a 50% deficit. The proportional rule is what catches it.
     expect(flooredTargets(2000, 4000).kcalTraining).toBe(3000)
+  })
+
+  it('the rest-day drop cannot outrun the rest-day floor', () => {
+    // This is what makes the clamp inside flooredTargets look redundant:
+    // a floored training day minus the drop lands exactly on MIN_KCAL_REST,
+    // so the clamp never binds. Pinned here because the day somebody
+    // widens REST_DAY_DROP is the day it starts binding, and a silent
+    // 1,100 kcal rest target is precisely the bug this file exists for.
+    expect(MIN_KCAL_TRAINING - REST_DAY_DROP).toBeGreaterThanOrEqual(MIN_KCAL_REST)
   })
 
   it('only ever raises a target', () => {

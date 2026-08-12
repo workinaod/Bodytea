@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { intoChunks, speakable } from './speakable'
-import { pickVoice, scoreVoice } from './voices'
+import { coachVoices, pickVoice, scoreVoice } from './voices'
 
 // Every input below is a real string from the catalog or the coach.
 
@@ -142,5 +142,96 @@ describe('voice selection', () => {
     expect(pickVoice([fr, en])).toBe(en)
     expect(pickVoice([voice('Zarvox', 'x.Zarvox')])).toBeNull()
     expect(pickVoice([])).toBeNull()
+  })
+})
+
+
+describe('the coach voice shortlist', () => {
+  // The picker listed every English voice the device reported and never
+  // consulted scoreVoice, which has vetoed the joke voices all along. On
+  // an iPhone that put Albert, Bad News, Bahh and Bells at the top of the
+  // list, in that order, with Samantha somewhere below the fold.
+  const IOS_LIST = [
+    voice('Albert', 'com.apple.speech.synthesis.voice.Albert'),
+    voice('Bad News', 'com.apple.speech.synthesis.voice.BadNews'),
+    voice('Bahh', 'com.apple.speech.synthesis.voice.Bahh'),
+    voice('Bells', 'com.apple.speech.synthesis.voice.Bells'),
+    voice('Samantha', 'com.apple.ttsbundle.Samantha-compact'),
+    voice('Karen', 'com.apple.ttsbundle.Karen-compact', 'en-AU'),
+    voice('Moira', 'com.apple.ttsbundle.Moira-compact', 'en-IE'),
+    voice('Tessa', 'com.apple.ttsbundle.Tessa-compact', 'en-ZA'),
+    voice('Fred', 'com.apple.speech.synthesis.voice.Fred'),
+    voice('Rocko', 'com.apple.eloquence.en-US.Rocko'),
+    // Neither a joke voice nor shortlisted, and deliberately the HIGHEST
+    // quality cut in the list. Without these two the fixture could not
+    // tell the shortlist apart from "everything that is not a joke", and
+    // a mutation removing the shortlist entirely survived the suite.
+    voice('Ava', 'com.apple.voice.enhanced.en-US.Ava'),
+    voice('Daniel', 'com.apple.voice.premium.en-GB.Daniel', 'en-GB'),
+  ]
+
+  it('offers exactly the four, and nothing else', () => {
+    expect(coachVoices(IOS_LIST).map((v) => v.name).sort()).toEqual([
+      'Karen',
+      'Moira',
+      'Samantha',
+      'Tessa',
+    ])
+  })
+
+  it('keeps every quality cut of a shortlisted voice, so the good one is pickable', () => {
+    const both = [
+      voice('Samantha', 'com.apple.ttsbundle.Samantha-compact'),
+      voice('Samantha', 'com.apple.voice.premium.en-US.Samantha'),
+    ]
+    expect(coachVoices(both)).toHaveLength(2)
+  })
+
+  it('falls back to everything decent when none of the four exist', () => {
+    // Android and desktop Chrome have none of these. An empty picker
+    // there would take the choice away from the users who most need one.
+    const android = [
+      voice('Google US English', 'Google US English'),
+      voice('Google UK English Female', 'Google UK English Female', 'en-GB'),
+      voice('Albert', 'com.apple.speech.synthesis.voice.Albert'),
+    ]
+    const out = coachVoices(android).map((v) => v.name)
+    expect(out).toContain('Google US English')
+    expect(out).not.toContain('Albert')
+  })
+
+  it('never returns a joke voice through the fallback either', () => {
+    expect(coachVoices([voice('Zarvox', 'com.apple.speech.synthesis.voice.Zarvox')])).toEqual([])
+  })
+
+  it('excludes good voices that are simply not on the list', () => {
+    // The distinction the first version of this fixture could not make:
+    // Ava and Daniel are perfectly nice voices and still not offered.
+    const names = coachVoices(IOS_LIST).map((v) => v.name)
+    expect(names).not.toContain('Ava')
+    expect(names).not.toContain('Daniel')
+  })
+
+  it('automatic selection lands on the shortlist even against a better voice', () => {
+    // The bug a mutation test found in the first fix: a +12 score bonus
+    // for shortlisted names loses to an enhanced Ava at 21 against a
+    // compact Samantha at 9, so "Reset to automatic" returned a voice the
+    // picker refuses to show. Scoring cannot express set membership.
+    const picked = pickVoice(IOS_LIST)
+    expect(['Samantha', 'Karen', 'Moira', 'Tessa']).toContain(picked?.name)
+  })
+
+  it('still prefers the better CUT of a shortlisted voice', () => {
+    // Restricting the pool must not throw away quality ranking inside it.
+    const picked = pickVoice([
+      voice('Samantha', 'com.apple.ttsbundle.Samantha-compact'),
+      voice('Samantha', 'com.apple.voice.premium.en-US.Samantha'),
+    ])
+    expect(picked?.voiceURI).toBe('com.apple.voice.premium.en-US.Samantha')
+  })
+
+  it('an explicit choice still wins over the shortlist', () => {
+    const ava = voice('Ava', 'com.apple.voice.premium.en-US.Ava')
+    expect(pickVoice([...IOS_LIST, ava], ava.voiceURI)).toBe(ava)
   })
 })

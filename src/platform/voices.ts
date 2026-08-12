@@ -24,6 +24,37 @@ const NOVELTY =
 /** Voices that actually sound like a person reading. */
 const WARM = /\b(samantha|ava|allison|zoe|susan|karen|serena|moira|nicky|tom|aaron|evan|nathan)\b/i
 
+/**
+ * The coach's shortlist.
+ *
+ * scoreVoice has always vetoed the joke voices, but the PICKER never
+ * asked it: it listed every English voice the device reported, so the
+ * first four rows on an iPhone were Albert, Bad News, Bahh and Bells —
+ * a comedy voice, a funeral dirge, a sheep and a carillon — while
+ * Samantha sat below the fold. The veto existed and nothing consulted it.
+ *
+ * These four are the ones worth offering: natural-sounding, distinct
+ * from each other, and each a different English accent (US, AU, IE, ZA)
+ * so the choice is a real choice rather than four shades of the same
+ * voice.
+ */
+export const COACH_VOICES = /\b(samantha|karen|moira|tessa)\b/i
+
+/**
+ * The shortlist, or an honest fallback.
+ *
+ * Hard-filtering would be wrong: these are Apple voices, and on Android
+ * or a desktop browser none of them exist. Returning an empty picker
+ * there would take the choice away from exactly the users who most need
+ * one. So when the shortlist is empty, everything that is not a joke
+ * voice comes back instead.
+ */
+export function coachVoices(all: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
+  const short = all.filter((v) => COACH_VOICES.test(v.name ?? ''))
+  if (short.length) return short
+  return all.filter((v) => scoreVoice(v) > -100)
+}
+
 export type VoiceQuality = 'premium' | 'enhanced' | 'compact' | 'unknown'
 
 /**
@@ -95,7 +126,16 @@ export function pickVoice(
     if (chosen) return chosen
   }
   const en = all.filter((v) => (v.lang ?? '').toLowerCase().startsWith('en'))
-  const pool = en.length ? en : all
+  // Automatic picks from the SAME set the picker offers, by construction.
+  //
+  // The first attempt at this gave shortlisted names a +12 score bonus and
+  // hoped that was enough. It is not, and a mutation test caught it: an
+  // enhanced Ava scores 21 against a compact Samantha's 9, so "Reset to
+  // automatic" handed back a voice the picker deliberately refuses to
+  // show. A score nudge cannot express set membership, so this does not
+  // try to. Quality still decides WITHIN the set, which is what scoring
+  // is actually for.
+  const pool = coachVoices(en.length ? en : all)
   const best = [...pool].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0]
   // Everything scored as a joke voice: better to take the engine default.
   return best && scoreVoice(best) > -100 ? best : null

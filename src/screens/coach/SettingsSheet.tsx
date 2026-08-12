@@ -20,6 +20,7 @@ export function SettingsSheet({
   onOpenAccount,
   onOpenData,
   backupDays,
+  cloudSyncedAt,
 }: {
   open: boolean
   onClose: () => void
@@ -27,6 +28,8 @@ export function SettingsSheet({
   onOpenData: () => void
   /** Days since the last export, null if it has never happened. */
   backupDays: number | null
+  /** When the account last synced to the cloud, null if it never has. */
+  cloudSyncedAt: string | null
 }) {
   const settings = useAppStore((s) => s.data.settings)
   const update = useAppStore((s) => s.update)
@@ -160,30 +163,46 @@ export function SettingsSheet({
           <SettingsRow
             label="Account"
             sub="Sign in, cloud backup, leaderboard name"
-            onClick={() => {
-              onClose()
-              onOpenAccount()
-            }}
+            // Deliberately does NOT close Settings. Who closes what is the
+            // caller's decision, because only the caller knows the sheet
+            // should come BACK when the account sheet is dismissed.
+            onClick={onOpenAccount}
           />
           <SettingsRow
             label="Backup and data"
-            sub={
-              backupDays === null
-                ? 'Never backed up. It all lives on this phone.'
-                : backupDays >= 7
-                  ? `${backupDays} days since your last backup.`
-                  : `Backed up ${backupDays === 0 ? 'today' : `${backupDays} day${backupDays === 1 ? '' : 's'} ago`}.`
-            }
-            warn={backupDays === null || backupDays >= 7}
-            onClick={() => {
-              onClose()
-              onOpenData()
-            }}
+            sub={backupLine(backupDays, cloudSyncedAt)}
+            // Only alarming when nothing is protecting the data. An
+            // account that syncs is a backup, and shouting at somebody who
+            // already has one is how a warning stops meaning anything.
+            warn={cloudSyncedAt === null && (backupDays === null || backupDays >= 7)}
+            onClick={onOpenData}
           />
         </div>
       </div>
     </Sheet>
   )
+}
+
+/**
+ * One sentence covering BOTH kinds of backup, because there are two and
+ * they were being reported by two screens that disagreed. A synced
+ * account is a real backup and gets said first; the exported file is the
+ * copy that survives losing the account, so it is still worth mentioning.
+ */
+function backupLine(backupDays: number | null, cloudSyncedAt: string | null): string {
+  const exported =
+    backupDays === null
+      ? null
+      : backupDays === 0
+        ? 'today'
+        : `${backupDays} day${backupDays === 1 ? '' : 's'} ago`
+  if (cloudSyncedAt) {
+    return exported
+      ? `Synced to your account. Last file export ${exported}.`
+      : 'Synced to your account. No file exported yet.'
+  }
+  if (exported === null) return 'Never backed up. It all lives on this phone.'
+  return backupDays! >= 7 ? `${backupDays} days since your last backup.` : `Backed up ${exported}.`
 }
 
 function SettingsRow({

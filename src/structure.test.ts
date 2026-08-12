@@ -202,3 +202,57 @@ describe('platform isolation', () => {
     expect(stale).toEqual([])
   })
 })
+
+// ---------- Locked sheets ----------
+
+/**
+ * A locked sheet is the app's accountability gate: SkipFlow and the
+ * reconcile screen have no close button, a dead backdrop, and a drag
+ * that only rubber-bands. Getting past one is supposed to require
+ * answering it.
+ *
+ * Sheet also refuses to honour Escape while locked, but a mutation test
+ * showed that guard is currently UNOBSERVABLE: every locked call site
+ * passes `onClose={() => {}}`, so an Escape that got through would call
+ * a function that does nothing. Deleting the guard broke no test.
+ *
+ * The guard stays, because the day a locked sheet is given a real
+ * onClose is the day it becomes the only thing standing there. But the
+ * property that actually protects users today is this convention, so
+ * this is what gets pinned.
+ */
+describe('locked sheets', () => {
+  /**
+   * Arrow functions are the trap here. A prop list is full of `=>`, and
+   * `[^>]*?` stops dead at the `>` inside the first one, so the obvious
+   * regex matches NOTHING and the test passes by finding no offenders.
+   * The first version of this did exactly that. Neutralising the arrows
+   * first is what makes the tag scannable.
+   */
+  const tagsOf = (text: string) => [...text.replaceAll('=>', '=\u00bb').matchAll(/<Sheet\s([^>]*?)>/gs)].map((m) => m[1])
+
+  it('never pass a close handler that could actually close them', () => {
+    const offenders: string[] = []
+    for (const f of FILES) {
+      if (/\.test\.tsx?$/.test(f.path)) continue
+      for (const props of tagsOf(f.text)) {
+        if (!/\blocked\b/.test(props)) continue
+        if (!/onClose=\{\(\)\s*=\u00bb\s*\{\s*\}\}/.test(props)) {
+          offenders.push(`${f.path}: a locked <Sheet> whose onClose is not a no-op`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('still finds the locked sheets it is meant to be guarding', () => {
+    // A regex that silently matches nothing would pass the test above
+    // forever. Both known gates must be found. This is the check that
+    // caught the arrow-function bug in the first place.
+    const found = FILES.filter(
+      (f) => !/\.test\.tsx?$/.test(f.path) && tagsOf(f.text).some((p) => /\blocked\b/.test(p)),
+    ).map((f) => f.path)
+    expect(found).toContain('screens/today/SkipFlow.tsx')
+    expect(found).toContain('screens/ReconcileSheet.tsx')
+  })
+})

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
 import {
   bestQualityAvailable,
+  coachVoices,
   listEnglishVoices,
   onVoicesChanged,
   voiceQuality,
@@ -39,7 +40,9 @@ export function VoicePicker() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
 
   useEffect(() => {
-    const read = () => setVoices(listEnglishVoices())
+    // Shortlisted here rather than in listEnglishVoices, which is the
+    // raw platform read and stays raw.
+    const read = () => setVoices(coachVoices(listEnglishVoices()))
     read()
     return onVoicesChanged(read)
   }, [])

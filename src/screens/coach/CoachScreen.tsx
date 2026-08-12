@@ -15,6 +15,7 @@ import { ExerciseGuideSheet } from '../today/ExerciseGuideSheet'
 import { SettingsSheet } from './SettingsSheet'
 import { DataTransferSheet } from './DataTransferSheet'
 import { AccountSheet } from './AccountSheet'
+import { loadSyncMeta } from '../../cloud/logic'
 import { BookletScreen } from '../booklet/BookletScreen'
 import type { DebriefData } from '../../types'
 
@@ -60,6 +61,28 @@ export function CoachScreen() {
   const [dataOpen, setDataOpen] = useState(false)
   const [bookletOpen, setBookletOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
+  /**
+   * Settings is where Account and Backup are reached from, so dismissing
+   * either has to land back in Settings rather than on this screen.
+   *
+   * The rows used to close Settings before opening the next sheet, which
+   * meant the way OUT of a two-tap detour was three taps back in. Not
+   * stacked instead, because two open sheets means two aria-modal dialogs
+   * and two document-level Escape handlers, and Escape would dismiss both.
+   */
+  const [backToSettings, setBackToSettings] = useState(false)
+  const leaveSettingsFor = (openIt: (v: boolean) => void) => () => {
+    setSettingsOpen(false)
+    setBackToSettings(true)
+    openIt(true)
+  }
+  const returnToSettings = (closeIt: (v: boolean) => void) => () => {
+    closeIt(false)
+    if (backToSettings) {
+      setBackToSettings(false)
+      setSettingsOpen(true)
+    }
+  }
   const [debrief, setDebrief] = useState<DebriefData | null>(null)
   const [guideExercise, setGuideExercise] = useState<string | null>(null)
   const [feedCount, setFeedCount] = useState(20)
@@ -68,6 +91,12 @@ export function CoachScreen() {
   const backupDays = data.settings.lastExportAt
     ? daysBetween(data.settings.lastExportAt.slice(0, 10), today)
     : null
+  // Whether the account is syncing, which is a DIFFERENT question from
+  // whether a file has ever been exported. Settings read only the export
+  // date, so a user whose account sheet said "Backed up just now" was
+  // told two rows away that they had never backed up and it all lived on
+  // this phone. Both sentences were about backup and only one was true.
+  const cloudSyncedAt = loadSyncMeta()?.lastSyncAt ?? null
 
   const quote = useMemo(
     () => MOTIVATION_QUOTES[daysBetween('2026-01-01', today) % MOTIVATION_QUOTES.length],
@@ -253,12 +282,13 @@ export function CoachScreen() {
       <SettingsSheet
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        onOpenAccount={() => setAccountOpen(true)}
-        onOpenData={() => setDataOpen(true)}
+        onOpenAccount={leaveSettingsFor(setAccountOpen)}
+        onOpenData={leaveSettingsFor(setDataOpen)}
         backupDays={backupDays}
+        cloudSyncedAt={cloudSyncedAt}
       />
-      <DataTransferSheet open={dataOpen} onClose={() => setDataOpen(false)} />
-      <AccountSheet open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <DataTransferSheet open={dataOpen} onClose={returnToSettings(setDataOpen)} />
+      <AccountSheet open={accountOpen} onClose={returnToSettings(setAccountOpen)} />
       {bookletOpen && <BookletScreen onClose={() => setBookletOpen(false)} />}
       <DebriefSheet debrief={debrief} onClose={() => setDebrief(null)} />
       <ExerciseGuideSheet exerciseId={guideExercise} onClose={() => setGuideExercise(null)} />

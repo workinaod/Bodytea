@@ -61,6 +61,15 @@ export function flooredTargets(
   const training = Math.max(kcalTraining, floor)
   return {
     kcalTraining: training,
+    // The rest clamp is UNREACHABLE while MIN_KCAL_TRAINING - REST_DAY_DROP
+    // equals MIN_KCAL_REST, because a floored training day minus the drop
+    // already lands exactly on it. A mutation test proved that by deleting
+    // the clamp and watching nothing fail.
+    //
+    // It stays, and it is load-bearing the moment any of those three
+    // numbers moves — widening the drop to 400 would put rest at 1,100
+    // with nothing to catch it. The invariant is pinned in the test file
+    // so the relationship cannot drift silently instead.
     kcalRest: Math.max(training - REST_DAY_DROP, MIN_KCAL_REST),
   }
 }
