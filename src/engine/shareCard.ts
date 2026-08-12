@@ -89,7 +89,7 @@ export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise
   } catch {
     /* draw with fallback fonts */
   }
-  const DISPLAY = '"Space Grotesk", system-ui, sans-serif'
+  const DISPLAY = '"Inter Tight", system-ui, sans-serif'
 
   // Ground: pure black with a heat bloom and a whisper of grid
   x.fillStyle = '#0a0a0a'

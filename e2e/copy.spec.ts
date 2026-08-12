@@ -36,7 +36,11 @@ test('every cue and caption fits its box on a 390px screen', async ({ page }) =>
 
   const bad = await page.evaluate(
     ({ captions, cues }) => {
-      const fam = "'Space Grotesk', system-ui, sans-serif"
+      // Read the face off the running app rather than naming one here.
+      // Captions and cues inherit from body, so when the app's type
+      // changes this ruler changes with it instead of silently
+      // measuring a font nobody sees any more.
+      const fam = getComputedStyle(document.body).fontFamily
       function lines(text: string, width: number, size: number) {
         const box = document.createElement('div')
         box.style.cssText =

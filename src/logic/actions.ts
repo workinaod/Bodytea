@@ -34,6 +34,7 @@ import {
   pushShown,
 } from '../engine/coach'
 import { composeDebrief } from '../engine/debrief'
+import { finalStatus } from '../engine/quit'
 import { currentStreak, detectPRs, proteinFor } from '../engine/stats'
 import { addDaysISO, daysBetween, mondayOf, todayISO, weekdayOf } from '../engine/calendar'
 import { estKcal } from '../engine/runs'
@@ -311,19 +312,8 @@ export function finishSession(date: ISODate): DebriefData {
   store().update((d) => {
     const s = d.sessions[date]
     if (!s) return
-    const considered = s.exercises.filter(
-      (e, i) => !e.skipped && (s.trimmedFromIndex === undefined || i < s.trimmedFromIndex),
-    )
-    const allDone = considered.length > 0 && considered.every((e) => e.sets.every((x) => x.done))
     s.endedAt = new Date().toISOString()
-    const eased = s.readiness?.downgraded || (s.intensity !== undefined && s.intensity !== 'full')
-    s.status = eased
-      ? allDone
-        ? 'downgraded-completed'
-        : 'partial'
-      : allDone
-        ? 'completed'
-        : 'partial'
+    s.status = finalStatus(s)
   })
 
   const data = store().data

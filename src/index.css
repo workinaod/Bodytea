@@ -4,7 +4,8 @@
 /* Bodytea look: pure neutral blacks — zero color cast on any
    surface — with two hot accents used sparingly: heat orange-red
    for brand/action, volt for commit CTAs. Nike-on-asphalt, not a
-   theme. Space Grotesk (bundled, offline) carries every heading. */
+   theme. One superfamily, bundled and offline: Inter Tight carries
+   the headings, Inter carries every word and every number. */
 @theme {
   --color-bg: #0a0a0a;
   --color-surface: #151515;
@@ -21,7 +22,7 @@
   --color-gold: #f2c14e;
   --color-danger: #ff4d5e;
   --color-good: #62d97e;
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-display: 'Inter Tight', system-ui, sans-serif;
 
   /* ---- Type scale ----
      Six named sizes, so screens stop inventing text-[13.5px] and the
@@ -55,7 +56,7 @@
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 /* The eyebrow above a hero: small, wide, quiet.
@@ -70,16 +71,16 @@
 }
 
 @font-face {
-  font-family: 'Space Grotesk';
-  src: url('/Bodytea/fonts/space-grotesk-500.woff2') format('woff2');
-  font-weight: 500;
+  font-family: 'Inter';
+  src: url('/Bodytea/fonts/inter-400-900.woff2') format('woff2');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Space Grotesk';
-  src: url('/Bodytea/fonts/space-grotesk-700.woff2') format('woff2');
-  font-weight: 600 900;
+  font-family: 'Inter Tight';
+  src: url('/Bodytea/fonts/inter-tight-400-900.woff2') format('woff2');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -96,36 +97,35 @@ body {
     var(--color-bg);
   background-attachment: fixed;
   color: var(--color-ink);
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-variant-numeric: tabular-nums;
   overscroll-behavior-y: none;
 }
 
-/* Headings speak in the brand voice; data stays in the system face. */
+/* Headings take the tighter cut of the same family: same voice,
+   one notch more compressed, so a title reads as a title. */
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
 }
 
 /* Screen titles.
-   Space Grotesk set at default weight with a nudge of negative tracking
-   is just a UI font with the corners filed off, which is why the
-   headlines read as generic. At display sizes it wants to be set HEAVY
-   and TIGHT: weight 800 closes the counters, -0.04em locks the letters
-   into a single mass, and 0.98 leading stops two-line titles drifting
-   apart. That is the difference between type that was chosen and type
-   that was defaulted. */
+   Set at default weight with a nudge of negative tracking, any UI font
+   is just a UI font with the corners filed off, which is why the old
+   headlines read as generic. At display sizes they want to be set HEAVY:
+   weight 800 closes the counters and 0.98 leading stops two-line titles
+   drifting apart.
+
+   The tracking stays gentle because Inter Tight is ALREADY the narrow
+   cut of the family. Stacking -0.04em on top of it closed "Full Body"
+   into one word. The face supplies the tightness; the tracking only
+   takes the last of the air out. */
 .headline {
   font-family: var(--font-display);
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   line-height: 0.98;
   /* Optical sizing where the face offers it, so big text is not just
      small text scaled up. */
@@ -136,7 +136,7 @@ h3 {
 .headline-sm {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.012em;
   line-height: 1.12;
 }
 

@@ -1,2 +1,2 @@
-Space Grotesk — © Florian Karsten, SIL Open Font License 1.1
-https://github.com/floriankarsten/space-grotesk
+Inter and Inter Tight — © The Inter Project Authors (https://github.com/rsms/inter)
+SIL Open Font License 1.1 — https://openfontlicense.org
