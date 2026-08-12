@@ -325,7 +325,17 @@ export interface SubstituteQuery {
   can: (id: string) => boolean
   /** Joints to route around. A movement stressing any of these is out. */
   avoid?: Joint[]
-  /** Never hand back something harder to execute than this. */
+  /**
+   * Never hand back something harder to execute than this.
+   *
+   * Defaults to one step above the movement being replaced, floored at 1,
+   * NOT to the movement's own skill. A leg press is skill 0 and almost
+   * nothing else is, so the stricter rule left a machine-only movement
+   * with no legal substitute at all — which is exactly the athlete who
+   * needs one, the week they are away from their gym. Skill 1 is "the
+   * app's own guide is enough"; 2 and above is where coaching starts, and
+   * that line is the one worth holding.
+   */
   maxSkill?: 0 | 1 | 2 | 3
   /** Cap the systemic cost, for a day that has already taken enough. */
   maxFatigue?: 0 | 1 | 2 | 3
@@ -349,7 +359,7 @@ export function substitutesFor(id: string, q: SubstituteQuery): string[] {
   const meta = MOVEMENT[id]
   if (!meta) return []
   const avoid = new Set(q.avoid ?? [])
-  const maxSkill = q.maxSkill ?? meta.skill
+  const maxSkill = q.maxSkill ?? Math.max(meta.skill, 1)
   const scored: { id: string; score: number }[] = []
   for (const [otherId, m] of Object.entries(MOVEMENT)) {
     if (otherId === id) continue

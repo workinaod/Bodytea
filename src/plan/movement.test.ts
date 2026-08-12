@@ -145,10 +145,17 @@ describe('substitution preserves the JOB, not just the muscle', () => {
     expect(MOVEMENT[subs[0]].pattern).toBe('push-horizontal')
   })
 
-  it('never hands back something harder to execute', () => {
+  it('never hands back something that needs coaching to attempt', () => {
+    // Not "never more technical", which sounds right and strands the
+    // machine-only movements: a leg press is skill 0 and almost nothing
+    // else is, so that rule left an athlete away from their gym with no
+    // legal substitute. The line that matters is skill 2, where coaching
+    // starts; below it the app's own guide is enough.
     for (const id of Object.keys(MOVEMENT)) {
       for (const sub of substitutesFor(id, { can: everything })) {
-        expect(MOVEMENT[sub].skill, `${id} → ${sub}`).toBeLessThanOrEqual(MOVEMENT[id].skill)
+        expect(MOVEMENT[sub].skill, `${id} → ${sub}`).toBeLessThanOrEqual(
+          Math.max(MOVEMENT[id].skill, 1),
+        )
       }
     }
   })
