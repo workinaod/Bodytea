@@ -173,6 +173,34 @@ describe('migrations', () => {
   })
 })
 
+describe('every activity the tracker can record survives a backup', () => {
+  it('accepts a hike, which the tracker offers and the schema refused', () => {
+    // The Track sheet has offered four GPS activities since it was
+    // redesigned, and RunTrackerSheet takes all four. The zod mirror
+    // still listed three. So a tracked hike saved fine, sat in the
+    // app fine, and then failed its own backup the moment the user
+    // tried to restore one: "activity: invalid enum value". Their
+    // whole history, refused over a walk in the woods.
+    for (const activity of ['run', 'bike', 'walk', 'hike'] as const) {
+      const data = fixtureData()
+      data.runs = [
+        {
+          id: `r-${activity}`,
+          activity,
+          date: '2026-08-10',
+          startedAt: '2026-08-10T12:00:00.000Z',
+          durationSec: 1800,
+          distanceMi: 2.4,
+          avgPaceSec: 750,
+          splits: [750, 750],
+          points: [],
+        },
+      ]
+      expect(parseEnvelope(serializeState(data)).data.runs[0].activity).toBe(activity)
+    }
+  })
+})
+
 describe('import validation', () => {
   it('rejects non-JSON', () => {
     expect(() => parseEnvelope('not json')).toThrow(/not valid JSON/)

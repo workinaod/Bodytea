@@ -10,8 +10,9 @@ import { addDaysISO } from '../engine/calendar'
 // ============================================================
 
 import { isoDate, weekday } from './primitives'
-// Session shapes live in ./sessionSchema, beside the types they mirror.
+// Session and activity shapes live beside the types they mirror.
 import { sessionSchema } from './sessionSchema'
+import { cardioEntrySchema, runLogSchema } from './activitySchema'
 
 const settingsSchema = z.object({
   phaseStartDate: isoDate,
@@ -248,40 +249,10 @@ const appDataSchema = z.object({
   photos: z.array(photoMetaSchema),
   coach: coachSchema,
   grocery: z.array(z.string()),
-  cardio: z.record(
-    z.string(),
-    z.array(
-      z.object({
-        id: z.string(),
-        at: z.string(),
-        activityId: z.string(),
-        label: z.string(),
-        when: z.enum(['pre', 'post', 'solo']),
-        where: z.enum(['indoor', 'outdoor']).optional(),
-        miles: z.number().optional(),
-        minutes: z.number().optional(),
-        mode: z.string().optional(),
-      }),
-    ),
-  ),
+  cardio: z.record(z.string(), z.array(cardioEntrySchema)),
   swaps: z.record(z.string(), z.record(z.string(), z.string())),
   dayLoad: z.record(z.string(), z.literal('trimmed')),
-  runs: z.array(
-    z.object({
-      id: z.string(),
-      activity: z.enum(['run', 'bike', 'walk']),
-      date: isoDate,
-      startedAt: z.string(),
-      durationSec: z.number().min(0),
-      distanceMi: z.number().min(0),
-      distanceSource: z.enum(['gps', 'steps', 'manual', 'none']).optional(),
-      steps: z.number().min(0).optional(),
-      avgPaceSec: z.number().min(0),
-      kcalEst: z.number().min(0).optional(),
-      splits: z.array(z.number()),
-      points: z.array(z.tuple([z.number(), z.number(), z.number()])),
-    }),
-  ),
+  runs: z.array(runLogSchema),
 })
 
 export const envelopeSchema = z.object({

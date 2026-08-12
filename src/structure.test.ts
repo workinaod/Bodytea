@@ -65,8 +65,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // not get to keep the headroom it earned.
   'screens/today/FocusView.tsx': 660,
   // Session shapes moved to store/sessionSchema.ts, beside the types they
-  // mirror, and the shared zod primitives to store/primitives.ts.
-  'store/schema.ts': 645,
+  // mirror, the shared zod primitives to store/primitives.ts, and the
+  // GPS and cardio shapes to store/activitySchema.ts. The allowance
+  // follows it down each time.
+  'store/schema.ts': 616,
   'engine/engine.test.ts': 705,
 }
 
