@@ -12,6 +12,8 @@ import { CARDIO_GROUP_INFO } from '../../plan/templates'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
 import { chooseCardio, finishSession, reopenSession, restoreToday, startSession, swapExercise, toggleCnsSwap } from '../../logic/actions'
+import { trimSessionVolume } from '../../logic/volumeActions'
+import { trimForVolume } from '../../engine/volume'
 import { makeupCandidate } from '../../engine/reconcile'
 import { sessionGrade } from '../../engine/stats'
 import { streakDays } from '../../engine/streak'
@@ -21,6 +23,7 @@ import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
 import { ReadinessSheet } from './ReadinessSheet'
 import { IntensitySheet } from './IntensitySheet'
+import { VolumeNotice } from './VolumeNotice'
 import { SkipFlow } from './SkipFlow'
 import { DebriefSheet } from './DebriefSheet'
 import { ExerciseGuideSheet } from './ExerciseGuideSheet'
@@ -35,6 +38,9 @@ export function TodayScreen() {
   const [readinessOpen, setReadinessOpen] = useState(false)
   const [intensityOpen, setIntensityOpen] = useState(false)
   const [skipOpen, setSkipOpen] = useState(false)
+  // Armed by the volume notice before the session exists; applied the
+  // moment it does.
+  const [trimVolume, setTrimVolume] = useState(false)
   const [viewMode, setViewMode] = useState<'focus' | 'list'>('focus')
   const [guideId, setGuideId] = useState<string | null>(null)
   const [debrief, setDebrief] = useState<{ data: DebriefData; coachLine?: string } | null>(null)
@@ -55,6 +61,13 @@ export function TodayScreen() {
   const date = selected ?? homeDate
 
   const day = useMemo(() => resolveDay(date, data), [date, data])
+  // Arming the trim has to change the list too. Saying "Overhead Tricep
+  // Extension is out" above a preview that still lists it is worse than
+  // not offering the trim at all.
+  const previewExercises = useMemo(
+    () => (trimVolume ? trimForVolume(day.exercises).exercises : day.exercises),
+    [trimVolume, day.exercises],
+  )
   const session = data.sessions[date]
   // A make-up session runs a MISSED day's workout on a rest day, the
   // views need that day's resolution, not the rest day's empty one.
@@ -171,14 +184,25 @@ export function TodayScreen() {
 
       {/* Actions live at the top, no reaching past the list to start */}
       {today && !session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
-        <div className="flex gap-2 pt-0.5">
-          <Btn className="flex-[2]" onClick={handleStart}>
-            {day.cns ? 'Readiness check → start' : 'Start session'}
-          </Btn>
-          <Btn kind="ghost" className="flex-1" onClick={() => setSkipOpen(true)}>
-            Can't train
-          </Btn>
-        </div>
+        <>
+          {/* Before the start button, never after: a day that asks one
+              muscle for more than a session can pay for is worth knowing
+              now, not at set 11 with twelve still to go. */}
+          <VolumeNotice
+            exercises={(makeupResolved ?? day).exercises}
+            armed={trimVolume}
+            onArm={() => setTrimVolume(true)}
+            onDisarm={() => setTrimVolume(false)}
+          />
+          <div className="flex gap-2 pt-0.5">
+            <Btn className="flex-[2]" onClick={handleStart}>
+              {day.cns ? 'Readiness check → start' : 'Start session'}
+            </Btn>
+            <Btn kind="ghost" className="flex-1" onClick={() => setSkipOpen(true)}>
+              Can't train
+            </Btn>
+          </div>
+        </>
       )}
 
       {day.banners.map((b) => (
@@ -442,7 +466,7 @@ export function TodayScreen() {
       {!session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
         <>
           <div className="mt-1">
-            {day.exercises.map((r, i) => {
+            {previewExercises.map((r, i) => {
               const def = getExercise(r.exerciseId)
               const swapBase = r.swappedFrom ?? r.exerciseId
               const canSwap = swapCandidatesFor(swapBase, data.plan).length > 0
@@ -494,7 +518,7 @@ export function TodayScreen() {
                 </div>
               )
             })}
-            {day.exercises.length === 0 && <EmptyNote>Nothing scheduled.</EmptyNote>}
+            {previewExercises.length === 0 && <EmptyNote>Nothing scheduled.</EmptyNote>}
           </div>
 
           {day.note && (
@@ -519,6 +543,7 @@ export function TodayScreen() {
         onStart={(flags, intensity) => {
           setReadinessOpen(false)
           startSession(date, flags, intensity, makeupTarget ?? undefined)
+          if (trimVolume) trimSessionVolume(date)
           setMakeupTarget(null)
         }}
       />
@@ -532,6 +557,7 @@ export function TodayScreen() {
         onStart={(intensity) => {
           setIntensityOpen(false)
           startSession(date, undefined, intensity, makeupTarget ?? undefined)
+          if (trimVolume) trimSessionVolume(date)
           setMakeupTarget(null)
         }}
       />
