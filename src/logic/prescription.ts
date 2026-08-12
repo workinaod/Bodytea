@@ -1,4 +1,4 @@
-import type { ISODate } from '../types'
+import type { ISODate, SessionFeel } from '../types'
 import { getExercise } from '../plan/exercises'
 import { suggestedStartWeight } from '../engine/startWeight'
 import { useAppStore } from '../store/appStore'
@@ -38,7 +38,7 @@ export function prefillFor(
   opts: { repRange?: RepRange; lightMode?: boolean } = {},
 ): { weightLb?: number; reps?: number } {
   const data = store().data
-  const step =
+  const wrapStep =
     opts.repRange && repStepFor(data, exerciseId, opts.repRange, date).wrapped
       ? loadStepLb(exerciseId)
       : 0
@@ -52,10 +52,24 @@ export function prefillFor(
     const done = log.sets.filter((x) => x.done && x.weightLb !== undefined)
     if (done.length) {
       const best = done.reduce((a, b) => ((a.weightLb ?? 0) >= (b.weightLb ?? 0) ? a : b))
-      // The legacy per-exercise feel check-in: easy climbs, hard backs off.
-      // It only applies when the range did NOT just wrap, or a good week
-      // would be paid twice, once in reps and once again in load.
-      const bump = step > 0 ? 0 : log.feel === 'easy' ? 5 : log.feel === 'hard' ? -5 : 0
+      // A day that felt heavy does not earn more weight, whatever the reps
+      // did. Reaching the top of the range while grinding is a sign the
+      // load is already right, not a licence to add to it.
+      const step = s.feel === 'heavy' ? 0 : wrapStep
+      const bump =
+        step > 0
+          ? 0 // a good week is paid once, in reps or in load, never both
+          : s.feel === 'heavy'
+            ? -5
+            : s.feel !== undefined
+              ? 0 // 'light' and 'right' let the rep ladder do the work
+              : // Legacy per-exercise feel, for sessions logged before the
+                // session-level question existed. Never for newer ones.
+                log.feel === 'easy'
+                ? 5
+                : log.feel === 'hard'
+                  ? -5
+                  : 0
       const w =
         best.weightLb !== undefined ? Math.max(0, best.weightLb + bump + step) : undefined
       return {
@@ -78,10 +92,17 @@ export function prefillFor(
   return { weightLb: opts.lightMode ? lightLoad(seeded) : seeded }
 }
 
-/** Mid-rest weight check-in, asked at most once per exercise every 2 weeks. */
-export function setExerciseFeel(date: ISODate, exIdx: number, feel: 'easy' | 'right' | 'hard'): void {
+/**
+ * The one check-in, answered at the halfway point of the session.
+ *
+ * It replaced a per-exercise question asked on the middle set of a
+ * movement, which was the wrong moment and the wrong scope: "early on
+ * you can feel good but by the third workout your dead". One honest
+ * answer about the day beats several guesses about single lifts.
+ */
+export function setSessionFeel(date: ISODate, feel: SessionFeel): void {
   store().update((d) => {
-    const ex = d.sessions[date]?.exercises[exIdx]
-    if (ex) ex.feel = feel
+    const s = d.sessions[date]
+    if (s) s.feel = feel
   })
 }

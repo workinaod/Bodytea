@@ -134,3 +134,51 @@ describe('prefillFor: a light day is actually lighter', () => {
     if (full !== undefined) expect(light!).toBeLessThan(full)
   })
 })
+
+describe('prefillFor: the one session check-in drives the load', () => {
+  it('a heavy day does not earn more weight, even at the top of the range', () => {
+    const s = lastWeek(SQUAT, 8, 100)
+    s.feel = 'heavy'
+    seed(s)
+    // Without the check-in this would wrap and add 10.
+    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(95)
+  })
+
+  it('a heavy day backs the weight off when there was no wrap either', () => {
+    const s = lastWeek(SQUAT, 6, 100)
+    s.feel = 'heavy'
+    seed(s)
+    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(95)
+  })
+
+  it('light and right let the rep ladder do the work, without a second raise', () => {
+    for (const feel of ['light', 'right'] as const) {
+      const s = lastWeek(SQUAT, 6, 100)
+      s.feel = feel
+      seed(s)
+      expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb, feel).toBe(100)
+    }
+  })
+
+  it('a light day still takes the wrap step when the top was cleared', () => {
+    const s = lastWeek(SQUAT, 8, 100)
+    s.feel = 'light'
+    seed(s)
+    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(110)
+  })
+
+  it('the session answer overrules the old per-exercise chip', () => {
+    const s = lastWeek(SQUAT, 6, 100)
+    s.feel = 'right'
+    s.exercises[0].feel = 'easy' // legacy signal, would have added 5
+    seed(s)
+    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(100)
+  })
+
+  it('still honours the old chip on history logged before the question existed', () => {
+    const s = lastWeek(SQUAT, 6, 100)
+    s.exercises[0].feel = 'easy'
+    seed(s) // no session-level feel at all
+    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(105)
+  })
+})

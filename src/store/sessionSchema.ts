@@ -45,6 +45,7 @@ export const sessionSchema = z.object({
     }),
   ),
   notes: z.string().optional(),
+  feel: z.enum(['light', 'right', 'heavy']).optional(),
   fatigue: z
     .array(
       z.object({

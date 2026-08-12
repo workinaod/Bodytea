@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ExerciseDef, ISODate, ResolvedDay, SessionLog } from '../../types'
+import type { ExerciseDef, ResolvedDay, SessionLog } from '../../types'
 import { getExercise } from '../../plan/exercises'
 import { videoFor } from '../../plan/videos'
 import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../../engine/focus'
 import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../platform/speech'
 import { useAppStore } from '../../store/appStore'
 import { abandonSession, patchSet, restartSession, setWeightForward} from '../../logic/actions'
-import { setExerciseFeel } from '../../logic/prescription'
-import { daysBetween } from '../../engine/calendar'
+import { setSessionFeel } from '../../logic/prescription'
 import { Stepper } from '../../components/ui'
 import { HowToSlides } from './HowToSlides'
 import { ExerciseBrief } from './ExerciseBrief'
@@ -21,18 +20,6 @@ import { BreakScreen, type BreakState } from './BreakScreen'
 // a true 1-second 3-2-1, then the coach shuts up and lets you
 // work. Instructions are spoken only when asked, and shortened.
 // ============================================================
-
-/** True if this exercise already answered a weight check-in in the last 2 weeks. */
-function feelAskedRecently(
-  sessions: Record<string, SessionLog>,
-  exerciseId: string,
-  today: ISODate,
-): boolean {
-  return Object.values(sessions).some((s) => {
-    const d = daysBetween(s.date, today)
-    return d >= 0 && d < 14 && s.exercises.some((e) => e.exerciseId === exerciseId && e.feel !== undefined)
-  })
-}
 
 /** What load the number means, by equipment. "Your weight" reads like
     body weight; "Weight per dumbbell" can't be misread. */
@@ -112,6 +99,8 @@ export function FocusView({
 
   const current = currentFocusItem(session)
   const progress = focusProgress(session)
+  /** Half the day's sets, rounded up: the moment the check-in is worth asking. */
+  const halfwayAt = Math.ceil(progress.total / 2)
 
   const ex = current ? session.exercises[current.exIdx] : null
   const def = ex ? getExercise(ex.exerciseId) : null
@@ -254,23 +243,19 @@ export function FocusView({
       const nextEx = session.exercises[next.exIdx]
       const nextDef = getExercise(nextEx.exerciseId)
       const sameExercise = next.exIdx === current.exIdx
-      // Weight check-in on the MIDDLE set: by then they know if the load is
-      // off, no reason to wait out the whole exercise. Once per 2 weeks.
       const justEx = session.exercises[current.exIdx]
-      const justDef = getExercise(justEx.exerciseId)
-      const midSetIdx = Math.max(0, Math.ceil(justEx.sets.length / 2) - 1)
-      const askFeel =
-        (justDef.kind === 'lift' || justDef.kind === 'carry') &&
-        /dumbbell|barbell|kettlebell|ez bar|trap bar|plate|weighted/i.test(justDef.equipment) &&
-        current.setIdx === midSetIdx &&
-        !feelAskedRecently(data.sessions, justDef.id, session.date)
+      // ONE check-in, at the halfway point of the whole session, asked once.
+      // Not on the middle set of an exercise: early on you can feel good and
+      // by the third movement you are done, so a single lift is the wrong
+      // thing to ask about and the wrong moment to ask.
+      const askSessionFeel = session.feel === undefined && progress.done + 1 >= halfwayAt
       setBreakState({
         seconds: rest,
         nextName: nextDef.name,
         nextSetLabel: sameExercise
           ? `Set ${next.setIdx + 1} of ${nextEx.sets.length}`
           : `${nextEx.sets.length} × ${nextEx.sets[0]?.targetReps}`,
-        feelExIdx: askFeel ? current.exIdx : undefined,
+        askSessionFeel,
         easeOffer: weightDropped(justEx.sets),
         nextExerciseId: nextDef.id,
       })
@@ -602,10 +587,8 @@ export function FocusView({
           brk={breakState}
           mode={soundMode}
           onDone={() => setBreakState(null)}
-          onFeel={
-            breakState.feelExIdx !== undefined
-              ? (f) => setExerciseFeel(session.date, breakState.feelExIdx!, f)
-              : undefined
+          onSessionFeel={
+            breakState.askSessionFeel ? (f) => setSessionFeel(session.date, f) : undefined
           }
           onEase={() => {
             const cuts = easeRemaining(session.date)

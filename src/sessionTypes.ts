@@ -55,6 +55,15 @@ export type SessionIntensity = 'full' | 'lighter' | 'minimum'
  */
 export type FatigueReason = 'fried' | 'form' | 'pain' | 'empty'
 
+/**
+ * How the whole session sat, asked ONCE at its halfway point.
+ *
+ * Deliberately different words from the old per-exercise
+ * easy/right/hard, so the two never get confused in history: this one
+ * is about the day, not about one movement.
+ */
+export type SessionFeel = 'light' | 'right' | 'heavy'
+
 /** One "I can't finish this" answer, kept so later sessions can learn from it. */
 export interface FatigueNote {
   exerciseId: string
@@ -84,4 +93,6 @@ export interface SessionLog {
   notes?: string
   /** Every "I can't finish this" answer given during the session. */
   fatigue?: FatigueNote[]
+  /** The one mid-session check-in: how the whole day is sitting. */
+  feel?: SessionFeel
 }

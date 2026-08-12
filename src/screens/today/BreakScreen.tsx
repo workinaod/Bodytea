@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { SessionFeel } from '../../types'
 import { say } from '../../platform/speech'
 import { Stepper } from '../../components/ui'
 import { ExerciseDemo } from '../../components/ExerciseDemo'
@@ -13,8 +14,8 @@ export interface BreakState {
   seconds: number
   nextName: string
   nextSetLabel: string
-  /** Set → the just-finished exercise gets the "how was the weight?" chips. */
-  feelExIdx?: number
+  /** Set once, at the halfway point: ask how the whole session is sitting. */
+  askSessionFeel?: boolean
   /** The weight came down inside the exercise that just finished. */
   easeOffer?: boolean
   /** Drives the preview of what is coming. */
@@ -23,16 +24,24 @@ export interface BreakState {
 
 // ============================================================
 // The rest screen between sets: a countdown, what is coming
-// next, and once a fortnight the "how did that weight feel?"
-// check-in. Its own file because it is a whole screen, not a
-// step in the set loop.
+// next, and ONE check-in at the halfway point of the session.
+//
+// It used to ask "how was the weight?" on the middle set of an
+// exercise, once a fortnight. Wrong moment and wrong scope:
+// "early on you can feel good but by the third workout your
+// dead". Halfway through the whole day is when the answer means
+// something, and one answer about the day beats several guesses
+// about single lifts.
+//
+// Its own file because it is a whole screen, not a step in the
+// set loop.
 // ============================================================
 
 export function BreakScreen({
   brk,
   mode,
   onDone,
-  onFeel,
+  onSessionFeel,
   onEase,
   weightLb,
   loadLabel,
@@ -47,7 +56,7 @@ export function BreakScreen({
   onWeight?: (v: number) => void
   mode: 'voice' | 'beeps-names' | 'beeps' | 'silent'
   onDone: () => void
-  onFeel?: (f: 'easy' | 'right' | 'hard') => void
+  onSessionFeel?: (f: SessionFeel) => void
   /** Shorten what is left. Returns a line describing what changed. */
   onEase?: () => string
 }) {
@@ -157,21 +166,21 @@ export function BreakScreen({
       )}
       {eased && <div className="mt-7 max-w-[280px] text-center text-[11.5px] font-bold text-lime">{eased}</div>}
 
-      {onFeel && !feelDone && (
+      {onSessionFeel && !feelDone && (
         <div className="mt-7 text-center">
-          <div className="text-[11.5px] font-bold text-ink-dim">How was the weight?</div>
+          <div className="text-[11.5px] font-bold text-ink-dim">How is this session sitting?</div>
           <div className="mt-2 flex gap-1.5">
             {(
               [
-                ['easy', 'Too easy'],
-                ['right', 'About right'],
-                ['hard', 'Too hard'],
+                ['light', 'Light'],
+                ['right', 'Right'],
+                ['heavy', 'Heavy'],
               ] as const
             ).map(([id, label]) => (
               <button
                 key={id}
                 onClick={() => {
-                  onFeel(id)
+                  onSessionFeel(id)
                   setFeelDone(true)
                 }}
                 className="rounded-full bg-white/[0.07] px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-white/[0.14]"
