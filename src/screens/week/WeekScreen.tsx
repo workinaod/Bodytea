@@ -290,18 +290,53 @@ export function WeekScreen() {
       {/* Day preview sheet */}
       <Sheet open={!!preview} onClose={() => setPreview(null)} title={preview ? `${formatShort(preview.date)} · ${preview.title}` : ''}>
         {preview && (
-          <div className="space-y-2 pb-6">
-            <p className="text-[12.5px] text-ink-dim">{preview.tagline}</p>
-            {preview.exercises.map((r) => (
-              <div key={r.exerciseId} className="flex items-center justify-between rounded-xl bg-white/[0.07] px-3.5 py-2.5">
-                <span className="text-[13px] font-bold">{r.name}</span>
-                <span className="font-mono text-[12px] text-ink-dim">
-                  {r.sets > 1 ? `${r.sets} × ${r.repText}` : r.repText}
-                </span>
-              </div>
-            ))}
-            {preview.exercises.length === 0 && <p className="py-4 text-center text-[12.5px] text-ink-faint">Rest day.</p>}
-            {preview.note && <p className="pt-1 text-[11.5px] leading-relaxed text-ink-faint">{preview.note}</p>}
+          <div className="space-y-3 pb-6">
+            <p className="text-[12.5px] leading-snug text-ink-dim">{preview.tagline}</p>
+
+            {preview.exercises.length > 0 && (
+              <>
+                {/* One grouped block with hairlines, the way the tier
+                    picker and the settings rows read. Seven identical
+                    floating pills gave the day no order and no shape. */}
+                <div className="overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
+                  {preview.exercises.map((r, i) => (
+                    <div
+                      key={r.exerciseId}
+                      className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
+                    >
+                      <span className="num w-4 shrink-0 text-[11px] font-bold text-ink-faint">{i + 1}</span>
+                      <span className="min-w-0 flex-1 text-[13.5px] font-extrabold leading-snug">{r.name}</span>
+                      {/* Sets and reps split so the columns line up down
+                          the list. Tabular figures, not a monospace font:
+                          the old one made the numbers read as code. */}
+                      <span className="flex shrink-0 items-baseline gap-1.5">
+                        {r.sets > 1 && (
+                          <span className="num text-[13px] font-extrabold text-accent-soft">{r.sets}</span>
+                        )}
+                        {r.sets > 1 && <span className="text-[11px] text-ink-faint">×</span>}
+                        <span className="num text-[13px] font-bold text-ink-dim">{r.repText}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="eyebrow text-ink-faint">
+                  {preview.exercises.length} exercises ·{' '}
+                  {preview.exercises.reduce((n, r) => n + r.sets, 0)} sets
+                </div>
+              </>
+            )}
+
+            {preview.exercises.length === 0 && (
+              <p className="py-6 text-center text-[13px] font-semibold text-ink-faint">
+                Rest day. Protein is still today's job.
+              </p>
+            )}
+
+            {preview.note && (
+              <p className="border-l-2 border-accent/40 py-1 pl-3 text-[12px] leading-relaxed text-ink-dim">
+                {preview.note}
+              </p>
+            )}
           </div>
         )}
       </Sheet>
