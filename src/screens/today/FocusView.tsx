@@ -593,6 +593,13 @@ export function FocusView({
               ? (f) => setExerciseFeel(session.date, breakState.feelExIdx!, f)
               : undefined
           }
+          weightLb={set.weightLb}
+          loadLabel={isLoaded ? loadLabel(def.equipment) : undefined}
+          onWeight={
+            isLoaded
+              ? (v) => patchSet(session.date, current.exIdx, current.setIdx, { weightLb: v })
+              : undefined
+          }
         />
       )}
       {howToOpen && <HowToSlides def={def} onClose={() => setHowToOpen(false)} />}

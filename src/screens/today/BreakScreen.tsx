@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { say } from '../../platform/speech'
+import { Stepper } from '../../components/ui'
 import { buzzRestOver } from '../../platform/haptics'
 
 /** What the rest screen needs to know about the gap it is filling. */
@@ -23,8 +24,17 @@ export function BreakScreen({
   mode,
   onDone,
   onFeel,
+  weightLb,
+  loadLabel,
+  onWeight,
 }: {
   brk: BreakState
+  /** The weight already set for the set that is coming up. */
+  weightLb?: number
+  /** What that weight is per, e.g. "weight per dumbbell". */
+  loadLabel?: string
+  /** Absent for bodyweight work, where there is nothing to rerack. */
+  onWeight?: (v: number) => void
   mode: 'voice' | 'beeps-names' | 'beeps' | 'silent'
   onDone: () => void
   onFeel?: (f: 'easy' | 'right' | 'hard') => void
@@ -65,6 +75,15 @@ export function BreakScreen({
   }, [])
 
   const ready = remaining === 0
+  // The green screen is a question, so ask it out loud. Without this the
+  // coach talks you into the rest and then goes silent at the one moment
+  // you are waiting to be told to move.
+  const asked = useRef(false)
+  useEffect(() => {
+    if (!ready || asked.current) return
+    asked.current = true
+    if (mode === 'voice' || mode === 'beeps-names') say('Ready?')
+  }, [ready, mode])
   const mm = Math.floor(remaining / 60)
   const ss = String(remaining % 60).padStart(2, '0')
 
@@ -95,6 +114,18 @@ export function BreakScreen({
         <div className="mt-1 text-[17px] font-extrabold text-ink">{brk.nextName}</div>
         <div className="text-[12.5px] font-semibold text-ink-dim">{brk.nextSetLabel}</div>
       </div>
+      {/* Rest is exactly when you change the plates or grab different
+          bells. Making people wait for the gate to do it means walking
+          back to the rack after the countdown has already finished. */}
+      {onWeight && (
+        <div className="mt-7 flex items-center gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.05] px-4 py-2.5">
+          <span className="text-[11px] font-black uppercase tracking-wider text-ink-dim">
+            {loadLabel ?? 'weight'}
+          </span>
+          <Stepper value={weightLb} onChange={onWeight} step={5} suffix="lb" width="w-16" />
+        </div>
+      )}
+
       {onFeel && !feelDone && (
         <div className="mt-7 text-center">
           <div className="text-[11.5px] font-bold text-ink-dim">How was the weight?</div>
