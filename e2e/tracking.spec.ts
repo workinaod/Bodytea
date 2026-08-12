@@ -84,4 +84,79 @@ test('a session with nothing to measure still logs, and shows no zeros', async (
   await page.clock.runFor(400)
   await page.waitForTimeout(400)
   await expect(page.getByText(/Cardio logged/)).toBeVisible()
+
+  // And it reaches Progress, which before this could only tell you
+  // about runs and rides. An hour of ball was invisible there.
+  await page.getByRole('button', { name: 'Progress', exact: true }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(400)
+  await expect(page.getByText('Sport, last 30 days')).toBeVisible()
+  await expect(page.getByText('Basketball', { exact: true })).toBeVisible()
+})
+
+test('a session with no measured distance never prints 0.00 mi', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+  await onboard(page)
+
+  // Seed the two GPS sessions that used to render wrong: a treadmill
+  // run the satellites never saw, and a hike, which printed as "Run"
+  // because the label was a two-way choice made when there were only
+  // two activities.
+  // The write has to land while the NEXT document is booting. Done as a
+  // plain evaluate before a reload it gets clobbered: the running app
+  // still has a save in flight and puts its own copy back.
+  await page.clock.runFor(400)
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('__seeded')) return
+    sessionStorage.setItem('__seeded', '1')
+    const raw = localStorage.getItem('naod.state')
+    if (!raw) return
+    const env = JSON.parse(raw)
+    env.data.runs = [
+      {
+        id: 'treadmill',
+        activity: 'run',
+        date: '2026-08-10',
+        startedAt: '2026-08-10T07:00:00.000Z',
+        durationSec: 1800,
+        distanceMi: 0,
+        distanceSource: 'none',
+        steps: 4200,
+        avgPaceSec: 0,
+        kcalEst: 300,
+        splits: [],
+        points: [],
+      },
+      {
+        id: 'walkup',
+        activity: 'hike',
+        date: '2026-08-09',
+        startedAt: '2026-08-09T07:00:00.000Z',
+        durationSec: 3600,
+        distanceMi: 2.8,
+        distanceSource: 'gps',
+        avgPaceSec: 1285,
+        kcalEst: 420,
+        splits: [],
+        points: [],
+      },
+    ]
+    localStorage.setItem('naod.state', JSON.stringify(env))
+  })
+  await page.reload()
+  await page.clock.runFor(600)
+  await page.getByRole('button', { name: 'Progress', exact: true }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(500)
+
+  const list = page.getByText(/Run · /).locator('..')
+  // The treadmill session reports what it has, not a zero and two
+  // dashes. "0.00 mi · 30:00 · --" is three ways of saying nothing.
+  await expect(list).toContainText('4,200 steps')
+  await expect(page.getByText('0.00 mi')).toHaveCount(0)
+  // And a hike is a hike.
+  await expect(page.getByText(/Hike · /)).toBeVisible()
 })
