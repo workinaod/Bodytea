@@ -26,6 +26,7 @@ import { parseRepRange, repLabel } from './reps'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
 import { MIN_KCAL_REST, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
+import { adaptSession } from './adapt'
 
 // ============================================================
 // The pipeline: (date, state) → ResolvedDay.
@@ -460,6 +461,24 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
         : 'Trimmed a few sets to keep this day useful. Extra work on a muscle that has had enough only costs you recovery.',
       tone: 'info',
     })
+  }
+
+  // --- Adapt to what has actually been happening ---
+  //
+  // AFTER the volume cap so a substitution lands on the day actually
+  // being done, and BEFORE the rep collapse because repLabel reads the
+  // history of the exercise it labels: a movement swapped in afterwards
+  // would be labelled from the history of the one it replaced.
+  //
+  // Only the automatic adjustments reach here. What that means, and why
+  // the rest are proposals, is engine/adapt.ts's business.
+  if (template.kind === 'session') {
+    const adapted = adaptSession(exercises, data, dateISO, plan.equipment, (id) => {
+      const def = getExercise(id)
+      return { name: def.name, kind: def.kind, restSec: def.restSec }
+    })
+    exercises = adapted.exercises
+    if (adapted.note) banners.push({ id: 'adapted', text: adapted.note, tone: 'info' })
   }
 
   // --- One rep number, never a range. LAST, after every decision ---

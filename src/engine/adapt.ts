@@ -374,3 +374,37 @@ export function weekLoad(data: AppData, today: ISODate): { planned: number; unpl
   }
   return { planned, unplanned }
 }
+
+
+// ---------------- The one call the resolver makes ----------------
+
+/**
+ * Apply everything automatic to a session, and hand back the line that
+ * explains it.
+ *
+ * This lives here rather than in resolveDay so the resolver stays a
+ * pipeline of named transforms instead of growing a branch that knows
+ * about equipment, joints and signal windows. The resolver's job is
+ * ORDER; this file's job is what adaptation means.
+ */
+export function adaptSession(
+  exercises: ResolvedExercise[],
+  data: AppData,
+  dateISO: ISODate,
+  equipment: EquipTag[],
+  nameOf: (id: string) => { name: string; kind: ResolvedExercise['kind']; restSec: number },
+): { exercises: ResolvedExercise[]; note: string | null } {
+  const owned = new Set<EquipTag>(['none', ...equipment])
+  const automatic = planAdjustments(exercises, {
+    owned,
+    signals: readSignals(data, dateISO),
+  }).filter((a) => a.automatic)
+  if (automatic.length === 0) return { exercises, note: null }
+  return {
+    exercises: applyAutomatic(exercises, automatic, nameOf),
+    note:
+      automatic.length === 1
+        ? automatic[0].because
+        : `${automatic.length} movements swapped today. ${automatic[0].because}`,
+  }
+}

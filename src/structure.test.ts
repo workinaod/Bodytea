@@ -81,6 +81,8 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // This one is the +21 for v19 → v20, the calorie-floor repair.
   'store/schema.ts': 639,
   'engine/engine.test.ts': 705,
+  // Test files, where length is coverage rather than a missing split.
+  'store/store.test.ts': 667,
 }
 
 describe('file size', () => {

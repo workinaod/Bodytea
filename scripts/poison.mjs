@@ -288,6 +288,22 @@ const E2E_MUTATIONS = [
     spec: 'e2e/sheet.spec.ts',
   },
   {
+    id: 'adaptation-never-runs',
+    bug: 'the adaptation engine exists and nothing it decides ever lands',
+    file: 'src/engine/adapt.ts',
+    find: '  if (automatic.length === 0) return { exercises, note: null }',
+    to: '  if (automatic.length >= 0) return { exercises, note: null }',
+    spec: 'e2e/adapt.spec.ts',
+  },
+  {
+    id: 'adaptation-runs-on-a-good-week',
+    bug: 'the plan gets rewritten when nothing has happened',
+    file: 'src/engine/adapt.ts',
+    find: '  if (automatic.length === 0) return { exercises, note: null }',
+    to: '  if (automatic.length === -1) return { exercises, note: null }',
+    spec: 'e2e/adapt.spec.ts',
+  },
+  {
     id: 'focus-stays-behind',
     bug: 'focus stays on the button underneath the sheet',
     file: 'src/components/Sheet.tsx',
@@ -316,7 +332,12 @@ function check(m, isE2e) {
   let caught
   try {
     if (isE2e) {
-      run('npm run build')
+      // A mutation that does not COMPILE leaves the previous dist in
+      // place, and Playwright then tests the un-mutated build and passes.
+      // That reads as SURVIVED, which is a false alarm pointing at a test
+      // that is actually fine. This is the same stale-build trap that
+      // once made a whole e2e suite pass against code it had never run.
+      if (!run('npm run build')) return { id: m.id, bug: m.bug, result: 'BUILD FAILED', ok: false }
       caught = !run(`npx playwright test ${m.spec}`)
     } else {
       caught = !run(`npx vitest run ${m.spec}`)
