@@ -52,7 +52,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   'screens/onboarding/Onboarding.tsx': 1095,
   'screens/meals/MealsScreen.tsx': 980,
   'plan/generator.ts': 920,
-  'logic/actions.ts': 835,
+  // Was 835, which it blew through and broke three deploys on. Meal
+  // logging moved to logic/mealActions.ts and the allowance follows it
+  // down: an oversized file that shrinks does not keep the headroom.
+  'logic/actions.ts': 802,
   // Was 836. The how-to reader and the rest screen both moved out, and
   // the allowance follows it down: an oversized file that shrinks does
   // not get to keep the headroom it earned.

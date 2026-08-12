@@ -4,7 +4,6 @@ import type {
   DebriefData,
   ExcuseReason,
   ISODate,
-  MealEntry,
   Measurement,
   PhotoMeta,
   RunLog,
@@ -12,7 +11,7 @@ import type {
   SessionLog,
   Tier,
 } from '../types'
-import { DEFAULT_SUPPLEMENTS, defaultWeekState } from '../types'
+import { defaultWeekState } from '../types'
 import { isIntenseSport } from '../plan/cardio'
 import { getExercise } from '../plan/exercises'
 import { suggestedStartWeight } from '../engine/startWeight'
@@ -38,7 +37,6 @@ import { finalStatus } from '../engine/quit'
 import { currentStreak, detectPRs, proteinFor } from '../engine/stats'
 import { addDaysISO, daysBetween, mondayOf, todayISO, weekdayOf } from '../engine/calendar'
 import { estKcal } from '../engine/runs'
-import { nutritionDayType } from '../engine/resolveDay'
 
 // ============================================================
 // Store-facing actions. Screens call these; each composes the
@@ -735,56 +733,16 @@ export function writeOffWeek(monday: ISODate, reason: ExcuseReason, proofPhotoId
 }
 
 // ---------- Meals ----------
-
-function ensureMealDay(date: ISODate): void {
-  store().update((d) => {
-    if (!d.meals[date]) {
-      d.meals[date] = { date, entries: [], supplements: { ...DEFAULT_SUPPLEMENTS } }
-    }
-  })
-}
-
-export function addMealEntry(date: ISODate, entry: Omit<MealEntry, 'id' | 'at' | 'servings'> & { servings?: number }): void {
-  ensureMealDay(date)
-  store().update((d) => {
-    d.meals[date].entries.push({
-      ...entry,
-      id: uid(),
-      at: new Date().toISOString(),
-      servings: entry.servings ?? 1,
-    })
-  })
-}
-
-export function setMealServings(date: ISODate, entryId: string, servings: number): void {
-  store().update((d) => {
-    const e = d.meals[date]?.entries.find((x) => x.id === entryId)
-    if (e) e.servings = Math.max(0.5, servings)
-  })
-}
-
-export function removeMealEntry(date: ISODate, entryId: string): void {
-  store().update((d) => {
-    const day = d.meals[date]
-    if (day) day.entries = day.entries.filter((x) => x.id !== entryId)
-  })
-}
-
-export function toggleSupplement(date: ISODate, id: keyof typeof DEFAULT_SUPPLEMENTS): void {
-  ensureMealDay(date)
-  store().update((d) => {
-    d.meals[date].supplements[id] = !d.meals[date].supplements[id]
-  })
-}
-
-export function cycleDayTypeOverride(date: ISODate): void {
-  ensureMealDay(date)
-  store().update((d) => {
-    const day = d.meals[date]
-    day.dayTypeOverride =
-      day.dayTypeOverride === undefined ? 'training' : day.dayTypeOverride === 'training' ? 'rest' : undefined
-  })
-}
+// Food logging lives in ./mealActions. Re-exported here so the
+// screens keep one import for every action they call.
+export {
+  addMealEntry,
+  cycleDayTypeOverride,
+  nutritionTargets,
+  removeMealEntry,
+  setMealServings,
+  toggleSupplement,
+} from './mealActions'
 
 // ---------- Measurements ----------
 
@@ -840,10 +798,4 @@ export function dailyCoachSweep(): void {
   if (daysSince >= 7 && !feedToday('backup-nudge')) {
     pushCoachMessage('backup-nudge', { count: daysSince })
   }
-}
-
-export function nutritionTargets(date: ISODate) {
-  const data = store().data
-  const dayType = nutritionDayType(date, data)
-  return { dayType }
 }
