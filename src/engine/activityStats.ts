@@ -1,6 +1,7 @@
-import type { AppData, CardioEntry, ISODate, RunLog } from '../types'
-import { cardioActivity } from '../plan/cardio'
+import type { AppData, ISODate } from '../types'
 import { addDaysISO } from './calendar'
+import { loggedSessions, type LoggedSession } from './activityLog'
+import { perceivedIntensity } from './calibration'
 import type { Intensity } from './intensity'
 
 // ============================================================
@@ -34,81 +35,64 @@ export interface ActivityRollup {
   miles: number
   kcal: number
   steps: number
-  /** How the measured sessions graded out. Absent tiers are zero. */
+  /** How the graded sessions came out. Absent tiers are zero. */
   mix: Record<Intensity, number>
-  /** Sessions that carried a measured tier, so a mix bar can scale. */
-  measured: number
-}
-
-/** A run log read as though it were a cardio entry, so one loop covers both. */
-function fromRun(r: RunLog): CardioEntry & { minutes: number } {
-  return {
-    id: r.id,
-    at: r.startedAt,
-    activityId: r.activity,
-    label: r.activity,
-    when: 'solo',
-    minutes: Math.round(r.durationSec / 60),
-    // A run with no measured distance reports none, rather than a zero
-    // that would drag the mileage total down with a phantom entry.
-    ...(r.distanceSource !== 'none' && r.distanceMi > 0 ? { miles: r.distanceMi } : {}),
-    ...(r.steps ? { steps: r.steps } : {}),
-    ...(r.kcalEst ? { kcalEst: r.kcalEst } : {}),
-  }
+  /** Sessions carrying a tier from either source, so a bar can scale. */
+  graded: number
 }
 
 /**
  * Every sport trained in the window, biggest calorie contributor
  * first, because that ordering answers "what is actually doing the
  * work" without the reader having to compare rows.
+ *
+ * Sessions arrive through engine/activityLog.ts, which is what stops
+ * a GPS run being counted once as a route and again as the cardio
+ * entry saveRun writes beside it.
  */
 export function sportSummary(data: AppData, today: ISODate, days = 30): ActivityRollup[] {
   const since = addDaysISO(today, -(days - 1))
   const by = new Map<string, ActivityRollup>()
 
-  const add = (e: CardioEntry) => {
-    const def = cardioActivity(e.activityId)
-    let row = by.get(e.activityId)
+  for (const s of loggedSessions(data, { from: since, to: today })) {
+    let row = by.get(s.activityId)
     if (!row) {
       row = {
-        activityId: e.activityId,
-        // A custom activity carries its own name, and the label on the
-        // entry is the one the user typed.
-        label: e.activityId === 'custom' ? e.label : def.label,
-        emoji: def.emoji,
+        activityId: s.activityId,
+        label: s.label,
+        emoji: s.emoji,
         sessions: 0,
         minutes: 0,
         miles: 0,
         kcal: 0,
         steps: 0,
         mix: { low: 0, standard: 0, high: 0 },
-        measured: 0,
+        graded: 0,
       }
-      by.set(e.activityId, row)
+      by.set(s.activityId, row)
     }
     row.sessions++
-    row.minutes += e.minutes ?? 0
-    row.miles += e.miles ?? 0
-    row.kcal += e.kcalEst ?? 0
-    row.steps += e.steps ?? 0
-    if (e.intensity) {
-      row.mix[e.intensity]++
-      row.measured++
+    row.minutes += s.minutes
+    row.miles += s.miles ?? 0
+    row.kcal += s.kcal ?? 0
+    row.steps += s.steps ?? 0
+    // Their own answer where they gave one, the calibrated prediction
+    // where they did not, and nothing at all where neither is possible.
+    const tier = tierOf(data, s)
+    if (tier) {
+      row.mix[tier]++
+      row.graded++
     }
-  }
-
-  for (const [date, entries] of Object.entries(data.cardio)) {
-    if (date < since || date > today) continue
-    for (const e of entries) add(e)
-  }
-  for (const r of data.runs) {
-    if (r.date < since || r.date > today) continue
-    add(fromRun(r))
   }
 
   return [...by.values()]
     .map((r) => ({ ...r, miles: Math.round(r.miles * 100) / 100 }))
     .sort((a, b) => b.kcal - a.kcal || b.minutes - a.minutes)
+}
+
+/** How hard this session was for this athlete, best evidence first. */
+function tierOf(data: AppData, s: LoggedSession): Intensity | null {
+  return perceivedIntensity(data, s.activityId, s.steps, s.minutes, s.felt)
 }
 
 /** The window's totals, for the one line above the table. */
@@ -175,3 +159,42 @@ export const MIN_SESSIONS_TO_COMPARE = 3
  * is the smallest change worth telling somebody about.
  */
 export const TREND_DEADBAND = 0.2
+
+export interface DayActivity {
+  emoji: string
+  label: string
+  minutes: number
+  steps?: number
+  miles?: number
+  kcal?: number
+  /** Their answer, or the calibrated read of the step rate. */
+  tier: Intensity | null
+}
+
+/**
+ * What was trained on one day, for the Today and Week tabs.
+ *
+ * Both used to say only that cardio existed: a chip that counted
+ * entries and a "played" marker. An hour of tracked ball and a
+ * fifteen-minute walk looked identical on both screens, which is
+ * exactly the information the tracking was added to provide.
+ */
+export function dayActivities(data: AppData, date: ISODate): DayActivity[] {
+  return loggedSessions(data, { from: date, to: date }).map((s) => ({
+    emoji: s.emoji,
+    label: s.label,
+    minutes: s.minutes,
+    ...(s.steps ? { steps: s.steps } : {}),
+    ...(s.miles ? { miles: s.miles } : {}),
+    ...(s.kcal ? { kcal: s.kcal } : {}),
+    tier: tierOf(data, s),
+  }))
+}
+
+/** Minutes as something a person says out loud. */
+export function shortDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return m === 0 ? `${h}h` : `${h}h ${m}m`
+}

@@ -26,6 +26,8 @@ import { SkipFlow } from './SkipFlow'
 import { DebriefSheet } from './DebriefSheet'
 import { ExerciseGuideSheet } from './ExerciseGuideSheet'
 import { CardioSheet } from './CardioSheet'
+import { dayActivities, shortDuration } from '../../engine/activityStats'
+import { intensityLabel } from '../../engine/intensity'
 import { cardioActivity } from '../../plan/cardio'
 
 export function TodayScreen() {
@@ -263,6 +265,25 @@ export function TodayScreen() {
           {today && cardioEntries.length === 0 && cardioTip && (
             <p className="px-1 text-[11px] leading-snug text-ink-faint">{cardioTip}</p>
           )}
+          {/* Once something is logged the tip is gone and this took its
+              place. The chip counts entries; it never said what they
+              were, so an hour of tracked ball read the same as a walk. */}
+          {dayActivities(data, date).map((a, i) => (
+            <p key={i} className="px-1 text-[11px] leading-snug text-ink-faint">
+              <span className="font-bold text-ink-dim">
+                {a.emoji} {a.label}
+              </span>
+              {[
+                shortDuration(a.minutes),
+                a.steps ? `${a.steps.toLocaleString()} steps` : null,
+                a.miles ? `${a.miles} mi` : null,
+                a.kcal ? `~${a.kcal} cal` : null,
+                a.tier ? intensityLabel(a.tier).toLowerCase() : null,
+              ]
+                .filter(Boolean)
+                .map((bit) => ` · ${bit}`)}
+            </p>
+          ))}
         </>
       )}
 

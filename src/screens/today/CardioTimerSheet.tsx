@@ -10,7 +10,9 @@ import {
   stepDistanceMi,
   tracksSteps,
 } from '../../engine/intensity'
-import { logCardio } from '../../logic/actions'
+import { logCardio, setCardioFeltIntensity } from '../../logic/actions'
+import type { Intensity } from '../../engine/intensity'
+import { IntensityAsk } from './IntensityAsk'
 import { useAppStore } from '../../store/appStore'
 import { requestMotionPermission, startStepCounter, type StepCounter } from '../../platform/motion'
 import { watchDistance, type DistanceWatch } from '../../platform/geo'
@@ -49,7 +51,15 @@ export function CardioTimerSheet({
   const def = customLabel ? { ...base, label: customLabel } : base
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
-  const [saved, setSaved] = useState<{ steps?: number; miles?: number; kcal: number; note: string | null; tier: string | null } | null>(null)
+  const [saved, setSaved] = useState<{
+    id: string
+    steps?: number
+    miles?: number
+    kcal: number
+    note: string | null
+    tier: string | null
+  } | null>(null)
+  const [felt, setFelt] = useState<Intensity | undefined>(undefined)
   const wakeRef = useRef<{ release?: () => Promise<void> } | null>(null)
   const stepsRef = useRef<StepCounter | null>(null)
   const geoRef = useRef<DistanceWatch | null>(null)
@@ -128,7 +138,7 @@ export function CardioTimerSheet({
 
     const { kcal, intensity } = cardioKcal({ activityId: def.id, minutes, bodyweightLb, steps })
 
-    logCardio(date, {
+    const id = logCardio(date, {
       activityId: def.id,
       label: def.label,
       when: 'solo',
@@ -139,6 +149,7 @@ export function CardioTimerSheet({
       ...(kcal > 0 ? { kcalEst: kcal } : {}),
     })
     setSaved({
+      id,
       steps: steps > 0 ? steps : undefined,
       miles,
       kcal,
@@ -179,7 +190,10 @@ export function CardioTimerSheet({
             </div>
             {saved.tier && (
               <div className="mt-3 rounded-full bg-accent/12 px-3.5 py-1.5 text-[11.5px] font-black uppercase tracking-[0.14em] text-accent-soft ring-1 ring-accent/25">
-                {intensityLabel(saved.tier as 'low' | 'standard' | 'high')} intensity
+                {/* "All out session", not "All out intensity". The tier
+                    words are the ones the question below offers, so the
+                    two have to read as the same sentence. */}
+                {intensityLabel(saved.tier as 'low' | 'standard' | 'high')} session
               </div>
             )}
             <Numbers steps={saved.steps} miles={saved.miles} kcal={saved.kcal} className="mt-6" />
@@ -189,7 +203,16 @@ export function CardioTimerSheet({
               </p>
             )}
             <p className="mt-3 text-[13px] text-ink-dim">Counts as today's cardio.</p>
-            <Btn kind="lime" className="mt-7 w-full max-w-xs" onClick={onClose}>
+            <div className="mt-6 w-full max-w-xs">
+              <IntensityAsk
+                answered={felt}
+                onAnswer={(tier) => {
+                  setFelt(tier)
+                  setCardioFeltIntensity(date, saved.id, tier)
+                }}
+              />
+            </div>
+            <Btn kind="lime" className="mt-6 w-full max-w-xs" onClick={onClose}>
               Done
             </Btn>
           </>

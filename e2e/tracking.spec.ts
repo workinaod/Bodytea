@@ -160,3 +160,64 @@ test('a session with no measured distance never prints 0.00 mi', async ({ page }
   // And a hike is a hike.
   await expect(page.getByText(/Hike · /)).toBeVisible()
 })
+
+test('the end-of-session question records the answer and says so', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+  await onboard(page)
+  await openTracker(page, 'Basketball')
+  await page.getByRole('button', { name: /Start basketball/i }).click()
+  await page.clock.runFor(65_000)
+  await page.waitForTimeout(600)
+  await page.getByRole('button', { name: 'Finish' }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(500)
+
+  // The one question, asked once, at the end of the session.
+  await expect(timer(page)).toContainText('How hard was that?')
+  await page.getByRole('button', { name: /All out/ }).click()
+  await page.clock.runFor(300)
+  await page.waitForTimeout(400)
+
+  // It becomes a receipt rather than staying a question, so nobody
+  // wonders whether the tap registered.
+  await expect(timer(page)).toContainText('Logged how it felt')
+  await expect(timer(page)).not.toContainText('How hard was that?')
+  await expect(page.getByRole('button', { name: /All out/ })).toHaveAttribute('aria-pressed', 'true')
+
+  // And the answer reaches storage, which is the whole point: it is
+  // what engine/calibration.ts learns the athlete's own bands from.
+  const stored = await page.evaluate(() => {
+    const env = JSON.parse(localStorage.getItem('naod.state')!)
+    return Object.values(env.data.cardio).flat().map((e: unknown) => (e as { feltIntensity?: string }).feltIntensity)
+  })
+  expect(stored).toContain('high')
+})
+
+test('the answer reaches the Today tab', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+  await onboard(page)
+  await openTracker(page, 'Basketball')
+  await page.getByRole('button', { name: /Start basketball/i }).click()
+  await page.clock.runFor(65_000)
+  await page.waitForTimeout(600)
+  await page.getByRole('button', { name: 'Finish' }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(400)
+  await page.getByRole('button', { name: /^Easy/ }).click()
+  await page.clock.runFor(300)
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(500)
+
+  // Today used to say only that cardio existed. An hour of tracked ball
+  // and a fifteen-minute walk read identically.
+  // "🏀 Basketball · 1 min · ~9 cal · easy": what it was, how long, what
+  // it cost, and how it felt.
+  await expect(page.getByText(/Basketball · 1 min .* easy/)).toBeVisible()
+})

@@ -1,16 +1,12 @@
 import type {
-  CardioEntry,
   CoachSituation,
   DebriefData,
   ExcuseReason,
   ISODate,
   Measurement,
   PhotoMeta,
-  RunLog,
   Tier,
 } from '../types'
-import { defaultWeekState } from '../types'
-import { isIntenseSport } from '../plan/cardio'
 import { flushPersist, uid, useAppStore } from '../store/appStore'
 import { downscalePhoto, PhotoStore } from '../store/storage'
 import { planTemplate, resolveDay } from '../engine/resolveDay'
@@ -32,7 +28,6 @@ import { composeDebrief } from '../engine/debrief'
 import { finalStatus } from '../engine/quit'
 import { currentStreak, detectPRs, proteinFor } from '../engine/stats'
 import { addDaysISO, daysBetween, mondayOf, todayISO, weekdayOf } from '../engine/calendar'
-import { estKcal } from '../engine/runs'
 
 // ============================================================
 // Store-facing actions. Screens call these; each composes the
@@ -491,71 +486,16 @@ export function changeTier(date: ISODate, to: Tier, excuseInfo?: { reason: Excus
 
 // ---------- Same-day ball / cardio ----------
 
+// Writing sport to the log moved to logic/cardioActions.ts, and the
+// allowance follows the file down. Re-exported so the screens that
+// already import from here keep working.
+export { logCardio, playedFrom, removeCardio, saveRun, setCardioFeltIntensity, setRunFeltIntensity } from './cardioActions'
+
 export function toggleBallToday(date: ISODate): void {
   store().updateWeek(date, (w) => {
     w.ballDates = w.ballDates.includes(date)
       ? w.ballDates.filter((d) => d !== date)
       : [...w.ballDates, date]
-  })
-}
-
-/**
- * Log a cardio/sport entry for a date. Intense sport (running games, a
- * match) also marks the week's "played" date, same engine semantics as
- * the original ball log: conditioning covered, next-day speed protected.
- */
-export function logCardio(
-  date: ISODate,
-  entry: Omit<CardioEntry, 'id' | 'at'>,
-): void {
-  const markPlayed = isIntenseSport(entry.activityId, entry.mode)
-  store().update((d) => {
-    ;(d.cardio[date] ??= []).push({ ...entry, id: uid(), at: new Date().toISOString() })
-    if (markPlayed) {
-      const monday = mondayOf(date)
-      const w = (d.weeks[monday] ??= defaultWeekState(monday))
-      if (!w.ballDates.includes(date)) w.ballDates = [...w.ballDates, date]
-    }
-  })
-}
-
-/** Remove a logged entry; un-marks the played date when no intense sport remains. */
-export function removeCardio(date: ISODate, entryId: string): void {
-  store().update((d) => {
-    d.cardio[date] = (d.cardio[date] ?? []).filter((e) => e.id !== entryId)
-    if (d.cardio[date].length === 0) delete d.cardio[date]
-    const stillPlayed = (d.cardio[date] ?? []).some((e) => isIntenseSport(e.activityId, e.mode))
-    if (!stillPlayed) {
-      const w = d.weeks[mondayOf(date)]
-      if (w) w.ballDates = w.ballDates.filter((x) => x !== date)
-    }
-  })
-}
-
-/**
- * Save a GPS-tracked run/ride AND log its cardio entry in one shot,
- * the tracker feeds the same conditioning machinery as a manual log.
- */
-export function saveRun(run: RunLog): void {
-  store().update((d) => {
-    // estimate calories with the freshest bodyweight on record
-    let bw: number | undefined
-    for (let i = d.measurements.length - 1; i >= 0; i--) {
-      if (d.measurements[i].weightLb !== undefined) {
-        bw = d.measurements[i].weightLb
-        break
-      }
-    }
-    run.kcalEst = estKcal(run.activity, run.distanceMi, run.durationSec, bw ?? 175)
-    d.runs.push(run)
-  })
-  logCardio(run.date, {
-    activityId: run.activity,
-    label: run.activity === 'run' ? 'Run' : 'Bike',
-    when: 'solo',
-    where: 'outdoor',
-    miles: run.distanceMi,
-    minutes: Math.round(run.durationSec / 60),
   })
 }
 

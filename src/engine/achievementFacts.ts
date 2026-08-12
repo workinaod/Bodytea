@@ -4,6 +4,7 @@ import { resolveDay } from './resolveDay'
 import { getExercise } from '../plan/exercises'
 import { e1RM } from './stats'
 import { streakState } from './streak'
+import { travelMiles } from './activityLog'
 
 // ============================================================
 // Every number the trophy case needs, measured once.
@@ -224,7 +225,7 @@ function cardioRecords(data: AppData) {
   for (const date of Object.keys(data.cardio).sort()) {
     for (const e of data.cardio[date]) {
       sessions++
-      miles += e.miles ?? 0
+      miles += travelMiles(e)
       if (e.miles && e.miles > 0) {
         const prev = bestMiles.get(e.activityId)
         if (prev !== undefined && e.miles > prev) distanceRecords++
@@ -330,7 +331,7 @@ function progression(data: AppData, first: ISODate, today: ISODate): number {
           }
         }
       }
-      for (const c of data.cardio[d] ?? []) miles += c.miles ?? 0
+      for (const c of data.cardio[d] ?? []) miles += travelMiles(c)
     }
     weekly.push({ load, miles })
   }

@@ -4,6 +4,8 @@ import { useAppStore } from '../../store/appStore'
 import { CARDIO_ACTIVITIES, cardioActivity } from '../../plan/cardio'
 import { logCardio, removeCardio } from '../../logic/actions'
 import { Btn, Chip, Stepper } from '../../components/ui'
+import type { Intensity } from '../../engine/intensity'
+import { IntensityAsk } from './IntensityAsk'
 import { Sheet } from '../../components/Sheet'
 import { RunTrackerSheet } from './RunTrackerSheet'
 import { CardioTimerSheet } from './CardioTimerSheet'
@@ -45,6 +47,7 @@ export function CardioSheet({
   const [minutes, setMinutes] = useState(30)
   const [mode, setMode] = useState<string | null>(null)
   const [customLabel, setCustomLabel] = useState('')
+  const [felt, setFelt] = useState<Intensity | undefined>(undefined)
 
   const def = picked ? cardioActivity(picked) : null
 
@@ -53,6 +56,7 @@ export function CardioSheet({
     setPicked(null)
     setMode(null)
     setCustomLabel('')
+    setFelt(undefined)
   }
 
   /** All the way back to the start, for closing the sheet. */
@@ -82,6 +86,7 @@ export function CardioSheet({
       ...(def.asks.miles ? { miles } : {}),
       ...(def.asks.minutes ? { minutes } : {}),
       ...(def.modes && mode ? { mode } : {}),
+      ...(felt ? { feltIntensity: felt } : {}),
     }
     logCardio(date, entry)
     resetForm()
@@ -264,6 +269,8 @@ export function CardioSheet({
                 </div>
               </div>
             )}
+
+            <IntensityAsk answered={felt} onAnswer={setFelt} />
 
             <Btn className="w-full py-3.5" onClick={save}>
               Log it

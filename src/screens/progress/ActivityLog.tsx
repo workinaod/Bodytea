@@ -173,7 +173,7 @@ function Row({ row }: { row: ActivityRollup }) {
         <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{row.label}</span>
         <span className="shrink-0 text-[12px] font-bold text-ink-dim">{hours(row.minutes)}</span>
       </div>
-      {row.measured > 0 && (
+      {row.graded > 0 && (
         <div className="mt-1.5 flex h-[3px] gap-px overflow-hidden rounded-full">
           {(['high', 'standard', 'low'] as const).map((tier) =>
             row.mix[tier] > 0 ? (

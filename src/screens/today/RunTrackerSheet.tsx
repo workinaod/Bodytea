@@ -16,7 +16,9 @@ import {
 } from '../../engine/runs'
 import { buildShareImage, shareRunCard } from '../../engine/shareCard'
 import { reactionForRun, type Reaction } from '../../engine/reactions'
-import { saveRun } from '../../logic/actions'
+import { saveRun, setRunFeltIntensity } from '../../logic/actions'
+import type { Intensity } from '../../engine/intensity'
+import { IntensityAsk } from './IntensityAsk'
 import { useAppStore } from '../../store/appStore'
 import { Btn } from '../../components/ui'
 import { MAX_ZOOM, MIN_ZOOM, RouteMap } from '../../components/RouteMap'
@@ -134,6 +136,7 @@ export function RunTrackerSheet({
   const mapH = Math.max(280, (typeof window !== 'undefined' ? window.innerHeight : 800) - 260)
 
   const [scrapped, setScrapped] = useState(false)
+  const [felt, setFelt] = useState<Intensity | undefined>(undefined)
   // Goal check-in: composed once per finished run against live app data
   const review = useMemo(
     () => (saved ? runGoalReview(useAppStore.getState().data, saved) : null),
@@ -330,6 +333,16 @@ export function RunTrackerSheet({
                 </div>
               </div>
             )}
+
+            <div className="rounded-2xl bg-white/[0.045] p-3.5 ring-1 ring-white/[0.05]">
+              <IntensityAsk
+                answered={felt}
+                onAnswer={(tier) => {
+                  setFelt(tier)
+                  setRunFeltIntensity(saved.id, tier)
+                }}
+              />
+            </div>
 
             <div className="flex gap-2">
               <Btn

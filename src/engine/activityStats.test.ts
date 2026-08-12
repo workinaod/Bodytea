@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { AppData, CardioEntry, ISODate, RunLog } from '../types'
 import { emptyAppData } from '../types'
 import { addDaysISO } from './calendar'
+import { travelMiles } from './activityLog'
 import {
   MIN_SESSIONS_TO_COMPARE,
   TREND_DEADBAND,
@@ -51,7 +52,7 @@ describe('sportSummary', () => {
     // The whole point: basketball logged from the timer and basketball
     // logged by hand are the same sport and belong on the same line.
     const d = base()
-    log(d, TODAY, entry({ activityId: 'basketball', minutes: 60, kcalEst: 500, steps: 7000, intensity: 'standard' }))
+    log(d, TODAY, entry({ activityId: 'basketball', minutes: 60, kcalEst: 500, steps: 7000, feltIntensity: 'standard' }))
     log(d, addDaysISO(TODAY, -3), entry({ activityId: 'basketball', minutes: 45, kcalEst: 380 }))
     d.runs = [run({ date: addDaysISO(TODAY, -1), distanceMi: 3.2, kcalEst: 320, distanceSource: 'gps' })]
 
@@ -63,7 +64,7 @@ describe('sportSummary', () => {
     expect(ball.kcal).toBe(880)
     expect(ball.steps).toBe(7000)
     // Only one of the two carried a measured tier, and only it votes.
-    expect(ball.measured).toBe(1)
+    expect(ball.graded).toBe(1)
     expect(ball.mix).toEqual({ low: 0, standard: 1, high: 0 })
   })
 
@@ -132,11 +133,63 @@ describe('sportSummary', () => {
   })
 })
 
+describe('a GPS run is one session, not two', () => {
+  // saveRun writes the route as a RunLog AND logs a cardio entry beside
+  // it, because the conditioning machinery reads the cardio log. The
+  // first version of this rollup read both and added them up, so every
+  // tracked run showed as two sessions with twice the miles and twice
+  // the minutes. Anybody who used the GPS tracker had a wrong month.
+
+  it('counts a linked pair once', () => {
+    const d = base()
+    const r = run({ date: TODAY, distanceMi: 3.2, durationSec: 1800, kcalEst: 320, distanceSource: 'gps' })
+    d.runs = [r]
+    log(d, TODAY, entry({ activityId: 'run', runId: r.id, miles: 3.2, minutes: 30, label: 'Run' }))
+    const row = sportSummary(d, TODAY)[0]
+    expect(row.sessions).toBe(1)
+    expect(row.miles).toBe(3.2)
+    expect(row.minutes).toBe(30)
+    expect(row.kcal).toBe(320)
+  })
+
+  it('counts an unlinked legacy pair once too', () => {
+    // Entries written before runId existed carry no link. They still
+    // match on the exact signature saveRun leaves: same day, same
+    // activity, same rounded duration.
+    const d = base()
+    d.runs = [run({ date: TODAY, distanceMi: 3.2, durationSec: 1800, kcalEst: 320, distanceSource: 'gps' })]
+    log(d, TODAY, entry({ activityId: 'run', miles: 3.2, minutes: 30, label: 'Run' }))
+    expect(sportSummary(d, TODAY)[0].sessions).toBe(1)
+  })
+
+  it('still counts a genuinely separate session on the same day', () => {
+    const d = base()
+    d.runs = [run({ date: TODAY, distanceMi: 3.2, durationSec: 1800, distanceSource: 'gps' })]
+    // A different sport that afternoon is not the morning's run.
+    log(d, TODAY, entry({ activityId: 'basketball', minutes: 30, kcalEst: 200 }))
+    expect(sportTotals(sportSummary(d, TODAY)).sessions).toBe(2)
+  })
+
+  it('still counts a SECOND run on the same day', () => {
+    // The case that decides how tight the legacy match has to be. A
+    // tracked 30-minute run in the morning and a hand-logged
+    // 45-minute jog that evening are two sessions. Matching on day
+    // and sport alone would swallow the second one.
+    const d = base()
+    d.runs = [run({ date: TODAY, distanceMi: 3.2, durationSec: 1800, distanceSource: 'gps' })]
+    log(d, TODAY, entry({ activityId: 'run', label: 'Run', miles: 4.5, minutes: 45 }))
+    const row = sportSummary(d, TODAY)[0]
+    expect(row.sessions).toBe(2)
+    expect(row.minutes).toBe(75)
+    expect(row.miles).toBe(7.7)
+  })
+})
+
 describe('intensityTrend', () => {
   /** n sessions of one tier, spread back from `endsAt`. */
   function block(d: AppData, endsAt: ISODate, tier: 'low' | 'standard' | 'high', n: number) {
     for (let i = 0; i < n; i++) {
-      log(d, addDaysISO(endsAt, -i * 2), entry({ activityId: 'basketball', minutes: 60, kcalEst: 400, intensity: tier }))
+      log(d, addDaysISO(endsAt, -i * 2), entry({ activityId: 'basketball', minutes: 60, kcalEst: 400, feltIntensity: tier }))
     }
   }
 
@@ -175,16 +228,17 @@ describe('intensityTrend', () => {
     const d = base()
     block(d, addDaysISO(TODAY, -30), 'standard', 8)
     block(d, TODAY, 'standard', 7)
-    log(d, TODAY, entry({ activityId: 'basketball', minutes: 60, kcalEst: 400, intensity: 'high' }))
+    log(d, TODAY, entry({ activityId: 'basketball', minutes: 60, kcalEst: 400, feltIntensity: 'high' }))
     const t = intensityTrend(d, TODAY, 30)!
     expect(t.now - t.before).toBeLessThan(TREND_DEADBAND)
     expect(t.direction).toBe('flat')
   })
 
-  it('ignores sessions with no measured tier entirely', () => {
-    // Hand-logged hours have no evidence to vote with. If they counted
-    // as anything, a month of honest manual logging would swing the
-    // trend without a single thing having been measured.
+  it('ignores sessions with nothing to grade them by entirely', () => {
+    // An hour logged by hand, with no step count and no answer, has no
+    // evidence to vote with. If it counted as anything, a month of
+    // honest manual logging would swing the trend without a single
+    // session having been measured or rated.
     const d = base()
     block(d, addDaysISO(TODAY, -30), 'low', 4)
     block(d, TODAY, 'high', 4)
@@ -193,5 +247,28 @@ describe('intensityTrend', () => {
       log(d, addDaysISO(TODAY, -i), entry({ activityId: 'soccer', minutes: 60, kcalEst: 500 }))
     }
     expect(intensityTrend(d, TODAY, 30)).toEqual(withMeasured)
+  })
+})
+
+describe('travelMiles', () => {
+  it('counts ground covered and not court shuffling', () => {
+    // A pickleball hour genuinely covers about a mile of court, and
+    // that is a real number for that sport. It is not travel, and
+    // adding it to a lifetime mileage badge puts volleyball footwork
+    // in the same column as a hike. Before steps existed only the four
+    // activities that ask for miles could contribute; this is that
+    // same set, without a hardcoded list.
+    for (const id of ['run', 'bike', 'walk', 'hike', 'soccer', 'football']) {
+      expect(travelMiles({ activityId: id, miles: 3 })).toBe(3)
+    }
+    for (const id of ['basketball', 'tennis', 'pickleball', 'volleyball']) {
+      expect(travelMiles({ activityId: id, miles: 3 })).toBe(0)
+    }
+  })
+
+  it('is zero for anything without a distance at all', () => {
+    expect(travelMiles({ activityId: 'run' })).toBe(0)
+    expect(travelMiles({ activityId: 'run', miles: 0 })).toBe(0)
+    expect(travelMiles({ activityId: 'swim', miles: 2 })).toBe(0)
   })
 })

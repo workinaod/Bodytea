@@ -170,9 +170,18 @@ export function cardioKcal(m: CardioMeasure): KcalEstimate {
   return { kcal, met, basis, intensity }
 }
 
-/** What the tier is called on screen. */
+/**
+ * What the tier is called on screen.
+ *
+ * These are the same three words the end-of-session question offers,
+ * on purpose. Asking "how hard was that: Easy / Solid / All out" and
+ * then reporting back "Standard intensity" makes the app sound like
+ * it is grading something other than what it asked about.
+ *
+ * The ids never move. Only these change.
+ */
 export function intensityLabel(tier: Intensity): string {
-  return tier === 'low' ? 'Low' : tier === 'high' ? 'High' : 'Standard'
+  return tier === 'low' ? 'Easy' : tier === 'high' ? 'All out' : 'Solid'
 }
 
 /**

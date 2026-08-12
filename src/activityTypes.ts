@@ -36,6 +36,8 @@ export interface RunLog {
   points: RunPoint[]
   /** MET-estimated calories at save time (wearables replace this later). */
   kcalEst?: number
+  /** What the athlete said it was, asked once when the session ends. */
+  feltIntensity?: 'low' | 'standard' | 'high'
 }
 
 // ---------- Daily cardio / sport log ----------
@@ -54,6 +56,14 @@ export interface CardioEntry {
   minutes?: number
   /** Activity-specific mode, e.g. basketball 'games' vs 'shooting'. */
   mode?: string
+  /**
+   * Set when this entry is the shadow of a GPS session. saveRun writes
+   * the route as a RunLog AND logs a cardio entry, because the
+   * conditioning machinery reads the cardio log. Anything that ADDS the
+   * two logs together has to know they are one session, or every
+   * tracked run counts twice. See engine/activityLog.ts.
+   */
+  runId?: string
 
   // ---- Only present when the phone recorded the session live ----
   // A logged-after-the-fact entry has none of these, and the app
@@ -71,4 +81,14 @@ export interface CardioEntry {
   intensity?: 'low' | 'standard' | 'high'
   /** Calories at save time, from the measured tier rather than a claim. */
   kcalEst?: number
+
+  /**
+   * What the ATHLETE said it was, asked once when the session ends.
+   *
+   * Kept strictly apart from `intensity`, which is what the step rate
+   * said. Conflating them would destroy the only thing that makes
+   * either useful: the disagreement between them is what
+   * engine/calibration.ts learns from.
+   */
+  feltIntensity?: 'low' | 'standard' | 'high'
 }

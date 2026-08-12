@@ -5,6 +5,8 @@ import { resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatShort, mondayOf, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { Card, Chip, DayArrow, ScreenHeader, SectionTitle, Toggle } from '../../components/ui'
+import { dayActivities, shortDuration } from '../../engine/activityStats'
+import { intensityLabel } from '../../engine/intensity'
 import { Sheet } from '../../components/Sheet'
 import { changeTier } from '../../logic/actions'
 import { TierDropSheet } from './TierDropSheet'
@@ -56,6 +58,12 @@ export function WeekScreen() {
     const out: string[] = []
     const wd = weekdayOf(d.date)
     if (week?.ballDates.includes(d.date)) out.push(ball ? '🏀 played' : '🏃 conditioned')
+    // What was actually done, not just that something was. The row used
+    // to read the same for a fifteen-minute walk and two hours of ball.
+    for (const a of dayActivities(data, d.date)) {
+      const tier = a.tier ? `, ${intensityLabel(a.tier).toLowerCase()}` : ''
+      out.push(`${a.emoji} ${shortDuration(a.minutes)}${tier}`)
+    }
     for (const ev of data.plan.lifeEvents) {
       if ((week?.events[ev.id] ?? []).includes(wd)) out.push(ev.kind === 'late-night' ? '🌙 late night' : '🦵 on feet')
     }
