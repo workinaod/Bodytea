@@ -22,6 +22,7 @@ import {
 } from './transforms'
 import { trimForVolume, type VolumeCut } from './volume'
 import { capAccessorySets, orderSession } from './sequence'
+import { repLabel } from './reps'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
 
@@ -459,6 +460,21 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
       tone: 'info',
     })
   }
+
+  // --- One rep number, never a range. LAST, after every decision ---
+  //
+  // The plan holds "8-12" because a range is programming data. The
+  // athlete is shown "8", because a range handed to someone mid-set is
+  // a menu, not an instruction.
+  //
+  // This runs after sequencing and capping on purpose: isAccessory()
+  // reads the rep range to tell a light 12-rep accessory from a real
+  // lift, so collapsing first would make an incline press that has
+  // progressed to 12 reps look like isolation and sort it to the back.
+  exercises = exercises.map((e) => ({
+    ...e,
+    repText: repLabel(e.repText, data, e.exerciseId, dateISO),
+  }))
 
   if (scheduledCardio) {
     const { def, opt } = scheduledCardio
