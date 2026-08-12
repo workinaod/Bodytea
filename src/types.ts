@@ -505,8 +505,8 @@ export interface Settings {
   soundMode?: 'voice' | 'beeps-names' | 'beeps' | 'silent'
   /** Cadence speed multiplier for spoken counting (0.6–1.6, default 1). */
   cadenceSpeed?: number
-  /** The "use voice commands" nudge has been shown once, so never again. */
-  voiceTipSeen?: boolean
+  /** Voice control has actually been USED, so stop nudging about it. */
+  voiceUsed?: boolean
 }
 
 export interface AppData {

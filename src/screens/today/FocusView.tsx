@@ -88,14 +88,19 @@ export function FocusView({
   soundRef.current = soundMode
 
   // The voice nudge shows whenever a session opens on its first set, so
-  // cancelling a set and coming back in still gets it. Once someone has
-  // actually used voice control they know it exists and it stops.
-  const [voiceTip, setVoiceTip] = useState(!data.settings.voiceTipSeen)
+  // cancelling a set and coming back in still gets it. Only actually USING
+  // voice control retires it.
+  //
+  // Renamed from voiceTipSeen deliberately. That flag was set by swatting
+  // the bubble away, which is not the same as learning what it pointed at,
+  // so one dismissal silenced it permanently. The old value is stale by
+  // design: a new name means everyone gets the nudge back.
+  const [voiceTip, setVoiceTip] = useState(!data.settings.voiceUsed)
   const dismissVoiceTip = (permanently = false) => {
     setVoiceTip(false)
-    if (permanently && !data.settings.voiceTipSeen) {
+    if (permanently && !data.settings.voiceUsed) {
       update((d) => {
-        d.settings.voiceTipSeen = true
+        d.settings.voiceUsed = true
       })
     }
   }
@@ -175,7 +180,7 @@ export function FocusView({
 
   useEffect(() => {
     if (phase === 'live') setVoiceTip(false)
-    else if (!data.settings.voiceTipSeen && current?.setIdx === 0) setVoiceTip(true)
+    else if (!data.settings.voiceUsed && current?.setIdx === 0) setVoiceTip(true)
   }, [phase, current?.exIdx, current?.setIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startSet = useCallback(
@@ -485,13 +490,17 @@ export function FocusView({
         </div>
       </div>
 
-      {/* Shown once, ever: tap it away, or start a set and it goes. Sits in
-          normal flow under the mic so it points at the button it is about
-          without ever covering the lift being described. */}
+      {/* Back on every session that opens on its first set. Tapping it away
+          or starting a set clears it for NOW, not for good: swatting a
+          tooltip is not the same as learning what it was pointing at, and
+          treating it that way is why this stopped appearing at all. Only
+          the mic button itself retires it. Sits in normal flow under the
+          mic so it points at the button it is about without ever covering
+          the lift being described. */}
       {voiceSupported && voiceTip && (
         <div className="mt-2 flex justify-end px-4">
           <button
-            onClick={() => dismissVoiceTip(true)}
+            onClick={() => dismissVoiceTip()}
             className="breathe-in relative rounded-2xl bg-lime px-3 py-1.5 text-[11.5px] font-bold text-black shadow-lg shadow-lime/25"
           >
             <span
