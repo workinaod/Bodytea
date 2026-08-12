@@ -6,6 +6,7 @@ import { RestTimer } from '../../components/RestTimer'
 import { setRestSec } from '../../engine/focus'
 import { patchSet, restartSession, trimFromExercise } from '../../logic/actions'
 import { useAppStore } from '../../store/appStore'
+import { CantFinishSheet } from './CantFinishSheet'
 
 function fmtElapsed(startedAt?: string): string {
   if (!startedAt) return '0:00'
@@ -19,16 +20,15 @@ export function SessionView({
   session,
   onOpenGuide,
   onFinish,
-  onSkip,
 }: {
   day: ResolvedDay
   session: SessionLog
   onOpenGuide: (exerciseId: string) => void
   onFinish: () => void
-  onSkip: () => void
 }) {
   const [openIdx, setOpenIdx] = useState<number | null>(0)
   const [timer, setTimer] = useState<{ key: number; seconds: number } | null>(null)
+  const [cantFinish, setCantFinish] = useState(false)
   const restEnabled = useAppStore((s) => s.data.settings.restTimerEnabled)
   const [, force] = useState(0)
 
@@ -187,7 +187,7 @@ export function SessionView({
           to bring the real nav back) */}
       <div className="fixed inset-x-0 bottom-[calc(max(env(safe-area-inset-bottom),8px)+12px)] z-30 border-t border-edge bg-bg/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-lg gap-2">
-          <Btn kind="ghost" className="flex-1" onClick={onSkip}>
+          <Btn kind="ghost" className="flex-1" onClick={() => setCantFinish(true)}>
             Can't finish
           </Btn>
           <Btn kind="lime" className="flex-[2]" onClick={onFinish}>
@@ -195,6 +195,16 @@ export function SessionView({
           </Btn>
         </div>
       </div>
+
+      <CantFinishSheet
+        open={cantFinish}
+        onClose={() => setCantFinish(false)}
+        session={session}
+        exIdx={Math.max(0, firstUnpassed)}
+        setIdx={Math.max(0, session.exercises[Math.max(0, firstUnpassed)]?.sets.findIndex((s) => !s.done) ?? 0)}
+        weightLb={session.exercises[Math.max(0, firstUnpassed)]?.sets.find((s) => !s.done)?.weightLb}
+        onFinishSession={onFinish}
+      />
 
       {timer && <RestTimer key={timer.key} seconds={timer.seconds} onDismiss={() => setTimer(null)} />}
     </div>

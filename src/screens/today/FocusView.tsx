@@ -13,6 +13,7 @@ import { ExerciseBrief } from './ExerciseBrief'
 import { weightDropped } from '../../engine/volume'
 import { easeRemaining } from '../../logic/volumeActions'
 import { BreakScreen, type BreakState } from './BreakScreen'
+import { CantFinishSheet } from './CantFinishSheet'
 
 // ============================================================
 // Focus mode, guided: each set is intro'd (name, set, reps at
@@ -48,13 +49,11 @@ export function FocusView({
   day,
   session,
   onFinish,
-  onSkip,
   onListView,
 }: {
   day: ResolvedDay
   session: SessionLog
   onFinish: () => void
-  onSkip: () => void
   onListView: () => void
 }) {
   const [breakState, setBreakState] = useState<BreakState | null>(null)
@@ -64,6 +63,7 @@ export function FocusView({
   const [phase, setPhase] = useState<'go' | 'live'>('go')
   const [caption, setCaption] = useState('')
   const [howToOpen, setHowToOpen] = useState(false)
+  const [cantFinish, setCantFinish] = useState(false)
   // The how-to rolls away when work starts. Tapping STEPS brings it back.
   const [stepsOpen, setStepsOpen] = useState(false)
   const data = useAppStore((s) => s.data)
@@ -576,7 +576,7 @@ export function FocusView({
           >
             How do I do this?
           </button>
-          <button onClick={onSkip} className="rounded-full bg-danger/15 px-4 py-2.5 text-[12px] font-bold text-danger active:scale-95">
+          <button onClick={() => setCantFinish(true)} className="rounded-full bg-danger/15 px-4 py-2.5 text-[12px] font-bold text-danger active:scale-95">
             Can't finish
           </button>
         </div>
@@ -607,6 +607,15 @@ export function FocusView({
           }
         />
       )}
+      <CantFinishSheet
+        open={cantFinish}
+        onClose={() => setCantFinish(false)}
+        session={session}
+        exIdx={current.exIdx}
+        setIdx={current.setIdx}
+        weightLb={set.weightLb}
+        onFinishSession={onFinish}
+      />
       {howToOpen && <HowToSlides def={def} onClose={() => setHowToOpen(false)} />}
     </div>
   )

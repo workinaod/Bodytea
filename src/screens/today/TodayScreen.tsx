@@ -356,7 +356,6 @@ export function TodayScreen() {
           day={viewDay}
           session={session}
           onFinish={requestFinish}
-          onSkip={() => setSkipOpen(true)}
           onListView={() => setViewMode('list')}
         />
       )}
@@ -373,7 +372,6 @@ export function TodayScreen() {
             session={session}
             onOpenGuide={setGuideId}
             onFinish={requestFinish}
-            onSkip={() => setSkipOpen(true)}
           />
         </>
       )}
