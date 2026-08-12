@@ -336,7 +336,7 @@ export type ExcuseReason =
   | 'tired'
   | 'sick'
   | 'gig'
-  | 'travel'
+  | 'travel' | 'sore'
   | 'other'
   | 'none'
 

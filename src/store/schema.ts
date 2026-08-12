@@ -185,7 +185,7 @@ const excuseSchema = z.object({
   date: isoDate,
   scope: z.enum(['day', 'week']),
   action: z.enum(['skip', 'lighten', 'tier-drop', 'unexplained-miss']),
-  reason: z.enum(['busy', 'tired', 'sick', 'gig', 'travel', 'other', 'none']),
+  reason: z.enum(['busy', 'tired', 'sick', 'gig', 'travel', 'sore', 'other', 'none']),
   claimText: z.string().optional(),
   proofPhotoId: z.string().optional(),
   accepted: z.boolean(),

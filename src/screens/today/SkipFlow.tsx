@@ -10,13 +10,15 @@ import { useAppStore } from '../../store/appStore'
 import { validateProofFile } from '../../store/storage'
 import { pushCoachMessage, resolveSkipFlow, savePhotoFile, trimToday } from '../../logic/actions'
 
+// One word each. "DJ gig / shift" was work with extra steps, and being
+// sick or hurt is never a one-day problem, so it moved to the Week tab
+// where it can move a whole schedule. Anything else goes in the box:
+// an "Other" chip only ever meant "let me type", so it is the typing.
 const REASONS: { id: ExcuseReason; label: string }[] = [
-  { id: 'busy', label: 'Work / busy' },
+  { id: 'busy', label: 'Work' },
   { id: 'tired', label: 'Exhausted' },
-  { id: 'sick', label: 'Sick / hurt' },
-  { id: 'gig', label: 'DJ gig / shift' },
   { id: 'travel', label: 'Traveling' },
-  { id: 'other', label: 'Other' },
+  { id: 'sore', label: 'Sore' },
 ]
 
 /**
@@ -45,6 +47,11 @@ export function SkipFlow({
   const [confirmText, setConfirmText] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const warnedExplosive = useRef(false)
+
+  // The text box IS the "Other" option, so typing something counts as
+  // answering the question even when no chip is lit.
+  const typed = claimText.trim().length > 0
+  const chosen: ExcuseReason | null = reason ?? (typed ? 'other' : null)
 
   const plan = useAppStore((s) => s.data.plan)
   const template = day.templateId ? planTemplate(plan, day.templateId) : null
@@ -97,7 +104,7 @@ export function SkipFlow({
     const { message } = resolveSkipFlow({
       date: day.date,
       mode,
-      reason: reason ?? 'none',
+      reason: chosen ?? 'none',
       claimText: claimText || undefined,
       proofPhotoId: proofId,
       takeMinimum,
@@ -146,7 +153,7 @@ export function SkipFlow({
             <div className="mb-2 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
               Why?
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {REASONS.map((r) => (
                 <button
                   key={r.id}
@@ -159,9 +166,10 @@ export function SkipFlow({
                 </button>
               ))}
             </div>
-            <input
-              className="mt-2 w-full rounded-xl bg-white/[0.07] px-3.5 py-3 text-[13px] outline-none placeholder:text-ink-faint"
-              placeholder="Details (optional), goes on the record"
+            <textarea
+              rows={3}
+              className="mt-2 w-full resize-none rounded-xl bg-white/[0.07] px-3.5 py-3 text-[13px] leading-snug outline-none placeholder:text-ink-faint"
+              placeholder="Something else? Type it here."
               value={claimText}
               onChange={(e) => setClaimText(e.target.value)}
             />
@@ -175,16 +183,16 @@ export function SkipFlow({
               <Btn
                 kind="lime"
                 className="flex-1"
-                disabled={!reason}
+                disabled={!chosen}
                 onClick={() => {
-                  trimToday(day.date, reason!, claimText || undefined)
+                  trimToday(day.date, chosen!, claimText || undefined)
                   onCancel()
                 }}
               >
                 Trim it, still training
               </Btn>
             ) : (
-              <Btn className="flex-1" disabled={!reason} onClick={() => setStep(1)}>
+              <Btn className="flex-1" disabled={!chosen} onClick={() => setStep(1)}>
                 Continue
               </Btn>
             )}

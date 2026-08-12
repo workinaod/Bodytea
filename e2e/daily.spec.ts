@@ -106,7 +106,7 @@ test('same-day trim: work ran long → volume cut today, restorable', async ({ p
   // The Can't-train flow leads with the trim, still training, just less
   await page.getByRole('button', { name: "Can't train" }).click()
   await page.getByRole('button', { name: /Trim today's load/ }).click()
-  await page.getByRole('button', { name: 'Work / busy' }).click()
+  await page.getByRole('button', { name: 'Work', exact: true }).click()
   await page.getByRole('button', { name: 'Trim it, still training' }).click()
 
   // The day resolves trimmed, with the escape hatch offered

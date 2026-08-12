@@ -126,8 +126,8 @@ const TRIM_REASON_LABEL: Record<ExcuseReason, string> = {
   sick: 'body says easy',
   gig: 'gig / shift day',
   travel: 'on the road',
-  other: 'life happened',
-  none: 'life happened',
+  sore: 'muscles need a break',
+  other: 'life happened', none: 'life happened',
 }
 
 /**

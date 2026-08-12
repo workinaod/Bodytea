@@ -402,3 +402,30 @@ describe('debrief composer', () => {
     expect(new Set(composed.shownIds).size).toBe(composed.shownIds.length)
   })
 })
+
+describe('backing off because you are sore', () => {
+  it('is accepted without proof, unlike an excuse', () => {
+    const accepted = excuseAccepted({
+      reason: 'sore',
+      week: undefined,
+      date: '2026-08-11',
+      scope: 'day',
+    })
+    expect(accepted).toBe(true)
+  })
+
+  it('never feeds the escalation ladder, so it cannot demand a photo later', () => {
+    const sore: ExcuseRecord[] = [1, 2, 3, 4].map((n) => ({
+      id: `s${n}`,
+      date: `2026-08-0${n}`,
+      at: `2026-08-0${n}T09:00:00.000Z`,
+      scope: 'day',
+      action: 'skip',
+      reason: 'sore',
+      accepted: true,
+      minimumViableTaken: false,
+      escalationLevelAtTime: 0,
+    }))
+    expect(escalationLevel(sore, '2026-08-11')).toBe(0)
+  })
+})

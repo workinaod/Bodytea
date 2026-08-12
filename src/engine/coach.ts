@@ -221,6 +221,11 @@ export function excuseAccepted(opts: {
   scope: 'day' | 'week'
 }): boolean {
   if (opts.proofPhotoId) return true
+  // Backing off sore muscles is the athlete reading their own recovery,
+  // which is the behaviour to encourage. Making them prove it, or
+  // counting it toward an escalation ladder built for flakiness, would
+  // teach them to train through it and lie about it instead.
+  if (opts.reason === 'sore') return true
   if (opts.reason === 'gig') {
     return opts.scope === 'week'
       ? anyGigFlag(opts.week)
