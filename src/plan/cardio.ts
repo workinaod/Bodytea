@@ -133,30 +133,6 @@ export const CARDIO_ACTIVITIES: CardioActivityDef[] = [
     ],
   },
   {
-    id: 'rugby',
-    label: 'Rugby',
-    emoji: '🏉',
-    sport: true,
-    met: 8.3,
-    asks: { minutes: true },
-    modes: [
-      { id: 'match', label: 'Match / competitive', intense: true, met: 8.3 },
-      { id: 'touch', label: 'Touch / training', intense: false, met: 6.3 },
-    ],
-  },
-  {
-    id: 'cricket',
-    label: 'Cricket',
-    emoji: '🏏',
-    sport: true,
-    met: 4.8,
-    asks: { minutes: true },
-    modes: [
-      { id: 'match', label: 'Match, batting or bowling', intense: true, met: 4.8 },
-      { id: 'nets', label: 'Nets / practice', intense: false, met: 4.0 },
-    ],
-  },
-  {
     id: 'hockey',
     label: 'Hockey',
     emoji: '🏒',

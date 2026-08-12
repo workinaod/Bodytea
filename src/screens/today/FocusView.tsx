@@ -5,7 +5,7 @@ import { videoFor } from '../../plan/videos'
 import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../../engine/focus'
 import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../platform/speech'
 import { useAppStore } from '../../store/appStore'
-import { abandonSession, patchSet, restartSession, setExerciseFeel } from '../../logic/actions'
+import { abandonSession, patchSet, restartSession, setExerciseFeel, setWeightForward} from '../../logic/actions'
 import { daysBetween } from '../../engine/calendar'
 import { Stepper } from '../../components/ui'
 import { HowToSlides } from './HowToSlides'
@@ -529,7 +529,7 @@ export function FocusView({
             <span className="text-[11px] font-black uppercase tracking-wider text-ink-dim">{loadLabel(def.equipment)}</span>
             <Stepper
               value={set.weightLb}
-              onChange={(v) => patchSet(session.date, current.exIdx, current.setIdx, { weightLb: v })}
+              onChange={(v) => setWeightForward(session.date, current.exIdx, current.setIdx, v)}
               step={5}
               suffix="lb"
               width="w-16"
@@ -597,7 +597,7 @@ export function FocusView({
           loadLabel={isLoaded ? loadLabel(def.equipment) : undefined}
           onWeight={
             isLoaded
-              ? (v) => patchSet(session.date, current.exIdx, current.setIdx, { weightLb: v })
+              ? (v) => setWeightForward(session.date, current.exIdx, current.setIdx, v)
               : undefined
           }
         />

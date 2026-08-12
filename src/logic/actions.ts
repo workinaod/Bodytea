@@ -259,6 +259,32 @@ export function patchSet(
 }
 
 /**
+ * Set the weight for THIS set and every later set of the same exercise
+ * that is not already logged.
+ *
+ * Each set used to be prefilled independently from past sessions, so
+ * moving set 1 from 25 to 30 left sets 2, 3 and 4 sitting at 25 and you
+ * had to redo it at every gate. Nobody changes the load mid-exercise
+ * and then wants the old number back on the next set; if they do, the
+ * next gate is right there. Sets already done are never touched, so the
+ * record of what was actually lifted stays true.
+ */
+export function setWeightForward(
+  date: ISODate,
+  exIdx: number,
+  setIdx: number,
+  weightLb: number,
+): void {
+  store().update((d) => {
+    const sets = d.sessions[date]?.exercises[exIdx]?.sets
+    if (!sets) return
+    for (let i = setIdx; i < sets.length; i++) {
+      if (i === setIdx || !sets[i].done) sets[i].weightLb = weightLb
+    }
+  })
+}
+
+/**
  * Walk away before the work starts: wipes the in-progress session so
  * the day is startable again later. Only offered while nothing past
  * the first exercise is logged.
