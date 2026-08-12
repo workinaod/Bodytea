@@ -3,15 +3,14 @@ import type { GpsActivity } from './activityTypes'
 import { setPreferredVoice } from './platform/speech'
 import { useAppStore } from './store/appStore'
 import { TabBar, type TabId } from './components/TabBar'
-import { Sheet } from './components/Sheet'
 import { TodayScreen } from './screens/today/TodayScreen'
 import { WeekScreen } from './screens/week/WeekScreen'
 import { MealsScreen } from './screens/meals/MealsScreen'
 import { ProgressScreen } from './screens/progress/ProgressScreen'
 import { CoachScreen } from './screens/coach/CoachScreen'
 import { RunTrackerSheet } from './screens/today/RunTrackerSheet'
+import { TrackSheet } from './screens/today/TrackSheet'
 import { CardioTimerSheet } from './screens/today/CardioTimerSheet'
-import { CARDIO_ACTIVITIES } from './plan/cardio'
 import { Onboarding } from './screens/onboarding'
 import { ReconcileSheet } from './screens/ReconcileSheet'
 import { dailyCoachSweep } from './logic/actions'
@@ -26,6 +25,8 @@ export default function App() {
   const [tab, setTab] = useState<TabId>('today')
   const [track, setTrack] = useState<'choose' | GpsActivity | null>(null)
   const [timerActivity, setTimerActivity] = useState<string | null>(null)
+  // Only set when the user typed their own name in the custom row.
+  const [timerLabel, setTimerLabel] = useState<string | undefined>(undefined)
 
   // A live session on the home date folds the tab bar into the glow strip
   // (only where the session UI actually is, the Today tab).
@@ -100,56 +101,29 @@ export default function App() {
         {tab === 'coach' && <CoachScreen />}
       </div>
       <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} session={sessionLive && tab === 'today'} />
-      <Sheet open={track === 'choose'} onClose={() => setTrack(null)} title="Track">
-        <div className="space-y-2 pb-8">
-          {/* The GPS four in one raised band. Adding Hike as a fourth big
-              card made this a 2x2 that swallowed the sheet and pushed
-              everything else off the screen. One row keeps them primary
-              without making them the whole page. */}
-          <div className="grid grid-cols-4 gap-2">
-            {(
-              [
-                { id: 'run', label: 'Run', emoji: '🏃' },
-                { id: 'bike', label: 'Ride', emoji: '🚴' },
-                { id: 'walk', label: 'Walk', emoji: '🚶' },
-                { id: 'hike', label: 'Hike', emoji: '🥾' },
-              ] as const
-            ).map((a) => (
-              <button
-                key={a.id}
-                onClick={() => setTrack(a.id)}
-                className="press flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-b from-white/[0.13] to-white/[0.05] py-3.5 shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_8px_20px_-12px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.09]"
-              >
-                <span className="text-[21px] leading-none">{a.emoji}</span>
-                <span className="text-[11.5px] font-extrabold">{a.label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {CARDIO_ACTIVITIES.filter((a) => !a.gps).map((a) => (
-              <button
-                key={a.id}
-                onClick={() => {
-                  setTrack(null)
-                  setTimerActivity(a.id)
-                }}
-                className="flex items-center gap-2.5 rounded-2xl bg-white/[0.07] px-3.5 py-3 text-left active:bg-white/[0.14]"
-              >
-                <span className="text-[18px]">{a.emoji}</span>
-                <span className="text-[13px] font-bold">{a.label}</span>
-              </button>
-            ))}
-          </div>
-          <p className="text-[11px] leading-snug text-ink-faint">
-            Timed session, logged as today's cardio when you finish.
-          </p>
-        </div>
-      </Sheet>
+      <TrackSheet
+        open={track === 'choose'}
+        onClose={() => setTrack(null)}
+        onPickGps={(id) => setTrack(id)}
+        onPickTimed={(id, label) => {
+          setTrack(null)
+          setTimerActivity(id)
+          setTimerLabel(label)
+        }}
+      />
       {track !== null && track !== 'choose' && (
         <RunTrackerSheet activity={track} date={today} onClose={() => setTrack(null)} />
       )}
       {timerActivity && (
-        <CardioTimerSheet activityId={timerActivity} date={today} onClose={() => setTimerActivity(null)} />
+        <CardioTimerSheet
+          activityId={timerActivity}
+          customLabel={timerLabel}
+          date={today}
+          onClose={() => {
+            setTimerActivity(null)
+            setTimerLabel(undefined)
+          }}
+        />
       )}
       <ReconcileSheet />
       <UpdateToast />

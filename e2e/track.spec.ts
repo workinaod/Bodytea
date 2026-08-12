@@ -1,0 +1,33 @@
+import { test, type Page } from '@playwright/test'
+import { expect } from '@playwright/test'
+
+// A name typed into the custom row has to survive all the way to the
+// timer and into the log. Picking "Custom" and getting a session called
+// "Custom" is the failure this guards.
+async function onboard(page: Page) {
+  await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Next: the goal' }).click()
+  await page.getByText('🎯 All-around athlete').click()
+  await page.getByPlaceholder(/dunk on a 10-ft rim/).fill('stay dangerous year-round')
+  await page.getByRole('button', { name: 'Next: my week' }).click()
+  await page.getByRole('button', { name: 'Next: my gear' }).click()
+  await page.getByRole('button', { name: 'Next: experience' }).click()
+  await page.getByRole('button', { name: 'Next: numbers' }).click()
+  await page.getByRole('button', { name: 'Generate my booklet' }).click()
+  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+}
+test('a custom activity keeps the name you typed', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+  await onboard(page)
+  await page.getByRole('button', { name: 'Track a run or ride' }).click()
+  await page.clock.runFor(600)
+  await page.waitForTimeout(600)
+  await page.getByPlaceholder('Custom').fill('Padel')
+  await page.getByRole('button', { name: 'Start', exact: true }).click()
+  await page.clock.runFor(600)
+  await page.waitForTimeout(400)
+  await expect(page.getByRole('button', { name: /Start padel/i })).toBeVisible()
+})

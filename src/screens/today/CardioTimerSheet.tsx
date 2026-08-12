@@ -13,12 +13,18 @@ export function CardioTimerSheet({
   activityId,
   date,
   onClose,
+  customLabel,
 }: {
   activityId: string
   date: ISODate
   onClose: () => void
+  /** What the user called it, when they named it themselves. */
+  customLabel?: string
 }) {
-  const def = cardioActivity(activityId)
+  const base = cardioActivity(activityId)
+  // A session someone named "Padel" should say Padel everywhere, not
+  // "Custom", or the Record reads as a list of anonymous blanks.
+  const def = customLabel ? { ...base, label: customLabel } : base
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [saved, setSaved] = useState(false)
