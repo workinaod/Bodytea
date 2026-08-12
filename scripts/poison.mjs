@@ -336,8 +336,8 @@ const MUTATIONS = [
     id: 'cooking-time-nonsense',
     bug: 'a meal claims more hands-on time than it takes in total',
     file: 'src/plan/cooking.ts',
-    find: "  'chili': C('stovetop', 15, 40, [",
-    to: "  'chili': C('stovetop', 45, 40, [",
+    find: "  chili: C('stovetop', 15, 40, [",
+    to: "  chili: C('stovetop', 45, 40, [",
     spec: 'src/plan/cooking.test.ts',
   },
   {
