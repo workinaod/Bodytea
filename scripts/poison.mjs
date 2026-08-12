@@ -301,6 +301,38 @@ const MUTATIONS = [
     spec: 'src/engine/adapt.test.ts',
   },
   {
+    id: 'unfinished-sets-count-as-done',
+    bug: 'a set started and abandoned is recorded as work performed',
+    file: 'src/engine/sessionRecap.ts',
+    find: '    const done = log.sets.filter((s) => s.done)',
+    to: '    const done = log.sets',
+    spec: 'src/engine/sessionRecap.test.ts',
+  },
+  {
+    id: 'skipped-day-claims-work',
+    bug: 'a skipped day reports the sets sitting on its log',
+    file: 'src/engine/sessionRecap.ts',
+    find: "  const logged = session && session.status !== 'skipped' ? session.exercises : []",
+    to: '  const logged = session ? session.exercises : []',
+    spec: 'src/engine/sessionRecap.test.ts',
+  },
+  {
+    id: 'uneven-sets-collapsed',
+    bug: 'a set that died reads as a clean 3 x 8',
+    file: 'src/engine/sessionRecap.ts',
+    find: '      : unique.length === 1',
+    to: '      : unique.length >= 1',
+    spec: 'src/engine/sessionRecap.test.ts',
+  },
+  {
+    id: 'unplanned-work-dropped',
+    bug: 'a substitution or self-added movement vanishes from the record',
+    file: 'src/engine/sessionRecap.ts',
+    find: '  for (const log of byId.values()) {',
+    to: '  for (const log of new Map().values()) {',
+    spec: 'src/engine/sessionRecap.test.ts',
+  },
+  {
     id: 'substitution-dead-end',
     bug: 'a gym movement strands a bodyweight user with no fallback',
     file: 'src/plan/equip.ts',
@@ -352,6 +384,22 @@ const E2E_MUTATIONS = [
     spec: 'e2e/adapt.spec.ts',
   },
   {
+    id: 'week-sheet-hides-what-happened',
+    bug: 'the day sheet goes back to being a schedule',
+    file: 'src/engine/sessionRecap.ts',
+    find: '    trained: out.some((r) => r.actual !== null) || cardio.length > 0,',
+    to: '    trained: false,',
+    spec: 'e2e/week.spec.ts',
+  },
+  {
+    id: 'week-sheet-drops-cardio',
+    bug: "the day's cardio disappears from its own record",
+    file: 'src/screens/week/WeekScreen.tsx',
+    find: '            {recap && recap.cardio.length > 0 && (',
+    to: '            {recap && recap.cardio.length < 0 && (',
+    spec: 'e2e/week.spec.ts',
+  },
+  {
     id: 'focus-stays-behind',
     bug: 'focus stays on the button underneath the sheet',
     file: 'src/components/Sheet.tsx',
@@ -366,10 +414,19 @@ const E2E_MUTATIONS = [
  *
  * The finally block below restores after each mutation, and a finally
  * block does not run when the process is KILLED. An interrupted run left
- * live poison sitting in two source files, which then read as ordinary
- * uncommitted work and very nearly got committed. Anything holding a
- * mutation is registered here and put back on the way out, whatever the
- * way out turns out to be.
+ * live poison sitting in source files, which then read as ordinary
+ * uncommitted work and very nearly got committed twice.
+ *
+ * Three layers, because no single one is enough:
+ *
+ *   the finally, for the normal path;
+ *   signal handlers, for Ctrl-C and an orderly terminate;
+ *   assertClean at startup plus `--restore`, for SIGKILL, which cannot
+ *   be trapped by anything and WILL happen (a worker restart is one).
+ *
+ * The last layer is the one that actually saves you. Everything this
+ * touches is committed, so `--restore` is just git, and the guard means
+ * a poisoned tree stops the next run dead instead of compounding.
  */
 const dirty = new Map()
 
@@ -391,6 +448,19 @@ process.on('uncaughtException', (e) => {
   process.exit(1)
 })
 
+/**
+ * Put every target file back, whatever state it is in.
+ *
+ * The escape hatch for a run that was SIGKILLed. Safe because every file
+ * in the mutation list is committed by definition: a mutation needs a
+ * known anchor to find.
+ */
+function restoreFromGit(targets) {
+  const files = [...new Set(targets)].join(' ')
+  execSync(`git checkout HEAD -- ${files}`, { cwd: ROOT, stdio: 'pipe' })
+  console.log(`[poison] restored ${new Set(targets).size} file(s) from HEAD.`)
+}
+
 /** Refuse to start on a tree that already has edits in a target file. */
 function assertClean(targets) {
   const out = execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf8' })
@@ -401,7 +471,9 @@ function assertClean(targets) {
   if (clash.length) {
     console.error(
       '[poison] refusing to run: these files are already modified, so a restore\n' +
-        '         would silently discard real work. Commit or stash first:\n' +
+        '         would silently discard real work. Commit or stash first,\n' +
+        '         or if a previous run was killed mid-mutation:\n' +
+        '           node scripts/poison.mjs --restore\n' +
         clash.map((c) => `           ${c}`).join('\n'),
     )
     process.exit(2)
@@ -443,6 +515,11 @@ function check(m, isE2e) {
     dirty.delete(path)
   }
   return { id: m.id, bug: m.bug, result: caught ? 'CAUGHT' : 'SURVIVED', ok: caught }
+}
+
+if (arg === '--restore') {
+  restoreFromGit([...MUTATIONS, ...E2E_MUTATIONS].map((m) => m.file))
+  process.exit(0)
 }
 
 const list = arg === 'e2e' ? E2E_MUTATIONS : MUTATIONS
