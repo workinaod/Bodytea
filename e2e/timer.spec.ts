@@ -1,0 +1,36 @@
+import { test, expect, type Page } from '@playwright/test'
+
+// The timer opened from inside the Track sheet, and that sheet's
+// backdrop-blur is a containing block for fixed children, so the
+// full-screen timer was confined to the sheet's box: an inset panel
+// with two close buttons and its title tucked behind one of them.
+// It portals to the body now. One X, edge to edge.
+async function onboard(page: Page) {
+  await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Next: the goal' }).click()
+  await page.getByText('🎯 All-around athlete').click()
+  await page.getByPlaceholder(/dunk on a 10-ft rim/).fill('stay dangerous year-round')
+  await page.getByRole('button', { name: 'Next: my week' }).click()
+  await page.getByRole('button', { name: 'Next: my gear' }).click()
+  await page.getByRole('button', { name: 'Next: experience' }).click()
+  await page.getByRole('button', { name: 'Next: numbers' }).click()
+  await page.getByRole('button', { name: 'Generate my booklet' }).click()
+  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+}
+test('the custom timer is a full-screen takeover, not a panel', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+  await onboard(page)
+  await page.getByRole('button', { name: 'Track a run or ride' }).click()
+  await page.clock.runFor(600)
+  await page.getByPlaceholder('Custom').fill('Padel')
+  await page.getByRole('button', { name: 'Start', exact: true }).click()
+  await page.clock.runFor(800)
+  await page.waitForTimeout(500)
+  await expect(page.getByRole('button', { name: 'Close' })).toHaveCount(1)
+  // Edge to edge: confined inside the sheet it was inset on both sides.
+  const box = await page.locator('.fixed.inset-0.z-\\[90\\]').boundingBox()
+  expect(box?.width).toBe(390)
+})

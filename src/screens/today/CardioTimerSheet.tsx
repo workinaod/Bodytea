@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { ISODate } from '../../types'
 import { cardioActivity } from '../../plan/cardio'
 import { logCardio } from '../../logic/actions'
@@ -55,8 +56,12 @@ export function CardioTimerSheet({
     setSaved(true)
   }
 
-  return (
-    <div className="fixed inset-0 z-[80] flex flex-col bg-bg px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-[max(env(safe-area-inset-top),14px)]">
+  // Portalled to the body, above the session UI. Rendered in place it
+  // competed with FocusView's own stacking context instead of sitting
+  // over it, so a live session's close button painted straight through
+  // this screen and you got two X buttons and a buried title.
+  return createPortal(
+    <div className="fixed inset-0 z-[90] flex flex-col bg-bg px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-[max(env(safe-area-inset-top),14px)]">
       <div className="flex items-center justify-between py-1">
         <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-ink-dim">
           {def.emoji} {def.label}
@@ -108,6 +113,7 @@ export function CardioTimerSheet({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
