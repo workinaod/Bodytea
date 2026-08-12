@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, SCHEMA_VERSION } from '../types'
-import { buildExport, parseEnvelope, serializeState } from './backup'
+import { buildExport, buildEnvelope, parseEnvelope, serializeState } from './backup'
+import { migrate } from './schema'
+import { MIN_KCAL_REST, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
 
 function fixtureData() {
   const data = emptyAppData('2026-08-10')
@@ -560,5 +562,30 @@ describe('v18 → v19: everyone but the owner restarts onboarding', () => {
     expect(Object.keys(parsed.data.sessions).length).toBe(before.sessions)
     expect(parsed.data.measurements.length).toBe(before.measurements)
     expect(parsed.data.coach.feed.length).toBe(before.feed)
+  })
+})
+
+describe('v19 → v20 repairs calorie targets written without a floor', () => {
+  // A booklet's calorie target is written ONCE at onboarding and read
+  // forever after. Flooring the generator protects new plans and does
+  // nothing at all for a plan already on disk, and the unfloored
+  // bring-your-own-routine path wrote 950/650 for a 90 lb athlete.
+  it('raises a stored crash target to the floor', () => {
+    const env = buildEnvelope(fixtureData()) as unknown as Record<string, unknown>
+    const data = env.data as { plan: { nutrition: { kcalTraining: number; kcalRest: number } } }
+    data.plan.nutrition = { kcalTraining: 950, kcalRest: 650 }
+    env.schemaVersion = 19
+    const out = migrate(env)
+    expect(out.data.plan.nutrition.kcalTraining).toBeGreaterThanOrEqual(MIN_KCAL_TRAINING)
+    expect(out.data.plan.nutrition.kcalRest).toBeGreaterThanOrEqual(MIN_KCAL_REST)
+  })
+
+  it('leaves a healthy stored target exactly as it was', () => {
+    const env = buildEnvelope(fixtureData()) as unknown as Record<string, unknown>
+    const data = env.data as { plan: { nutrition: { kcalTraining: number; kcalRest: number } } }
+    data.plan.nutrition = { kcalTraining: 3000, kcalRest: 2700 }
+    env.schemaVersion = 19
+    const out = migrate(env)
+    expect(out.data.plan.nutrition).toEqual({ kcalTraining: 3000, kcalRest: 2700 })
   })
 })

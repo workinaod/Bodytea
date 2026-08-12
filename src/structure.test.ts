@@ -69,7 +69,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // mirror, the shared zod primitives to store/primitives.ts, and the
   // GPS and cardio shapes to store/activitySchema.ts. The allowance
   // follows it down each time.
-  'store/schema.ts': 616,
+  // Migrations only ever accumulate: every schema bump adds a step that
+  // can never be deleted while any device might still hold the old shape.
+  // This one is the +21 for v19 → v20, the calorie-floor repair.
+  'store/schema.ts': 637,
   'engine/engine.test.ts': 705,
 }
 

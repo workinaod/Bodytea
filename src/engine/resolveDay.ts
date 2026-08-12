@@ -25,6 +25,7 @@ import { capAccessorySets, orderSession } from './sequence'
 import { parseRepRange, repLabel } from './reps'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
+import { MIN_KCAL_REST, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
 
 // ============================================================
 // The pipeline: (date, state) → ResolvedDay.
@@ -553,9 +554,19 @@ export function nutritionDayType(dateISO: ISODate, data: AppData): 'training' | 
   return 'rest'
 }
 
+/**
+ * Floored on the way out as well as on the way in.
+ *
+ * The migration repairs what is on disk, but a booklet is also editable
+ * by hand and importable from another device, so the number the meals
+ * ring is drawn from gets checked at the point of use too. Cheap, and it
+ * means no future path can reintroduce a target nobody should eat to.
+ */
 export function kcalTargetFor(data: AppData, dayType: 'training' | 'rest'): number {
   const n = data.plan.nutrition
-  return dayType === 'training' ? n.kcalTraining + data.settings.trainingDayKcalBonus : n.kcalRest
+  return dayType === 'training'
+    ? Math.max(MIN_KCAL_TRAINING, n.kcalTraining) + data.settings.trainingDayKcalBonus
+    : Math.max(MIN_KCAL_REST, n.kcalRest)
 }
 
 /** The debrief/recovery pool key for a template (role-keyed via debriefKey). */

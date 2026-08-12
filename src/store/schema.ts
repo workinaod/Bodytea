@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { SCHEMA_VERSION, type Envelope, type Goal } from '../types'
 import { buildNaodPreset } from '../plan/presets/naod'
 import { buildMealPlan, buildNaodMealPlan } from '../plan/foods'
+import { MIN_KCAL_REST, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
 import { addDaysISO } from '../engine/calendar'
 
 // ============================================================
@@ -584,6 +585,26 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
     const isOwner = plan?.sportMode === 'ball' || !!plan?.name?.startsWith('NAOD')
     if (e.data?.settings && !isOwner) {
       e.data.settings.onboarded = false
+    }
+    return env
+  },
+  // v19 → v20: repair calorie targets that were generated without a
+  // floor. The generator floors them now, but a target is written into
+  // the booklet ONCE at onboarding and read forever after, so every plan
+  // built by the unfloored bring-your-own-routine path still carries what
+  // it was given: 1,400/1,100 for a 120 lb athlete on a cut, 950/650 at
+  // 90 lb. Fixing the generator does nothing for a plan already on disk.
+  //
+  // Maintenance is not recoverable from a stored plan, so this applies
+  // the absolute minimums only. That is the part that matters here.
+  19: (env) => {
+    const e = env as {
+      data?: { plan?: { nutrition?: { kcalTraining?: number; kcalRest?: number } } }
+    }
+    const n = e.data?.plan?.nutrition
+    if (n) {
+      if (typeof n.kcalTraining === 'number') n.kcalTraining = Math.max(MIN_KCAL_TRAINING, n.kcalTraining)
+      if (typeof n.kcalRest === 'number') n.kcalRest = Math.max(MIN_KCAL_REST, n.kcalRest)
     }
     return env
   },
