@@ -1,4 +1,5 @@
 import type { ISODate, MealEntry } from '../types'
+import { FOODS } from '../plan/foods'
 import { DEFAULT_SUPPLEMENTS } from '../types'
 import { uid, useAppStore } from '../store/appStore'
 import { nutritionDayType } from '../engine/resolveDay'
@@ -26,9 +27,15 @@ export function addMealEntry(
   entry: Omit<MealEntry, 'id' | 'at' | 'servings'> & { servings?: number },
 ): void {
   ensureMealDay(date)
+  // A food chip knows its full macros; fill them in even when the caller
+  // only passed protein and calories, so the carb and fat rings have
+  // something real to read rather than a blank the UI has to apologise for.
+  const food = entry.foodId ? FOODS.find((f) => f.id === entry.foodId) : undefined
   store().update((d) => {
     d.meals[date].entries.push({
       ...entry,
+      carbsG: entry.carbsG ?? food?.carbsG,
+      fatG: entry.fatG ?? food?.fatG,
       id: uid(),
       at: new Date().toISOString(),
       servings: entry.servings ?? 1,

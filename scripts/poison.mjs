@@ -237,6 +237,22 @@ const MUTATIONS = [
     spec: 'src/engine/adapt.test.ts',
   },
   {
+    id: 'macro-coverage-lies',
+    bug: 'a half-logged day claims full carb and fat coverage',
+    file: 'src/engine/stats.ts',
+    find: '  out.coverage = out.kcal > 0 ? out.coveredKcal / out.kcal : 0',
+    to: '  out.coverage = out.kcal > 0 ? 1 : 0',
+    spec: 'src/store/store.test.ts',
+  },
+  {
+    id: 'macro-backfill-lost',
+    bug: 'meals logged before carbs were stored read as zero carbs',
+    file: 'src/engine/stats.ts',
+    find: '    const food = e.foodId ? FOODS.find((f) => f.id === e.foodId) : undefined\n    const carbs = e.carbsG ?? food?.carbsG',
+    to: '    const food = undefined as { carbsG: number; fatG: number } | undefined\n    const carbs = e.carbsG ?? food?.carbsG',
+    spec: 'src/store/store.test.ts',
+  },
+  {
     id: 'substitution-dead-end',
     bug: 'a gym movement strands a bodyweight user with no fallback',
     file: 'src/plan/equip.ts',

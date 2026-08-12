@@ -2,6 +2,7 @@ import type { AppData, ISODate, SessionLog } from '../types'
 import { addDaysISO, daysBetween, todayISO } from './calendar'
 import { resolveDay } from './resolveDay'
 import { getExercise } from '../plan/exercises'
+import { FOODS } from '../plan/foods'
 
 // ============================================================
 // Derived numbers: streaks, e1RM trends, PRs, adherence,
@@ -260,6 +261,70 @@ export function proteinFor(data: AppData, date: ISODate): number {
   const day = data.meals[date]
   if (!day) return 0
   return Math.round(day.entries.reduce((s, e) => s + e.proteinG * e.servings, 0))
+}
+
+/**
+ * The most recent bodyweight the athlete has actually recorded.
+ *
+ * Nutrition targets are grams per kilogram, so they need this, and there
+ * is no `settings.bodyweightLb`: weight lives in the check-in history
+ * where it belongs, because it moves.
+ */
+export function latestBodyweightLb(data: AppData): number | null {
+  const withWeight = data.measurements
+    .filter((m) => m.weightLb !== undefined)
+    .sort((a, b) => (a.date > b.date ? -1 : 1))
+  return withWeight[0]?.weightLb ?? null
+}
+
+export interface DayMacros {
+  proteinG: number
+  carbsG: number
+  fatG: number
+  kcal: number
+  /** Calories the carb/fat numbers could actually account for. */
+  coveredKcal: number
+  /** Fraction of the day's calories with carb and fat data behind them. */
+  coverage: number
+}
+
+/**
+ * The day's macros, and how much of the day they actually describe.
+ *
+ * Coverage is the honest part. The app logged protein and calories only
+ * for its whole life, so every meal already on a device has no carb or
+ * fat behind it, and a custom entry never will. Backfilling from foodId
+ * recovers the food chips; the rest is unknown, and drawing a confident
+ * carb ring over a day the app only half understands is exactly the kind
+ * of quietly-wrong number the rest of this codebase exists to avoid.
+ *
+ * The UI decides what to do with a partial day. This just refuses to
+ * pretend.
+ */
+export function macrosFor(data: AppData, date: ISODate): DayMacros {
+  const day = data.meals[date]
+  const out: DayMacros = { proteinG: 0, carbsG: 0, fatG: 0, kcal: 0, coveredKcal: 0, coverage: 0 }
+  if (!day) return out
+  for (const e of day.entries) {
+    const n = e.servings
+    out.proteinG += e.proteinG * n
+    out.kcal += e.kcal * n
+    const food = e.foodId ? FOODS.find((f) => f.id === e.foodId) : undefined
+    const carbs = e.carbsG ?? food?.carbsG
+    const fat = e.fatG ?? food?.fatG
+    if (carbs !== undefined && fat !== undefined) {
+      out.carbsG += carbs * n
+      out.fatG += fat * n
+      out.coveredKcal += e.kcal * n
+    }
+  }
+  out.proteinG = Math.round(out.proteinG)
+  out.carbsG = Math.round(out.carbsG)
+  out.fatG = Math.round(out.fatG)
+  out.kcal = Math.round(out.kcal)
+  out.coveredKcal = Math.round(out.coveredKcal)
+  out.coverage = out.kcal > 0 ? out.coveredKcal / out.kcal : 0
+  return out
 }
 
 export function kcalFor(data: AppData, date: ISODate): number {

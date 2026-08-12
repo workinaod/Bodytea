@@ -170,6 +170,8 @@ const mealDaySchema = z.object({
       label: z.string(),
       proteinG: z.number(),
       kcal: z.number(),
+      carbsG: z.number().optional(),
+      fatG: z.number().optional(),
       source: z.enum(['chip', 'mealTemplate', 'custom', 'recent']),
       foodId: z.string().optional(),
       servings: z.number().positive(),

@@ -4,7 +4,8 @@ import { uid, useAppStore } from '../../store/appStore'
 import { addDaysISO, formatDayLabel } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { kcalTargetFor, nutritionDayType } from '../../engine/resolveDay'
-import { kcalBumpSuggestion, kcalFor, proteinFor, proteinStreak } from '../../engine/stats'
+import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor, proteinStreak } from '../../engine/stats'
+import { macroTargets } from '../../plan/sportsNutrition'
 import { buildMealPlan, FOODS, SUPPLEMENT_CATALOG, type MealsPerDay } from '../../plan/foods'
 import { mealAlternatives } from '../../plan/mealAlts'
 import { Btn, Card, Chip, DayArrow, Ring, ScreenHeader, SectionTitle } from '../../components/ui'
@@ -45,6 +46,23 @@ export function MealsScreen() {
   const kcalTarget = kcalTargetFor(data, dayType)
   const protein = proteinFor(data, date)
   const kcal = kcalFor(data, date)
+  const macros = macrosFor(data, date)
+  // No recorded weight yet means no per-kilogram target, so the macro card
+  // stays away rather than guessing at somebody's bodyweight.
+  const bodyweight = latestBodyweightLb(data)
+  // Carbs take what protein and the fat floor leave, scaled to the day's
+  // own calorie target. See plan/sportsNutrition.ts for why that is the
+  // right order rather than fixed percentages.
+  const macroTarget = useMemo(
+    () =>
+      macroTargets({
+        bodyweightLb: bodyweight ?? 175,
+        kcal: kcalTarget,
+        protein: 'hypertrophy',
+        load: dayType === 'training' ? 'moderate' : 'rest',
+      }),
+    [bodyweight, kcalTarget, dayType],
+  )
   const pStreak = proteinStreak(data)
   const bump = useMemo(() => kcalBumpSuggestion(data), [data])
 
@@ -84,6 +102,30 @@ export function MealsScreen() {
             <Ring value={protein} target={data.settings.proteinTargetG} label="Protein" unit="g" color="var(--color-accent)" size={140} />
             <Ring value={kcal} target={kcalTarget} label="Calories" unit="kcal" color="var(--color-cyan)" size={112} />
           </Card>
+
+          {/* Carbs and fat.
+              Protein and calories are the two numbers the plan is built
+              on, so they keep the big rings. These sit under them because
+              they are the fuel and the floor rather than the target: carbs
+              flex with how much work the day holds, and fat has a minimum
+              below which hormones suffer, which is a thing to stay ABOVE
+              rather than hit.
+              Hidden entirely on a day with no macro data behind it. A ring
+              at zero would read as "you ate no carbs" when what it means
+              is "the app has no idea", and those are different sentences. */}
+          {macros.coveredKcal > 0 && bodyweight !== null && (
+            <Card className="!py-4">
+              <div className="flex items-center justify-around">
+                <Ring value={macros.carbsG} target={macroTarget.carbsG} label="Carbs" unit="g" color="var(--color-lime)" size={96} />
+                <Ring value={macros.fatG} target={macroTarget.fatG} label="Fat" unit="g" color="var(--color-gold)" size={96} />
+              </div>
+              <p className="mt-2 text-center text-[10.5px] leading-snug text-ink-faint">
+                {macros.coverage >= 0.95
+                  ? 'Carbs flex with the work in the day. Fat is a floor, not a target.'
+                  : `Based on the ${Math.round(macros.coverage * 100)}% of today's calories logged with full macros. Custom entries only carry protein and calories.`}
+              </p>
+            </Card>
+          )}
 
           <div className="flex flex-wrap items-center gap-1.5">
             <Chip tone={dayType === 'training' ? 'accent' : 'default'} onClick={() => cycleDayTypeOverride(date)}>

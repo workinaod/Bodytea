@@ -322,6 +322,18 @@ export interface MealEntry {
   label: string
   proteinG: number
   kcal: number
+  /**
+   * Carbs and fat, when the entry knew them.
+   *
+   * Optional because the app logged protein and calories only for its
+   * whole life, so every meal already on a device has neither. Read
+   * through engine/stats.ts macrosFor, which backfills from foodId where
+   * the entry came from a food chip and reports how much of the day it
+   * could actually account for. A carb ring drawn over a day it only half
+   * understands is worse than no ring.
+   */
+  carbsG?: number
+  fatG?: number
   source: MealEntrySource
   foodId?: string
   servings: number

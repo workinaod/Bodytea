@@ -3,6 +3,7 @@ import { emptyAppData, SCHEMA_VERSION } from '../types'
 import { buildExport, buildEnvelope, parseEnvelope, serializeState } from './backup'
 import { migrate } from './schema'
 import { MIN_KCAL_REST, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
+import { macrosFor } from '../engine/stats'
 
 function fixtureData() {
   const data = emptyAppData('2026-08-10')
@@ -587,5 +588,79 @@ describe('v19 → v20 repairs calorie targets written without a floor', () => {
     env.schemaVersion = 19
     const out = migrate(env)
     expect(out.data.plan.nutrition).toEqual({ kcalTraining: 3000, kcalRest: 2700 })
+  })
+})
+
+describe('macro totals refuse to pretend', () => {
+  // The app logged protein and calories only for its whole life, so every
+  // meal already on a device has no carb or fat behind it, and a custom
+  // entry never will. A carb ring drawn confidently over a day the app
+  // only half understands is the exact class of quietly-wrong number the
+  // rest of this codebase exists to avoid.
+  const day = (entries: unknown[]) => {
+    const d = emptyAppData('2026-08-10')
+    d.meals['2026-08-10'] = { entries, supplements: [] } as never
+    return d
+  }
+
+  it('reports full coverage when every entry carries macros', () => {
+    const m = macrosFor(
+      day([
+        { id: 'a', at: '', label: 'Chicken', proteinG: 70, kcal: 375, carbsG: 0, fatG: 8, source: 'chip', servings: 1 },
+      ]),
+      '2026-08-10',
+    )
+    expect(m.coverage).toBe(1)
+    expect(m.fatG).toBe(8)
+  })
+
+  it('backfills a legacy food-chip entry from the food library', () => {
+    // Logged before carbs and fat were stored, but it knows which food it
+    // was, and the library knows the rest.
+    const m = macrosFor(
+      day([{ id: 'a', at: '', label: 'Rice', proteinG: 4, kcal: 205, source: 'chip', foodId: 'rice', servings: 2 }]),
+      '2026-08-10',
+    )
+    expect(m.carbsG).toBe(90)
+    expect(m.coverage).toBe(1)
+  })
+
+  it('reports PARTIAL coverage rather than a confident zero', () => {
+    const m = macrosFor(
+      day([
+        { id: 'a', at: '', label: 'Rice', proteinG: 4, kcal: 200, source: 'chip', foodId: 'rice', servings: 1 },
+        { id: 'b', at: '', label: 'Whatever I ate out', proteinG: 30, kcal: 800, source: 'custom', servings: 1 },
+      ]),
+      '2026-08-10',
+    )
+    expect(m.kcal).toBe(1000)
+    expect(m.coveredKcal).toBe(200)
+    expect(m.coverage).toBeCloseTo(0.2, 2)
+    // And it does NOT claim the custom meal had no carbs.
+    expect(m.carbsG).toBe(45)
+  })
+
+  it('reports zero coverage for a day of untracked entries, so the UI can stay quiet', () => {
+    const m = macrosFor(
+      day([{ id: 'a', at: '', label: 'Dinner', proteinG: 40, kcal: 700, source: 'custom', servings: 1 }]),
+      '2026-08-10',
+    )
+    expect(m.coverage).toBe(0)
+    expect(m.coveredKcal).toBe(0)
+  })
+
+  it('scales macros by servings', () => {
+    const m = macrosFor(
+      day([{ id: 'a', at: '', label: 'Oats', proteinG: 8, kcal: 225, carbsG: 40, fatG: 4, source: 'chip', servings: 2.5 }]),
+      '2026-08-10',
+    )
+    expect(m.carbsG).toBe(100)
+    expect(m.fatG).toBe(10)
+  })
+
+  it('handles a day with no meals at all', () => {
+    expect(macrosFor(emptyAppData('2026-08-10'), '2026-08-10')).toEqual({
+      proteinG: 0, carbsG: 0, fatG: 0, kcal: 0, coveredKcal: 0, coverage: 0,
+    })
   })
 })
