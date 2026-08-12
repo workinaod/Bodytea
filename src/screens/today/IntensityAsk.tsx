@@ -19,7 +19,7 @@ import type { Intensity } from '../../engine/intensity'
 // and pushed the Easy label a row higher than the other two, which read
 // as a rendering fault rather than a design.
 const OPTIONS: { id: Intensity; label: string; hint: string }[] = [
-  { id: 'low', label: 'Easy', hint: 'Had more in me' },
+  { id: 'low', label: 'Easy', hint: 'More in the tank?' },
   { id: 'standard', label: 'Solid', hint: 'Normal session' },
   { id: 'high', label: 'All out', hint: 'Left it all there' },
 ]

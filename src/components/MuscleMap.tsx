@@ -2,18 +2,23 @@
 // Muscle activation map: front and back figures with
 // individually fillable regions. Inline SVG, fully offline.
 //
-// Two rules make it read as a body rather than an action figure:
+// Three rules keep it a body rather than an action figure:
 //
-// 1. The silhouette is built from OVERLAPPING shapes in one fill.
-//    Butted shapes leave hairline seams at every joint, which is
-//    what made the old figure look like moulded plastic parts.
-// 2. Muscles are BELLIES, not rounded rectangles: narrow at the
-//    tendon, widest through the middle. `belly()` generates that
-//    shape so every group is consistently organic.
-//
-// Regions are separated by a faint dark line rather than a
-// background-coloured stroke, so the body stays continuous and
-// the anatomy reads on top of it.
+// 1. AT REST IT IS A SILHOUETTE. An unlit muscle sits a hair
+//    above the body fill and carries no outline at all. Outlining
+//    every group all the time is what turned the old figure into
+//    plate armour: a mannequin assembled from panels, with the
+//    seams doing more work than the anatomy.
+// 2. LIMBS ARE ONE PIECE. An arm is a single outline from
+//    shoulder to fingertips, a leg one from hip to toe. Stacked
+//    segments leave a visible cut at every joint no matter how
+//    far they overlap.
+// 3. BIG MUSCLES HAVE HEADS. A quad is three bellies, not a slab;
+//    a hamstring is two; a calf is two. Drawing each group as one
+//    rounded rectangle is what made the thighs read as shin pads.
+//    `belly()` gives every head the same organic profile: narrow
+//    at the tendon, widest through the middle, able to lean so it
+//    follows the bone.
 // ============================================================
 
 import type { MuscleRegion } from '../plan/muscleRegions'
@@ -26,12 +31,15 @@ export const ALL_REGIONS: MuscleRegion[] = [
   'lower-back', 'glutes', 'hamstrings', 'full-body', 'heart',
 ]
 
-type FillFn = (r: MuscleRegion) => { fill: string; opacity: number }
+type Paint = { fill: string; opacity: number }
+type FillFn = (r: MuscleRegion) => Paint
 
-const BASE = { fill: 'rgba(255,255,255,0.085)', opacity: 1 }
-const PRIMARY = { fill: 'var(--color-accent)', opacity: 0.95 }
-const SECONDARY = { fill: 'var(--color-accent)', opacity: 0.34 }
-const FULLBODY = { fill: 'var(--color-accent)', opacity: 0.5 }
+const BODY = 'rgba(255,255,255,0.055)'
+/** Barely above the body: relief you can see, not a panel you can count. */
+const BASE: Paint = { fill: 'rgba(255,255,255,0.075)', opacity: 1 }
+const PRIMARY: Paint = { fill: 'var(--color-accent)', opacity: 0.95 }
+const SECONDARY: Paint = { fill: 'var(--color-accent)', opacity: 0.34 }
+const FULLBODY: Paint = { fill: 'var(--color-accent)', opacity: 0.5 }
 
 function makeFill(primary: MuscleRegion[], secondary: MuscleRegion[]): FillFn {
   const full = primary.includes('full-body') || secondary.includes('full-body')
@@ -44,16 +52,20 @@ function makeFill(primary: MuscleRegion[], secondary: MuscleRegion[]): FillFn {
 }
 
 /**
- * Separation between adjacent muscles. Deliberately faint: outlining
- * every group at full strength turns the figure into plate armour, which
- * is the other way to fail at looking like a body.
+ * Separation between muscles, and only where there is something to
+ * separate. A lit group gets a real edge so its heads read; an unlit
+ * one gets almost nothing and melts back into the silhouette.
  */
-const S = { stroke: 'rgba(0,0,0,0.28)', strokeWidth: 0.4 }
+function edge(p: Paint) {
+  return p.fill === BASE.fill
+    ? { stroke: 'rgba(0,0,0,0.16)', strokeWidth: 0.3 }
+    : { stroke: 'rgba(0,0,0,0.3)', strokeWidth: 0.45 }
+}
 
 /**
  * A muscle belly. Narrow where it becomes tendon, widest through the
- * middle, and able to lean so a limb muscle follows the bone rather than
- * standing straight up.
+ * middle, and able to lean so a limb muscle follows the bone rather
+ * than standing straight up.
  */
 function belly(
   xTop: number,
@@ -69,82 +81,147 @@ function belly(
   const yMid = yTop + (yBot - yTop) * bulge
   const c1 = yTop + (yMid - yTop) * 0.55
   const c2 = yMid + (yBot - yMid) * 0.45
+  // A control point is not on the curve. Putting it at the intended
+  // half-width leaves the drawn belly about a quarter thinner than
+  // asked for, which is why the quads came out as three separate
+  // stalks with the thigh showing between them. Solve for the control
+  // offset that puts the CURVE where wMid says it should be:
+  // x(0.5) = 0.25 * mean(ends) + 0.75 * control.
+  const ctrl = (target: number, e0: number, e1: number) => (target - 0.25 * ((e0 + e1) / 2)) / 0.75
+  const lTop = xTop - wTop / 2
+  const lBot = xBot - wBot / 2
+  const rTop = xTop + wTop / 2
+  const rBot = xBot + wBot / 2
+  const cl = ctrl(xMid - wMid / 2, lTop, lBot)
+  const cr = ctrl(xMid + wMid / 2, rTop, rBot)
   return [
-    `M${xTop - wTop / 2},${yTop}`,
-    `C${xMid - wMid / 2},${c1} ${xMid - wMid / 2},${c2} ${xBot - wBot / 2},${yBot}`,
-    `L${xBot + wBot / 2},${yBot}`,
-    `C${xMid + wMid / 2},${c2} ${xMid + wMid / 2},${c1} ${xTop + wTop / 2},${yTop}`,
+    `M${lTop},${yTop}`,
+    `C${cl},${c1} ${cl},${c2} ${lBot},${yBot}`,
+    `L${rBot},${yBot}`,
+    `C${cr},${c2} ${cr},${c1} ${rTop},${yTop}`,
     'Z',
   ].join(' ')
 }
 
 /**
- * The body underneath. Every piece overlaps its neighbour and shares one
- * fill, so the figure has no seams: shoulders melt into arms, hips into
- * thighs, exactly as a silhouette should.
+ * The body underneath. Head, torso, one arm and one leg, each limb a
+ * single continuous outline so no joint shows a cut.
  */
-function Silhouette({ back = false }: { back?: boolean }) {
+function Silhouette() {
   return (
-    <g fill="rgba(255,255,255,0.055)">
-      {/* head + neck */}
-      <ellipse cx="50" cy="14" rx="7.6" ry="9.2" />
-      <path d="M45.6,20 L54.4,20 L55.5,30 L44.5,30 Z" />
-      {/* torso: shoulders, waist, hips, all one sweep */}
+    <g fill={BODY}>
+      <ellipse cx="50" cy="13.6" rx="7.4" ry="9" />
+      <path d="M45.8,19.6 L54.2,19.6 L55.4,29.4 L44.6,29.4 Z" />
+
+      {/* torso: shoulders, ribs, waist, hips, one sweep */}
       <path
-        d="M44,27 C38,28.5 32,30.5 29.6,34.5 C27.4,38.5 28.4,45 30.6,52
-           C32.6,58.5 34.4,66 35.6,74 C36.4,80 36.2,86 35.2,92
-           C34.6,96 35.4,98.5 38,99 L62,99 C64.6,98.5 65.4,96 64.8,92
-           C63.8,86 63.6,80 64.4,74 C65.6,66 67.4,58.5 69.4,52
-           C71.6,45 72.6,38.5 70.4,34.5 C68,30.5 62,28.5 56,27 Z"
+        d="M44.4,27.2 C39.4,28 34,29.4 30.4,32.4 C28.4,35.6 28.6,41.6 30.8,49
+           C32.6,55.4 34,62 34.7,69.6 C35.2,75.2 35.8,81.6 35.9,87.4
+           C36,92.4 35.6,96.4 35.4,99.4 L64.6,99.4
+           C64.4,96.4 64,92.4 64.1,87.4 C64.2,81.6 64.8,75.2 65.3,69.6
+           C66,62 67.4,55.4 69.2,49 C71.4,41.6 71.6,35.6 69.6,32.4
+           C66,29.4 60.6,28 55.6,27.2 Z"
       />
-      {/* arms: upper, fore, hand, each overlapping the last */}
+
+      {/* arm: shoulder to fingertips, one outline */}
       {[1, -1].map((s) => (
-        <g key={s} transform={s === 1 ? undefined : 'translate(100,0) scale(-1,1)'}>
-          <path d="M31.5,31 C26.5,32.5 24,36.5 23.2,42.5 L21,62 L27.5,63 L29.5,44 C30.2,38.5 31.8,34.5 34,32.5 Z" />
-          <path d="M21.2,60.5 L27.6,61.5 L25.4,84 C25,88 24.4,91.5 23.6,93.5 L19.4,93 C18.8,90.5 18.6,86.5 19,82.5 Z" />
-          <path d="M19.6,90.5 L23.8,91 C24.6,94 24.8,97.5 23.8,99.5 C22.4,101 20,100.6 19,99 C18.4,96.5 18.8,93 19.6,90.5 Z" />
-        </g>
+        <path
+          key={s}
+          transform={s === 1 ? undefined : 'translate(100,0) scale(-1,1)'}
+          d="M31.6,30.4 C27,31.8 24.2,35 23.4,39.8 C22.9,45.6 23,52 23.2,58.6
+             C22.6,65 21.8,72 21.4,79.6 C21.1,84.6 20.9,89 20.7,92.6
+             C20.4,96.6 20.6,99.4 21.6,100.6 C22.8,101.6 24.2,101 24.8,99
+             C25.4,96 25.9,92 26.4,87.6 C27.1,81 27.9,74 28.6,67.4
+             C29.2,61.4 29.8,55.4 30.4,49.6 C31,44 31.8,39 33,35.6
+             C33.8,33.4 34.4,32.2 34.8,31.6 Z"
+        />
       ))}
-      {/* legs: thigh into shin into foot, overlapping */}
+
+      {/* leg: hip to toe, one outline */}
       {[1, -1].map((s) => (
-        <g key={s} transform={s === 1 ? undefined : 'translate(100,0) scale(-1,1)'}>
-          <path d="M35.4,95 C33.6,104 33.2,116 34,128 C34.5,136 35,142 35.6,147 L44.4,147 C44.6,141 44.8,133 45,124 C45.2,113 45.6,103 46,95 Z" />
-          <path d="M35.4,144 C34.8,152 35.4,163 36.4,172 C37,178 37.4,182 37.8,185 L44.2,185 C44.4,181 44.6,175 44.8,168 C45,159 45,151 44.8,144 Z" />
-          <path d="M37.4,182 C36.6,186 36.4,189 36.8,190.5 L47.5,190.5 C48.2,189 48,186.5 46.6,182 Z" />
-        </g>
+        <path
+          key={s}
+          transform={s === 1 ? undefined : 'translate(100,0) scale(-1,1)'}
+          d="M35.4,95.6 C33.6,102 33.2,110.8 33.9,120.4 C34.4,128 35.1,135.6 35.6,141.8
+             C35.9,145.6 35.4,149.4 34.9,154.4 C34.4,160.4 34.7,167.6 35.5,174.6
+             C36,179 36.4,182.6 36.6,185.2 C35.8,187.2 35.6,189.2 36.1,190.6
+             L48.2,190.6 C48.6,189 48.2,186.6 46.8,184.6 C46.4,181.4 46,177 45.8,172
+             C45.6,166 45.5,159.6 45.6,154 C45.7,149.2 45.8,145.4 46,141.8
+             C46.4,135.6 46.9,128 47.2,120.4 C47.5,110.8 47.4,102 47.2,96 Z"
+        />
       ))}
-      {back && null}
     </g>
   )
 }
 
-function FrontFigure({ f, showHeart, heartHot }: { f: FillFn; showHeart: boolean; heartHot: boolean }) {
-  const both = (d: string, fill: ReturnType<FillFn>) => (
+/**
+ * Draws a muscle group: one outline, plus optional SEAMS.
+ *
+ * The heads of a big muscle are drawn as lines over a single shape
+ * rather than as separate overlapping shapes. Stacking bellies left
+ * gaps between them wherever the widths did not quite meet, so a
+ * quad rendered as three stalks with thigh showing through. One
+ * outline cannot do that, and the seams still give the definition.
+ *
+ * Seams only appear on a lit group. On a resting body they would be
+ * scratches on a silhouette.
+ */
+function group(shape: string | string[], p: Paint, seams: string[] = [], mirror = true) {
+  const e = edge(p)
+  const shapes = Array.isArray(shape) ? shape : [shape]
+  const lit = p.fill !== BASE.fill
+  const half = (
     <>
-      <path d={d} {...S} {...fill} />
-      <path d={d} {...S} {...fill} transform="translate(100,0) scale(-1,1)" />
+      {shapes.map((d, i) => (
+        <path key={i} d={d} {...e} {...p} />
+      ))}
+      {lit &&
+        seams.map((d, i) => (
+          <path key={`s${i}`} d={d} fill="none" stroke="rgba(0,0,0,0.34)" strokeWidth="0.5" strokeLinecap="round" />
+        ))}
     </>
   )
+  return (
+    <>
+      <g>{half}</g>
+      {mirror && <g transform="translate(100,0) scale(-1,1)">{half}</g>}
+    </>
+  )
+}
+
+function FrontFigure({ f, showHeart, heartHot }: { f: FillFn; showHeart: boolean; heartHot: boolean }) {
   return (
     <svg viewBox="0 0 100 200" className="h-full w-auto">
       <Silhouette />
 
-      {/* traps: the slope from neck to shoulder */}
-      {both('M45.5,25.5 C41,27 35,29 31.5,31.5 C34,33.5 40,32.5 45.5,31 Z', f('traps'))}
+      {/* trapezius: the slope off the neck onto the shoulder */}
+      {group('M45.6,25.4 C41.2,26.6 35.2,28.4 31.4,31.4 C34.4,33 40,32.2 45.6,30.6 Z', f('traps'))}
 
-      {/* deltoid cap, wrapping the shoulder */}
-      {both(
-        'M31.2,31.2 C26.6,32.8 23.9,36.6 23.2,42.4 C25.6,45.4 30.4,45.6 33.4,43 C34.4,38.4 34.6,34.4 34.2,32.4 Z',
+      {/* deltoid: a three-headed cap, not a pad */}
+      {group(
+        [
+          'M31.4,30.8 C27.6,32 25,34.6 23.8,38.2 C26,39.6 29.6,39.2 32,37.4 C32.6,34.6 33.2,32.6 34,31.4 Z',
+          'M23.6,38.8 C23,42.4 23.1,46 23.4,49.4 C26.4,49.6 30,48 31.2,45 C31.4,42 31.6,39.6 31.9,37.9 C29.4,39.8 25.8,40.2 23.6,38.8 Z',
+        ],
         bestOf(f, ['delts-front', 'delts-side']),
       )}
 
-      {/* upper chest, then the main fan */}
-      {both('M35.4,32.6 C39.6,31.4 44.6,31 47.4,31.6 L47.4,39.4 C43.4,40.2 38,39.6 34.6,38.2 Z', f('chest-upper'))}
-      {both('M34.4,39.6 C38.4,41 43.6,41.6 47.4,41 L47.4,53.6 C43.2,56.4 36.8,53.4 33.6,46.6 Z', f('chest'))}
+      {/* pectoral: clavicular head above, the sternal fan below it */}
+      {group(
+        'M48.9,30.9 C43.6,30.9 38.6,31.8 35.2,33.4 L34.8,38.4 C39.4,37.1 44.2,36.9 48.9,37.5 Z',
+        f('chest-upper'),
+      )}
+      {group(
+        [
+          `M48.9,38.4 C44,37.9 38.8,38.2 34.8,39.6
+           C35.7,43.5 38.4,47.6 42,50.6 C44.4,52.5 47,53.3 48.9,52.9 Z`,
+        ],
+        f('chest'),
+      )}
 
       {showHeart && (
         <path
-          d="M50,49 C48.2,45.8 44.6,45.6 43.6,48.2 C42.8,50.4 44.8,52.6 50,56 C55.2,52.6 57.2,50.4 56.4,48.2 C55.4,45.6 51.8,45.8 50,49 Z"
+          d="M50,48.4 C48.2,45.4 44.8,45.2 43.8,47.7 C43,49.8 44.9,51.9 50,55.2 C55.1,51.9 57,49.8 56.2,47.7 C55.2,45.2 51.8,45.4 50,48.4 Z"
           fill={heartHot ? 'var(--color-danger)' : 'var(--color-surface-2)'}
           stroke="var(--color-danger)"
           strokeWidth="1"
@@ -152,99 +229,130 @@ function FrontFigure({ f, showHeart, heartHot }: { f: FillFn; showHeart: boolean
         />
       )}
 
-      {/* biceps: a real belly, peaking above the elbow */}
-      {both(belly(28.8, 41, 25.4, 61, 6.4, 8.6, 4.4, 0.42), f('biceps'))}
+      {/* biceps: short and high, peaking well above the elbow */}
+      {group(belly(28.4, 40.5, 26.2, 60, 6, 8, 3.6, 0.4), f('biceps'))}
       {/* forearm: thick under the elbow, tapering into the wrist */}
-      {both(belly(25, 62.5, 21.6, 88, 6.4, 7.4, 3.6, 0.3), f('forearms'))}
+      {group(belly(25.6, 61.5, 22.8, 87, 6.2, 7.2, 3.2, 0.26), f('forearms'))}
 
-      {/* abs: two columns of segments, not a grid on a box */}
-      {[57.5, 64.5, 71.5, 78].map((y, i) => (
-        <g key={y}>
-          {both(
-            `M43.2,${y} C45.6,${y - 0.9} 48.4,${y - 0.9} 48.9,${y}
-             L48.9,${y + 5.4} C48,${y + 6.3} 45,${y + 6.3} 43.4,${y + 5.4} Z`,
-            f('abs'),
-          )}
-          {i === 3 && null}
-        </g>
-      ))}
+      {/* rectus abdominis: segments shrink and close up going down */}
+      {group(
+        `M49.1,55.6 C47,55.4 44.8,55.6 43.3,56.2
+         C43,63 43.2,70 43.8,76.4 C44.2,80.4 44.7,83 45.2,84.6
+         C46.6,85.2 48,85.2 49.1,84.8 Z`,
+        f('abs'),
+        [
+          'M43.5,62.4 L49.1,62.4',
+          'M43.9,68.8 L49.1,68.8',
+          'M44.4,75.2 L49.1,75.2',
+        ],
+      )}
 
-      {/* obliques: the wedge from ribs to hip */}
-      {both('M36.4,56.5 C39.6,57.8 41.4,58.4 42.4,58.8 L42,80.4 C39.4,81 37.4,78.6 36.2,73 C35.6,67 35.8,60.6 36.4,56.5 Z', f('obliques'))}
+      {/* obliques: the wedge from the lower ribs onto the hip */}
+      {group(
+        'M36.2,56.8 C39,57.8 40.8,58.4 42,58.8 C42.2,66.4 42,73.6 41.6,80.6 C39.2,80.8 37.4,78 36.4,72.8 C35.8,67 35.8,61 36.2,56.8 Z',
+        f('obliques'),
+      )}
 
-      {/* hip flexors: the V into the groin */}
-      {both('M37.6,83.4 C40.4,87.4 44,91.2 47.6,93.8 L45.2,96.8 C41,94 37.4,89.6 36,85.4 Z', f('hip-flexors'))}
+      {/* hip flexors: the V running into the groin */}
+      {group('M38.4,84.6 C40.8,88.4 43.8,91.6 46.8,93.8 L45.2,96.4 C41.6,94 38.6,90.4 37.2,86.4 Z', f('hip-flexors'))}
 
-      {/* adductors: the inner thigh */}
-      {both(belly(46.8, 98, 45.6, 124, 4.2, 5.2, 2.2, 0.3), f('adductors'))}
+      {/* adductors: the inner thigh, high and narrow */}
+      {group(belly(46.6, 98, 45.4, 122, 4, 5, 2.2, 0.28), f('adductors'))}
 
-      {/* quads: sweeping out then in above the knee */}
-      {both(belly(39.4, 97, 40.6, 141, 11.6, 13.4, 8, 0.45), f('quads'))}
+      {/* quadriceps: lateralis sweeping outside, rectus down the middle,
+          medialis as the teardrop that sits low above the knee */}
+      {group(
+        belly(40.6, 97.5, 41, 139, 10.2, 12, 8.4, 0.38),
+        f('quads'),
+        [
+          // vastus lateralis off the rectus femoris
+          'M38.4,100 C37.4,110 37.6,124 38.9,136',
+          // and the medialis teardrop, which only shows low
+          'M44.4,112 C44.6,122 43.8,130 43,136.6',
+        ],
+      )}
 
-      {/* tibialis: the shin muscle, thin and long */}
-      {both(belly(40.6, 150, 42.4, 180, 5.4, 6, 3, 0.32), f('tibialis'))}
+      {/* tibialis: thin and long down the outside of the shin */}
+      {group(belly(40.4, 150, 42.2, 179, 4.8, 5.4, 2.6, 0.3), f('tibialis'))}
     </svg>
   )
 }
 
 function BackFigure({ f }: { f: FillFn }) {
-  const both = (d: string, fill: ReturnType<FillFn>) => (
-    <>
-      <path d={d} {...S} {...fill} />
-      <path d={d} {...S} {...fill} transform="translate(100,0) scale(-1,1)" />
-    </>
-  )
   return (
     <svg viewBox="0 0 100 200" className="h-full w-auto">
-      <Silhouette back />
+      <Silhouette />
 
-      {/* traps: the real kite, neck to shoulders to mid-back */}
-      <path
-        d="M50,24 C44,25.5 36,28.5 31.6,31.6 C35,34.4 41,35.6 46.4,36.4 L50,54.5
-           L53.6,36.4 C59,35.6 65,34.4 68.4,31.6 C64,28.5 56,25.5 50,24 Z"
-        {...S}
-        {...f('traps')}
-      />
+      {/* trapezius: the kite, neck to both shoulders down to mid-back */}
+      {group(
+        [
+          `M50,24 C44.4,25.2 37.4,27.6 32,31.4 C35.6,33.4 41.2,34.8 46.6,35.6
+           L50,50.4 L53.4,35.6 C58.8,34.8 64.4,33.4 68,31.4 C62.6,27.6 55.6,25.2 50,24 Z`,
+        ],
+        f('traps'),
+        [],
+        false,
+      )}
 
-      {/* rear deltoid */}
-      {both(
-        'M31.2,31.2 C26.6,32.8 23.9,36.6 23.2,42.4 C25.6,45.4 30.4,45.6 33.4,43 C34.4,38.4 34.6,34.4 34.2,32.4 Z',
+      {/* rear deltoid, same cap as the front */}
+      {group(
+        [
+          'M31.4,30.8 C27.6,32 25,34.6 23.8,38.2 C26,39.6 29.6,39.2 32,37.4 C32.6,34.6 33.2,32.6 34,31.4 Z',
+          'M23.6,38.8 C23,42.4 23.1,46 23.4,49.4 C26.4,49.6 30,48 31.2,45 C31.4,42 31.6,39.6 31.9,37.9 C29.4,39.8 25.8,40.2 23.6,38.8 Z',
+        ],
         bestOf(f, ['delts-rear', 'delts-side']),
       )}
 
-      {/* lats: the wing, wide at the armpit, tapering to the waist */}
-      {both(
-        'M33.6,40.4 C36.6,45.6 41.4,48.6 46.6,50 L46.6,68.4 C41,70.6 36.2,66.4 34,58 C32.8,52 32.8,45.4 33.6,40.4 Z',
+      {/* triceps: the long head down the back of the arm */}
+      {group(belly(28.6, 39.5, 26.4, 60.5, 6, 7.4, 3.8, 0.45), f('triceps'))}
+      {group(belly(25.8, 62, 22.9, 87, 6, 7, 3.2, 0.26), f('forearms'))}
+
+      {/* latissimus: a wing off the armpit that narrows into the waist,
+          not the vest it used to draw */}
+      {group(
+        [
+          `M34.6,43.4 C36.6,47.6 39.6,50.4 42.6,52
+           C43,56 43,60 42.4,63.8 C40,64.6 37.8,62.6 36.2,58.6
+           C34.9,54.8 34.4,48.6 34.6,43.4 Z`,
+        ],
         f('lats'),
       )}
 
-      {/* mid-back: between the shoulder blades */}
-      {both('M46.8,52.4 C44.4,52 42.4,51.4 41,50.6 L41,63.6 C42.6,64.6 44.8,65.2 46.8,65.4 Z', f('mid-back'))}
+      {/* rhomboids between the blades */}
+      {group('M46.6,53.6 C44.8,53.2 43.4,52.6 42.4,51.9 L42.4,62.2 C43.6,63 45.1,63.4 46.6,63.6 Z', f('mid-back'))}
 
-      {/* lower back: the erectors, two columns into the sacrum */}
-      {both(belly(45.6, 67, 46.4, 86, 6.4, 7.2, 4.6, 0.4), f('lower-back'))}
+      {/* erectors: two columns down into the sacrum */}
+      {group(belly(45.4, 66.5, 46.2, 86, 5.8, 6.8, 4.4, 0.42), f('lower-back'))}
 
-      {/* glutes */}
-      {both(
-        'M35.8,85 C33.6,88.8 33.4,94.4 35,98.8 C37,102 42,102.6 45.8,100.4 C48.2,97.4 48.8,91.6 47.6,87.4 C44.6,84.2 39.2,83.4 35.8,85 Z',
+      {/* gluteus: a shield off the hip crest, tucking under at the fold */}
+      {group(
+        [
+          `M48.8,83.6 L37.4,84.4
+           C35.6,87.2 34.9,91 35.4,94.8 C36,98.6 38.8,101.4 42.8,101.6
+           C45.8,101.6 48,100 48.7,97.2 Z`,
+        ],
         f('glutes'),
       )}
 
-      {/* hamstrings */}
-      {both(belly(39.8, 101, 40.8, 140, 11.4, 12.4, 7.4, 0.42), f('hamstrings'))}
+      {/* hamstrings: two heads, splitting as they reach the knee */}
+      {group(belly(40.8, 101.5, 41.2, 138, 10.4, 11.6, 8, 0.4), f('hamstrings'), [
+        'M41,104 C40.4,114 40.6,126 41.4,135.6',
+      ])}
 
-      {/* calves: the diamond, high and wide, into the achilles */}
-      {both(belly(40.2, 147, 41.8, 175, 9, 10.6, 3.8, 0.34), f('calves'))}
+      {/* calves: two gastroc heads, the inner one lower and fuller */}
+      {group(belly(40.4, 145, 41.6, 174, 8.2, 10.2, 3.4, 0.3), f('calves'), [
+        'M40.6,148 C40.2,155 40.8,162 41.4,168',
+      ])}
 
       {/* achilles into the heel */}
-      {both('M40.6,173 C40,177.5 39.8,181 40,183.5 L44,183.5 C44.2,180.5 44.2,177 44,173 Z', f('achilles-feet'))}
-      {both('M37.6,182.5 C36.8,186.5 36.6,189.2 37,190.5 L47.4,190.5 C48,189 47.8,186.6 46.6,182.5 Z', f('achilles-feet'))}
+      {group('M40.8,172 C40.2,176.5 40.1,180 40.3,183 L44,183 C44.2,180 44.2,176.5 44,172 Z', f('achilles-feet'))}
+      {group('M37.2,182.6 C36.4,186.4 36.2,189 36.6,190.4 L47.6,190.4 C48.2,189 47.8,186.4 46.6,182.6 Z', f('achilles-feet'))}
     </svg>
   )
 }
 
 /** The strongest fill among several regions (shared shapes like shoulder caps). */
-function bestOf(f: FillFn, regions: MuscleRegion[]) {
+function bestOf(f: FillFn, regions: MuscleRegion[]): Paint {
   let best = BASE
   for (const r of regions) {
     const v = f(r)
