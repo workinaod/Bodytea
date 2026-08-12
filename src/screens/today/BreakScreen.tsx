@@ -170,10 +170,13 @@ export function BreakScreen({
         <div className="mt-7 text-center">
           <div className="text-[11.5px] font-bold text-ink-dim">How is this session sitting?</div>
           <div className="mt-2 flex gap-1.5">
+            {/* The stored value stays 'right', only the word changes.
+                It is the id the load rules read and the id already on
+                disk, so renaming it would be a migration for a label. */}
             {(
               [
                 ['light', 'Light'],
-                ['right', 'Right'],
+                ['right', 'Perfect'],
                 ['heavy', 'Heavy'],
               ] as const
             ).map(([id, label]) => (
