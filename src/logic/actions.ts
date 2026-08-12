@@ -7,18 +7,15 @@ import type {
   Measurement,
   PhotoMeta,
   RunLog,
-  SessionIntensity,
-  SessionLog,
   Tier,
 } from '../types'
 import { defaultWeekState } from '../types'
 import { isIntenseSport } from '../plan/cardio'
-import { prefillFor } from './prescription'
 import { flushPersist, uid, useAppStore } from '../store/appStore'
 import { downscalePhoto, PhotoStore } from '../store/storage'
 import { planTemplate, resolveDay } from '../engine/resolveDay'
 import { swapCandidatesFor } from '../plan/subs'
-import { applyReadinessDowngrade, minimumViableFor } from '../engine/transforms'
+import { minimumViableFor } from '../engine/transforms'
 import {
   busyButMealsLogged,
   pruneTierDropExcuses,
@@ -155,53 +152,6 @@ export function restoreToday(date: ISODate): void {
 }
 
 // ---------- Session lifecycle ----------
-
-export function startSession(
-  date: ISODate,
-  readinessFlags?: [boolean, boolean, boolean, boolean],
-  intensity: SessionIntensity = 'full',
-  makeupFor?: ISODate,
-): void {
-  const data = store().data
-  // A make-up runs the MISSED day's workout, logged under today
-  const resolved = resolveDay(makeupFor ?? date, data)
-  const downgraded = (readinessFlags?.filter(Boolean).length ?? 0) >= 2 || intensity === 'lighter'
-  let exercises = downgraded ? applyReadinessDowngrade(resolved.exercises) : resolved.exercises
-  if (intensity === 'minimum') {
-    // The bare-minimum counter-offer, chosen up front instead of mid-excuse:
-    // the template's authored recipe, or the first two movements at ≤2 sets.
-    const template = resolved.templateId ? planTemplate(data.plan, resolved.templateId) : null
-    exercises = template
-      ? minimumViableFor(template, resolved.exercises).exercises
-      : resolved.exercises.slice(0, 2).map((r) => ({ ...r, sets: Math.min(r.sets, 2) }))
-  }
-
-  const skeleton: SessionLog = {
-    date,
-    templateId: resolved.templateId ?? 'cardio',
-    status: 'partial',
-    startedAt: new Date().toISOString(),
-    readiness: readinessFlags ? { flags: readinessFlags, downgraded } : undefined,
-    intensity: intensity === 'full' ? undefined : intensity,
-    makeupFor,
-    exercises: exercises.map((r) => {
-      const pre = prefillFor(date, r.exerciseId, { repRange: r.repRange, lightMode: r.lightMode })
-      return {
-        exerciseId: r.exerciseId,
-        fromSlot: r.fromSlot,
-        sets: Array.from({ length: r.sets }, () => ({
-          targetReps: r.repText,
-          weightLb: r.kind === 'lift' || r.kind === 'carry' ? pre.weightLb : undefined,
-          reps: r.repsNum ?? pre.reps,
-          done: false,
-        })),
-      }
-    }),
-  }
-  store().update((d) => {
-    d.sessions[date] = skeleton
-  })
-}
 
 export function patchSet(
   date: ISODate,

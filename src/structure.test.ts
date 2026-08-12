@@ -59,7 +59,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // load and how many reps to ask for) to logic/prescription.ts. The
   // allowance follows it down each time: an oversized file that shrinks
   // does not keep the headroom.
-  'logic/actions.ts': 761,
+  'logic/actions.ts': 711,
   // Was 836. The how-to reader and the rest screen both moved out, and
   // the allowance follows it down: an oversized file that shrinks does
   // not get to keep the headroom it earned.

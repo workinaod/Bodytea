@@ -38,10 +38,12 @@ export function prefillFor(
   opts: { repRange?: RepRange; lightMode?: boolean } = {},
 ): { weightLb?: number; reps?: number } {
   const data = store().data
-  const wrapStep =
-    opts.repRange && repStepFor(data, exerciseId, opts.repRange, date).wrapped
-      ? loadStepLb(exerciseId)
-      : 0
+  // The rep engine owns both load signals, because both are decided by
+  // the same walk through history: the wrap that earns more weight, and
+  // the fell-short-and-felt-heavy that gives some back.
+  const step = opts.repRange ? repStepFor(data, exerciseId, opts.repRange, date) : null
+  const wrapStep = step?.wrapped ? loadStepLb(exerciseId) : 0
+  const backOff = step?.backOff ? -loadStepLb(exerciseId) : 0
 
   const sessions = Object.values(data.sessions)
     .filter((s) => s.date < date && s.status !== 'skipped')
@@ -52,26 +54,31 @@ export function prefillFor(
     const done = log.sets.filter((x) => x.done && x.weightLb !== undefined)
     if (done.length) {
       const best = done.reduce((a, b) => ((a.weightLb ?? 0) >= (b.weightLb ?? 0) ? a : b))
-      // A day that felt heavy does not earn more weight, whatever the reps
-      // did. Reaching the top of the range while grinding is a sign the
-      // load is already right, not a licence to add to it.
-      const step = s.feel === 'heavy' ? 0 : wrapStep
+      // The weight moves on two signals only, both from the rep engine:
+      // the wrap earns it, falling short on a heavy day gives it back.
+      // A "heavy" answer on its own is NOT one of them. Treating it as
+      // one meant an honest run of hard weeks stripped the load to zero
+      // while the rep target kept climbing.
       const bump =
-        step > 0
-          ? 0 // a good week is paid once, in reps or in load, never both
-          : s.feel === 'heavy'
-            ? -5
-            : s.feel !== undefined
-              ? 0 // 'light' and 'right' let the rep ladder do the work
-              : // Legacy per-exercise feel, for sessions logged before the
-                // session-level question existed. Never for newer ones.
-                log.feel === 'easy'
-                ? 5
-                : log.feel === 'hard'
-                  ? -5
-                  : 0
+        wrapStep > 0 || backOff < 0 || s.feel !== undefined
+          ? 0
+          : // Legacy per-exercise feel, for sessions logged before the
+            // session-level question existed. Never for newer ones.
+            log.feel === 'easy'
+            ? 5
+            : log.feel === 'hard'
+              ? -5
+              : 0
+      // A back-off must never walk the load down to nothing. Repeated
+      // misses take it down a step at a time, and without a floor an
+      // honest run of bad weeks ends at 0 lb, which is not a
+      // prescription, it is the absence of one. Below a single step
+      // there is no lift left to make lighter.
+      const floor = backOff < 0 ? loadStepLb(exerciseId) : 0
       const w =
-        best.weightLb !== undefined ? Math.max(0, best.weightLb + bump + step) : undefined
+        best.weightLb !== undefined
+          ? Math.max(floor, best.weightLb + bump + wrapStep + backOff)
+          : undefined
       return {
         weightLb: w !== undefined && opts.lightMode ? lightLoad(w) : w,
         reps: best.reps,

@@ -136,19 +136,40 @@ describe('prefillFor: a light day is actually lighter', () => {
 })
 
 describe('prefillFor: the one session check-in drives the load', () => {
-  it('a heavy day does not earn more weight, even at the top of the range', () => {
+  it('a heavy day that was CLEARED holds everything, up and down', () => {
+    // Earned, but a day that took everything you had is not the day to
+    // ask for more. Without the check-in this would wrap and add 10.
     const s = lastWeek(SQUAT, 8, 100)
     s.feel = 'heavy'
     seed(s)
-    // Without the check-in this would wrap and add 10.
-    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(95)
+    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(100)
   })
 
-  it('a heavy day backs the weight off when there was no wrap either', () => {
-    const s = lastWeek(SQUAT, 6, 100)
+  it('only takes weight off when a heavy day also fell short', () => {
+    const s = lastWeek(SQUAT, 6, 100, false)
     s.feel = 'heavy'
     seed(s)
-    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(95)
+    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(90)
+  })
+
+  it('a miss on a day that felt fine is a bad day, not a reason to deload', () => {
+    const s = lastWeek(SQUAT, 6, 100, false)
+    s.feel = 'right'
+    seed(s)
+    expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(100)
+  })
+
+  it('never walks the load down to nothing, however bad the run', () => {
+    // Five straight heavy misses used to end at 0 lb, which is not a
+    // prescription. One step is the floor.
+    let w = 25
+    for (let i = 0; i < 8; i++) {
+      const s = lastWeek(PRESS, 8, w, false)
+      s.feel = 'heavy'
+      seed(s)
+      w = prefillFor(TODAY, PRESS, { repRange: { low: 8, high: 12 } }).weightLb!
+    }
+    expect(w).toBe(5)
   })
 
   it('light and right let the rep ladder do the work, without a second raise', () => {

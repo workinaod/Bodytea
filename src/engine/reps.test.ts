@@ -174,7 +174,11 @@ describe('repStepFor: the wrap that hands the next step to the bar', () => {
   })
 
   it('starting fresh is the bottom of the range, and is not a wrap', () => {
-    expect(repStepFor(data(), 'flat-db-press', RANGE, START)).toEqual({ reps: 8, wrapped: false })
+    expect(repStepFor(data(), 'flat-db-press', RANGE, START)).toEqual({
+      reps: 8,
+      wrapped: false,
+      backOff: false,
+    })
   })
 })
 

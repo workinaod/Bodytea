@@ -78,16 +78,33 @@ export interface RepStep {
    * treadmill wearing the costume of a progression.
    */
   wrapped: boolean
+  /**
+   * The last session felt heavy AND fell short of its target. That
+   * combination, and only that combination, means the load is too
+   * much and should come down.
+   *
+   * Tying the retreat to FAILING rather than to the feel alone is
+   * what stops a spiral. Backing off every week someone answers
+   * "heavy" took a working weight from 25 lb to 0 in five weeks
+   * while the rep target climbed the whole way, which is the exact
+   * opposite of coaching.
+   */
+  backOff: boolean
 }
 
 /**
- * One step of double progression, and whether that step was the
- * wrap that hands the next move to the barbell.
+ * One step of double progression, and what it says about the load.
  *
  * Walks back to the last session that trained it, reads what was
- * prescribed then, and moves once: cleared it, add a rep; already
- * at the top, reset to the bottom and flag the load; did not clear
- * it, hold.
+ * prescribed then, and moves once:
+ *
+ *   fell short          hold the reps, and back off only if it also
+ *                       felt heavy
+ *   cleared, felt heavy hold everything. The work was earned, but a
+ *                       day that took everything you had is not the
+ *                       day to ask for more
+ *   cleared             add a rep, or at the top of the range wrap
+ *                       to the bottom and hand the step to the load
  */
 export function repStepFor(
   data: AppData,
@@ -105,13 +122,17 @@ export function repStepFor(
     const prescribed = Number((log.sets[0]?.targetReps ?? '').match(/^\d+/)?.[0])
     if (!Number.isFinite(prescribed)) continue
     const last = Math.min(Math.max(prescribed, range.low), range.high)
-    if (!clearedTarget(log.sets, last)) return { reps: last, wrapped: false }
+    const heavy = session.feel === 'heavy'
+    if (!clearedTarget(log.sets, last)) return { reps: last, wrapped: false, backOff: heavy }
+    // Cleared it, but it took everything. Hold, do not ask for more.
+    if (heavy) return { reps: last, wrapped: false, backOff: false }
     // Top of the range means the next step is load, not reps.
     return last >= range.high
-      ? { reps: range.low, wrapped: true }
-      : { reps: last + 1, wrapped: false }
+      ? { reps: range.low, wrapped: true, backOff: false }
+      : { reps: last + 1, wrapped: false, backOff: false }
   }
-  return { reps: range.low, wrapped: false } // never trained it: start at the load end
+  // Never trained it: start at the load end.
+  return { reps: range.low, wrapped: false, backOff: false }
 }
 
 /** The rep number alone, for the places that only print it. */
