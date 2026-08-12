@@ -13,7 +13,8 @@ import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
 import { chooseCardio, finishSession, reopenSession, restoreToday, startSession, swapExercise, toggleCnsSwap } from '../../logic/actions'
 import { makeupCandidate } from '../../engine/reconcile'
-import { currentStreak, sessionGrade } from '../../engine/stats'
+import { sessionGrade } from '../../engine/stats'
+import { streakDays } from '../../engine/streak'
 import { quitCopy } from '../../engine/quit'
 import { swapCandidatesFor } from '../../plan/subs'
 import { SessionView } from './SessionView'
@@ -120,7 +121,7 @@ export function TodayScreen() {
   // is measured to YESTERDAY: that is the run actually banked and about
   // to be lost. Counting today would inflate it by a day nobody trained.
   const quit = useMemo(
-    () => (session ? quitCopy(session, currentStreak(data, addDaysISO(date, -1))) : null),
+    () => (session ? quitCopy(session, streakDays(data, addDaysISO(date, -1))) : null),
     [session, data, date],
   )
   function requestFinish() {

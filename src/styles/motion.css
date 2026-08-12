@@ -207,6 +207,49 @@
 
 /* ---------- accessibility ---------- */
 
+/* ---- The streak flame ----
+   Three layers moving at slightly different phases is what makes
+   fire read as fire: a single scaling blob reads as a pulsing
+   logo. The duration comes from the tier, so a year-long streak
+   genuinely burns faster than a week-old one. */
+@keyframes flame-breathe {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.06) translateY(-1px);
+  }
+}
+@keyframes flame-lick {
+  0%,
+  100% {
+    transform: scaleX(1) scaleY(1);
+    transform-origin: 50% 100%;
+  }
+  35% {
+    transform: scaleX(0.93) scaleY(1.07);
+    transform-origin: 50% 100%;
+  }
+  70% {
+    transform: scaleX(1.05) scaleY(0.96);
+    transform-origin: 50% 100%;
+  }
+}
+@keyframes flame-core {
+  0%,
+  100% {
+    transform: scaleY(1);
+    opacity: 0.92;
+    transform-origin: 50% 100%;
+  }
+  50% {
+    transform: scaleY(1.18);
+    opacity: 1;
+    transform-origin: 50% 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* Movement goes away. The fade stays, so things still feel connected
      rather than teleporting. */
@@ -229,6 +272,12 @@
     transform: none !important;
   }
   .nav-glow {
+    animation: none !important;
+  }
+  /* The flame holds its shape rather than vanishing: it is
+     information, not decoration. */
+  .flame,
+  .flame * {
     animation: none !important;
   }
 }

@@ -3,9 +3,9 @@ import type { Measurement } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { addDaysISO, formatShort, todayISO, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
+import { streakDays } from '../../engine/streak'
 import {
   adherenceMap,
-  currentStreak,
   liftSeries,
   proteinFor,
   repMaxSeries,
@@ -21,6 +21,7 @@ import { daysBetween } from '../../engine/calendar'
 import { MilestoneReviewSheet } from './MilestoneReview'
 import { BodyFatEstimator } from './BodyFatEstimator'
 import { WeeklyRecap } from './WeeklyRecap'
+import { TrophyCase } from './TrophyCase'
 import { BoardContent } from '../board/BoardScreen'
 import { avgMph, fmtDuration, fmtPace, weeklyMiles } from '../../engine/runs'
 import { RouteMap } from '../../components/RouteMap'
@@ -64,11 +65,12 @@ export function ProgressScreen() {
   const [review, setReview] = useState<MilestoneReview | null>(null)
   const [openRun, setOpenRun] = useState<RunLog | null>(null)
   const [recapOpen, setRecapOpen] = useState(false)
-  const [view, setView] = useState<'me' | 'board'>('me')
+  const [view, setView] = useState<'me' | 'case' | 'board'>('me')
   const [metric, setMetric] = useState<(typeof METRICS)[number]['key']>('waistIn')
   const [lift, setLift] = useState(data.plan.trackedLifts[0]?.exerciseId ?? 'front-squat')
 
-  const streak = currentStreak(data)
+  // The same streak the flame counts, so one number means one thing.
+  const streak = streakDays(data)
   const sessions = totalSessions(data)
   const heat = useMemo(() => adherenceMap(data, 12 * 7), [data])
   const today = useToday()
@@ -127,7 +129,8 @@ export function ProgressScreen() {
       <div className="flex rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-1">
         {(
           [
-            { id: 'me', label: 'My progress' },
+            { id: 'me', label: 'Progress' },
+            { id: 'case', label: 'Trophy case' },
             { id: 'board', label: 'The Board' },
           ] as const
         ).map((v) => (
@@ -144,6 +147,7 @@ export function ProgressScreen() {
       </div>
 
       {view === 'board' && <BoardContent />}
+      {view === 'case' && <TrophyCase />}
 
       {view === 'me' && checkinDue && (
         <Card className="border-accent/40">

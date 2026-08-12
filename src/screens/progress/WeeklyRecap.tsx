@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { AppData } from '../../types'
 import { addDaysISO, formatShort } from '../../engine/calendar'
-import { adherenceMap, currentStreak, e1RM, proteinFor } from '../../engine/stats'
+import { adherenceMap, e1RM, proteinFor } from '../../engine/stats'
+import { streakDays } from '../../engine/streak'
 import { getExercise } from '../../plan/exercises'
 
 // ============================================================
@@ -36,7 +37,7 @@ function buildCards(data: AppData, today: string): RecapCard[] {
     glow: 'var(--color-accent)',
   })
 
-  const streak = currentStreak(data)
+  const streak = streakDays(data)
   if (streak >= 2) {
     cards.push({
       eyebrow: 'Streak',

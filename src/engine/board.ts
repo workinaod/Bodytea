@@ -59,6 +59,13 @@ export function computeBoardStats(data: AppData, today: ISODate = todayISO()): M
   const protein30 = logged >= 10 ? round1((hit / logged) * 100) : null
 
   return {
+    // Deliberately still the SESSION streak, not the calendar-day one
+    // the flame shows. Every other client that has already uploaded a
+    // number uploaded this one, and a ranked column cannot hold two
+    // units at once: swapping it here would put day-streaks and
+    // session-streaks in the same ordering until every user happened
+    // to sync. It changes with the leaderboard's own pass, once, for
+    // everyone.
     streak: currentStreak(data, today),
     consistency30,
     prGain90,
