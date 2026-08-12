@@ -79,7 +79,7 @@ test('custom life events: add one, pick its days, engine reacts next day', async
 
   // Tomorrow's session carries the pre-fatigued banner
   await page.getByRole('button', { name: 'Today', exact: true }).click()
-  await page.getByRole('button', { name: '›' }).click() // Tuesday
+  await page.getByRole('button', { name: 'Next day' }).click() // Tuesday
   await expect(page.getByText(/Closing shift yesterday: a jump set dropped/)).toBeVisible()
 
   // A late-night event warns on the day itself

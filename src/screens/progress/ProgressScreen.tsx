@@ -11,7 +11,7 @@ import {
   repMaxSeries,
   totalSessions,
 } from '../../engine/stats'
-import { Btn, Card, Chip, SectionTitle, Stepper } from '../../components/ui'
+import { Btn, Card, Chip, ScreenHeader, SectionTitle, Stepper } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { Heatmap, SimpleLine } from '../../components/charts'
 import { PhotoStore } from '../../store/storage'
@@ -121,7 +121,7 @@ export function ProgressScreen() {
 
   return (
     <div className="space-y-3 pb-6">
-      <h1 className="headline text-[31px]">Progress</h1>
+      <ScreenHeader title="Progress" />
 
       {/* You vs everyone: the Board lives here as a second lens */}
       <div className="flex rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-1">

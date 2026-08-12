@@ -6,7 +6,7 @@ import { addDaysISO, formatDayLabel, mondayOf, todayISO } from '../../engine/cal
 import { lateNightGraceDate } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
 import { enableReminders, notificationSupport } from '../../logic/reminders'
-import { BannerRow, Btn, Card, Chip, EmptyNote } from '../../components/ui'
+import { BannerRow, Btn, Card, Chip, DayArrow, EmptyNote, ScreenHeader } from '../../components/ui'
 import { getExercise } from '../../plan/exercises'
 import { CARDIO_GROUP_INFO } from '../../plan/templates'
 import { REST_DAY_CARDS } from '../../plan/debrief'
@@ -127,21 +127,15 @@ export function TodayScreen() {
 
   return (
     <div className="space-y-3">
-      {/* Date header */}
-      <div className="flex items-center justify-between">
-        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(date, -1))}>
-          ‹
-        </button>
-        <button className="text-center" onClick={() => setSelected(null)}>
-          <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-ink-dim">
-            {today ? 'Today' : formatDayLabel(date)}
-          </div>
-          {!today && <div className="text-[10px] font-bold text-accent">tap to jump to today</div>}
-        </button>
-        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(date, 1))}>
-          ›
-        </button>
-      </div>
+      <ScreenHeader
+        title={today ? 'Today' : formatDayLabel(date)}
+        onTitleTap={() => setSelected(null)}
+        left={<DayArrow dir="prev" onClick={() => setSelected(addDaysISO(date, -1))} />}
+        right={<DayArrow dir="next" onClick={() => setSelected(addDaysISO(date, 1))} />}
+        sub={
+          !today && <div className="text-[10px] font-bold text-accent">tap to jump to today</div>
+        }
+      />
 
       {graceDate && date === graceDate && (
         <div className="border-l-2 border-cyan/60 py-1 pl-3 text-[12.5px] leading-snug text-cyan/90">

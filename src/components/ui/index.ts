@@ -6,6 +6,7 @@
 
 export { Btn, IconBtn, XIcon } from './Button'
 export { Card, SectionTitle, BannerRow, EmptyNote } from './Surface'
+export { ScreenHeader, DayArrow } from './ScreenHeader'
 export { Chip, ChoiceChip } from './Chip'
 export { Ring, Stat } from './Data'
 export { Stepper, Toggle } from './Input'

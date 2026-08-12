@@ -4,7 +4,7 @@ import { uid, useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatShort, mondayOf, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
-import { Card, Chip, SectionTitle, Toggle } from '../../components/ui'
+import { Card, Chip, DayArrow, ScreenHeader, SectionTitle, Toggle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { changeTier } from '../../logic/actions'
 import { TierDropSheet } from './TierDropSheet'
@@ -85,22 +85,17 @@ export function WeekScreen() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(weekStart, -7))}>
-          ‹
-        </button>
-        <button onClick={() => setSelected(null)} className="text-center">
-          <div className="text-[20px] font-bold tracking-tight">
-            Week of {formatShort(weekStart)}
-          </div>
-          <div className="mt-0.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+      <ScreenHeader
+        title={`Week of ${formatShort(weekStart)}`}
+        onTitleTap={() => setSelected(null)}
+        left={<DayArrow dir="prev" unit="week" onClick={() => setSelected(addDaysISO(weekStart, -7))} />}
+        right={<DayArrow dir="next" unit="week" onClick={() => setSelected(addDaysISO(weekStart, 7))} />}
+        sub={
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             Week {days[0].weekIndex} · Block {days[0].blockIndex} · {days[0].isDeload ? 'Deload' : days[0].abWeek}
           </div>
-        </button>
-        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(weekStart, 7))}>
-          ›
-        </button>
-      </div>
+        }
+      />
 
       {/* Tier picker */}
       <SectionTitle>This week's tier {needsPick && <span className="text-danger">· pick it now</span>}</SectionTitle>

@@ -7,7 +7,7 @@ import { kcalTargetFor, nutritionDayType } from '../../engine/resolveDay'
 import { kcalBumpSuggestion, kcalFor, proteinFor, proteinStreak } from '../../engine/stats'
 import { buildMealPlan, FOODS, SUPPLEMENT_CATALOG, type MealsPerDay } from '../../plan/foods'
 import { mealAlternatives } from '../../plan/mealAlts'
-import { Btn, Card, Chip, Ring, SectionTitle } from '../../components/ui'
+import { Btn, Card, Chip, DayArrow, Ring, ScreenHeader, SectionTitle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import {
   addMealEntry,
@@ -50,19 +50,12 @@ export function MealsScreen() {
 
   return (
     <div className="space-y-3 pb-6">
-      <div className="flex items-center justify-between">
-        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(date, -1))}>
-          ‹
-        </button>
-        <button onClick={() => setSelected(null)} className="text-center">
-          <div className="text-[13px] font-bold uppercase tracking-[0.18em] text-ink-dim">
-            {date === today ? 'Fuel' : formatDayLabel(date)}
-          </div>
-        </button>
-        <button className="px-3 py-2 text-[17px] font-bold text-ink-faint" onClick={() => setSelected(addDaysISO(date, 1))}>
-          ›
-        </button>
-      </div>
+      <ScreenHeader
+        title={date === today ? 'Fuel' : formatDayLabel(date)}
+        onTitleTap={() => setSelected(null)}
+        left={<DayArrow dir="prev" onClick={() => setSelected(addDaysISO(date, -1))} />}
+        right={<DayArrow dir="next" onClick={() => setSelected(addDaysISO(date, 1))} />}
+      />
 
       {/* The three jobs, one switch */}
       <div className="flex rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-1">

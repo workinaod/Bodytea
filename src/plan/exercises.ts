@@ -32,7 +32,7 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
         'Leaning from the waist instead of the ankles, bend at the hips and you lose the line of force.',
         'Cutting the rest short. This is nervous-system work, not conditioning.',
       ],
-      cue: 'Lean till you HAVE to catch yourself. Fire fast and low. Drive the ground back, don’t pop up.',
+      cue: 'Lean till you HAVE to catch yourself. Fire fast and low.',
       videoQuery: 'falling start sprint acceleration drill technique',
       restSec: 180,
     }),

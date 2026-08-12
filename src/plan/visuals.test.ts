@@ -63,6 +63,54 @@ describe('exercise videos', () => {
   })
 })
 
+// ============================================================
+// Copy that fits the box it is drawn in.
+//
+// The card says the same thing three times: a yellow cue, an
+// orange caption, and a numbered step. The step is the detail,
+// so the two above it are headlines and have to behave like
+// headlines. "Lean from the ANKLES, one straight line" wrapped
+// to two lines and step 1 already said the straight-line part.
+//
+// The numbers come from the real render boxes, not from taste:
+//   caption  max-w-[240px] at 12px bold, narrowed again by the
+//            figure/muscle-map split (ExerciseDemo.tsx)
+//   cue      13px bold centred in ~306px (FocusView.tsx)
+// A count that passes here but still wraps on a 390px screen
+// means the limit is wrong, not the copy.
+// ============================================================
+
+/** Two lines of cue. */
+export const CUE_MAX = 80
+/** One line of caption in the compact split. */
+export const CAPTION_MAX = 26
+
+describe('copy fits its box', () => {
+  it('every cue fits two lines', () => {
+    const over = Object.values(EXERCISES)
+      .filter((e) => e.cue && e.cue.length > CUE_MAX)
+      .map((e) => `${e.id}: ${e.cue!.length} chars`)
+    expect(over).toEqual([])
+  })
+
+  it('every photo caption fits one line', () => {
+    const over = Object.entries(DEMO_PHOTOS).flatMap(([id, seq]) =>
+      seq.frames.filter((f) => f.caption.length > CAPTION_MAX).map((f) => `${id}: "${f.caption}"`),
+    )
+    expect(over).toEqual([])
+  })
+
+  it('every figure label fits one line', () => {
+    const over: string[] = []
+    for (const [id, spec] of Object.entries(EXERCISE_DEMOS)) {
+      for (const frame of spec.frames) {
+        if (frame.label && frame.label.length > CAPTION_MAX) over.push(`${id}: "${frame.label}"`)
+      }
+    }
+    expect(over).toEqual([])
+  })
+})
+
 describe('exercise figures', () => {
   it('every exercise can still show something when it has no video', () => {
     // Dropping a wrong photo or a duplicated clip is only safe because the
