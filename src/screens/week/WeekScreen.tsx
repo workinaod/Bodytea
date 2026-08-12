@@ -10,6 +10,7 @@ import { intensityLabel } from '../../engine/intensity'
 import { Sheet } from '../../components/Sheet'
 import { changeTier } from '../../logic/actions'
 import { TierDropSheet } from './TierDropSheet'
+import { actualLine, dayRecap } from '../../engine/sessionRecap'
 
 const WD_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -28,6 +29,9 @@ export function WeekScreen() {
   const weekStart = selected ?? mondayOf(today)
   const [preview, setPreview] = useState<ResolvedDay | null>(null)
   const [tierDropTo, setTierDropTo] = useState<Tier | null>(null)
+  // Recomputed from `data`, so finishing a session or logging cardio
+  // updates the sheet without it needing to know either happened.
+  const recap = useMemo(() => (preview ? dayRecap(data, preview.date) : null), [data, preview])
 
   const week = data.weeks[weekStart]
   const tier = week?.tier ?? 1
@@ -301,49 +305,94 @@ export function WeekScreen() {
           <div className="space-y-3 pb-6">
             <p className="text-[12.5px] leading-snug text-ink-dim">{preview.tagline}</p>
 
-            {preview.exercises.length > 0 && (
+            {recap && recap.exercises.length > 0 && (
               <>
-                {/* One grouped block with hairlines, the way the tier
-                    picker and the settings rows read. Seven identical
-                    floating pills gave the day no order and no shape. */}
                 <div className="overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
-                  {preview.exercises.map((r, i) => (
+                  {recap.exercises.map((r, i) => (
                     <div
-                      key={r.exerciseId}
-                      className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
+                      key={`${r.exerciseId}-${i}`}
+                      className={`px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
                     >
-                      <span className="num w-4 shrink-0 text-[11px] font-bold text-ink-faint">{i + 1}</span>
-                      <span className="min-w-0 flex-1 text-[13.5px] font-extrabold leading-snug">{r.name}</span>
-                      {/* Sets and reps split so the columns line up down
-                          the list. Tabular figures, not a monospace font:
-                          the old one made the numbers read as code. */}
-                      <span className="flex shrink-0 items-baseline gap-1.5">
-                        {r.sets > 1 && (
-                          <span className="num text-[13px] font-extrabold text-accent-soft">{r.sets}</span>
-                        )}
-                        {r.sets > 1 && <span className="text-[11px] text-ink-faint">×</span>}
-                        <span className="num text-[13px] font-bold text-ink-dim">{r.repText}</span>
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="num w-4 shrink-0 text-[11px] font-bold text-ink-faint">{i + 1}</span>
+                        <span className="min-w-0 flex-1 text-[13.5px] font-extrabold leading-snug">
+                          {r.name}
+                          {/* Work the plan never asked for is the part of the
+                              record the plan cannot account for, so it says so
+                              rather than sitting in the list pretending. */}
+                          {!r.planned && <span className="ml-1.5 text-[10.5px] font-bold text-lime">added</span>}
+                        </span>
+                        <span className="flex shrink-0 items-baseline gap-1.5">
+                          {r.planned ? (
+                            <>
+                              {r.planned.sets > 1 && (
+                                <span className="num text-[13px] font-extrabold text-accent-soft">{r.planned.sets}</span>
+                              )}
+                              {r.planned.sets > 1 && <span className="text-[11px] text-ink-faint">×</span>}
+                              <span className="num text-[13px] font-bold text-ink-dim">{r.planned.repText}</span>
+                            </>
+                          ) : (
+                            <span className="text-[11px] text-ink-faint">—</span>
+                          )}
+                        </span>
+                      </div>
+                      {/* What actually happened, under what was asked for.
+                          Only once the day has something to report: on a
+                          future day this row would be noise on every line. */}
+                      {recap.trained && (
+                        <div className="mt-1 flex items-center gap-3 pl-7">
+                          {r.actual ? (
+                            <span className="text-[11.5px] font-bold text-lime">✓ {actualLine(r.actual)}</span>
+                          ) : (
+                            <span className="text-[11.5px] font-semibold text-ink-faint">not done</span>
+                          )}
+                          {r.swappedFrom && (
+                            <span className="text-[10.5px] text-ink-faint">swapped in</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
                 <div className="eyebrow text-ink-faint">
-                  {preview.exercises.length} exercises ·{' '}
-                  {preview.exercises.reduce((n, r) => n + r.sets, 0)} sets
+                  {recap.trained
+                    ? `${recap.actualSets} of ${recap.plannedSets} sets done`
+                    : `${recap.exercises.length} exercises · ${recap.plannedSets} sets`}
                 </div>
               </>
             )}
 
-            {preview.exercises.length === 0 && (
+            {recap && recap.exercises.length === 0 && (
               <p className="py-6 text-center text-[13px] font-semibold text-ink-faint">
                 Rest day. Protein is still today's job.
               </p>
             )}
 
-            {preview.note && (
-              <p className="border-l-2 border-accent/40 py-1 pl-3 text-[12px] leading-relaxed text-ink-dim">
-                {preview.note}
-              </p>
+            {/* The day's cardio. An hour of basketball is what the day
+                actually contained, and a lifting record read without it
+                describes a different afternoon. */}
+            {recap && recap.cardio.length > 0 && (
+              <div className="overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
+                {recap.cardio.map((c, i) => (
+                  <div
+                    key={`${c.label}-${i}`}
+                    className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
+                  >
+                    <span className="shrink-0 text-[14px]">{c.emoji}</span>
+                    <span className="min-w-0 flex-1 text-[13px] font-bold leading-snug">{c.label}</span>
+                    <span className="num shrink-0 text-[12px] font-semibold text-ink-dim">
+                      {[
+                        shortDuration(c.minutes),
+                        c.miles ? `${c.miles.toFixed(2)} mi` : null,
+                        c.steps ? `${c.steps.toLocaleString()} steps` : null,
+                        c.kcal ? `${c.kcal} cal` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}

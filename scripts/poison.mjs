@@ -361,6 +361,53 @@ const E2E_MUTATIONS = [
   },
 ]
 
+/**
+ * Every file this run has mutated but not yet put back.
+ *
+ * The finally block below restores after each mutation, and a finally
+ * block does not run when the process is KILLED. An interrupted run left
+ * live poison sitting in two source files, which then read as ordinary
+ * uncommitted work and very nearly got committed. Anything holding a
+ * mutation is registered here and put back on the way out, whatever the
+ * way out turns out to be.
+ */
+const dirty = new Map()
+
+function restoreAll() {
+  for (const [path, original] of dirty) writeFileSync(path, original)
+  dirty.clear()
+}
+
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(sig, () => {
+    restoreAll()
+    console.error(`\n[poison] interrupted (${sig}); every mutated file restored.`)
+    process.exit(130)
+  })
+}
+process.on('uncaughtException', (e) => {
+  restoreAll()
+  console.error('[poison] crashed; every mutated file restored.\n', e)
+  process.exit(1)
+})
+
+/** Refuse to start on a tree that already has edits in a target file. */
+function assertClean(targets) {
+  const out = execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf8' })
+  const modified = new Set(
+    out.split('\n').map((l) => l.slice(3).trim()).filter(Boolean),
+  )
+  const clash = [...new Set(targets)].filter((t) => modified.has(t))
+  if (clash.length) {
+    console.error(
+      '[poison] refusing to run: these files are already modified, so a restore\n' +
+        '         would silently discard real work. Commit or stash first:\n' +
+        clash.map((c) => `           ${c}`).join('\n'),
+    )
+    process.exit(2)
+  }
+}
+
 function run(cmd) {
   try {
     execSync(cmd, { cwd: ROOT, stdio: 'pipe', encoding: 'utf8' })
@@ -376,6 +423,7 @@ function check(m, isE2e) {
   if (!original.includes(m.find)) {
     return { id: m.id, bug: m.bug, result: 'ANCHOR MISSING', ok: false }
   }
+  dirty.set(path, original)
   writeFileSync(path, original.replace(m.find, m.to))
   let caught
   try {
@@ -392,11 +440,13 @@ function check(m, isE2e) {
     }
   } finally {
     writeFileSync(path, original)
+    dirty.delete(path)
   }
   return { id: m.id, bug: m.bug, result: caught ? 'CAUGHT' : 'SURVIVED', ok: caught }
 }
 
 const list = arg === 'e2e' ? E2E_MUTATIONS : MUTATIONS
+assertClean(list.map((m) => m.file))
 const results = []
 for (const m of list) {
   const r = check(m, arg === 'e2e')
