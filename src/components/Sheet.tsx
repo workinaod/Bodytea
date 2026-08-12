@@ -109,8 +109,15 @@ export function Sheet({
   // inside a sheet resolves against the sheet's box instead of the
   // screen. That is how the full-screen run tracker ended up as a
   // strip at the bottom of the cardio sheet.
+  //
+  // z-75 threads a narrow gap on purpose. Above FocusView (70), because
+  // at z-50 a sheet opened from inside a session rendered BEHIND it and
+  // "Can't finish" looked completely dead. Below the run tracker (80)
+  // and the cardio timer (90), because those are full-screen takeovers
+  // launched OVER a sheet, and lifting sheets above them instead left
+  // the cardio sheet swallowing taps meant for "Finish run".
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-[75] flex items-end justify-center">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-[6px] animate-fade-in"
         style={{ opacity: dragY > 0 ? Math.max(0.25, 1 - dragY / 400) : undefined }}
