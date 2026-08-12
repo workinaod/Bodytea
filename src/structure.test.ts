@@ -42,9 +42,13 @@ const HARD_MAX = 600
 const OVERSIZE_ALLOWED: Record<string, number> = {
   // Data catalogs: these are databases in TypeScript clothing. They still
   // get split by domain, but they are not "long functions".
-  'plan/exercises.ts': 1830,
+  // The gym and no-gym libraries went into their own modules rather than
+  // in here; these two grew only by the lines that WIRE them in (the two
+  // spreads) and by the demo aliases pointing new movements at the
+  // existing keyframe shape they share.
+  'plan/exercises.ts': 1840,
   'plan/athleticExercises.ts': 1250,
-  'plan/demos.ts': 900,
+  'plan/demos.ts': 955,
   'plan/athletic.ts': 735,
   // Activity shapes moved to activityTypes.ts, the logged-session shapes
   // to sessionTypes.ts, the engine's day output to resolvedTypes.ts; the

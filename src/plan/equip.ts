@@ -166,6 +166,52 @@ export const EXERCISE_EQUIP: Record<string, EquipTag[]> = {
   'sled-push': ['sled'],
   'nordic-curl': ['bench', 'partner'],
   'tibialis-raise': [],
+
+  // ---- Full-gym machines and cables ----
+  'machine-chest-press': ['machine'],
+  'pec-deck': ['machine'],
+  'cable-fly': ['machine'],
+  'chest-supported-row-machine': ['machine'],
+  'straight-arm-pulldown': ['machine'],
+  'face-pull': ['machine'],
+  'assisted-pull-up': ['machine'],
+  'tricep-pushdown': ['machine'],
+  'cable-curl': ['machine'],
+  'cable-lateral-raise': ['machine'],
+  'hack-squat': ['machine'],
+  'leg-extension': ['machine'],
+  'seated-leg-curl': ['machine'],
+  'standing-calf-machine': ['machine'],
+  'cable-pull-through': ['machine'],
+  'hip-abduction-machine': ['machine'],
+
+  // ---- Bands (a tag that previously had one exercise behind it) ----
+  'band-row': ['band'],
+  'band-pull-apart': ['band'],
+  'band-face-pull': ['band'],
+  'band-curl': ['band'],
+  'band-pressdown': ['band'],
+  'band-overhead-press': ['band'],
+  'band-good-morning': ['band'],
+  'band-lateral-walk': ['band'],
+
+  // ---- Bodyweight progressions. 'none' means genuinely nothing: a
+  //      wall and a floor are not equipment, a step is not either.
+  //      incline-push-up takes 'none' because a table, a kitchen
+  //      counter or a wall all work and everyone has one. ----
+  'incline-push-up': ['none'],
+  'decline-push-up': ['none'],
+  'archer-push-up': ['none'],
+  'diamond-push-up': ['none'],
+  'cossack-squat': ['none'],
+  'shrimp-squat': ['none'],
+  'single-leg-glute-bridge': ['none'],
+  'wall-sit': ['none'],
+  'bird-dog': ['none'],
+  'superman-hold': ['none'],
+  'bodyweight-calf-raise': ['none'],
+  'prone-rear-delt-raise': ['none'],
+  'underhand-inverted-row': ['none'],
 }
 
 export function equipFor(id: string): EquipTag[] {
@@ -217,6 +263,40 @@ export const SUBSTITUTIONS: Record<string, string[]> = {
   'single-leg-calf-raise': ['double-leg-calf-raise', 'pogo-hop'],
   'double-leg-calf-raise': ['pogo-hop'],
   'seated-calf-raise': ['double-leg-calf-raise', 'pogo-hop'],
+
+  // ---- New movements degrade all the way down to a bare floor ----
+  'machine-chest-press': ['flat-db-press', 'decline-push-up', 'push-up'],
+  'pec-deck': ['cable-fly', 'flat-db-press', 'push-up'],
+  'cable-fly': ['pec-deck', 'flat-db-press', 'push-up'],
+  'chest-supported-row-machine': ['one-arm-db-row', 'band-row', 'inverted-row'],
+  'straight-arm-pulldown': ['db-pullover', 'band-row', 'underhand-inverted-row'],
+  'face-pull': ['band-face-pull', 'band-pull-apart', 'rear-delt-raise', 'prone-rear-delt-raise'],
+  'assisted-pull-up': ['lat-pulldown', 'band-row', 'inverted-row'],
+  'tricep-pushdown': ['band-pressdown', 'overhead-tricep-extension', 'diamond-push-up'],
+  'cable-curl': ['band-curl', 'hammer-curl', 'underhand-inverted-row'],
+  'cable-lateral-raise': ['lateral-raise', 'band-overhead-press', 'pike-push-up'],
+  'hack-squat': ['leg-press', 'front-squat', 'goblet-squat', 'split-squat'],
+  'leg-extension': ['wall-sit', 'split-squat'],
+  'seated-leg-curl': ['machine-leg-curl', 'slider-leg-curl', 'single-leg-glute-bridge'],
+  'standing-calf-machine': ['bodyweight-calf-raise', 'double-leg-calf-raise', 'pogo-hop'],
+  'cable-pull-through': ['band-good-morning', 'db-rdl', 'glute-bridge'],
+  'hip-abduction-machine': ['band-lateral-walk', 'single-leg-glute-bridge'],
+  'band-row': ['inverted-row'],
+  'band-pull-apart': ['prone-rear-delt-raise'],
+  'band-face-pull': ['band-pull-apart', 'prone-rear-delt-raise'],
+  'band-curl': ['underhand-inverted-row'],
+  'band-pressdown': ['diamond-push-up', 'push-up'],
+  'band-overhead-press': ['pike-push-up'],
+  'band-good-morning': ['single-leg-glute-bridge', 'glute-bridge'],
+  'band-lateral-walk': ['single-leg-glute-bridge'],
+  // Bodyweight progressions regress toward the easier variant, never up.
+  'decline-push-up': ['push-up', 'incline-push-up'],
+  'archer-push-up': ['decline-push-up', 'push-up', 'incline-push-up'],
+  'diamond-push-up': ['push-up', 'incline-push-up'],
+  'shrimp-squat': ['split-squat', 'reverse-lunge'],
+  'cossack-squat': ['split-squat', 'reverse-lunge'],
+  'single-leg-glute-bridge': ['glute-bridge'],
+  'bodyweight-calf-raise': ['pogo-hop'],
 }
 
 /** Resolve an exercise to itself or its best equipment-legal substitute (null if nothing fits). */

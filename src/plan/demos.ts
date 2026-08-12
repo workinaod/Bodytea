@@ -888,6 +888,62 @@ Object.assign(EXERCISE_DEMOS, {
   'tibialis-raise': EXERCISE_DEMOS['single-leg-calf-raise'],
 })
 
+
+// ---- Full-gym and no-gym libraries ----
+//
+// A demo is a hand-tuned stick figure, and a movement that is genuinely
+// the same SHAPE deserves the same one rather than a worse copy of it.
+// A machine chest press and a dumbbell bench press trace an identical
+// path; what differs is the equipment holding the load, which the demo
+// figure does not draw anyway. Where the shape genuinely differs, the
+// alias points at the closest existing shape and nothing else claims to
+// be exact.
+Object.assign(EXERCISE_DEMOS, {
+  // Press: same path as the free-weight versions.
+  'machine-chest-press': EXERCISE_DEMOS['flat-db-press'],
+  'pec-deck': EXERCISE_DEMOS['flat-db-press'],
+  'cable-fly': EXERCISE_DEMOS['flat-db-press'],
+  'band-overhead-press': EXERCISE_DEMOS['standing-ohp'],
+  // Pull.
+  'chest-supported-row-machine': EXERCISE_DEMOS['chest-supported-row'],
+  'band-row': EXERCISE_DEMOS['seated-cable-row'],
+  'straight-arm-pulldown': EXERCISE_DEMOS['db-pullover'],
+  'face-pull': EXERCISE_DEMOS['rear-delt-raise'],
+  'band-face-pull': EXERCISE_DEMOS['rear-delt-raise'],
+  'band-pull-apart': EXERCISE_DEMOS['rear-delt-raise'],
+  'assisted-pull-up': EXERCISE_DEMOS['pull-up'],
+  // Arms.
+  'tricep-pushdown': EXERCISE_DEMOS['overhead-tricep-extension'],
+  'band-pressdown': EXERCISE_DEMOS['overhead-tricep-extension'],
+  'cable-curl': EXERCISE_DEMOS['hammer-curl'],
+  'band-curl': EXERCISE_DEMOS['hammer-curl'],
+  'cable-lateral-raise': EXERCISE_DEMOS['lateral-raise'],
+  // Legs.
+  'hack-squat': EXERCISE_DEMOS['leg-press'],
+  'leg-extension': EXERCISE_DEMOS['machine-leg-curl'],
+  'seated-leg-curl': EXERCISE_DEMOS['machine-leg-curl'],
+  'standing-calf-machine': EXERCISE_DEMOS['double-leg-calf-raise'],
+  'bodyweight-calf-raise': EXERCISE_DEMOS['single-leg-calf-raise'],
+  'cable-pull-through': EXERCISE_DEMOS['good-morning'],
+  'band-good-morning': EXERCISE_DEMOS['good-morning'],
+  'hip-abduction-machine': EXERCISE_DEMOS['glute-bridge'],
+  'band-lateral-walk': EXERCISE_DEMOS['lateral-lunge'],
+  'wall-sit': EXERCISE_DEMOS['deep-squat-hold'],
+  'cossack-squat': EXERCISE_DEMOS['lateral-lunge'],
+  'shrimp-squat': EXERCISE_DEMOS['split-squat'],
+  'single-leg-glute-bridge': EXERCISE_DEMOS['glute-bridge'],
+  // Push-up family: all one shape at different angles.
+  'incline-push-up': EXERCISE_DEMOS['push-up'],
+  'decline-push-up': EXERCISE_DEMOS['push-up'],
+  'archer-push-up': EXERCISE_DEMOS['push-up'],
+  'diamond-push-up': EXERCISE_DEMOS['push-up'],
+  // Floor core holds.
+  'prone-rear-delt-raise': EXERCISE_DEMOS['prone-y-raise'],
+  'underhand-inverted-row': EXERCISE_DEMOS['inverted-row'],
+  'bird-dog': EXERCISE_DEMOS['dead-bug'],
+  'superman-hold': EXERCISE_DEMOS['plank-side-plank'],
+})
+
 /** Demo for an exercise, with a safe standing fallback. */
 export function demoFor(id: string): DemoSpec {
   return (

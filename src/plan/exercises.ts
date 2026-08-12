@@ -1,5 +1,7 @@
 import type { ExerciseDef } from '../types'
 import { ATHLETIC_EXERCISES } from './athleticExercises'
+import { GYM_EXERCISES } from './gymExercises'
+import { HOME_EXERCISES } from './homeExercises'
 
 // ============================================================
 // Full exercise guides. `cue` lines and several `why`/`mistakes`
@@ -1815,6 +1817,10 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
     }),
     // ---- Athletic Performance Library (organized by athletic quality) ----
     ...ATHLETIC_EXERCISES,
+    // ---- Full-gym machines and cables ----
+    ...GYM_EXERCISES,
+    // ---- Bands and bodyweight progressions ----
+    ...HOME_EXERCISES,
   ].map((e) => [e.id, e]),
 )
 
