@@ -221,3 +221,29 @@ test('the answer reaches the Today tab', async ({ page }) => {
   // it cost, and how it felt.
   await expect(page.getByText(/Basketball · 1 min .* easy/)).toBeVisible()
 })
+
+test('a session that runs past midnight logs to the day it began', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  // Ten to midnight.
+  await page.clock.install({ time: new Date(2026, 7, 10, 23, 50) })
+  await page.goto('./')
+  await onboard(page)
+  await openTracker(page, 'Basketball')
+  await page.getByRole('button', { name: /Start basketball/i }).click()
+
+  // Play through the rollover. The date the screen was handed comes
+  // from useToday(), which ticks over at midnight, so without pinning
+  // it the session files under the 11th while its own start time says
+  // the 10th.
+  await page.clock.runFor(25 * 60_000)
+  await page.waitForTimeout(700)
+  await page.getByRole('button', { name: 'Finish' }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(500)
+
+  const dates = await page.evaluate(() =>
+    Object.keys(JSON.parse(localStorage.getItem('naod.state')!).data.cardio),
+  )
+  expect(dates).toEqual(['2026-08-10'])
+})

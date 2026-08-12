@@ -153,7 +153,34 @@ function meansByTier(samples: Sample[]): Partial<Record<Intensity, number>> {
  * neither. Nothing here can produce a band that is not ordered, and
  * nothing can move it more than half of where it started.
  */
+/**
+ * Memo, keyed on the data object itself.
+ *
+ * personalBand walks the whole history, and the screens call it once
+ * per SESSION shown: the Progress table, the Week rows and the Today
+ * line were each re-reading every session ever logged, for every
+ * session ever logged. Quadratic, and it lands on the main thread of
+ * a phone.
+ *
+ * The store replaces `data` on every update rather than mutating it,
+ * so identity is a correct cache key and a stale band is not
+ * reachable. Weak, so old snapshots are collected.
+ */
+const BAND_CACHE = new WeakMap<AppData, Map<string, PersonalBand | null>>()
+
 export function personalBand(data: AppData, activityId: string): PersonalBand | null {
+  let perActivity = BAND_CACHE.get(data)
+  if (!perActivity) {
+    perActivity = new Map()
+    BAND_CACHE.set(data, perActivity)
+  }
+  if (perActivity.has(activityId)) return perActivity.get(activityId) ?? null
+  const built = computeBand(data, activityId)
+  perActivity.set(activityId, built)
+  return built
+}
+
+function computeBand(data: AppData, activityId: string): PersonalBand | null {
   const base = trackingFor(activityId).band
   if (!base) return null
   const pop: PersonalBand = { low: base.low, high: base.high, samples: 0, source: 'population' }

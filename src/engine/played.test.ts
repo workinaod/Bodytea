@@ -74,3 +74,103 @@ describe('things that were never game days', () => {
     }
   })
 })
+
+describe('deleting a GPS session removes both of its records', () => {
+  it('takes the RunLog with the cardio entry', async () => {
+    // A GPS session is two records and the cardio list only ever showed
+    // one. Deleting it dropped the entry and left the RunLog behind, so
+    // the session stayed in the Progress table, the weekly mileage chart
+    // and every total, while the list it was deleted from showed it gone.
+    const { useAppStore } = await import('../store/appStore')
+    const { logCardio, removeCardio } = await import('../logic/cardioActions')
+    const { loggedSessions } = await import('./activityLog')
+
+    useAppStore.getState().update((d) => {
+      d.runs = [
+        {
+          id: 'gps-1', activity: 'run', date: '2026-08-12',
+          startedAt: '2026-08-12T07:00:00.000Z', durationSec: 1800,
+          distanceMi: 3.2, distanceSource: 'gps', avgPaceSec: 562, splits: [], points: [],
+        },
+      ]
+      d.cardio = {}
+    })
+    const id = logCardio('2026-08-12', {
+      activityId: 'run', label: 'Run', when: 'solo', runId: 'gps-1', miles: 3.2, minutes: 30,
+    })
+    expect(loggedSessions(useAppStore.getState().data)).toHaveLength(1)
+
+    removeCardio('2026-08-12', id)
+    const after = useAppStore.getState().data
+    expect(after.runs).toHaveLength(0)
+    expect(loggedSessions(after)).toHaveLength(0)
+  })
+
+  it('leaves unrelated runs alone', async () => {
+    const { useAppStore } = await import('../store/appStore')
+    const { logCardio, removeCardio } = await import('../logic/cardioActions')
+
+    useAppStore.getState().update((d) => {
+      d.runs = [
+        {
+          id: 'keep-me', activity: 'run', date: '2026-08-12',
+          startedAt: '2026-08-12T07:00:00.000Z', durationSec: 1800,
+          distanceMi: 3.2, distanceSource: 'gps', avgPaceSec: 562, splits: [], points: [],
+        },
+      ]
+      d.cardio = {}
+    })
+    const id = logCardio('2026-08-12', {
+      activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 60,
+    })
+    removeCardio('2026-08-12', id)
+    expect(useAppStore.getState().data.runs).toHaveLength(1)
+  })
+})
+
+describe('the cardio mirror of a GPS session', () => {
+  it('carries no distance when the run itself claims none', async () => {
+    // A session that never got a fix keeps whatever scraps the tracker
+    // saw before giving up, under a twentieth of a mile, marked 'none'.
+    // The mirror used to copy that number unconditionally, which fed
+    // GPS noise straight into the achievement mileage the RunLog path
+    // is careful to suppress.
+    const { useAppStore } = await import('../store/appStore')
+    const { saveRun } = await import('../logic/cardioActions')
+    const { travelMiles } = await import('./activityLog')
+
+    useAppStore.getState().update((d) => {
+      d.runs = []
+      d.cardio = {}
+    })
+    saveRun({
+      id: 'nofix', activity: 'run', date: '2026-08-12',
+      startedAt: '2026-08-12T07:00:00.000Z', durationSec: 1800,
+      distanceMi: 0.04, distanceSource: 'none', avgPaceSec: 0, splits: [], points: [],
+    })
+    const mirror = useAppStore.getState().data.cardio['2026-08-12'][0]
+    expect(mirror.runId).toBe('nofix')
+    expect(mirror.miles).toBeUndefined()
+    expect(travelMiles(mirror)).toBe(0)
+  })
+
+  it('carries the distance when the run does claim one', async () => {
+    const { useAppStore } = await import('../store/appStore')
+    const { saveRun } = await import('../logic/cardioActions')
+
+    useAppStore.getState().update((d) => {
+      d.runs = []
+      d.cardio = {}
+    })
+    saveRun({
+      id: 'real', activity: 'hike', date: '2026-08-12',
+      startedAt: '2026-08-12T07:00:00.000Z', durationSec: 3600,
+      distanceMi: 4.2, distanceSource: 'gps', avgPaceSec: 857, splits: [], points: [],
+    })
+    const mirror = useAppStore.getState().data.cardio['2026-08-12'][0]
+    expect(mirror.miles).toBe(4.2)
+    // And it is a hike, not a bike. That label was a two-way choice
+    // made when there were only two GPS activities.
+    expect(mirror.label).toBe('Hike')
+  })
+})

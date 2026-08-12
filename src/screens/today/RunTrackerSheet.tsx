@@ -23,12 +23,8 @@ import { useAppStore } from '../../store/appStore'
 import { Btn } from '../../components/ui'
 import { MAX_ZOOM, MIN_ZOOM, RouteMap } from '../../components/RouteMap'
 import { RunReactionCard } from '../../components/RunReactionCard'
-import {
-  requestMotionPermission,
-  startStepCounter,
-  strideMiles,
-  type StepCounter,
-} from '../../platform/motion'
+import { requestMotionPermission, startStepCounter, type StepCounter } from '../../platform/motion'
+import { stepDistanceMi, tracksSteps } from '../../engine/intensity'
 
 type Phase = 'acquiring' | 'live' | 'done' | 'denied'
 
@@ -47,6 +43,11 @@ export function RunTrackerSheet({
   date: ISODate
   onClose: () => void
 }) {
+  // Pinned when the screen opens. `date` comes from useToday(), which
+  // ticks over at midnight, so a run started at 23:50 and finished at
+  // 00:10 was filed under the new day while its own startedAt said the
+  // old one. The session belongs to the day it began.
+  const logDate = useRef(date)
   const [phase, setPhase] = useState<Phase>('acquiring')
   const [elapsed, setElapsed] = useState(0)
   // Street level by default: close enough to read the road you are on.
@@ -57,6 +58,10 @@ export function RunTrackerSheet({
   const [reaction, setReaction] = useState<Reaction | null>(null)
   const pastRuns = useAppStore((s) => s.data.runs)
   const [cardUrl, setCardUrl] = useState<string | null>(null)
+  // The unmount cleanup runs with the deps it was created with, and that
+  // effect has none, so it closed over cardUrl from the first render:
+  // always null, so the blob URL was never revoked.
+  const cardUrlRef = useRef<string | null>(null)
   const [shareNote, setShareNote] = useState<string | null>(null)
   const cardBlobRef = useRef<Blob | null>(null)
   const pointsRef = useRef<RunPoint[]>([])
@@ -68,16 +73,27 @@ export function RunTrackerSheet({
   // Steps run alongside GPS from the first moment. A treadmill gives the
   // satellites nothing to work with, so the pedometer is what turns an
   // indoor session from "0.00 mi" into real distance.
+  //
+  // Not on a bike, though. Nobody takes a step riding one, and the table
+  // in plan/cardio.ts says so. Counting anyway meant a trainer session
+  // indoors banked accelerometer vibration as thousands of "steps",
+  // converted them at a WALKING stride, and reported miles that were
+  // road buzz. The counter now starts only where footfalls exist.
+  const countsSteps = tracksSteps(activity)
   useEffect(() => {
+    if (!countsSteps) return
     let live = true
     void requestMotionPermission().then((ok) => {
+      // The permission prompt can resolve after the screen is gone. Without
+      // this the listener attaches to a dead component and never comes off.
       if (ok && live) stepsRef.current = startStepCounter()
+      else if (ok) startStepCounter().stop()
     })
     return () => {
       live = false
       stepsRef.current?.stop()
     }
-  }, [])
+  }, [countsSteps])
 
   useEffect(() => {
     if (!('geolocation' in navigator)) {
@@ -113,7 +129,7 @@ export function RunTrackerSheet({
       if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
       clearInterval(tick)
       void wakeRef.current?.release?.()
-      if (cardUrl) URL.revokeObjectURL(cardUrl)
+      if (cardUrlRef.current) URL.revokeObjectURL(cardUrlRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -157,15 +173,19 @@ export function RunTrackerSheet({
       setPhase('done')
       return
     }
-    const log = buildRunLog(uid(), activity, date, startedAtIso.current, elapsed, points)
+    const log = buildRunLog(uid(), activity, logDate.current, startedAtIso.current, elapsed, points)
 
     // A treadmill moves the body without moving the phone, so GPS reports
     // nothing for a genuine session. When the satellites saw no distance
     // but the pedometer did, count the steps and say where the number
     // came from rather than banking a run of 0.00 miles.
-    if (gpsMi < 0.05 && steps >= 50) {
+    // Each activity converts at its OWN stride: a hiking step over
+    // uneven ground is not a walking step, and this used to hand both
+    // of them the walking figure.
+    const stepMi = countsSteps ? stepDistanceMi(activity, steps, heightIn) : null
+    if (gpsMi < 0.05 && stepMi !== null && steps >= 50) {
       log.steps = steps
-      log.distanceMi = +(steps * strideMiles(heightIn, activity === 'run')).toFixed(2)
+      log.distanceMi = stepMi
       log.distanceSource = 'steps'
       log.avgPaceSec = log.distanceMi > 0 ? Math.round(elapsed / log.distanceMi) : 0
     } else {
@@ -180,7 +200,8 @@ export function RunTrackerSheet({
     void buildShareImage(log, rx).then((blob) => {
       if (!blob) return
       cardBlobRef.current = blob
-      setCardUrl(URL.createObjectURL(blob))
+      cardUrlRef.current = URL.createObjectURL(blob)
+      setCardUrl(cardUrlRef.current)
     })
   }
 

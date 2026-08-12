@@ -225,13 +225,21 @@ function cardioRecords(data: AppData) {
   for (const date of Object.keys(data.cardio).sort()) {
     for (const e of data.cardio[date]) {
       sessions++
-      miles += travelMiles(e)
-      if (e.miles && e.miles > 0) {
+      // Court sports now carry a miles figure derived from steps at a
+      // shuffle stride. It is a real number for that sport and it is
+      // not a distance record: "furthest pickleball" is not a thing
+      // anyone is chasing, and a PACE record over shuffle distance is
+      // arithmetic on two numbers that were never a pace. Only travel
+      // counts here, which is the set that could contribute before
+      // steps existed.
+      const mi = travelMiles(e)
+      miles += mi
+      if (mi > 0) {
         const prev = bestMiles.get(e.activityId)
-        if (prev !== undefined && e.miles > prev) distanceRecords++
-        if (prev === undefined || e.miles > prev) bestMiles.set(e.activityId, e.miles)
+        if (prev !== undefined && mi > prev) distanceRecords++
+        if (prev === undefined || mi > prev) bestMiles.set(e.activityId, mi)
         if (e.minutes && e.minutes > 0) {
-          const pace = e.minutes / e.miles
+          const pace = e.minutes / mi
           const prevPace = bestPace.get(e.activityId)
           if (prevPace !== undefined && pace < prevPace) paceRecords++
           if (prevPace === undefined || pace < prevPace) bestPace.set(e.activityId, pace)

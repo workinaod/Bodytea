@@ -55,7 +55,12 @@ export function sportSummary(data: AppData, today: ISODate, days = 30): Activity
   const by = new Map<string, ActivityRollup>()
 
   for (const s of loggedSessions(data, { from: since, to: today })) {
-    let row = by.get(s.activityId)
+    // Keyed by the LABEL as well, because every user-named activity
+    // shares the id 'custom'. Keying on the id alone folded Padel,
+    // spin class and boxing into one row under whichever name was
+    // seen first, with all three sets of numbers added together.
+    const key = rowKey(s)
+    let row = by.get(key)
     if (!row) {
       row = {
         activityId: s.activityId,
@@ -69,7 +74,7 @@ export function sportSummary(data: AppData, today: ISODate, days = 30): Activity
         mix: { low: 0, standard: 0, high: 0 },
         graded: 0,
       }
-      by.set(s.activityId, row)
+      by.set(key, row)
     }
     row.sessions++
     row.minutes += s.minutes
@@ -88,6 +93,14 @@ export function sportSummary(data: AppData, today: ISODate, days = 30): Activity
   return [...by.values()]
     .map((r) => ({ ...r, miles: Math.round(r.miles * 100) / 100 }))
     .sort((a, b) => b.kcal - a.kcal || b.minutes - a.minutes)
+}
+
+/**
+ * One row per distinct activity. Everything catalogued is its own row
+ * by id; anything the user named is its own row by that name.
+ */
+function rowKey(s: LoggedSession): string {
+  return s.activityId === 'custom' ? `custom:${s.label.toLowerCase()}` : s.activityId
 }
 
 /** How hard this session was for this athlete, best evidence first. */

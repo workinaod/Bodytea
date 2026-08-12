@@ -390,7 +390,12 @@ const ACTIVITY_TRACKING: Record<string, ActivityTracking> = {
   swim: { steps: false, distance: 'none' },
   'row-erg': { steps: false, distance: 'none' },
   hockey: { steps: false, distance: 'none' },
-  snow: { steps: false, distance: 'gps' },
+  // Skiing rides back up. A lift at 10 mph and a gondola at 25 both
+  // clear the teleport filter, so a GPS total for a ski day is roughly
+  // double the distance actually skied, and there is no way from a
+  // track alone to tell a descent from the ride that preceded it.
+  // Nothing is better than a number that is wrong by half.
+  snow: { steps: false, distance: 'none' },
 
   // Whatever the user named it. Assume feet on ground and a normal
   // walking stride, and let GPS take over if it turns out to move.

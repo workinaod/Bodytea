@@ -79,11 +79,23 @@ export function logCardio(date: ISODate, entry: Omit<CardioEntry, 'id' | 'at'>):
   return id
 }
 
-/** Remove a logged entry; un-marks the played date when nothing intense remains. */
+/**
+ * Remove a logged entry; un-marks the played date when nothing intense
+ * remains.
+ *
+ * A GPS session is two records, and the cardio list only ever showed
+ * one of them. Deleting it dropped the entry and left the RunLog
+ * behind, so the session stayed in the Progress table, the weekly
+ * mileage chart and every total, while the list it was deleted from
+ * showed it gone. The tap has to remove the session, not one of its
+ * two halves.
+ */
 export function removeCardio(date: ISODate, entryId: string): void {
   store().update((d) => {
+    const gone = (d.cardio[date] ?? []).find((e) => e.id === entryId)
     d.cardio[date] = (d.cardio[date] ?? []).filter((e) => e.id !== entryId)
     if (d.cardio[date].length === 0) delete d.cardio[date]
+    if (gone?.runId) d.runs = d.runs.filter((r) => r.id !== gone.runId)
     setPlayed(d, date)
   })
 }
@@ -141,7 +153,11 @@ export function saveRun(run: RunLog): void {
     when: 'solo',
     where: 'outdoor',
     runId: run.id,
-    miles: run.distanceMi,
+    // Only a distance the run itself stands behind. A session that
+    // never got a fix keeps whatever scraps the tracker saw before
+    // giving up, marked 'none', and copying that into the entry fed
+    // noise straight into the achievement mileage.
+    ...(run.distanceSource !== 'none' && run.distanceMi > 0 ? { miles: run.distanceMi } : {}),
     minutes: Math.round(run.durationSec / 60),
   })
 }

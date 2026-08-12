@@ -48,13 +48,24 @@ export interface LoggedSession {
   gps: boolean
 }
 
-/** Is this cardio entry the shadow of a run already in data.runs? */
-export function isRunMirror(e: CardioEntry, runs: RunLog[]): boolean {
+/**
+ * Is this cardio entry the shadow of a run already in data.runs?
+ *
+ * `date` is the log date, which is the key the entry is filed under.
+ * The first version read it off `e.at` instead, and `at` is
+ * `new Date().toISOString()`, which is two different wrong things at
+ * once. It is UTC, so anyone west of Greenwich logging in the evening
+ * stamps tomorrow and no legacy pair ever matches. And it is the
+ * moment of WRITING, so a session logged today for last Tuesday
+ * carries today's stamp and can be mistaken for the shadow of a run
+ * that happened today, which deletes it from every total.
+ */
+export function isRunMirror(e: CardioEntry, date: ISODate, runs: RunLog[]): boolean {
   if (e.runId) return runs.some((r) => r.id === e.runId)
   // No link: match the exact signature saveRun leaves behind.
   return runs.some(
     (r) =>
-      r.date === e.at.slice(0, 10) &&
+      r.date === date &&
       r.activity === e.activityId &&
       Math.round(r.durationSec / 60) === e.minutes,
   )
@@ -112,7 +123,7 @@ export function loggedSessions(
   for (const [date, entries] of Object.entries(data.cardio)) {
     if (!inRange(date)) continue
     for (const e of entries) {
-      if (isRunMirror(e, data.runs)) continue
+      if (isRunMirror(e, date, data.runs)) continue
       out.push(fromEntry(e, date))
     }
   }

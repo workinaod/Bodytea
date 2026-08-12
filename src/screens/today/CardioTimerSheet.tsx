@@ -49,6 +49,10 @@ export function CardioTimerSheet({
   // A session someone named "Padel" should say Padel everywhere, not
   // "Custom", or the Record reads as a list of anonymous blanks.
   const def = customLabel ? { ...base, label: customLabel } : base
+  // Pinned when the screen opens, for the same reason the GPS tracker
+  // pins it: `date` ticks over at midnight and a session belongs to the
+  // day it began, not the day it happened to end.
+  const logDate = useRef(date)
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [saved, setSaved] = useState<{
@@ -77,7 +81,10 @@ export function CardioTimerSheet({
   const showsDistance = distanceSourceFor(def.id) !== 'none'
 
   useEffect(() => {
-    if (startedAt === null) return
+    // `saved` stops it: the session is on disk with a fixed number of
+    // minutes on it, and a clock that keeps climbing behind the receipt
+    // walks away from the number that was actually logged.
+    if (startedAt === null || saved) return
     const id = setInterval(() => {
       setElapsed((Date.now() - startedAt) / 1000)
       setLive({ steps: stepsRef.current?.steps() ?? 0, miles: geoRef.current?.miles() ?? 0 })
@@ -93,7 +100,7 @@ export function CardioTimerSheet({
       clearInterval(id)
       void wakeRef.current?.release?.()
     }
-  }, [startedAt])
+  }, [startedAt, saved])
 
   // Sensors stop when the screen goes, whichever way it goes.
   useEffect(
@@ -123,6 +130,8 @@ export function CardioTimerSheet({
 
   function finish() {
     const minutes = Math.max(1, Math.round(elapsed / 60))
+    // Freeze the display on the instant that was logged.
+    setElapsed(elapsed)
     const steps = countsSteps ? (stepsRef.current?.steps() ?? 0) : 0
     const gpsMi = geoRef.current?.miles() ?? 0
     stepsRef.current?.stop()
@@ -138,7 +147,7 @@ export function CardioTimerSheet({
 
     const { kcal, intensity } = cardioKcal({ activityId: def.id, minutes, bodyweightLb, steps })
 
-    const id = logCardio(date, {
+    const id = logCardio(logDate.current, {
       activityId: def.id,
       label: def.label,
       when: 'solo',
@@ -208,7 +217,7 @@ export function CardioTimerSheet({
                 answered={felt}
                 onAnswer={(tier) => {
                   setFelt(tier)
-                  setCardioFeltIntensity(date, saved.id, tier)
+                  setCardioFeltIntensity(logDate.current, saved.id, tier)
                 }}
               />
             </div>

@@ -272,3 +272,29 @@ describe('travelMiles', () => {
     expect(travelMiles({ activityId: 'swim', miles: 2 })).toBe(0)
   })
 })
+
+describe('activities the user named themselves', () => {
+  it('gives each its own row', () => {
+    // Every user-named activity shares the id 'custom'. Keying the
+    // rollup on the id alone folded Padel, spin class and boxing into
+    // one row under whichever name happened to be seen first, with all
+    // three sets of numbers added together.
+    const d = base()
+    log(d, TODAY, entry({ activityId: 'custom', label: 'Padel', minutes: 60, kcalEst: 400 }))
+    log(d, TODAY, entry({ activityId: 'custom', label: 'Spin class', minutes: 45, kcalEst: 500 }))
+    log(d, addDaysISO(TODAY, -1), entry({ activityId: 'custom', label: 'Padel', minutes: 30, kcalEst: 200 }))
+    const rows = sportSummary(d, TODAY)
+    expect(rows).toHaveLength(2)
+    const padel = rows.find((r) => r.label === 'Padel')!
+    expect(padel.sessions).toBe(2)
+    expect(padel.minutes).toBe(90)
+    expect(rows.find((r) => r.label === 'Spin class')!.sessions).toBe(1)
+  })
+
+  it('treats the same name in different cases as the same activity', () => {
+    const d = base()
+    log(d, TODAY, entry({ activityId: 'custom', label: 'Padel', minutes: 60, kcalEst: 400 }))
+    log(d, TODAY, entry({ activityId: 'custom', label: 'padel', minutes: 30, kcalEst: 200 }))
+    expect(sportSummary(d, TODAY)).toHaveLength(1)
+  })
+})

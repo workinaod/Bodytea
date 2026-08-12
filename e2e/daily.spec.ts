@@ -32,7 +32,9 @@ test('daily cardio: run outdoors with miles; game day marks played', async ({ pa
   await page.getByText('Around the workout?').isVisible() // session day → pre/post choice
   await page.getByText('Pre-workout').click()
   await page.getByRole('button', { name: 'Log it' }).click()
-  await expect(page.getByText(/outdoor · 2 mi · 30 min · pre-workout/)).toBeVisible()
+  // A hand-logged hour costs the same calories as a tracked one, so the
+  // entry line now carries an estimate between the minutes and the slot.
+  await expect(page.getByText(/outdoor · 2 mi · 30 min · ~\d+ cal · pre-workout/)).toBeVisible()
 
   // A second entry: basketball running games
   await page.getByRole('button', { name: /Basketball/ }).click()

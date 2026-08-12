@@ -240,10 +240,13 @@ describe('distance', () => {
   it('is blank wherever a number would be theatre', () => {
     // No ground is covered in a boxing ring, a lane, an erg or a
     // skipping rope. A mileage figure for any of them is invented.
-    for (const id of ['combat', 'jump-rope', 'swim', 'row-erg', 'hockey']) {
+    for (const id of ['combat', 'jump-rope', 'swim', 'row-erg', 'hockey', 'snow']) {
       expect(distanceSourceFor(id)).toBe('none')
       expect(stepDistanceMi(id, 9000, 69)).toBeNull()
     }
+    // Skiing rides back up, and a lift at 10 mph clears the teleport
+    // filter, so a GPS day total is about double what was actually
+    // skied. Nothing beats a number wrong by half.
   })
 
   it('uses GPS where GPS works and steps where it does not', () => {

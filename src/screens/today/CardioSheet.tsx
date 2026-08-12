@@ -5,6 +5,7 @@ import { CARDIO_ACTIVITIES, cardioActivity } from '../../plan/cardio'
 import { logCardio, removeCardio } from '../../logic/actions'
 import { Btn, Chip, Stepper } from '../../components/ui'
 import type { Intensity } from '../../engine/intensity'
+import { cardioKcal } from '../../engine/intensity'
 import { IntensityAsk } from './IntensityAsk'
 import { Sheet } from '../../components/Sheet'
 import { RunTrackerSheet } from './RunTrackerSheet'
@@ -41,6 +42,8 @@ export function CardioSheet({
   const [intent, setIntent] = useState<'log' | 'track' | null>(null)
   const [tracking, setTracking] = useState<'run' | 'bike' | null>(null)
   const [timing, setTiming] = useState<string | null>(null)
+  const [timingLabel, setTimingLabel] = useState<string | undefined>(undefined)
+  const [naming, setNaming] = useState(false)
   const [when, setWhen] = useState<CardioWhen>(hasSession ? 'post' : 'solo')
   const [where, setWhere] = useState<'indoor' | 'outdoor'>('outdoor')
   const [miles, setMiles] = useState(2)
@@ -48,6 +51,9 @@ export function CardioSheet({
   const [mode, setMode] = useState<string | null>(null)
   const [customLabel, setCustomLabel] = useState('')
   const [felt, setFelt] = useState<Intensity | undefined>(undefined)
+  const bodyweightLb = useAppStore(
+    (st) => [...st.data.measurements].reverse().find((m) => m.weightLb !== undefined)?.weightLb ?? 175,
+  )
 
   const def = picked ? cardioActivity(picked) : null
 
@@ -63,12 +69,17 @@ export function CardioSheet({
   const reset = () => {
     resetForm()
     setIntent(null)
+    setNaming(false)
   }
 
   /** Picking an activity means different things depending on the direction. */
   const choose = (id: string) => {
     if (intent === 'track') {
       if (id === 'run' || id === 'bike') setTracking(id)
+      // A custom activity has to be named before it is timed, or the
+      // session banks as "Custom" and the Record fills with anonymous
+      // blanks. The Track sheet always asked; this path never did.
+      else if (id === 'custom') setNaming(true)
       else setTiming(id)
       return
     }
@@ -78,6 +89,16 @@ export function CardioSheet({
 
   const save = () => {
     if (!def) return
+    // A hand-logged hour costs the same calories as a tracked one. It
+    // had none at all, so the Sport table read "0 cal" for it and
+    // sorted every manually logged sport to the bottom.
+    const mins = def.asks.minutes ? minutes : 0
+    const { kcal } = cardioKcal({
+      activityId: def.id,
+      minutes: mins,
+      bodyweightLb,
+      mode: def.modes && mode ? mode : null,
+    })
     const entry: Omit<CardioEntry, 'id' | 'at'> = {
       activityId: def.id,
       label: def.id === 'custom' ? customLabel.trim() || 'Cardio' : def.label,
@@ -87,6 +108,7 @@ export function CardioSheet({
       ...(def.asks.minutes ? { minutes } : {}),
       ...(def.modes && mode ? { mode } : {}),
       ...(felt ? { feltIntensity: felt } : {}),
+      ...(kcal > 0 ? { kcalEst: kcal } : {}),
     }
     logCardio(date, entry)
     resetForm()
@@ -117,7 +139,7 @@ export function CardioSheet({
         )}
 
         {/* Step 1: already done, or about to happen? */}
-        {!picked && !intent && (
+        {!picked && !naming && !intent && (
           <div className="grid grid-cols-2 gap-2.5">
             {(
               [
@@ -138,8 +160,42 @@ export function CardioSheet({
           </div>
         )}
 
+        {/* Name it, then time it. */}
+        {naming && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[22px]">✨</span>
+              <span className="text-[16px] font-black">Custom</span>
+              <button
+                onClick={() => { setNaming(false); setCustomLabel('') }}
+                className="ml-auto rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold text-ink-dim"
+              >
+                back
+              </button>
+            </div>
+            <input
+              autoFocus
+              value={customLabel}
+              onChange={(e) => setCustomLabel(e.target.value)}
+              placeholder="What is it? (spin class, boxing, …)"
+              className="w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
+            />
+            <Btn
+              className="w-full py-3.5"
+              disabled={customLabel.trim().length === 0}
+              onClick={() => {
+                setTimingLabel(customLabel.trim())
+                setNaming(false)
+                setTiming('custom')
+              }}
+            >
+              Start it
+            </Btn>
+          </div>
+        )}
+
         {/* Step 2: which activity? Same grid either way. */}
-        {!picked && intent && (
+        {!picked && !naming && intent && (
           <>
             <div className="flex items-center gap-2">
               <p className="eyebrow text-ink-faint">
@@ -291,9 +347,11 @@ export function CardioSheet({
       {timing && (
         <CardioTimerSheet
           activityId={timing}
+          customLabel={timingLabel}
           date={date}
           onClose={() => {
             setTiming(null)
+            setTimingLabel(undefined)
             reset()
           }}
         />
