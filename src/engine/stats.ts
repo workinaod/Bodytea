@@ -8,9 +8,25 @@ import { getExercise } from '../plan/exercises'
 // protein stats, and the PDF's 3-4 week kcal check-in rule.
 // ============================================================
 
+/**
+ * Epley is fitted to heavy, low-rep sets and drifts badly outside them.
+ * Past about a dozen reps a set stops being a strength test and becomes
+ * a conditioning one, and the formula keeps extrapolating anyway: 100 lb
+ * for 20 reps scored 167, which beat a genuine heavy 140 × 5 at 163.
+ * That inversion crowned the light set a PR, drew it on the strength
+ * chart, and fed it to the board's "strength climbing" check.
+ *
+ * So reps are capped where the formula's evidence runs out. A 20-rep set
+ * still counts, it just cannot claim to predict a max it never tested.
+ */
+export const E1RM_MAX_REPS = 12
+
 /** Epley estimated 1RM. */
 export function e1RM(weightLb: number, reps: number): number {
-  return Math.round(weightLb * (1 + reps / 30))
+  // Epley returns 1.033 × weight at a single rep. A max single is not an
+  // estimate of itself, and rounding it up invented 7 lb on a 200 lb pull.
+  if (reps <= 1) return Math.round(weightLb)
+  return Math.round(weightLb * (1 + Math.min(reps, E1RM_MAX_REPS) / 30))
 }
 
 /** Best (heaviest-estimated) set of an exercise within one session. */

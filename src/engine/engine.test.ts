@@ -508,7 +508,9 @@ describe('stats', () => {
 
   it('e1RM uses Epley', () => {
     expect(e1RM(100, 8)).toBe(127)
-    expect(e1RM(200, 1)).toBe(207)
+    // A single is its own max. Epley's raw 1.033 multiplier used to make
+    // this 207, a number the athlete never lifted. See stats.test.ts.
+    expect(e1RM(200, 1)).toBe(200)
   })
 
   it('detects e1RM PRs against history only', () => {

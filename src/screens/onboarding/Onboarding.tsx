@@ -260,6 +260,7 @@ export function Onboarding() {
       goalStatement,
       customTargets: answers.customTargets,
       bodyweightLb: weight,
+      sex: sex ?? undefined,
       mealsPerDay,
       lifeSeeds: answers.lifeSeeds,
       dietStyle,

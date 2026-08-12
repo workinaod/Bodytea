@@ -13,6 +13,7 @@ import type {
 import { getExercise } from './exercises'
 import { canDo, equipFor, resolveForEquipment } from './equip'
 import { buildMealPlan, type MealsPerDay } from './foods'
+import { flooredTargets } from './kcalFloor'
 
 // ============================================================
 // The booklet generator: OnboardingAnswers → PlanConfig.
@@ -486,8 +487,8 @@ export function buildNutrition(
   if (goal === 'muscle' && ans['gain-amount'] === 'As much as possible') kcalTraining += 100
   return {
     proteinTargetG: Math.min(260, Math.max(120, Math.round(bw))),
-    kcalTraining,
-    kcalRest: kcalTraining - 300,
+    // 1700 above is lean-only; this floors every goal, and the rest day.
+    ...flooredTargets(kcalTraining, base),
   }
 }
 

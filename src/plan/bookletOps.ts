@@ -3,6 +3,7 @@ import { getExercise, EXERCISES } from './exercises'
 import { equipFor } from './equip'
 import { pickCardio, rationaleFor } from './generator'
 import { buildMealPlan, type MealsPerDay } from './foods'
+import { flooredTargets } from './kcalFloor'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -38,9 +39,16 @@ export function primaryGoalOf(goals: RoutineGoal[]): Goal {
  * Calorie targets from the goal COMBINATION: surplus for muscle, deficit
  * for a cut, near-maintenance for recomp (muscle + lose together).
  */
-export function byorNutrition(goals: RoutineGoal[], bodyweightLb: number) {
+export function byorNutrition(
+  goals: RoutineGoal[],
+  bodyweightLb: number,
+  sex?: 'male' | 'female',
+) {
   const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
-  const base = Math.round((bw * 15) / 50) * 50
+  // Same baseline as the guided path: a notch lower for women. This used
+  // to be a flat ×15, which handed every woman building her own routine
+  // a man's maintenance estimate.
+  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50
   let adj = 0
   if (goals.includes('muscle')) adj += 300
   if (goals.includes('lose-weight')) adj -= 400
@@ -48,11 +56,10 @@ export function byorNutrition(goals: RoutineGoal[], bodyweightLb: number) {
   if (goals.includes('muscle') && goals.includes('lose-weight')) {
     adj = goals.includes('athletic') ? 0 : -100 // recomp: hold near maintenance
   }
-  const kcalTraining = base + adj
   return {
     proteinTargetG: Math.min(260, Math.max(120, Math.round(bw))),
-    kcalTraining,
-    kcalRest: kcalTraining - 300,
+    // Floored, because this path had no floor at all: see plan/kcalFloor.ts.
+    ...flooredTargets(base + adj, base),
   }
 }
 
@@ -62,6 +69,7 @@ export function makeEmptyByorPlan(args: {
   goalStatement: string
   customTargets: CustomTarget[]
   bodyweightLb: number
+  sex?: 'male' | 'female'
   mealsPerDay?: MealsPerDay
   lifeSeeds?: { label: string; kind: LifeEventKind }[]
   dietStyle?: DietStyle
@@ -70,7 +78,7 @@ export function makeEmptyByorPlan(args: {
 }): { plan: PlanConfig; proteinTargetG: number } {
   const owned = new Set<EquipTag>(['none', ...ALL_TAGS])
   const goal = primaryGoalOf(args.routineGoals)
-  const n = byorNutrition(args.routineGoals, args.bodyweightLb)
+  const n = byorNutrition(args.routineGoals, args.bodyweightLb, args.sex)
   return {
     proteinTargetG: n.proteinTargetG,
     plan: {

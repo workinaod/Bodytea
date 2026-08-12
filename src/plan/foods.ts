@@ -22,8 +22,8 @@ export interface FoodDef {
 
 export const FOODS: FoodDef[] = [
   // Proteins (the priority)
-  { id: 'chicken', name: 'Chicken breast', serving: '8 oz cooked', proteinG: 55, kcal: 375, carbsG: 0, fatG: 8, category: 'protein' },
-  { id: 'steak', name: 'Lean steak / 93% beef', serving: '8 oz cooked', proteinG: 50, kcal: 480, carbsG: 0, fatG: 20, category: 'protein' },
+  { id: 'chicken', name: 'Chicken breast', serving: '8 oz cooked', proteinG: 70, kcal: 375, carbsG: 0, fatG: 8, category: 'protein' },
+  { id: 'steak', name: 'Lean steak / 93% beef', serving: '8 oz cooked', proteinG: 62, kcal: 480, carbsG: 0, fatG: 20, category: 'protein' },
   { id: 'salmon', name: 'Salmon', serving: '8 oz', proteinG: 46, kcal: 470, carbsG: 0, fatG: 28, category: 'protein' },
   { id: 'eggs', name: 'Eggs', serving: '4 large', proteinG: 24, kcal: 300, carbsG: 2, fatG: 20, category: 'protein' },
   { id: 'greek-yogurt', name: 'Greek yogurt (nonfat)', serving: '1 cup', proteinG: 23, kcal: 130, carbsG: 9, fatG: 0, category: 'protein' },
@@ -53,7 +53,7 @@ export const FOODS: FoodDef[] = [
   { id: 'veg', name: 'Big serving of veg', serving: '1-2 cups', proteinG: 3, kcal: 50, carbsG: 10, fatG: 0, category: 'veg' },
 
   // High-calorie muscle snacks
-  { id: 'jerky', name: 'Beef jerky', serving: '1 oz', proteinG: 10, kcal: 80, carbsG: 3, fatG: 1, category: 'snack' },
+  { id: 'jerky', name: 'Beef jerky', serving: '1 oz', proteinG: 10, kcal: 80, carbsG: 6, fatG: 1, category: 'snack' },
   { id: 'protein-bar', name: 'Protein bar', serving: '1 bar', proteinG: 20, kcal: 220, carbsG: 22, fatG: 8, category: 'snack' },
   { id: 'berries', name: 'Mixed berries', serving: '1 cup', proteinG: 1, kcal: 70, carbsG: 17, fatG: 0, category: 'snack' },
 
@@ -74,7 +74,7 @@ export const FOODS: FoodDef[] = [
   { id: 'lentils', name: 'Lentils', serving: '1 cup cooked', proteinG: 18, kcal: 230, carbsG: 40, fatG: 1, category: 'protein' },
   { id: 'black-beans', name: 'Black beans / chickpeas', serving: '1 cup', proteinG: 15, kcal: 240, carbsG: 41, fatG: 1, category: 'protein' },
   { id: 'edamame', name: 'Edamame', serving: '1 cup', proteinG: 18, kcal: 190, carbsG: 14, fatG: 8, category: 'protein' },
-  { id: 'protein-pasta', name: 'Protein pasta', serving: '2 oz dry', proteinG: 20, kcal: 200, carbsG: 34, fatG: 2, category: 'protein' },
+  { id: 'protein-pasta', name: 'Protein pasta', serving: '2 oz dry', proteinG: 16, kcal: 200, carbsG: 32, fatG: 3, category: 'protein' },
 
   // More carbs
   { id: 'quinoa', name: 'Quinoa', serving: '1 cup cooked', proteinG: 8, kcal: 220, carbsG: 39, fatG: 4, category: 'carb' },
@@ -130,7 +130,7 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
   { id: 't-dinner', dayType: 'training', slot: 'Dinner', name: 'Steak/salmon + potatoes', detail: '8 oz steak or salmon + potatoes + veg', proteinG: 50, kcal: 700 },
   { id: 't-snack', dayType: 'training', slot: 'Snack', name: 'Cottage cheese + trail mix', detail: 'Cottage cheese (1 cup) + handful trail mix', proteinG: 30, kcal: 300 },
 
-  // Rest day (~2,500 kcal, 200g+ protein)
+  // Rest day (~2,300 kcal, 200g+ protein)
   { id: 'r-breakfast', dayType: 'rest', slot: 'Breakfast', name: 'Protein oatmeal', detail: '3/4 cup oats + 1 scoop protein + banana + drizzle PB', proteinG: 40, kcal: 550 },
   { id: 'r-lunch', dayType: 'rest', slot: 'Lunch', name: 'Turkey burger + sweet potato', detail: 'Turkey burger (8 oz lean) + 1 sweet potato + big veg', proteinG: 55, kcal: 600 },
   { id: 'r-snack', dayType: 'rest', slot: 'Snack', name: 'Yogurt + berries + jerky', detail: 'Greek yogurt (1 cup) + berries + beef jerky (1 oz)', proteinG: 35, kcal: 300 },
