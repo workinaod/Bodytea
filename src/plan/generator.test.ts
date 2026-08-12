@@ -6,6 +6,7 @@ import { planConfigSchema } from '../store/schema'
 import { emptyAppData, defaultWeekState, type Goal } from '../types'
 import { resolveDay } from '../engine/resolveDay'
 import { overloadedRegions } from '../engine/volume'
+import { isAccessory, isMisordered, MAX_ACCESSORY_SETS } from '../engine/sequence'
 import { addDaysISO } from '../engine/calendar'
 
 // ============================================================
@@ -111,6 +112,16 @@ describe('generator invariants (7 goals × 4 day-counts × 3 equip profiles)', (
               // pressing day and nobody noticed for months.
               const over = overloadedRegions(r.exercises)
               expect(over, `${r.date} tier ${tier}: ${over.map((o) => `${o.region} ${o.load}/${o.ceiling}`).join(', ')}`).toEqual([])
+              // Compounds before isolation, power before both. Four sets
+              // of lateral raises mid-session is the shape of bug this
+              // catches, and it shipped in the preset for months.
+              expect(
+                isMisordered(r.exercises),
+                `${r.date} tier ${tier}: ${r.exercises.map((e) => e.exerciseId).join(' > ')}`,
+              ).toBe(false)
+              for (const e of r.exercises) {
+                if (isAccessory(e)) expect(e.sets, `${r.date} ${e.exerciseId} isolation sets`).toBeLessThanOrEqual(MAX_ACCESSORY_SETS)
+              }
               if (r.isDeload && r.kind === 'session') {
                 // deload halves lifting sets: nothing above ceil(orig/2) of recipe max (5 → 3)
                 for (const e of r.exercises) {

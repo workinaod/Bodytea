@@ -173,7 +173,7 @@ describe('resolveDay caps every day it hands out', () => {
   it('caps the push day and explains it in the banner', () => {
     const day = resolveDay(addDaysISO(START, 1), data(1)) // Tuesday
     expect(day.templateId).toBe('tuesday')
-    expect(totalSets(day.exercises)).toBe(18)
+    expect(totalSets(day.exercises)).toBe(17)
     const banner = day.banners.find((b) => b.id === 'volume-capped')
     expect(banner?.text).toContain('Overhead Tricep Extension')
   })

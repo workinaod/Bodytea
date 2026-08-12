@@ -21,6 +21,7 @@ import {
   lighterCombinedPull,
 } from './transforms'
 import { trimForVolume, type VolumeCut } from './volume'
+import { capAccessorySets, orderSession } from './sequence'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
 
@@ -425,6 +426,14 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   // --- Scheduled conditioning stacks AFTER the day's main work, the
   //     workout stays; the cardio is added on top, untouched by the
   //     volume transforms above. ---
+  // --- Sequence and dose the accessories, THEN cap volume ---
+  //
+  // Order first on purpose: the volume cap cuts from the bottom of the
+  // day, so it can only make good choices once the bottom of the day is
+  // actually the accessory work. Run the other way round it would shave
+  // the presses and leave the lateral raises alone.
+  exercises = capAccessorySets(orderSession(exercises))
+
   // --- Volume cap: the LAST lifting transform, before cardio is added ---
   //
   // Templates bind their slots late, so nobody authoring one can see
