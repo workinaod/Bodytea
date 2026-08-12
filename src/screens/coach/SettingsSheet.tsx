@@ -13,7 +13,20 @@ import { deliveryCapability, deliveryNote } from '../../platform/notifications'
 
 const WD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SettingsSheet({
+  open,
+  onClose,
+  onOpenAccount,
+  onOpenData,
+  backupDays,
+}: {
+  open: boolean
+  onClose: () => void
+  onOpenAccount: () => void
+  onOpenData: () => void
+  /** Days since the last export, null if it has never happened. */
+  backupDays: number | null
+}) {
   const settings = useAppStore((s) => s.data.settings)
   const update = useAppStore((s) => s.update)
   const [notifDenied, setNotifDenied] = useState(false)
@@ -135,7 +148,64 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           label="Voice coach"
           sub="Spoken rep counting, hold timers, and next-exercise briefings in focus mode."
         />
+
+        {/* Account and backup used to be their own two buttons in the
+            header, next to a shouting yellow banner. Three entry points
+            for things you touch once a month. They live here now, and
+            the backup age is a quiet line instead of an alarm. */}
+        <div className="overflow-hidden rounded-2xl ring-1 ring-white/[0.07]">
+          <SettingsRow
+            label="Account"
+            sub="Sign in, cloud backup, leaderboard name"
+            onClick={() => {
+              onClose()
+              onOpenAccount()
+            }}
+          />
+          <SettingsRow
+            label="Backup and data"
+            sub={
+              backupDays === null
+                ? 'Never backed up. It all lives on this phone.'
+                : backupDays >= 7
+                  ? `${backupDays} days since your last backup.`
+                  : `Backed up ${backupDays === 0 ? 'today' : `${backupDays} day${backupDays === 1 ? '' : 's'} ago`}.`
+            }
+            warn={backupDays === null || backupDays >= 7}
+            onClick={() => {
+              onClose()
+              onOpenData()
+            }}
+          />
+        </div>
       </div>
     </Sheet>
+  )
+}
+
+function SettingsRow({
+  label,
+  sub,
+  warn = false,
+  onClick,
+}: {
+  label: string
+  sub: string
+  warn?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-3 border-b border-white/[0.05] bg-white/[0.03] px-4 py-3.5 text-left last:border-b-0 active:bg-white/[0.08]"
+    >
+      <span className="min-w-0">
+        <span className="block text-[13.5px] font-extrabold">{label}</span>
+        <span className={`mt-0.5 block text-[11.5px] leading-snug ${warn ? 'text-gold' : 'text-ink-faint'}`}>
+          {sub}
+        </span>
+      </span>
+      <span className="shrink-0 text-[16px] text-ink-faint">›</span>
+    </button>
   )
 }

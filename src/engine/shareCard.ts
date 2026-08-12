@@ -111,9 +111,20 @@ export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise
   // The celebration sits BEHIND the route
   if (reaction) drawFrozenReaction(x, reaction.tier)
 
-  // The route, the hero of the card
+  // A run that covered no ground has no route. Two GPS points a few
+  // metres apart used to be stretched across the whole card as a bold
+  // diagonal, which is a picture of a journey that did not happen.
+  const hasDistance = log.distanceMi >= 0.05
   const pts = log.points
-  if (pts.length >= 2) {
+  const spread =
+    pts.length >= 2
+      ? Math.max(
+          Math.max(...pts.map((p) => p[0])) - Math.min(...pts.map((p) => p[0])),
+          Math.max(...pts.map((p) => p[1])) - Math.min(...pts.map((p) => p[1])),
+        )
+      : 0
+  // ~0.0004 degrees is roughly 45 m, below which it is GPS jitter.
+  if (pts.length >= 2 && hasDistance && spread > 0.0004) {
     const lats = pts.map((p) => p[0])
     const lngs = pts.map((p) => p[1])
     const minLa = Math.min(...lats)
@@ -148,7 +159,7 @@ export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise
   } else {
     x.fillStyle = 'rgba(255,255,255,0.25)'
     x.font = `600 40px ${DISPLAY}`
-    x.fillText('no GPS route · indoor grind', 72, 480)
+    x.fillText(hasDistance ? 'no GPS route logged' : 'no route · indoor grind', 72, 480)
   }
 
   // Headline + note carry the reaction's voice
@@ -162,21 +173,29 @@ export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise
     x.fillText(reaction.note.slice(0, 62), 72, H - 512)
   }
 
-  // The number that matters
+  // The number that matters, which is not always the distance. On a
+  // treadmill or an indoor session the distance is 0.00 and leading
+  // with it makes an honest hour of work look like nothing happened.
+  // Time is the thing that was actually earned, so time leads.
   x.fillStyle = '#ffffff'
-  x.font = `700 230px ${DISPLAY}`
-  x.fillText(log.distanceMi.toFixed(2), 64, H - 360)
+  x.font = `700 ${hasDistance ? 230 : 180}px ${DISPLAY}`
+  x.fillText(hasDistance ? log.distanceMi.toFixed(2) : fmtDuration(log.durationSec), 64, H - 360)
   x.fillStyle = 'rgba(255,255,255,0.55)'
   x.font = `700 54px ${DISPLAY}`
-  x.fillText('MILES', 72, H - 282)
+  x.fillText(hasDistance ? 'MILES' : 'MOVING', 72, H - 282)
 
   // Supporting stats
-  const stats: [string, string][] = [
-    [fmtDuration(log.durationSec), 'TIME'],
-    log.activity === 'bike'
-      ? [`${avgMph(log.distanceMi, log.durationSec)}`, 'MPH AVG']
-      : [fmtPace(log.avgPaceSec).replace('/mi', ''), 'AVG PACE'],
-  ]
+  const stats: [string, string][] = hasDistance
+    ? [
+        [fmtDuration(log.durationSec), 'TIME'],
+        log.activity === 'bike'
+          ? [`${avgMph(log.distanceMi, log.durationSec)}`, 'MPH AVG']
+          : [fmtPace(log.avgPaceSec).replace('/mi', ''), 'AVG PACE'],
+      ]
+    : [
+        [`${log.kcalEst ?? 0}`, 'CALORIES'],
+        log.steps ? [`${log.steps.toLocaleString()}`, 'STEPS'] : ['INDOOR', 'NO GPS'],
+      ]
   stats.forEach(([v, label], i) => {
     const px = 72 + i * 420
     x.fillStyle = '#ffffff'
@@ -200,7 +219,13 @@ export async function shareRunCard(log: RunLog, blob: Blob): Promise<'shared' | 
   const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean }
   if (nav.canShare?.({ files: [file] }) && navigator.share) {
     try {
-      await navigator.share({ files: [file], title: `${log.distanceMi.toFixed(2)} mi ${log.activity}` })
+      await navigator.share({
+        files: [file],
+        title:
+          log.distanceMi >= 0.05
+            ? `${log.distanceMi.toFixed(2)} mi ${log.activity}`
+            : `${fmtDuration(log.durationSec)} ${log.activity}`,
+      })
       return 'shared'
     } catch (err) {
       if ((err as { name?: string })?.name === 'AbortError') return 'cancelled'

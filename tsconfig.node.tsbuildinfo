@@ -1,1 +1,1 @@
-{"root":["./vite.config.ts","./playwright.config.ts","./e2e/_shots.spec.ts","./e2e/account.spec.ts","./e2e/booklet.spec.ts","./e2e/copy.spec.ts","./e2e/daily.spec.ts","./e2e/reset.spec.ts","./e2e/run.spec.ts","./e2e/smoke.spec.ts","./e2e/voice.spec.ts","./e2e/welcome.spec.ts"],"version":"5.9.3"}
+{"root":["./vite.config.ts","./playwright.config.ts","./e2e/account.spec.ts","./e2e/booklet.spec.ts","./e2e/copy.spec.ts","./e2e/daily.spec.ts","./e2e/reset.spec.ts","./e2e/run.spec.ts","./e2e/smoke.spec.ts","./e2e/voice.spec.ts","./e2e/welcome.spec.ts"],"version":"5.9.3"}

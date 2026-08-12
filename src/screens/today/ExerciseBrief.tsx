@@ -1,0 +1,151 @@
+import type { ExerciseDef } from '../../types'
+import { ExerciseDemo } from '../../components/ExerciseDemo'
+import { MuscleMap } from '../../components/MuscleMap'
+import { demoFor } from '../../plan/demos'
+import { photosFor } from '../../plan/demoPhotos'
+import { musclesFor } from '../../plan/muscles'
+
+// ============================================================
+// The reference half of the set screen, and the blind it rides on.
+//
+// Before a set this is the whole middle of the screen: clip, cue,
+// photo sequence, muscle map, the numbered steps. The moment work
+// starts it rolls up on itself and leaves a STEPS tab, and the
+// clock takes the space.
+//
+// The roll is a grid-template-rows transition from 1fr to 0fr.
+// That is the only way to animate to an intrinsic height without
+// measuring the content first, which matters here because the
+// block is a different height for every exercise.
+// ============================================================
+
+export function ExerciseBrief({
+  def,
+  vid,
+  videoOpen,
+  onOpenVideo,
+  rolled,
+  live,
+  stepsOpen,
+  onToggleSteps,
+  clock,
+  clockNote,
+}: {
+  def: ExerciseDef
+  vid: string | null
+  videoOpen: boolean
+  onOpenVideo: () => void
+  /** How-to hidden, clock showing. */
+  rolled: boolean
+  live: boolean
+  stepsOpen: boolean
+  onToggleSteps: () => void
+  clock: string
+  clockNote: string
+}) {
+  return (
+      <div className="mx-4 mt-3 flex min-h-0 flex-1 flex-col">
+        {rolled && (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+            <div className="num text-[86px] font-extrabold leading-none tracking-[-0.04em] text-ink">
+              {clock}
+            </div>
+            <div className="eyebrow mt-2 text-ink-faint">
+              {clockNote}
+            </div>
+          </div>
+        )}
+
+        {/* The blind */}
+        <div
+          className="grid shrink-0 transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+          style={{ gridTemplateRows: rolled ? '0fr' : '1fr' }}
+        >
+          <div className="min-h-0 overflow-hidden">
+        <div className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
+          {vid ? (
+            videoOpen ? (
+              <div className="overflow-hidden rounded-xl">
+                <iframe
+                  className="aspect-video w-full"
+                  src={`https://www.youtube-nocookie.com/embed/${vid}?autoplay=1`}
+                  title="How to"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <button onClick={() => onOpenVideo()} className="relative block w-full overflow-hidden rounded-xl">
+                <img
+                  src={`https://i.ytimg.com/vi/${vid}/hqdefault.jpg`}
+                  alt="How to do it"
+                  className="aspect-video w-full object-cover opacity-85"
+                  loading="lazy"
+                />
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent shadow-xl">
+                    <svg viewBox="0 0 24 24" className="ml-0.5 h-6 w-6 fill-black">
+                      <path d="M8 5v14l11-7L8 5Z" />
+                    </svg>
+                  </span>
+                </span>
+              </button>
+            )
+          ) : null}
+
+          {def.cue && (
+            <div className={`${vid ? 'mt-3' : ''} px-1 pb-1 text-center text-[13px] font-bold leading-snug text-gold`}>
+              {def.cue}
+            </div>
+          )}
+
+          <div className={`${vid || def.cue ? 'mt-3' : ''} flex items-center gap-2`}>
+            <div className="min-w-0 flex-1">
+              <ExerciseDemo compact spec={demoFor(def.id)} photos={photosFor(def.id)} />
+            </div>
+            <div className="w-[36%] shrink-0">
+              <MuscleMap
+                compact
+                primary={musclesFor(def.id).primary}
+                secondary={musclesFor(def.id).secondary}
+              />
+            </div>
+          </div>
+
+          <ol className="mt-3 space-y-2">
+            {def.steps.slice(0, 3).map((s, i) => (
+              <li key={i} className="flex gap-2.5 text-[13px] leading-snug text-ink-dim">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[10.5px] font-black text-accent">
+                  {i + 1}
+                </span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+          </div>
+        </div>
+
+        {/* The tab the blind leaves behind */}
+        {live && (
+          <button
+            onClick={onToggleSteps}
+            className="press mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-white/[0.05] py-2.5 ring-1 ring-white/[0.06]"
+          >
+            <span className="eyebrow text-ink-dim">Steps</span>
+            <svg
+              viewBox="0 0 24 24"
+              className={`h-3.5 w-3.5 text-ink-faint transition-transform duration-300 ${stepsOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 15l6-6 6 6" />
+            </svg>
+          </button>
+        )}
+      </div>
+  )
+}

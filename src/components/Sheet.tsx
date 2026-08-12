@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useBodyScrollLock } from './useBodyScrollLock'
 
 /**
@@ -103,7 +104,12 @@ export function Sheet({
 
   if (!open) return null
 
-  return (
+  // Portalled to the body on purpose. `backdrop-blur` on this very
+  // sheet creates a containing block, so ANY fixed overlay rendered
+  // inside a sheet resolves against the sheet's box instead of the
+  // screen. That is how the full-screen run tracker ended up as a
+  // strip at the bottom of the cardio sheet.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-[6px] animate-fade-in"
@@ -147,6 +153,7 @@ export function Sheet({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

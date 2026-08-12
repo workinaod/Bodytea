@@ -1,33 +1,37 @@
 import { useEffect } from 'react'
 
 /**
- * iOS-proof background scroll lock for full-screen overlays and sheets.
- * Freezes the body in place while `active`, restores scroll on release.
- * Without this, touch scrolling inside a fixed overlay chains to the
- * page behind it once the inner scroller hits an edge, and the whole
- * screen appears to shift or shrink.
+ * Background scroll lock for full-screen overlays and sheets.
+ *
+ * The old version pinned the body with `position: fixed; top: -scrollY`.
+ * That works on desktop and misbehaves on iOS: the offset leaks into
+ * the layout, so every sheet floated above the bottom of the screen by
+ * roughly however far the page happened to be scrolled. The gap moved
+ * around because the scroll position did.
+ *
+ * This locks scrolling without moving anything. `overflow: hidden` on
+ * the root stops the page scrolling, and `overscroll-behavior: contain`
+ * on the sheet's own scroller (plus `overscroll-behavior-y: none` on
+ * the body) is what actually stops a flick inside the sheet chaining
+ * to the page behind it, which is the problem the body pinning was
+ * really there to solve.
  */
 export function useBodyScrollLock(active: boolean): void {
   useEffect(() => {
     if (!active) return
-    const scrollY = window.scrollY
+    const html = document.documentElement
     const body = document.body
     const prev = {
-      position: body.style.position,
-      top: body.style.top,
-      width: body.style.width,
-      overflow: body.style.overflow,
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      touch: html.style.getPropertyValue('touch-action'),
     }
-    body.style.position = 'fixed'
-    body.style.top = `-${scrollY}px`
-    body.style.width = '100%'
+    html.style.overflow = 'hidden'
     body.style.overflow = 'hidden'
     return () => {
-      body.style.position = prev.position
-      body.style.top = prev.top
-      body.style.width = prev.width
-      body.style.overflow = prev.overflow
-      window.scrollTo(0, scrollY)
+      html.style.overflow = prev.htmlOverflow
+      body.style.overflow = prev.bodyOverflow
+      if (prev.touch) html.style.setProperty('touch-action', prev.touch)
     }
   }, [active])
 }

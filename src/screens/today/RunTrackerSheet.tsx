@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { ISODate, RunLog, RunPoint } from '../../types'
 import { uid } from '../../store/appStore'
 import {
@@ -17,7 +18,7 @@ import { reactionForRun, type Reaction } from '../../engine/reactions'
 import { saveRun } from '../../logic/actions'
 import { useAppStore } from '../../store/appStore'
 import { Btn } from '../../components/ui'
-import { RouteMap } from '../../components/RouteMap'
+import { MAX_ZOOM, MIN_ZOOM, RouteMap } from '../../components/RouteMap'
 import { RunReactionCard } from '../../components/RunReactionCard'
 import {
   requestMotionPermission,
@@ -179,7 +180,10 @@ export function RunTrackerSheet({
     })
   }
 
-  return (
+  // Portalled: this is rendered from inside CardioSheet, whose
+  // backdrop-blur makes it the containing block for fixed children.
+  // Without this the full-screen tracker is trapped in the sheet.
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex flex-col overflow-y-auto bg-bg">
       <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-4 pb-[max(env(safe-area-inset-bottom),16px)] pt-[max(env(safe-area-inset-top),14px)]">
         {/* Top bar. While recording there is no title: the map is the screen. */}
@@ -218,11 +222,11 @@ export function RunTrackerSheet({
             {/* The map IS the screen: it takes every pixel the layout can
                 spare, stays locked on the runner, and carries its own zoom. */}
             <div className="relative min-h-0 flex-1">
-              <RouteMap points={points} live follow zoom={zoom} width={mapW} height={mapH} />
+              <RouteMap points={points} live follow pannable zoom={zoom} width={mapW} height={mapH} />
               <div className="absolute right-2 top-2 flex flex-col overflow-hidden rounded-xl bg-black/55 ring-1 ring-white/15 backdrop-blur-sm">
                 <button
                   aria-label="Zoom in"
-                  onClick={() => setZoom((z) => Math.min(18, z + 1))}
+                  onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 1))}
                   className="press h-9 w-9 text-[18px] font-bold text-white/90"
                 >
                   +
@@ -230,7 +234,7 @@ export function RunTrackerSheet({
                 <span aria-hidden className="h-px bg-white/15" />
                 <button
                   aria-label="Zoom out"
-                  onClick={() => setZoom((z) => Math.max(13, z - 1))}
+                  onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 1))}
                   className="press h-9 w-9 text-[18px] font-bold text-white/90"
                 >
                   −
@@ -289,9 +293,21 @@ export function RunTrackerSheet({
                 PNG freezes this exact frame */}
             {reaction && <RunReactionCard log={saved} reaction={reaction} />}
 
+            {/* No distance means no pace and no speed either. Printing
+                "0.00 mi · -- · 0 mph" three times over is a receipt for
+                nothing; the time and the calories are what was earned. */}
             <p className="text-center text-[13px] font-semibold text-ink-dim">
-              {saved.distanceMi.toFixed(2)} mi · {fmtDuration(saved.durationSec)} · {fmtPace(saved.avgPaceSec)} ·{' '}
-              {avgMph(saved.distanceMi, saved.durationSec)} mph
+              {saved.distanceMi >= 0.05 ? (
+                <>
+                  {saved.distanceMi.toFixed(2)} mi · {fmtDuration(saved.durationSec)} ·{' '}
+                  {fmtPace(saved.avgPaceSec)} · {avgMph(saved.distanceMi, saved.durationSec)} mph
+                </>
+              ) : (
+                <>
+                  {fmtDuration(saved.durationSec)} moving
+                  {saved.steps ? ` · ${saved.steps.toLocaleString()} steps` : ' · no distance recorded'}
+                </>
+              )}
               {(saved.kcalEst ?? 0) > 0 && ` · ~${saved.kcalEst} cal`}
             </p>
 
@@ -350,6 +366,7 @@ export function RunTrackerSheet({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

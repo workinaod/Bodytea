@@ -21,7 +21,9 @@ test('account sheet: cloud module lazy-loads and the signed-out flow renders', a
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
 
   await page.getByRole('button', { name: 'Coach', exact: true }).click()
-  await page.getByRole('button', { name: 'Account' }).click()
+  // Account and backup moved inside Settings: one header button now.
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('button', { name: /^Account/ }).click()
 
   // Signed-out menu (cloud chunk loaded, session restore ran, no session)
   await expect(page.getByText(/cloud backup/).first()).toBeVisible()

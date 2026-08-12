@@ -8,12 +8,8 @@ import { useAppStore } from '../../store/appStore'
 import { abandonSession, patchSet, restartSession, setExerciseFeel } from '../../logic/actions'
 import { daysBetween } from '../../engine/calendar'
 import { Stepper } from '../../components/ui'
-import { MuscleMap } from '../../components/MuscleMap'
-import { ExerciseDemo } from '../../components/ExerciseDemo'
-import { musclesFor } from '../../plan/muscles'
-import { demoFor } from '../../plan/demos'
-import { photosFor } from '../../plan/demoPhotos'
 import { HowToSlides } from './HowToSlides'
+import { ExerciseBrief } from './ExerciseBrief'
 import { BreakScreen, type BreakState } from './BreakScreen'
 
 // ============================================================
@@ -44,6 +40,13 @@ function loadLabel(equipment: string): string {
   return 'Added weight'
 }
 
+/** m:ss for the working clock, so a long hold does not read as "184". */
+function fmtClock(sec: number): string {
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
 /** The main details in one breath, cue first, then the first two steps
     trimmed to their opening clause. Never the write-up verbatim. */
 function shortHowTo(def: ExerciseDef): string {
@@ -71,6 +74,8 @@ export function FocusView({
   const [phase, setPhase] = useState<'go' | 'live'>('go')
   const [caption, setCaption] = useState('')
   const [howToOpen, setHowToOpen] = useState(false)
+  // The how-to rolls away when work starts. Tapping STEPS brings it back.
+  const [stepsOpen, setStepsOpen] = useState(false)
   const data = useAppStore((s) => s.data)
   const update = useAppStore((s) => s.update)
   // Four sound levels: full voice / beeps + next-exercise name / beeps / silent
@@ -143,19 +148,28 @@ export function FocusView({
     cancelSpeech()
   }, [])
 
-  // ---- Live clock for timed sets (audio-free pacing on screen) ----
+  // ---- Live clock ----
+  // Runs for every working set now, not just the timed ones. Once the
+  // how-to rolls away the clock IS the screen, so it has to tick even
+  // when the prescription is reps rather than seconds.
   const liveStartRef = useRef(0)
   const [liveTick, setLiveTick] = useState(0)
   useEffect(() => {
-    if (phase !== 'live' || !isTimed) return
+    if (phase !== 'live') return
     const id = window.setInterval(() => setLiveTick((n) => n + 1), 1000)
     return () => window.clearInterval(id)
-  }, [phase, isTimed])
+  }, [phase])
   const liveSec = phase === 'live' && liveStartRef.current > 0 ? Math.max(0, Math.floor((Date.now() - liveStartRef.current) / 1000)) : 0
   void liveTick
+  /** How-to hidden, clock showing. */
+  const rolled = phase === 'live' && !stepsOpen
 
   // Work starting hides the nudge for this set. It is not marked seen: a
   // cancelled set that comes back to the gate should still get it.
+  useEffect(() => {
+    if (phase === 'go') setStepsOpen(false)
+  }, [phase, current?.exIdx, current?.setIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (phase === 'live') setVoiceTip(false)
     else if (!data.settings.voiceTipSeen && current?.setIdx === 0) setVoiceTip(true)
@@ -494,71 +508,18 @@ export function FocusView({
         </div>
       </div>
 
-      {/* Middle: reference material (screen-followers live here) */}
-      <div className="mx-4 mt-3 flex-1 overflow-y-auto">
-        <div className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
-          {vid ? (
-            videoOpen ? (
-              <div className="overflow-hidden rounded-xl">
-                <iframe
-                  className="aspect-video w-full"
-                  src={`https://www.youtube-nocookie.com/embed/${vid}?autoplay=1`}
-                  title="How to"
-                  allow="autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            ) : (
-              <button onClick={() => setVideoOpen(true)} className="relative block w-full overflow-hidden rounded-xl">
-                <img
-                  src={`https://i.ytimg.com/vi/${vid}/hqdefault.jpg`}
-                  alt="How to do it"
-                  className="aspect-video w-full object-cover opacity-85"
-                  loading="lazy"
-                />
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent shadow-xl">
-                    <svg viewBox="0 0 24 24" className="ml-0.5 h-6 w-6 fill-black">
-                      <path d="M8 5v14l11-7L8 5Z" />
-                    </svg>
-                  </span>
-                </span>
-              </button>
-            )
-          ) : null}
-
-          {def.cue && (
-            <div className={`${vid ? 'mt-3' : ''} px-1 pb-1 text-center text-[13px] font-bold leading-snug text-gold`}>
-              {def.cue}
-            </div>
-          )}
-
-          <div className={`${vid || def.cue ? 'mt-3' : ''} flex items-center gap-2`}>
-            <div className="min-w-0 flex-1">
-              <ExerciseDemo compact spec={demoFor(def.id)} photos={photosFor(def.id)} />
-            </div>
-            <div className="w-[36%] shrink-0">
-              <MuscleMap
-                compact
-                primary={musclesFor(def.id).primary}
-                secondary={musclesFor(def.id).secondary}
-              />
-            </div>
-          </div>
-
-          <ol className="mt-3 space-y-2">
-            {def.steps.slice(0, 3).map((s, i) => (
-              <li key={i} className="flex gap-2.5 text-[13px] leading-snug text-ink-dim">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[10.5px] font-black text-accent">
-                  {i + 1}
-                </span>
-                <span>{s}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-      </div>
+      <ExerciseBrief
+        def={def}
+        vid={vid ?? null}
+        videoOpen={videoOpen}
+        onOpenVideo={() => setVideoOpen(true)}
+        rolled={rolled}
+        live={phase === 'live'}
+        stepsOpen={stepsOpen}
+        onToggleSteps={() => setStepsOpen((v) => !v)}
+        clock={fmtClock(liveSec)}
+        clockNote={isTimed ? `of ${set.targetReps}` : 'under tension'}
+      />
 
       {/* One quiet caption line + the single dominant button */}
       <div className="px-4 pt-2">
@@ -577,15 +538,11 @@ export function FocusView({
         )}
 
         {/* Live: a clean working state, timer for timed sets, otherwise quiet */}
+        {/* The clock moved to the middle of the screen, where the
+            how-to used to be. This line is just the instruction. */}
         {phase === 'live' && (
-          <div className="mb-2 text-center">
-            {isTimed ? (
-              <div className="font-display text-[44px] font-black leading-none tabular-nums text-accent">{liveSec}s</div>
-            ) : (
-              <div className="text-[11px] font-black uppercase tracking-[0.22em] text-ink-faint">
-                working · tap or say done when finished
-              </div>
-            )}
+          <div className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.22em] text-ink-faint">
+            tap or say done when finished
           </div>
         )}
         {caption && (

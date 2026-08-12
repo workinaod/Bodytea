@@ -90,35 +90,15 @@ export function CoachScreen() {
       <ScreenHeader
         title="The Sergeant"
         right={
-          <>
-            <button aria-label="Settings" onClick={() => setSettingsOpen(true)} className="press flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-ink-dim">
-              <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" />
-              </svg>
-            </button>
-            <button aria-label="Account" onClick={() => setAccountOpen(true)} className="press flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-ink-dim">
-              <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17.5 19a4.5 4.5 0 0 0 .36-8.99A6 6 0 0 0 6.2 8.6 5 5 0 0 0 7 18.9" />
-                <path d="M12 13v8m0-8-3 3m3-3 3 3" />
-              </svg>
-            </button>
-            <button aria-label="Data" onClick={() => setDataOpen(true)} className="press flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-ink-dim">
-              <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 3v13m0 0-4-4m4 4 4-4" />
-                <path d="M16 21V8m0 0 4 4m-4-4-4 4" />
-              </svg>
-            </button>
-          </>
+          <button aria-label="Settings" onClick={() => setSettingsOpen(true)} className="press flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-ink-dim">
+            <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" />
+            </svg>
+          </button>
         }
       />
 
-      {(backupDays === null || backupDays >= 7) && (
-        <button onClick={() => setDataOpen(true)} className="w-full rounded-xl border border-gold/30 bg-gold/8 px-3.5 py-2.5 text-left text-[12.5px] font-semibold text-gold">
-          {backupDays === null ? 'Never backed up. ' : `${backupDays} days since your last backup. `}
-          It all lives on this phone. One tap fixes that →
-        </button>
-      )}
 
       {/* Need a push, typography, not a box */}
       <div className="px-2 pt-4 text-center">
@@ -270,7 +250,13 @@ export function CoachScreen() {
         <GuideReader onOpenExercise={(id) => setGuideExercise(id)} />
       </Sheet>
 
-      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onOpenAccount={() => setAccountOpen(true)}
+        onOpenData={() => setDataOpen(true)}
+        backupDays={backupDays}
+      />
       <DataTransferSheet open={dataOpen} onClose={() => setDataOpen(false)} />
       <AccountSheet open={accountOpen} onClose={() => setAccountOpen(false)} />
       {bookletOpen && <BookletScreen onClose={() => setBookletOpen(false)} />}
