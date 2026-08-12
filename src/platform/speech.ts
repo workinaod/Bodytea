@@ -239,26 +239,44 @@ export function startEars(handlers: EarHandlers): () => void {
   let alive = true
   const rec = new Ctor()
   rec.continuous = true
-  rec.interimResults = false
+  // Interim results are the whole difference between "done" landing now
+  // and landing a second and a half later. A final result is only
+  // emitted once the recognizer decides the utterance is OVER, which
+  // means waiting out the trailing silence. Mid-set that pause reads as
+  // the app ignoring you. The words we listen for are short and
+  // distinct, so the first interim that contains one is already enough.
+  rec.interimResults = true
   rec.lang = 'en-US'
+  // Each utterance keeps a stable index in `e.results`, and interims for
+  // it keep arriving after we have acted. Without this an utterance
+  // fires once per interim and again on the final.
+  let lastFired = -1
   rec.onresult = (e) => {
     // The coach's own voice comes back through the mic at gym volume, and
     // its lines contain the trigger words. Anything heard while it is
     // talking is discarded rather than obeyed.
     if (isSpeaking()) return
     for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (i <= lastFired) continue
       const heard = (e.results[i][0]?.transcript ?? '').toLowerCase()
       // ASK first ("how do I start this" must explain, not start), then
       // SKIP, then DONE, then GO, so "i'm done, start the timer"
       // resolves the completion first.
+      let hit = true
       if (ASK_RE.test(heard)) handlers.onAsk?.()
       else if (SKIP_RE.test(heard)) handlers.onSkip?.()
       else if (DONE_RE.test(heard)) handlers.onDone?.()
       else if (GO_RE.test(heard)) handlers.onGo?.()
+      else hit = false
+      if (hit) lastFired = i
     }
   }
   rec.onend = () => {
     if (!alive) return
+    // A restart begins a fresh result list from index 0, so the guard
+    // has to go with it or the first command after every restart is
+    // swallowed.
+    lastFired = -1
     try {
       rec.start()
     } catch {
