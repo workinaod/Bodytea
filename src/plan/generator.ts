@@ -14,6 +14,7 @@ import { getExercise } from './exercises'
 import { canDo, equipFor, resolveForEquipment } from './equip'
 import { buildMealPlan, type MealsPerDay } from './foods'
 import { flooredTargets } from './kcalFloor'
+import { proteinTargetG, type ProteinContext } from './sportsNutrition'
 
 // ============================================================
 // The booklet generator: OnboardingAnswers → PlanConfig.
@@ -486,10 +487,29 @@ export function buildNutrition(
   }
   if (goal === 'muscle' && ans['gain-amount'] === 'As much as possible') kcalTraining += 100
   return {
-    proteinTargetG: Math.min(260, Math.max(120, Math.round(bw))),
+    // Protein now depends on the SITUATION, not just the scale. A cut is
+    // where protein does its most important job (deciding whether the
+    // weight lost is fat or muscle) and where a flat 1 g/lb undershot;
+    // an endurance athlete was being handed protein instead of the carbs
+    // they run on. See plan/sportsNutrition.ts for the ranges and why.
+    proteinTargetG: proteinTargetG(bw, proteinContextFor(goal, ans)),
     // 1700 above is lean-only; this floors every goal, and the rest day.
     ...flooredTargets(kcalTraining, base),
   }
+}
+
+/** Which protein band this athlete's goal and answers put them in. */
+export function proteinContextFor(goal: Goal, ans: Record<string, string> = {}): ProteinContext {
+  if (goal === 'lean') {
+    // A big cut, or a desk-bound day making the deficit bite harder, is
+    // where lean mass is most at risk and protein matters most.
+    return ans['lose-amount'] === '30+ lb' || ans['lose-amount'] === '15 to 30 lb'
+      ? 'aggressiveDeficit'
+      : 'deficit'
+  }
+  if (goal === 'endurance') return 'endurance'
+  if (goal === 'muscle' || goal === 'strength' || goal === 'vertical') return 'hypertrophy'
+  return 'general'
 }
 
 // ---------- Goal follow-ups: the coach's extra questions ----------

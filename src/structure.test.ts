@@ -57,7 +57,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // Real splits owed, in plan order.
   'screens/onboarding/Onboarding.tsx': 1095,
   'screens/meals/MealsScreen.tsx': 980,
-  'plan/generator.ts': 920,
+  // +20 for proteinContextFor: the protein target now depends on whether
+  // the athlete is cutting, building or running, which is a decision the
+  // generator is the right place to make and a table it is not.
+  'plan/generator.ts': 940,
   // Was 835, which it blew through and broke three deploys on. Meal
   // logging moved to logic/mealActions.ts, then the prescription (what
   // load and how many reps to ask for) to logic/prescription.ts, then

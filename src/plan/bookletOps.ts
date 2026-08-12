@@ -4,6 +4,7 @@ import { equipFor } from './equip'
 import { pickCardio, rationaleFor } from './generator'
 import { buildMealPlan, type MealsPerDay } from './foods'
 import { flooredTargets } from './kcalFloor'
+import { proteinTargetG } from './sportsNutrition'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -57,7 +58,17 @@ export function byorNutrition(
     adj = goals.includes('athletic') ? 0 : -100 // recomp: hold near maintenance
   }
   return {
-    proteinTargetG: Math.min(260, Math.max(120, Math.round(bw))),
+    // Same evidence base as the guided path: a cut needs more protein
+    // than maintenance does, because protein is what decides whether the
+    // weight coming off is fat or muscle.
+    proteinTargetG: proteinTargetG(
+      bw,
+      goals.includes('lose-weight') && !goals.includes('muscle')
+        ? 'deficit'
+        : goals.includes('muscle')
+          ? 'hypertrophy'
+          : 'general',
+    ),
     // Floored, because this path had no floor at all: see plan/kcalFloor.ts.
     ...flooredTargets(base + adj, base),
   }
