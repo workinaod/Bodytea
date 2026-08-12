@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { CardioEntry, CardioWhen, ISODate } from '../../types'
 import { useAppStore } from '../../store/appStore'
-import { CARDIO_ACTIVITIES, cardioActivity } from '../../plan/cardio'
+import { CARDIO_ACTIVITIES, GPS_ACTIVITIES, cardioActivity } from '../../plan/cardio'
+import type { GpsActivity } from '../../activityTypes'
 import { logCardio, removeCardio } from '../../logic/actions'
 import { Btn, Chip, Stepper } from '../../components/ui'
 import type { Intensity } from '../../engine/intensity'
@@ -40,7 +41,11 @@ export function CardioSheet({
   const entries = useAppStore((s) => s.data.cardio[date]) ?? NO_ENTRIES
   const [picked, setPicked] = useState<string | null>(null)
   const [intent, setIntent] = useState<'log' | 'track' | null>(null)
-  const [tracking, setTracking] = useState<'run' | 'bike' | null>(null)
+  // All four GPS activities, same as the Track sheet. This listed only
+  // run and bike, so a walk started from here got the plain timer and a
+  // walk started from the Track button got the map, the route and a
+  // speed-based calorie figure. Same walk, two different receipts.
+  const [tracking, setTracking] = useState<GpsActivity | null>(null)
   const [timing, setTiming] = useState<string | null>(null)
   const [timingLabel, setTimingLabel] = useState<string | undefined>(undefined)
   const [naming, setNaming] = useState(false)
@@ -75,7 +80,7 @@ export function CardioSheet({
   /** Picking an activity means different things depending on the direction. */
   const choose = (id: string) => {
     if (intent === 'track') {
-      if (id === 'run' || id === 'bike') setTracking(id)
+      if (GPS_ACTIVITIES.some((g) => g.id === id)) setTracking(id as GpsActivity)
       // A custom activity has to be named before it is timed, or the
       // session banks as "Custom" and the Record fills with anonymous
       // blanks. The Track sheet always asked; this path never did.
@@ -239,9 +244,9 @@ export function CardioSheet({
               </button>
             </div>
 
-            {(def.id === 'run' || def.id === 'bike') && (
+            {GPS_ACTIVITIES.some((g) => g.id === def.id) && (
               <button
-                onClick={() => setTracking(def.id as 'run' | 'bike')}
+                onClick={() => setTracking(def.id as GpsActivity)}
                 className="flex w-full items-center justify-between rounded-2xl border border-accent/35 bg-accent/8 px-4 py-3 text-left active:bg-accent/15"
               >
                 <span>
