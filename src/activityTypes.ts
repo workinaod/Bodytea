@@ -10,9 +10,12 @@ import type { ISODate } from './types'
 /** [lat, lng, elapsedSec], compact enough to live in the envelope. */
 export type RunPoint = [number, number, number]
 
+/** The activities the live GPS tracker can record. */
+export type GpsActivity = 'run' | 'bike' | 'walk' | 'hike'
+
 export interface RunLog {
   id: string
-  activity: 'run' | 'bike' | 'walk'
+  activity: GpsActivity
   date: ISODate
   startedAt: string
   durationSec: number

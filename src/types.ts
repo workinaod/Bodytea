@@ -583,6 +583,7 @@ export interface Settings {
   reviewsSeen?: string[]
   /** Spoken counting + briefings in focus mode (default on). */
   voiceCoach?: boolean
+  /** Chosen voiceURI; absent lets the app pick. */ voiceURI?: string
   /** Session audio: full voice / beeps + next-exercise name / beeps only / silent. */
   soundMode?: 'voice' | 'beeps-names' | 'beeps' | 'silent'
   /** Cadence speed multiplier for spoken counting (0.6–1.6, default 1). */

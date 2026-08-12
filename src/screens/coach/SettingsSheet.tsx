@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sheet } from '../../components/Sheet'
 import { Toggle } from '../../components/ui'
+import { VoicePicker } from './VoicePicker'
 import { useAppStore } from '../../store/appStore'
 import { mondayOf } from '../../engine/calendar'
 import {
@@ -148,6 +149,8 @@ export function SettingsSheet({
           label="Voice coach"
           sub="Spoken rep counting, hold timers, and next-exercise briefings in focus mode."
         />
+
+        {settings.voiceCoach !== false && <VoicePicker />}
 
         {/* Account and backup used to be their own two buttons in the
             header, next to a shouting yellow banner. Three entry points

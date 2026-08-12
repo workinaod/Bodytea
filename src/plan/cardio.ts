@@ -52,7 +52,7 @@ export const CARDIO_ACTIVITIES: CardioActivityDef[] = [
   },
   { id: 'row-erg', label: 'Row / erg', emoji: '🚣', conditioning: true, met: 7.0, asks: { minutes: true } },
   { id: 'jump-rope', label: 'Jump rope', emoji: '🪢', conditioning: true, met: 11.8, asks: { minutes: true } },
-  { id: 'hike', label: 'Hike', emoji: '🥾', conditioning: true, met: 6.0, asks: { miles: true, minutes: true } },
+  { id: 'hike', label: 'Hike', emoji: '🥾', conditioning: true, gps: true, met: 6.0, asks: { miles: true, minutes: true } },
 
   // ---- Court sports ----
   {

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import type { GpsActivity } from './activityTypes'
+import { setPreferredVoice } from './platform/speech'
 import { useAppStore } from './store/appStore'
 import { TabBar, type TabId } from './components/TabBar'
 import { Sheet } from './components/Sheet'
@@ -22,7 +24,7 @@ export default function App() {
   const data = useAppStore((s) => s.data)
   const today = useToday()
   const [tab, setTab] = useState<TabId>('today')
-  const [track, setTrack] = useState<'choose' | 'run' | 'bike' | 'walk' | null>(null)
+  const [track, setTrack] = useState<'choose' | GpsActivity | null>(null)
   const [timerActivity, setTimerActivity] = useState<string | null>(null)
 
   // A live session on the home date folds the tab bar into the glow strip
@@ -31,6 +33,13 @@ export default function App() {
   // While the 12–3am window is open nothing else re-renders at 03:00,
   // this ticker makes the flip to the new day visible within a minute.
   const [, forceGraceTick] = useState(0)
+  // The chosen coach voice has to reach the speech layer at boot, not
+  // only while Settings is open. platform/ cannot read the store (that
+  // would import upwards), so the shell hands it down.
+  const voiceURI = data.settings.voiceURI
+  useEffect(() => {
+    setPreferredVoice(voiceURI)
+  }, [voiceURI])
   useEffect(() => {
     if (!grace) return
     const id = window.setInterval(() => forceGraceTick((n) => n + 1), 60_000)
@@ -95,12 +104,13 @@ export default function App() {
         <div className="space-y-2 pb-8">
           {/* The GPS activities: big, centred, and raised off the sheet.
               Nothing to read, one thing to hit. */}
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5">
             {(
               [
                 { id: 'run', label: 'Run', emoji: '🏃' },
                 { id: 'bike', label: 'Ride', emoji: '🚴' },
                 { id: 'walk', label: 'Walk', emoji: '🚶' },
+                { id: 'hike', label: 'Hike', emoji: '🥾' },
               ] as const
             ).map((a) => (
               <button
@@ -133,7 +143,7 @@ export default function App() {
           </p>
         </div>
       </Sheet>
-      {(track === 'run' || track === 'bike' || track === 'walk') && (
+      {track !== null && track !== 'choose' && (
         <RunTrackerSheet activity={track} date={today} onClose={() => setTrack(null)} />
       )}
       {timerActivity && (

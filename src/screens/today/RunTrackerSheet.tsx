@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ISODate, RunLog, RunPoint } from '../../types'
+import type { GpsActivity } from '../../activityTypes'
 import { uid } from '../../store/appStore'
 import {
   acceptFix,
@@ -40,7 +41,7 @@ export function RunTrackerSheet({
   date,
   onClose,
 }: {
-  activity: 'run' | 'bike' | 'walk'
+  activity: GpsActivity
   date: ISODate
   onClose: () => void
 }) {
@@ -125,7 +126,7 @@ export function RunTrackerSheet({
   // Stride length scales with height, so indoor distance needs it.
   const heightIn = useAppStore((st) => st.data.profile.heightIn)
   const liveKcal = estKcal(activity, distance, elapsed, bodyweight)
-  const label = activity === 'run' ? 'Run' : activity === 'bike' ? 'Ride' : 'Walk'
+  const label = activity === 'run' ? 'Run' : activity === 'bike' ? 'Ride' : activity === 'hike' ? 'Hike' : 'Walk'
 
   // The map is a full-screen takeover, so its box is the viewport minus
   // the fixed furniture: top bar, the stats band, and the finish button.

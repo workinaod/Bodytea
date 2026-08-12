@@ -1,4 +1,5 @@
 import type { AppData, ISODate, RunLog, RunPoint } from '../types'
+import type { GpsActivity } from '../activityTypes'
 import { addDaysISO, mondayOf } from './calendar'
 
 // ============================================================
@@ -75,7 +76,7 @@ const toKg = (lb: number) => Math.min(150, Math.max(40, (lb || 175) * 0.4536))
  * a logged run with no distance vanish from the day.
  */
 export function estKcal(
-  activity: 'run' | 'bike' | 'walk',
+  activity: GpsActivity,
   distanceMi: number,
   durationSec: number,
   bodyweightLb: number,
@@ -83,14 +84,18 @@ export function estKcal(
   if (durationSec < 60) return 0
   const kg = toKg(bodyweightLb)
   if (distanceMi <= 0) {
-    const flat = activity === 'run' ? 9.8 : activity === 'bike' ? 8.0 : 4.3
+    const flat = activity === 'run' ? 9.8 : activity === 'bike' ? 8.0 : activity === 'hike' ? 6.0 : 4.3
     return Math.round(flat * kg * (durationSec / 3600))
   }
   const mph = (distanceMi / durationSec) * 3600
   const met =
     activity === 'run'
       ? Math.max(3.5, 1.65 * mph)
-      : activity === 'walk'
+      : activity === 'hike'
+        ? // Compendium: cross-country hiking sits at 6.0 and climbs with
+          // pace. Flat ground under 2 mph is still walking work.
+          Math.max(4.5, 6.0 + Math.max(0, mph - 3) * 1.2)
+        : activity === 'walk'
         ? mph < 2.5
           ? 2.8
           : mph < 3.5

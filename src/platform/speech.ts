@@ -1,6 +1,16 @@
 import { intoChunks, speakable } from './speakable'
 import { pickVoice } from './voices'
 
+/**
+ * The user's chosen voice, set from Settings. Kept as a module value
+ * rather than read from the store, because this layer must not import
+ * upwards into the app.
+ */
+let preferredVoiceURI: string | undefined
+export function setPreferredVoice(uri: string | undefined): void {
+  preferredVoiceURI = uri
+}
+
 // ============================================================
 // Speech in and out, behind one adapter.
 //
@@ -79,7 +89,7 @@ function drain(gen: number): void {
 
   try {
     const u = new SpeechSynthesisUtterance(next.text)
-    const voice = pickVoice(window.speechSynthesis.getVoices())
+    const voice = pickVoice(window.speechSynthesis.getVoices(), preferredVoiceURI)
     if (voice) {
       u.voice = voice
       // Following the voice rather than hardcoding en-US: a mismatch makes

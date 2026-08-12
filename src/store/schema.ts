@@ -26,6 +26,7 @@ const settingsSchema = z.object({
   units: z.enum(['imperial', 'metric']),
   reviewsSeen: z.array(z.string()).optional(),
   voiceCoach: z.boolean().optional(),
+  voiceURI: z.string().optional(),
   soundMode: z.enum(['voice', 'beeps-names', 'beeps', 'silent']).optional(),
   cadenceSpeed: z.number().min(0.5).max(2).optional(),
   voiceTipSeen: z.boolean().optional(),
