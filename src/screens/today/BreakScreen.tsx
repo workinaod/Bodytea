@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { say } from '../../platform/speech'
 import { Stepper } from '../../components/ui'
+import { ExerciseDemo } from '../../components/ExerciseDemo'
+import { MuscleMap } from '../../components/MuscleMap'
+import { demoFor } from '../../plan/demos'
+import { photosFor } from '../../plan/demoPhotos'
+import { musclesFor } from '../../plan/muscles'
 import { buzzRestOver } from '../../platform/haptics'
 
 /** What the rest screen needs to know about the gap it is filling. */
@@ -10,6 +15,8 @@ export interface BreakState {
   nextSetLabel: string
   /** Set → the just-finished exercise gets the "how was the weight?" chips. */
   feelExIdx?: number
+  /** Drives the preview of what is coming. */
+  nextExerciseId?: string
 }
 
 // ============================================================
@@ -158,6 +165,32 @@ export function BreakScreen({
       <p className="mt-3 max-w-[260px] text-center text-[11px] leading-snug text-ink-faint">
         Full rest is part of the program. Rushing it kills explosive quality.
       </p>
+
+      {/* What is coming, so the rest is spent looking at the movement
+          instead of at a number counting down. Same flat dark panel and
+          quiet ring as the rest of this screen, nothing shouting. */}
+      {brk.nextExerciseId && (
+        <div className="mt-7 w-full max-w-sm px-5">
+          <div className="rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/[0.06]">
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <ExerciseDemo
+                  compact
+                  spec={demoFor(brk.nextExerciseId)}
+                  photos={photosFor(brk.nextExerciseId)}
+                />
+              </div>
+              <div className="w-[34%] shrink-0">
+                <MuscleMap
+                  compact
+                  primary={musclesFor(brk.nextExerciseId).primary}
+                  secondary={musclesFor(brk.nextExerciseId).secondary}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

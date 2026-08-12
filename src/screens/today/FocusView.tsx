@@ -263,6 +263,7 @@ export function FocusView({
           ? `Set ${next.setIdx + 1} of ${nextEx.sets.length}`
           : `${nextEx.sets.length} × ${nextEx.sets[0]?.targetReps}`,
         feelExIdx: askFeel ? current.exIdx : undefined,
+        nextExerciseId: nextDef.id,
       })
       setPhase('go')
     } else if (rest <= 15 && next) {
