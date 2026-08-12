@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useBodyScrollLock } from './useBodyScrollLock'
 
@@ -24,7 +24,7 @@ export function Sheet({
   title?: string
 }) {
   const sheetRef = useRef<HTMLDivElement>(null)
-  const scrollBodyRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
   const [dragY, setDragY] = useState(0)
   const dragYRef = useRef(0)
   const [dragging, setDragging] = useState(false)
@@ -40,6 +40,40 @@ export function Sheet({
 
   // ---- Background scroll lock (survives iOS rubber-banding) ----
   useBodyScrollLock(open)
+
+  /**
+   * Escape closes, and focus moves into the sheet and comes back out.
+   *
+   * The app is phone-first, so this went missing: on a touchscreen the
+   * swipe and the X are the whole story. But it installs to a desktop
+   * PWA too, and there a sheet was a keyboard dead end — nothing closed
+   * it, and focus stayed on the button underneath, which is also what a
+   * screen reader follows. `locked` still means locked: SkipFlow and the
+   * reconcile gate are deliberately inescapable and Escape must not be a
+   * back door around them.
+   */
+  useEffect(() => {
+    if (!open) return
+    const restoreTo = document.activeElement as HTMLElement | null
+    // After the portal paints, so the node exists to receive focus.
+    const raf = requestAnimationFrame(() => sheetRef.current?.focus())
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !lockedRef.current) {
+        e.stopPropagation()
+        onCloseRef.current()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      cancelAnimationFrame(raf)
+      document.removeEventListener('keydown', onKey)
+      // Only if focus is still inside the sheet being torn down; a close
+      // that already moved focus somewhere deliberate keeps it there.
+      if (restoreTo?.isConnected && sheetRef.current?.contains(document.activeElement)) {
+        restoreTo.focus()
+      }
+    }
+  }, [open])
 
   // ---- Native drag gesture ----
   useEffect(() => {
@@ -125,7 +159,11 @@ export function Sheet({
       />
       <div
         ref={sheetRef}
-        className={`relative flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-[30px] bg-[#141416]/95 ring-1 ring-white/[0.07] backdrop-blur-2xl pb-[max(env(safe-area-inset-bottom),16px)] ${
+        role="dialog"
+        aria-modal="true"
+        {...(title ? { 'aria-labelledby': titleId } : { 'aria-label': 'Dialog' })}
+        tabIndex={-1}
+        className={`relative flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-[30px] bg-[#141416]/95 ring-1 ring-white/[0.07] backdrop-blur-2xl outline-none pb-[max(env(safe-area-inset-bottom),16px)] ${
           dragY === 0 && !dragging ? 'animate-slide-up' : ''
         }`}
         style={{
@@ -137,7 +175,13 @@ export function Sheet({
         <div data-sheet-handle className="shrink-0 cursor-grab select-none px-5 pb-1 pt-3">
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
           <div className="flex items-center justify-between">
-            {title ? <h3 className="text-[17px] font-black tracking-tight">{title}</h3> : <span />}
+            {title ? (
+              <h3 id={titleId} className="text-[17px] font-black tracking-tight">
+                {title}
+              </h3>
+            ) : (
+              <span />
+            )}
             {!locked && (
               <button
                 aria-label="Close"
@@ -156,7 +200,7 @@ export function Sheet({
             )}
           </div>
         </div>
-        <div ref={scrollBodyRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2">
           {children}
         </div>
       </div>
