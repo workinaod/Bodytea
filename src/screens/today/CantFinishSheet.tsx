@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FatigueReason, SessionLog } from '../../types'
 import { Sheet } from '../../components/Sheet'
+import { Btn } from '../../components/ui'
 import { dropTo, endsTheExercise, sameGroupAhead } from '../../engine/fatigue'
 import { getExercise } from '../../plan/exercises'
 import { setWeightForward } from '../../logic/actions'
@@ -18,6 +19,10 @@ import { endExercise, endGroupAhead, logFatigue } from '../../logic/fatigueActio
 // Four answers because they want four different things, one word
 // each, over one box you never have to use. Nothing here happens
 // without a tap: the sheet offers, the athlete chooses.
+//
+// Built from the kit rather than from raw boxes. Translucent
+// glass and a hairline ring, never an opaque grey with a border,
+// which is the look Button.tsx calls cheap and is right about.
 // ============================================================
 
 const REASONS: { id: FatigueReason; emoji: string; label: string; sub: string }[] = [
@@ -27,13 +32,30 @@ const REASONS: { id: FatigueReason; emoji: string; label: string; sub: string }[
   { id: 'empty', emoji: '🪫', label: 'Empty', sub: 'Whole body, not one muscle.' },
 ]
 
-/** A thing the athlete can tap. `tone` marks the one that is being recommended. */
+/** A thing the athlete can tap. `tone` decides how loudly it is offered. */
 interface Offer {
   id: string
   label: string
   sub?: string
-  tone?: 'lead' | 'quiet'
+  /** 'lead' is the recommendation, 'stop' is a lead that ends something. */
+  tone?: 'lead' | 'stop'
   run: () => void
+}
+
+/** Quiet glass, the resting state of every tappable row in the kit. */
+const GLASS =
+  'bg-white/[0.055] ring-1 ring-white/[0.06] shadow-[0_1px_0_rgba(255,255,255,0.06)_inset] active:bg-white/[0.11]'
+
+const OFFER_TONE: Record<'lead' | 'stop' | 'quiet', string> = {
+  lead: 'bg-gradient-to-b from-accent/[0.16] to-accent/[0.05] ring-1 ring-accent/25 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset]',
+  stop: 'bg-gradient-to-b from-danger/[0.16] to-danger/[0.04] ring-1 ring-danger/30 shadow-[0_1px_0_rgba(255,255,255,0.1)_inset]',
+  quiet: GLASS,
+}
+
+const OFFER_TEXT: Record<'lead' | 'stop' | 'quiet', string> = {
+  lead: 'text-accent-soft',
+  stop: 'text-danger',
+  quiet: 'text-ink',
 }
 
 export function CantFinishSheet({
@@ -67,10 +89,6 @@ export function CantFinishSheet({
     if (ex) logFatigue(session.date, ex.exerciseId, r, setIdx, note)
   }
 
-  function finish(message: string) {
-    setDone(message)
-  }
-
   function close() {
     setReason(null)
     setNote('')
@@ -91,7 +109,7 @@ export function CantFinishSheet({
       : 'The rest of the day asks a different muscle.',
     run: () => {
       endExercise(session.date, exIdx)
-      finish('Done with that one. Next movement is up.')
+      setDone('Done with that one. Next movement is up.')
     },
   }
 
@@ -103,7 +121,7 @@ export function CantFinishSheet({
           sub: 'Same movement, a load you can still own.',
           run: () => {
             setWeightForward(session.date, exIdx, setIdx, lighter)
-            finish(`Down to ${lighter} lb. Finish the set.`)
+            setDone(`Down to ${lighter} lb. Finish the set.`)
           },
         }
       : null
@@ -115,14 +133,14 @@ export function CantFinishSheet({
   } else if (reason === 'form') {
     // Form first, because grinding ugly reps is how people get hurt
     // for no stimulus. The lighter set is still there if they want it.
-    offers.push({ ...endIt, tone: 'lead' })
+    offers.push({ ...endIt, tone: 'stop' })
     if (dropIt) offers.push(dropIt)
   } else if (reason === 'pain') {
     offers.push({
       ...endIt,
       label: 'Stop this exercise',
       sub: 'Nothing is worth training through this.',
-      tone: 'lead',
+      tone: 'stop',
     })
     if (ahead.length) {
       offers.push({
@@ -132,7 +150,7 @@ export function CantFinishSheet({
         run: () => {
           endExercise(session.date, exIdx)
           const n = endGroupAhead(session.date, exIdx)
-          finish(`That muscle is done for today. ${n + 1} movements stood down.`)
+          setDone(`That muscle is done for today. ${n + 1} movements stood down.`)
         },
       })
     }
@@ -144,14 +162,13 @@ export function CantFinishSheet({
       tone: 'lead',
       run: () => {
         const cuts = easeRemaining(session.date)
-        finish(cuts.length ? 'The rest of the day just got shorter.' : 'Nothing left worth cutting.')
+        setDone(cuts.length ? 'The rest of the day just got shorter.' : 'Nothing left worth cutting.')
       },
     })
     offers.push({
       id: 'finish',
       label: 'Finish here, log what I did',
       sub: 'Everything already done still counts.',
-      tone: 'quiet',
       run: () => {
         close()
         onFinishSession()
@@ -159,75 +176,83 @@ export function CantFinishSheet({
     })
   }
 
+  const where = `${def.name} · set ${setIdx + 1} of ${ex.sets.length}`
+
   return (
-    <Sheet open={open} onClose={close} title={done ? 'Sorted' : reason ? 'What now?' : "What's stopping you?"}>
+    <Sheet
+      open={open}
+      onClose={close}
+      title={done ? 'Sorted' : reason ? 'What now?' : "What's stopping you?"}
+    >
       {done ? (
-        <div className="pb-6 pt-2">
-          <p className="text-[15px] font-bold leading-snug text-lime">{done}</p>
-          <button
-            onClick={close}
-            className="press mt-5 w-full rounded-2xl bg-white/[0.07] py-3.5 text-[14px] font-bold text-ink"
-          >
+        <div className="pb-7 pt-1">
+          <div className="rounded-2xl bg-gradient-to-b from-lime/[0.14] to-lime/[0.04] px-4 py-4 ring-1 ring-lime/25 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset]">
+            <p className="text-[15px] font-extrabold leading-snug text-lime">{done}</p>
+          </div>
+          <Btn kind="subtle" size="lg" className="mt-3 w-full" onClick={close}>
             Back to the set
-          </button>
+          </Btn>
         </div>
       ) : !reason ? (
-        <div className="space-y-2 pb-5">
-          {REASONS.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => choose(r.id)}
-              className="press flex w-full items-center gap-3 rounded-2xl border border-edge bg-white/[0.05] px-4 py-3 text-left"
-            >
-              <span className="text-[20px]">{r.emoji}</span>
-              <span className="min-w-0">
-                <span className="block text-[15px] font-extrabold text-ink">{r.label}</span>
-                <span className="block text-[11.5px] leading-snug text-ink-faint">{r.sub}</span>
-              </span>
-            </button>
-          ))}
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Anything else? Optional."
-            rows={2}
-            maxLength={200}
-            className="mt-1 w-full resize-none rounded-2xl border border-edge bg-white/[0.05] px-4 py-3 text-[13px] text-ink outline-none placeholder:text-ink-faint"
-          />
+        <div className="pb-7">
+          <p className="px-0.5 pb-3 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
+            {where}
+          </p>
+          <div className="space-y-2">
+            {REASONS.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => choose(r.id)}
+                className={`press flex w-full items-center gap-3.5 rounded-2xl px-4 py-3.5 text-left ${GLASS}`}
+              >
+                {/* Fixed slot: emoji glyphs differ in width, and without it
+                    the four labels do not share a left edge. */}
+                <span className="w-7 shrink-0 text-center text-[22px] leading-none">{r.emoji}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-extrabold leading-tight text-ink">{r.label}</span>
+                  <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-faint">{r.sub}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 rounded-2xl bg-white/[0.055] px-4 py-3 ring-1 ring-white/[0.06] focus-within:ring-accent/40">
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Anything else? Optional."
+              rows={2}
+              maxLength={200}
+              className="w-full resize-none bg-transparent text-[13px] font-semibold text-ink outline-none placeholder:font-semibold placeholder:text-ink-dim"
+            />
+          </div>
         </div>
       ) : (
-        <div className="space-y-2 pb-5">
-          <p className="pb-1 text-[12.5px] leading-snug text-ink-dim">
-            {endsTheExercise(reason)
-              ? `${def.name} has done its job today.`
-              : `${def.name}, set ${setIdx + 1}.`}
+        <div className="pb-7">
+          <p className="px-0.5 pb-3 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
+            {endsTheExercise(reason) ? `${def.name} · done its job today` : where}
           </p>
-          {offers.map((o) => (
-            <button
-              key={o.id}
-              onClick={o.run}
-              className={`press block w-full rounded-2xl border px-4 py-3.5 text-left ${
-                o.tone === 'lead'
-                  ? 'border-accent/50 bg-accent/10'
-                  : 'border-edge bg-white/[0.05]'
-              }`}
-            >
-              <span
-                className={`block text-[14.5px] font-extrabold ${
-                  o.tone === 'lead' ? 'text-accent-soft' : 'text-ink'
-                }`}
-              >
-                {o.label}
-              </span>
-              {o.sub && <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-faint">{o.sub}</span>}
-            </button>
-          ))}
-          <button
-            onClick={close}
-            className="press mt-1 w-full rounded-2xl py-3 text-[13px] font-bold text-ink-dim"
-          >
+          <div className="space-y-2">
+            {offers.map((o) => {
+              const tone = o.tone ?? 'quiet'
+              return (
+                <button
+                  key={o.id}
+                  onClick={o.run}
+                  className={`press block w-full rounded-2xl px-4 py-3.5 text-left ${OFFER_TONE[tone]}`}
+                >
+                  <span className={`block text-[14.5px] font-extrabold leading-tight ${OFFER_TEXT[tone]}`}>
+                    {o.label}
+                  </span>
+                  {o.sub && (
+                    <span className="mt-1 block text-[11.5px] leading-snug text-ink-faint">{o.sub}</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <Btn kind="ghost" size="md" className="mt-3 w-full" onClick={close}>
             Never mind, keep going
-          </button>
+          </Btn>
         </div>
       )}
     </Sheet>
