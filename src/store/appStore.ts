@@ -7,7 +7,7 @@ import {
   type WeekState,
 } from '../types'
 import { mondayOf, todayISO } from '../engine/calendar'
-import { LocalStorageDriver, STATE_KEY } from './storage'
+import { LocalStorageDriver, STATE_KEY, isQuotaError } from './storage'
 import { parseEnvelope, serializeState } from './backup'
 
 // ============================================================
@@ -90,18 +90,59 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
 // ---------- Debounced persistence ----------
 
+/**
+ * Whether the last write to disk actually landed.
+ *
+ * Kept in its own store rather than in AppData because it is a fact
+ * about the device, not about the athlete, and it must never be
+ * serialized into the very envelope whose write just failed.
+ */
+export interface PersistHealth {
+  /** True once a write has failed and no later write has succeeded. */
+  failed: boolean
+  /** Quota is the recoverable one, and gets its own instructions. */
+  quota: boolean
+}
+
+export const usePersistHealth = create<PersistHealth>(() => ({ failed: false, quota: false }))
+
+function writeNow(raw: string): void {
+  let quota = false
+  let ok: boolean
+  try {
+    ok = driver.save(raw)
+  } catch (e) {
+    ok = false
+    quota = isQuotaError(e)
+  }
+  if (!ok && !quota) {
+    // The driver logs and returns false rather than throwing, so probe
+    // once to find out which sentence the banner should show.
+    try {
+      localStorage.setItem(`${STATE_KEY}.probe`, '1')
+      localStorage.removeItem(`${STATE_KEY}.probe`)
+    } catch (e) {
+      quota = isQuotaError(e)
+    }
+  }
+  const prev = usePersistHealth.getState()
+  if (prev.failed !== !ok || prev.quota !== (!ok && quota)) {
+    usePersistHealth.setState({ failed: !ok, quota: !ok && quota })
+  }
+}
+
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 useAppStore.subscribe((state) => {
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
-    driver.save(serializeState(state.data))
+    writeNow(serializeState(state.data))
   }, 300)
 })
 
 /** Flush pending writes (used before export and on pagehide). */
 export function flushPersist(): void {
   if (saveTimer) clearTimeout(saveTimer)
-  driver.save(serializeState(useAppStore.getState().data))
+  writeNow(serializeState(useAppStore.getState().data))
 }
 
 if (typeof window !== 'undefined') {

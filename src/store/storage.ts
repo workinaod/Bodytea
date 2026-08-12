@@ -7,10 +7,31 @@
 
 export interface StorageDriver {
   load(): string | null
-  save(raw: string): void
+  /** False means the write did NOT land. Callers must not ignore it. */
+  save(raw: string): boolean
 }
 
 export const STATE_KEY = 'naod.state'
+
+/**
+ * Is this the browser saying "the disk is full"?
+ *
+ * Every engine spells it differently and older Firefox reports a bare
+ * code, so the name check alone misses. Anything else — a security
+ * policy, private mode with storage disabled — is still a failed write
+ * and still has to be surfaced; this only decides which sentence the
+ * user gets.
+ */
+export function isQuotaError(e: unknown): boolean {
+  if (!(e instanceof Error)) return false
+  const dom = e as DOMException
+  return (
+    dom.name === 'QuotaExceededError' ||
+    dom.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+    dom.code === 22 ||
+    dom.code === 1014
+  )
+}
 
 export class LocalStorageDriver implements StorageDriver {
   load(): string | null {
@@ -20,11 +41,24 @@ export class LocalStorageDriver implements StorageDriver {
       return null
     }
   }
-  save(raw: string): void {
+  /**
+   * A failed write used to be a console line and a `void` return, so the
+   * app could not tell a saved session from a lost one. Once localStorage
+   * is full EVERY subsequent write fails: the user keeps training against
+   * in-memory state that looks completely normal, and the next reload
+   * silently rolls them back to whenever the quota ran out.
+   *
+   * That is the worst failure this app has, because its whole promise is
+   * that the data is on the device. So the result comes back now, and
+   * appStore raises a banner the moment one comes back false.
+   */
+  save(raw: string): boolean {
     try {
       localStorage.setItem(STATE_KEY, raw)
+      return true
     } catch (e) {
       console.error('Failed to persist state', e)
+      return false
     }
   }
 }

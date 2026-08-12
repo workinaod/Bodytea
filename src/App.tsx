@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { GpsActivity } from './activityTypes'
 import { setPreferredVoice } from './platform/speech'
-import { useAppStore } from './store/appStore'
+import { useAppStore, usePersistHealth } from './store/appStore'
 import { TabBar, type TabId } from './components/TabBar'
 import { TodayScreen } from './screens/today/TodayScreen'
 import { WeekScreen } from './screens/week/WeekScreen'
@@ -90,6 +90,7 @@ export default function App() {
 
   return (
     <div className="mx-auto min-h-dvh max-w-lg px-5 pb-28 pt-[max(env(safe-area-inset-top),16px)]">
+      <SaveFailedBanner />
       {/* keyed wrapper: every tab switch rises in, screens feel placed, not
           swapped. No fill-mode: a retained transform would become the
           containing block for the fixed sheets inside the screens. */}
@@ -169,6 +170,39 @@ function UpdateToast() {
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * The one thing this app cannot fail at quietly.
+ *
+ * Everything lives on the device, so a write that does not land means
+ * the session on screen is fiction: it is in memory, it looks saved, and
+ * it disappears on the next reload. localStorage swallowed those failures
+ * and logged to a console nobody on a phone can open.
+ *
+ * Loud, undismissable, and it names the fix, because the data is still
+ * recoverable at this point — it is in memory right now, and Coach →
+ * export writes it to a file. Once the tab closes it is not.
+ */
+function SaveFailedBanner() {
+  const { failed, quota } = usePersistHealth()
+  if (!failed) return null
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="mb-3 rounded-2xl bg-red-500/15 ring-1 ring-red-400/40 px-4 py-3"
+    >
+      <p className="text-[13px] font-black tracking-tight text-red-300">
+        Not saving to this device
+      </p>
+      <p className="mt-1 text-[12px] leading-snug text-ink-dim">
+        {quota
+          ? 'Storage is full, so anything logged since is only in memory and will be lost when the app closes. Export a backup from Coach now, then clear space.'
+          : 'The last save did not go through. Anything logged since is only in memory. Export a backup from Coach before closing the app.'}
+      </p>
     </div>
   )
 }
