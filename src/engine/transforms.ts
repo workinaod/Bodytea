@@ -129,14 +129,29 @@ export function scaleExplosive(exercises: ResolvedExercise[], factor: number): R
   })
 }
 
+/** Below this a lift stops being training and becomes a gesture. */
+const MIN_WORKING_SETS = 2
+
 /**
- * Readiness downgrade (2+ flags on a CNS day): sprint/jump volume −1/3,
- * every lift flagged light ("leave 3 in the tank").
+ * Readiness downgrade (2+ flags on a CNS day), and the same-day trim:
+ * sprint/jump volume −1/3, a set off every lift that can spare one, and
+ * the rest flagged light ("leave 3 in the tank").
+ *
+ * The set cut is the part that was missing for a long time. This used to
+ * scale the jumping and then only SET A FLAG on the lifts, so a trimmed
+ * day had the same lifts, the same set count and the same prefilled
+ * weight, plus a note saying it was lighter. The app did the arithmetic
+ * in prose and left the athlete to do it for real. A trimmed day now
+ * costs fewer sets, and prescription.ts takes the load down to match.
+ *
+ * Two sets is the floor. Cutting a 2-set accessory to 1 saves three
+ * minutes and removes the reason it was in the day.
  */
 export function applyReadinessDowngrade(exercises: ResolvedExercise[]): ResolvedExercise[] {
-  return scaleExplosive(exercises, 2 / 3).map((r) =>
-    r.kind === 'lift' || r.kind === 'core' || r.kind === 'carry' ? { ...r, lightMode: true } : r,
-  )
+  return scaleExplosive(exercises, 2 / 3).map((r) => {
+    if (r.kind !== 'lift' && r.kind !== 'core' && r.kind !== 'carry') return r
+    return { ...r, sets: Math.max(MIN_WORKING_SETS, r.sets - 1), lightMode: true }
+  })
 }
 
 /** Two consecutive bad-sleep nights: cut the whole day's volume by a third. */

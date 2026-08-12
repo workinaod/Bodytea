@@ -105,3 +105,32 @@ describe('prefillFor: the load at the top of the range', () => {
     expect(second.weightLb!).toBeGreaterThan(first.weightLb ?? 0)
   })
 })
+
+describe('prefillFor: a light day is actually lighter', () => {
+  it('takes the weight down, it does not just say it did', () => {
+    seed(lastWeek(SQUAT, 6, 100))
+    const full = prefillFor(TODAY, SQUAT).weightLb!
+    const light = prefillFor(TODAY, SQUAT, { lightMode: true }).weightLb!
+    expect(light, 'light mode changed nothing').toBeLessThan(full)
+  })
+
+  it('lands on a real plate step', () => {
+    seed(lastWeek(SQUAT, 6, 100))
+    expect(prefillFor(TODAY, SQUAT, { lightMode: true }).weightLb! % 5).toBe(0)
+  })
+
+  it('takes the wrap step first, then eases it, so a light day is still lighter', () => {
+    seed(lastWeek(SQUAT, 8, 100))
+    const normal = prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb!
+    const light = prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 }, lightMode: true }).weightLb!
+    expect(normal).toBe(110)
+    expect(light).toBeLessThan(normal)
+  })
+
+  it('eases the day-one seed too, not just weights read from history', () => {
+    useAppStore.setState({ data: emptyAppData(LAST_WEEK, LAST_WEEK) })
+    const full = prefillFor(TODAY, SQUAT).weightLb
+    const light = prefillFor(TODAY, SQUAT, { lightMode: true }).weightLb
+    if (full !== undefined) expect(light!).toBeLessThan(full)
+  })
+})

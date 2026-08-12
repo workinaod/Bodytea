@@ -63,11 +63,20 @@ export function regionsFor(exerciseId: string): MuscleRegion[] {
  * which on light dumbbells is a bigger percentage than the band
  * asks for. That is the cost of 5 lb plates, not a bug.
  */
-export function dropTo(weightLb: number): number {
+export function dropTo(weightLb: number, fraction = DROP_FRACTION): number {
   if (!Number.isFinite(weightLb) || weightLb <= 0) return 0
-  const rounded = Math.round((weightLb * DROP_FRACTION) / 5) * 5
+  const rounded = Math.round((weightLb * fraction) / 5) * 5
   return Math.max(0, Math.min(rounded, weightLb - 5))
 }
+
+/**
+ * The load for a day flagged light. Same mechanic as the back-off
+ * above, and deliberately the same function: two ways to say "take
+ * it down a notch" would drift apart, and both have to guarantee
+ * the number on screen actually moved.
+ */
+export const LIGHT_DAY_FRACTION = 0.85
+export const lightLoad = (weightLb: number) => dropTo(weightLb, LIGHT_DAY_FRACTION)
 
 export interface AheadHit {
   exIdx: number

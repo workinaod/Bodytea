@@ -32,7 +32,7 @@ export function IntensitySheet({
     {
       id: 'lighter',
       label: 'Normal',
-      sub: 'A third less jumping and sprinting, and lighter weights. End each set with about 3 reps left in you.',
+      sub: 'A set off each lift, lighter weights, and a third less jumping. End each set with about 3 reps left in you.',
     },
     {
       id: 'minimum',

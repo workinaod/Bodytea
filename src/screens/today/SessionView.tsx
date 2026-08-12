@@ -125,9 +125,12 @@ export function SessionView({
 
             {open && !trimmed && (
               <div className="space-y-2 border-t border-edge/60 px-4 pb-4 pt-3">
+                {/* The weight half of this line used to be an instruction to
+                    do the maths yourself. The number below is already the
+                    lighter one, so all that is left to say is the effort. */}
                 {resolved?.lightMode && (
                   <div className="text-[11.5px] font-semibold text-gold">
-                    Light mode: leave 3 in the tank, ~85% of usual weight.
+                    Light day: leave 3 in the tank.
                   </div>
                 )}
                 {ex.sets.map((set, setIdx) => (

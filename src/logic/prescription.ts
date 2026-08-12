@@ -3,6 +3,7 @@ import { getExercise } from '../plan/exercises'
 import { suggestedStartWeight } from '../engine/startWeight'
 import { useAppStore } from '../store/appStore'
 import { loadStepLb, repStepFor, type RepRange } from '../engine/reps'
+import { lightLoad } from '../engine/fatigue'
 
 // ============================================================
 // What load and how many reps go in front of you.
@@ -34,7 +35,7 @@ const store = () => useAppStore.getState()
 export function prefillFor(
   date: ISODate,
   exerciseId: string,
-  opts: { repRange?: RepRange } = {},
+  opts: { repRange?: RepRange; lightMode?: boolean } = {},
 ): { weightLb?: number; reps?: number } {
   const data = store().data
   const step =
@@ -55,9 +56,10 @@ export function prefillFor(
       // It only applies when the range did NOT just wrap, or a good week
       // would be paid twice, once in reps and once again in load.
       const bump = step > 0 ? 0 : log.feel === 'easy' ? 5 : log.feel === 'hard' ? -5 : 0
+      const w =
+        best.weightLb !== undefined ? Math.max(0, best.weightLb + bump + step) : undefined
       return {
-        weightLb:
-          best.weightLb !== undefined ? Math.max(0, best.weightLb + bump + step) : undefined,
+        weightLb: w !== undefined && opts.lightMode ? lightLoad(w) : w,
         reps: best.reps,
       }
     }
@@ -72,7 +74,8 @@ export function prefillFor(
     }
   }
   const seeded = suggestedStartWeight(getExercise(exerciseId), bw ?? 175, data.plan.experience ?? 'returning')
-  return seeded !== null ? { weightLb: seeded } : {}
+  if (seeded === null) return {}
+  return { weightLb: opts.lightMode ? lightLoad(seeded) : seeded }
 }
 
 /** Mid-rest weight check-in, asked at most once per exercise every 2 weeks. */

@@ -412,14 +412,14 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     exercises = applyReadinessDowngrade(exercises)
     banners.push({
       id: 'readiness',
-      text: 'Today is dialled back: a third less jumping and sprinting, and lighter weights. Fast and fresh beats tired and grinding.',
+      text: 'Today is dialled back: a set off each lift, lighter weights, and a third less jumping. Fast and fresh beats tired and grinding.',
       tone: 'warn',
     })
   } else if (trimmedToday) {
     exercises = applyReadinessDowngrade(exercises)
     banners.push({
       id: 'day-trimmed',
-      text: '📉 You picked a lighter day: a third less jumping and sprinting, and lighter weights. Showing up short beats skipping. The full plan is back tomorrow.',
+      text: '📉 You picked a lighter day: a set off each lift, lighter weights, and a third less jumping. Showing up short beats skipping. The full plan is back tomorrow.',
       tone: 'warn',
     })
   }
