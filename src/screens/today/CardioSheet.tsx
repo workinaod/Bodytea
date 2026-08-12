@@ -302,8 +302,13 @@ function modeLabel(activityId: string, mode: string): string {
 function describeEntry(e: CardioEntry): string {
   const bits: string[] = []
   if (e.where) bits.push(e.where)
+  // Steps sit beside the distance they produced, and the existing
+  // miles-then-minutes order is left alone: an entry logged by hand
+  // reads exactly as it always did.
+  if (e.steps) bits.push(`${e.steps.toLocaleString()} steps`)
   if (e.miles) bits.push(`${e.miles} mi`)
   if (e.minutes) bits.push(`${e.minutes} min`)
+  if (e.kcalEst) bits.push(`~${e.kcalEst} cal`)
   bits.push(e.when === 'pre' ? 'pre-workout' : e.when === 'post' ? 'post-workout' : 'standalone')
   return bits.join(' · ')
 }

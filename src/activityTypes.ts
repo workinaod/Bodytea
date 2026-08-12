@@ -54,4 +54,21 @@ export interface CardioEntry {
   minutes?: number
   /** Activity-specific mode, e.g. basketball 'games' vs 'shooting'. */
   mode?: string
+
+  // ---- Only present when the phone recorded the session live ----
+  // A logged-after-the-fact entry has none of these, and the app
+  // falls back to the mode chip exactly as it always did.
+
+  /** Footfalls counted across the session. */
+  steps?: number
+  /**
+   * Where `miles` came from. Court sports get it from steps, because
+   * a pickleball court is shorter than GPS error; open-air sports get
+   * it from the satellites.
+   */
+  distanceSource?: 'gps' | 'steps' | 'manual' | 'none'
+  /** What the measured work rate says this was. See engine/intensity.ts. */
+  intensity?: 'low' | 'standard' | 'high'
+  /** Calories at save time, from the measured tier rather than a claim. */
+  kcalEst?: number
 }

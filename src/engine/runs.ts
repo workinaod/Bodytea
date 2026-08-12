@@ -42,6 +42,38 @@ export function acceptFix(
   return dMi >= 0.005 || dt >= 20
 }
 
+/** Miles of GPS wobble to clear before movement counts as movement. */
+export const MIN_MOVE_MI = 0.005
+
+/**
+ * Should this fix ADD to a running distance total?
+ *
+ * Stricter than acceptFix, on purpose. acceptFix takes any fix once
+ * 20 seconds have passed, because a route being DRAWN wants a point
+ * even while you wait at a light. A total being ADDED UP does not:
+ * that clause turns GPS wobble into mileage, and an hour spent on the
+ * sideline of a game logs as a quarter mile walked.
+ *
+ * Holding the previous point instead of advancing it loses nothing.
+ * Someone genuinely moving slowly still gets every yard, credited in
+ * chunks once they clear the noise floor rather than continuously.
+ */
+export function creditsDistance(
+  prev: RunPoint | null,
+  lat: number,
+  lng: number,
+  elapsedSec: number,
+  accuracyM: number,
+): boolean {
+  if (accuracyM > 50) return false
+  if (!prev) return false
+  const dt = elapsedSec - prev[2]
+  if (dt <= 0) return false
+  const dMi = haversineMi(prev[0], prev[1], lat, lng)
+  if ((dMi / dt) * 3600 > 45) return false
+  return dMi >= MIN_MOVE_MI
+}
+
 export function totalDistanceMi(points: RunPoint[]): number {
   let mi = 0
   for (let i = 1; i < points.length; i++) {

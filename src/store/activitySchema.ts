@@ -46,4 +46,10 @@ export const cardioEntrySchema = z.object({
   miles: z.number().optional(),
   minutes: z.number().optional(),
   mode: z.string().optional(),
+  // Only on live-tracked sessions. Everything logged before these
+  // existed parses unchanged, which is the whole point of optional.
+  steps: z.number().min(0).optional(),
+  distanceSource: z.enum(['gps', 'steps', 'manual', 'none']).optional(),
+  intensity: z.enum(['low', 'standard', 'high']).optional(),
+  kcalEst: z.number().min(0).optional(),
 })

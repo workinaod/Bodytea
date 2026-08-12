@@ -2,13 +2,34 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ISODate } from '../../types'
 import { cardioActivity } from '../../plan/cardio'
+import {
+  cardioKcal,
+  distanceSourceFor,
+  intensityLabel,
+  intensityNote,
+  stepDistanceMi,
+  tracksSteps,
+} from '../../engine/intensity'
 import { logCardio } from '../../logic/actions'
+import { useAppStore } from '../../store/appStore'
+import { requestMotionPermission, startStepCounter, type StepCounter } from '../../platform/motion'
+import { watchDistance, type DistanceWatch } from '../../platform/geo'
 import { Btn } from '../../components/ui'
 
 /**
- * Timed tracker for any cardio that isn't a GPS run/ride: pick it from
- * Track, hit start, work. Finish logs it as today's cardio. Heart rate
- * and calories join when wearables do.
+ * Tracker for any cardio that is not a GPS run or ride: pick it from
+ * Track, hit start, work. Finish logs it as today's cardio.
+ *
+ * It used to record one number, the clock, and hand the rest to a
+ * guess. Now the pedometer runs alongside it, and for anything played
+ * over open ground the satellites do too, so an hour of ball comes
+ * back as steps, distance and a calorie figure that came from what
+ * happened rather than from what got claimed afterwards.
+ *
+ * Nothing here is mandatory. Motion permission refused, phone left in
+ * a bag, five minutes on the clock: the session still logs, just with
+ * fewer numbers on it. See engine/intensity.ts for why silence beats a
+ * confident wrong answer.
  */
 export function CardioTimerSheet({
   activityId,
@@ -28,12 +49,29 @@ export function CardioTimerSheet({
   const def = customLabel ? { ...base, label: customLabel } : base
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
-  const [saved, setSaved] = useState(false)
+  const [saved, setSaved] = useState<{ steps?: number; miles?: number; kcal: number; note: string | null; tier: string | null } | null>(null)
   const wakeRef = useRef<{ release?: () => Promise<void> } | null>(null)
+  const stepsRef = useRef<StepCounter | null>(null)
+  const geoRef = useRef<DistanceWatch | null>(null)
+  // Steps and miles tick under the clock, so the numbers have to
+  // repaint on the same beat the seconds do.
+  const [live, setLive] = useState({ steps: 0, miles: 0 })
+
+  const bodyweightLb = useAppStore(
+    (st) => [...st.data.measurements].reverse().find((m) => m.weightLb !== undefined)?.weightLb ?? 175,
+  )
+  const heightIn = useAppStore((st) => st.data.profile.heightIn)
+
+  const countsSteps = tracksSteps(def.id)
+  const usesGps = distanceSourceFor(def.id) === 'gps'
+  const showsDistance = distanceSourceFor(def.id) !== 'none'
 
   useEffect(() => {
     if (startedAt === null) return
-    const id = setInterval(() => setElapsed((Date.now() - startedAt) / 1000), 1000)
+    const id = setInterval(() => {
+      setElapsed((Date.now() - startedAt) / 1000)
+      setLive({ steps: stepsRef.current?.steps() ?? 0, miles: geoRef.current?.miles() ?? 0 })
+    }, 1000)
     type WakeNav = Navigator & { wakeLock?: { request: (t: 'screen') => Promise<{ release: () => Promise<void> }> } }
     void (navigator as WakeNav).wakeLock
       ?.request('screen')
@@ -47,13 +85,66 @@ export function CardioTimerSheet({
     }
   }, [startedAt])
 
+  // Sensors stop when the screen goes, whichever way it goes.
+  useEffect(
+    () => () => {
+      stepsRef.current?.stop()
+      geoRef.current?.stop()
+    },
+    [],
+  )
+
   const mm = Math.floor(elapsed / 60)
   const ss = String(Math.floor(elapsed % 60)).padStart(2, '0')
 
+  /**
+   * iOS will not report motion without a user gesture, so the sensors
+   * start on the tap rather than on mount. That is also the honest
+   * moment: nothing is counted before the session begins.
+   */
+  function start() {
+    setStartedAt(Date.now())
+    if (usesGps) geoRef.current = watchDistance()
+    if (!countsSteps) return
+    void requestMotionPermission().then((ok) => {
+      if (ok) stepsRef.current = startStepCounter()
+    })
+  }
+
   function finish() {
     const minutes = Math.max(1, Math.round(elapsed / 60))
-    logCardio(date, { activityId: def.id, label: def.label, when: 'solo', minutes })
-    setSaved(true)
+    const steps = countsSteps ? (stepsRef.current?.steps() ?? 0) : 0
+    const gpsMi = geoRef.current?.miles() ?? 0
+    stepsRef.current?.stop()
+    geoRef.current?.stop()
+
+    // GPS first where it works, steps where it does not, and nothing
+    // where neither can honestly say. A phone that never got a fix
+    // reports no distance rather than a zero, which reads as "you
+    // stood still" and is a different claim entirely.
+    const stepMi = stepDistanceMi(def.id, steps, heightIn)
+    const miles = usesGps && gpsMi >= 0.05 ? gpsMi : showsDistance ? (stepMi ?? undefined) : undefined
+    const distanceSource = miles === undefined ? undefined : usesGps && gpsMi >= 0.05 ? 'gps' : 'steps'
+
+    const { kcal, intensity } = cardioKcal({ activityId: def.id, minutes, bodyweightLb, steps })
+
+    logCardio(date, {
+      activityId: def.id,
+      label: def.label,
+      when: 'solo',
+      minutes,
+      ...(steps > 0 ? { steps } : {}),
+      ...(miles !== undefined ? { miles, distanceSource } : {}),
+      ...(intensity ? { intensity } : {}),
+      ...(kcal > 0 ? { kcalEst: kcal } : {}),
+    })
+    setSaved({
+      steps: steps > 0 ? steps : undefined,
+      miles,
+      kcal,
+      tier: intensity,
+      note: steps > 0 ? intensityNote(def.id, steps, minutes) : null,
+    })
   }
 
   // Portalled to the body, above the session UI. Rendered in place it
@@ -86,16 +177,31 @@ export function CardioTimerSheet({
             <div className="mt-3 font-display text-[64px] font-bold leading-none tabular-nums">
               {mm}:{ss}
             </div>
-            <p className="mt-2 text-[13px] text-ink-dim">Counts as today's cardio.</p>
-            <Btn kind="lime" className="mt-8 w-full max-w-xs" onClick={onClose}>
+            {saved.tier && (
+              <div className="mt-3 rounded-full bg-accent/12 px-3.5 py-1.5 text-[11.5px] font-black uppercase tracking-[0.14em] text-accent-soft ring-1 ring-accent/25">
+                {intensityLabel(saved.tier as 'low' | 'standard' | 'high')} intensity
+              </div>
+            )}
+            <Numbers steps={saved.steps} miles={saved.miles} kcal={saved.kcal} className="mt-6" />
+            {saved.note && (
+              <p className="mt-4 max-w-[30ch] text-center text-[12px] leading-snug text-ink-faint">
+                {saved.note}
+              </p>
+            )}
+            <p className="mt-3 text-[13px] text-ink-dim">Counts as today's cardio.</p>
+            <Btn kind="lime" className="mt-7 w-full max-w-xs" onClick={onClose}>
               Done
             </Btn>
           </>
         ) : startedAt === null ? (
           <>
             <div className="text-[64px]">{def.emoji}</div>
-            <p className="mt-3 text-[13.5px] text-ink-dim">Timer starts when you do.</p>
-            <Btn kind="lime" className="mt-8 w-full max-w-xs py-4 text-[15px]" onClick={() => setStartedAt(Date.now())}>
+            <p className="mt-3 max-w-[30ch] text-center text-[13.5px] leading-relaxed text-ink-dim">
+              {countsSteps
+                ? `Keep the phone on you and it counts your steps${usesGps ? ' and distance' : ''} too.`
+                : 'Timer starts when you do.'}
+            </p>
+            <Btn kind="lime" className="mt-8 w-full max-w-xs py-4 text-[15px]" onClick={start}>
               Start {def.label.toLowerCase()}
             </Btn>
           </>
@@ -107,7 +213,14 @@ export function CardioTimerSheet({
             <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-ink-faint">
               recording, screen stays on
             </div>
-            <Btn kind="lime" className="mt-10 w-full max-w-xs py-4 text-[15px]" onClick={finish}>
+            {countsSteps && (
+              <Numbers
+                steps={live.steps}
+                miles={showsDistance ? live.miles || undefined : undefined}
+                className="mt-7"
+              />
+            )}
+            <Btn kind="lime" className="mt-9 w-full max-w-xs py-4 text-[15px]" onClick={finish}>
               Finish
             </Btn>
           </>
@@ -115,5 +228,39 @@ export function CardioTimerSheet({
       </div>
     </div>,
     document.body,
+  )
+}
+
+/**
+ * The secondary band, in the run tracker's shape so the two screens
+ * read as one app. Anything the phone could not measure is left out
+ * rather than shown as a zero.
+ */
+function Numbers({
+  steps,
+  miles,
+  kcal,
+  className = '',
+}: {
+  steps?: number
+  miles?: number
+  kcal?: number
+  className?: string
+}) {
+  const cells = [
+    steps !== undefined && steps > 0 ? { v: steps.toLocaleString(), k: 'steps' } : null,
+    miles !== undefined && miles > 0 ? { v: miles.toFixed(2), k: 'mi' } : null,
+    kcal !== undefined && kcal > 0 ? { v: String(kcal), k: 'cal' } : null,
+  ].filter((c): c is { v: string; k: string } => c !== null)
+  if (cells.length === 0) return null
+  return (
+    <div className={`flex items-end justify-center gap-7 ${className}`}>
+      {cells.map((c) => (
+        <div key={c.k} className="text-center">
+          <div className="num text-[26px] font-bold leading-none">{c.v}</div>
+          <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-faint">{c.k}</div>
+        </div>
+      ))}
+    </div>
   )
 }
