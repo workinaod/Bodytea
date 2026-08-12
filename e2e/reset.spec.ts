@@ -85,9 +85,17 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
   // Rebuild on a completely different goal
   await buildPlan(page, 'Rebuild my plan', '🔥 Lose weight', 'lose 30 lb by summer')
 
-  // The logged meal survived the rebuild
+  // The logged meal survived the rebuild.
+  //
+  // The DENOMINATOR is deliberately not pinned here any more. This rebuild
+  // switches the goal to losing weight, and the protein target now depends
+  // on the situation rather than being 1 g/lb for everybody: a cut asks for
+  // more, because protein is what decides whether the weight lost is fat or
+  // muscle. Pinning 180 here made this test assert the old flat prescription
+  // as a side effect of checking that a meal survived. What the target
+  // SHOULD be per goal is covered directly in plan/sportsNutrition.test.ts.
   await page.getByRole('button', { name: 'Meals', exact: true }).click()
-  await expect(page.locator('text=/4[05] ?\\/ 180/').first()).toBeVisible({ timeout: 5000 })
+  await expect(page.locator('text=/4[05] ?\\/ \\d{3}/').first()).toBeVisible({ timeout: 5000 })
 })
 
 test('v19 reset leaves the owner alone', async ({ page }) => {
