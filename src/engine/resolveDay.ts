@@ -20,6 +20,7 @@ import {
   buildFromTemplate,
   lighterCombinedPull,
 } from './transforms'
+import { trimForVolume, type VolumeCut } from './volume'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
 
@@ -409,14 +410,14 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     exercises = applyReadinessDowngrade(exercises)
     banners.push({
       id: 'readiness',
-      text: 'Readiness downgrade active: explosive volume −1/3, lifts light. Fast and fresh beats tired and grinding.',
+      text: 'Today is dialled back: a third less jumping and sprinting, and lighter weights. Fast and fresh beats tired and grinding.',
       tone: 'warn',
     })
   } else if (trimmedToday) {
     exercises = applyReadinessDowngrade(exercises)
     banners.push({
       id: 'day-trimmed',
-      text: '📉 You called a trimmed day: explosive volume −1/3, lifts light. Showing up short beats skipping. Full plan returns tomorrow.',
+      text: '📉 You picked a lighter day: a third less jumping and sprinting, and lighter weights. Showing up short beats skipping. The full plan is back tomorrow.',
       tone: 'warn',
     })
   }
@@ -424,6 +425,32 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   // --- Scheduled conditioning stacks AFTER the day's main work, the
   //     workout stays; the cardio is added on top, untouched by the
   //     volume transforms above. ---
+  // --- Volume cap: the LAST lifting transform, before cardio is added ---
+  //
+  // Templates bind their slots late, so nobody authoring one can see
+  // what the day totals per MUSCLE. Tuesday reads as seven sensible
+  // movements and lands as 11.5 sets on the triceps, because every
+  // press pays the triceps and front delts whether or not they are the
+  // point of the movement. The author counted exercises; the body
+  // counts muscles.
+  //
+  // Capping here rather than warning about it later means every day the
+  // app shows is a day worth doing, for the preset and for generated
+  // plans alike. Cardio is appended after this on purpose: a run is not
+  // lifting volume.
+  const capped = trimForVolume(exercises)
+  if (capped.cuts.length > 0) {
+    exercises = capped.exercises
+    const gone = capped.cuts.filter((c: VolumeCut) => c.to === 0)
+    banners.push({
+      id: 'volume-capped',
+      text: gone.length
+        ? `Trimmed to keep this day useful. ${gone.map((c: VolumeCut) => c.name).join(' and ')} came out: those muscles had already done enough today.`
+        : 'Trimmed a few sets to keep this day useful. Extra work on a muscle that has had enough only costs you recovery.',
+      tone: 'info',
+    })
+  }
+
   if (scheduledCardio) {
     const { def, opt } = scheduledCardio
     exercises = [

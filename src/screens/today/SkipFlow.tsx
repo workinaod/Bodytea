@@ -123,7 +123,7 @@ export function SkipFlow({
             >
               <div className="text-[14px] font-bold">Trim today's load</div>
               <div className="mt-0.5 text-[11.5px] text-ink-faint">
-                Full session, volume cut: explosive −1/3, lifts light. Still counts as training.
+                Same exercises, fewer sets and lighter weights. Still counts as training.
               </div>
             </button>
             <button
@@ -131,7 +131,7 @@ export function SkipFlow({
               className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'lighten' ? 'border-gold/40 bg-gold/10' : 'border-edge bg-white/[0.07]'}`}
             >
               <div className="text-[14px] font-bold">Bare minimum</div>
-              <div className="mt-0.5 text-[11.5px] text-ink-faint">The ~10-minute version. Habit survives.</div>
+              <div className="mt-0.5 text-[11.5px] text-ink-faint">About 10 minutes. Keeps the habit alive.</div>
             </button>
             <button
               onClick={() => setMode('skip')}
@@ -196,8 +196,8 @@ export function SkipFlow({
         <div className="space-y-4 pb-5">
           <p className="text-[13.5px] leading-snug text-ink-dim">
             {level >= 2
-              ? 'At this point in the month: calendar photo or it didn\'t happen. Screenshot of the schedule, the gig poster, anything real.'
-              : 'Attach proof and this counts as a planned choice, not a failure. No proof means it goes down as unproven.'}
+              ? 'You have skipped a few times this month, so this one needs a photo. A screenshot of your calendar, the schedule, a poster, anything real.'
+              : 'Add a photo and this counts as a planned choice, not a failure. Without one it just goes down as a skip.'}
           </p>
           <input
             ref={fileRef}
@@ -258,7 +258,7 @@ export function SkipFlow({
           {mv && (
             <div className="rounded-xl border border-accent/30 bg-accent/8 p-4">
               <div className="text-[11px] font-black uppercase tracking-[0.14em] text-accent">
-                The counter-offer: {mv.label}
+                Try this instead: {mv.label}
               </div>
               <ul className="mt-2 space-y-1.5">
                 {mv.exercises.map((e) => (
@@ -271,7 +271,7 @@ export function SkipFlow({
                 ))}
               </ul>
               <p className="mt-2 text-[12px] leading-snug text-ink-dim">
-                Ten-ish minutes. The habit survives, the streak survives, and you can stop after.
+                About ten minutes. The habit lives, the streak lives, and you can stop right after.
                 Deal's a deal.
               </p>
             </div>
@@ -280,8 +280,8 @@ export function SkipFlow({
           {needsTypedConfirm && (
             <div>
               <div className="mb-1.5 text-[12px] font-semibold text-danger">
-                No proof at escalation level {level}. Type <span className="font-black">SKIP</span> to
-                confirm you're really doing this.
+                No photo, and this is not your first skip this month. Type{' '}
+                <span className="font-black">SKIP</span> to confirm.
               </div>
               <input
                 className="w-full rounded-xl border border-danger/40 bg-white/[0.07] px-3.5 py-3 text-center text-[15px] font-black tracking-[0.3em] outline-none"

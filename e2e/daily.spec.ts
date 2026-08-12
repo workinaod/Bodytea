@@ -110,10 +110,10 @@ test('same-day trim: work ran long → volume cut today, restorable', async ({ p
   await page.getByRole('button', { name: 'Trim it, still training' }).click()
 
   // The day resolves trimmed, with the escape hatch offered
-  await expect(page.getByText(/You called a trimmed day/)).toBeVisible()
+  await expect(page.getByText(/You picked a lighter day/)).toBeVisible()
   await expect(page.getByText(/Restore the full session/)).toBeVisible()
 
   // Meeting cancelled, full session comes back
   await page.getByText(/Restore the full session/).click()
-  await expect(page.getByText(/You called a trimmed day/)).not.toBeVisible()
+  await expect(page.getByText(/You picked a lighter day/)).not.toBeVisible()
 })

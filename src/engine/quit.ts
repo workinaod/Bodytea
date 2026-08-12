@@ -1,5 +1,4 @@
 import type { SessionLog, SessionStatus } from '../types'
-import { GRADE_LABEL, sessionGrade } from './stats'
 
 // ============================================================
 // Ending a session: what it becomes, and what you are told.
@@ -64,17 +63,17 @@ export function quitCopy(session: SessionLog, streak = 0): QuitCopy {
     const streakLine = streak > 0 ? ` Your ${streak} day streak ends here.` : ''
     return {
       title: 'Log this as skipped?',
-      body: `Nothing is in yet, so there is nothing to save. This one goes down as skipped.${streakLine}`,
-      stay: "No, I'll run one set",
+      body: `You have not finished a set yet, so there is nothing to save. Today goes down as skipped.${streakLine}`,
+      stay: "No, I'll do one set",
       go: 'Yes, log it as skipped',
     }
   }
 
-  const label = GRADE_LABEL[sessionGrade(session)].toLowerCase()
+  const left = total - done
   return {
-    title: 'Quit the session?',
-    body: `${done} of ${total} sets are in. Ending now grades the day ${label}, not a completion.`,
-    stay: 'No, keep training',
-    go: "Yes, quit and log what's done",
+    title: 'Stop here?',
+    body: `${done} of ${total} sets done. Your work is saved either way. Stop now and the other ${left} just ${left === 1 ? 'does' : 'do'} not happen today.`,
+    stay: 'Keep training',
+    go: `Stop, I'm done at ${done} sets`,
   }
 }

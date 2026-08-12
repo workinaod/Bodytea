@@ -10,6 +10,8 @@ import { daysBetween } from '../../engine/calendar'
 import { Stepper } from '../../components/ui'
 import { HowToSlides } from './HowToSlides'
 import { ExerciseBrief } from './ExerciseBrief'
+import { weightDropped } from '../../engine/volume'
+import { easeRemaining } from '../../logic/volumeActions'
 import { BreakScreen, type BreakState } from './BreakScreen'
 
 // ============================================================
@@ -263,6 +265,7 @@ export function FocusView({
           ? `Set ${next.setIdx + 1} of ${nextEx.sets.length}`
           : `${nextEx.sets.length} × ${nextEx.sets[0]?.targetReps}`,
         feelExIdx: askFeel ? current.exIdx : undefined,
+        easeOffer: weightDropped(justEx.sets),
         nextExerciseId: nextDef.id,
       })
       setPhase('go')
@@ -594,6 +597,14 @@ export function FocusView({
               ? (f) => setExerciseFeel(session.date, breakState.feelExIdx!, f)
               : undefined
           }
+          onEase={() => {
+            const cuts = easeRemaining(session.date)
+            if (cuts.length === 0) return 'Nothing left worth cutting. Finish it.'
+            const gone = cuts.filter((c) => c.to === 0).map((c) => c.name)
+            return gone.length
+              ? `Done. ${gone.join(' and ')} dropped.`
+              : `Done. ${cuts.length} ${cuts.length === 1 ? 'exercise' : 'exercises'} shortened.`
+          }}
           weightLb={set.weightLb}
           loadLabel={isLoaded ? loadLabel(def.equipment) : undefined}
           onWeight={

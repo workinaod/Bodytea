@@ -15,6 +15,8 @@ export interface BreakState {
   nextSetLabel: string
   /** Set → the just-finished exercise gets the "how was the weight?" chips. */
   feelExIdx?: number
+  /** The weight came down inside the exercise that just finished. */
+  easeOffer?: boolean
   /** Drives the preview of what is coming. */
   nextExerciseId?: string
 }
@@ -31,6 +33,7 @@ export function BreakScreen({
   mode,
   onDone,
   onFeel,
+  onEase,
   weightLb,
   loadLabel,
   onWeight,
@@ -45,10 +48,13 @@ export function BreakScreen({
   mode: 'voice' | 'beeps-names' | 'beeps' | 'silent'
   onDone: () => void
   onFeel?: (f: 'easy' | 'right' | 'hard') => void
+  /** Shorten what is left. Returns a line describing what changed. */
+  onEase?: () => string
 }) {
   const endsAt = useRef(Date.now() + brk.seconds * 1000)
   const [remaining, setRemaining] = useState(brk.seconds)
   const [feelDone, setFeelDone] = useState(false)
+  const [eased, setEased] = useState<string | null>(null)
   const buzzed = useRef(false)
 
   // Short and factual, the next gate handles weight + ready
@@ -132,6 +138,24 @@ export function BreakScreen({
           <Stepper value={weightLb} onChange={onWeight} step={5} suffix="lb" width="w-16" />
         </div>
       )}
+
+      {/* The weight dropped, which is fatigue with a number on it. Offer
+          the cut here, during the rest, because that is when a coach
+          standing next to you would say it. One tap, never automatic. */}
+      {brk.easeOffer && onEase && !eased && (
+        <div className="mt-7 w-full max-w-[280px] rounded-2xl border border-gold/30 bg-gold/[0.07] px-4 py-3 text-center">
+          <p className="text-[12.5px] leading-snug text-gold/90">
+            The weight came down that set. Want me to shorten what is left?
+          </p>
+          <button
+            onClick={() => setEased(onEase() || 'Nothing left worth cutting.')}
+            className="press mt-2 rounded-full bg-gold/20 px-4 py-1.5 text-[12px] font-black text-gold"
+          >
+            Yes, shorten it
+          </button>
+        </div>
+      )}
+      {eased && <div className="mt-7 max-w-[280px] text-center text-[11.5px] font-bold text-lime">{eased}</div>}
 
       {onFeel && !feelDone && (
         <div className="mt-7 text-center">

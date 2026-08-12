@@ -24,6 +24,8 @@ function asResolved(exercises: { exerciseId: string; sets: unknown[] }[]): Resol
       ({
         exerciseId: e.exerciseId,
         name: getExercise(e.exerciseId).name,
+        // kind matters: the engine doses a jump differently to a lift.
+        kind: getExercise(e.exerciseId).kind,
         sets: e.sets.length,
       }) as ResolvedExercise,
   )
@@ -44,11 +46,16 @@ export function sessionVerdict(date: ISODate): VolumeVerdict | null {
  * Completed sets are never removed. That makes this safe to run at
  * any point, and means a trim taken halfway through cuts only what is
  * still ahead of you.
+ *
+ * `slack` lowers today's ceilings. The plan already resolved under the
+ * normal ones, so a mid-session call needs slack to find anything: the
+ * question changed from "is this day well built" to "is this still the
+ * right day for the body that showed up".
  */
-export function trimSessionVolume(date: ISODate): VolumeCut[] {
+export function trimSessionVolume(date: ISODate, slack = 0): VolumeCut[] {
   const session = store().data.sessions[date]
   if (!session) return []
-  const { cuts } = trimForVolume(asResolved(session.exercises))
+  const { cuts } = trimForVolume(asResolved(session.exercises), slack)
   if (cuts.length === 0) return []
 
   const target = new Map(cuts.map((c) => [c.exerciseId, c.to]))
@@ -74,4 +81,13 @@ export function trimSessionVolume(date: ISODate): VolumeCut[] {
       .filter((e) => e.sets.length > 0)
   })
   return applied
+}
+
+/**
+ * Fatigue showed up mid-session, so re-run the cap against a lower
+ * ceiling and shorten what is still ahead. Returns what it changed,
+ * empty when there was nothing worth cutting.
+ */
+export function easeRemaining(date: ISODate): VolumeCut[] {
+  return trimSessionVolume(date, 3)
 }

@@ -32,20 +32,20 @@ export function IntensitySheet({
     {
       id: 'lighter',
       label: 'Normal',
-      sub: 'Dialed back a notch: explosive volume −1/3, every lift light with 3 in the tank.',
+      sub: 'A third less jumping and sprinting, and lighter weights. End each set with about 3 reps left in you.',
     },
     {
       id: 'minimum',
       label: mv?.label ?? 'The bare minimum',
-      sub: `${mv?.exercises.length ?? 2} exercises, shortest honest version. Beats zero.`,
+      sub: `Just ${mv?.exercises.length ?? 2} exercises. Short, but it counts.`,
     },
   ]
 
   return (
     <Sheet open={open} onClose={onClose} title="How much do you have today?">
       <p className="mb-4 text-[13px] leading-snug text-ink-dim">
-        Be straight with yourself, the plan scales to the answer. A lighter day you finish beats a
-        full day you abandon.
+        Answer honestly and the plan changes to match. A lighter day you finish beats a full day
+        you walk out of.
       </p>
       <div className="space-y-2.5 pb-4">
         {options.map((o) => (
@@ -63,7 +63,7 @@ export function IntensitySheet({
           </button>
         ))}
         <p className="px-1 text-[11px] leading-snug text-ink-faint">
-          Normal and minimum trim the day honestly. The debrief logs what actually happened.
+          The last two shorten today. Either way, the summary records what you actually did.
         </p>
       </div>
     </Sheet>

@@ -5,6 +5,7 @@ import { EXERCISES } from './exercises'
 import { planConfigSchema } from '../store/schema'
 import { emptyAppData, defaultWeekState, type Goal } from '../types'
 import { resolveDay } from '../engine/resolveDay'
+import { overloadedRegions } from '../engine/volume'
 import { addDaysISO } from '../engine/calendar'
 
 // ============================================================
@@ -15,7 +16,7 @@ import { addDaysISO } from '../engine/calendar'
 // exercises (guide + muscles + demo).
 // ============================================================
 
-const GOALS: Goal[] = ['vertical', 'speed', 'muscle', 'strength', 'lean', 'general']
+const GOALS: Goal[] = ['vertical', 'speed', 'muscle', 'strength', 'lean', 'general', 'endurance']
 const DAYS = [3, 4, 5, 6] as const
 const PROFILES = ['gym', 'home-db', 'minimal'] as const
 const START = '2026-08-10' // Monday
@@ -33,7 +34,7 @@ function answersFor(goal: Goal, daysPerWeek: (typeof DAYS)[number], equipProfile
   }
 }
 
-describe('generator invariants (6 goals × 4 day-counts × 3 equip profiles)', () => {
+describe('generator invariants (7 goals × 4 day-counts × 3 equip profiles)', () => {
   for (const goal of GOALS) {
     for (const days of DAYS) {
       for (const profile of PROFILES) {
@@ -104,6 +105,12 @@ describe('generator invariants (6 goals × 4 day-counts × 3 equip profiles)', (
               for (const e of r.exercises) {
                 expect(canDo(e.exerciseId, owned), `${r.date}: resolved ${e.exerciseId} not legal for ${profile}`).toBe(true)
               }
+              // No day the app hands out may bury a muscle it was not
+              // even built for. This is the guard the NAOD preset did
+              // not have: its Tuesday shipped 11.5 tricep sets on a
+              // pressing day and nobody noticed for months.
+              const over = overloadedRegions(r.exercises)
+              expect(over, `${r.date} tier ${tier}: ${over.map((o) => `${o.region} ${o.load}/${o.ceiling}`).join(', ')}`).toEqual([])
               if (r.isDeload && r.kind === 'session') {
                 // deload halves lifting sets: nothing above ceil(orig/2) of recipe max (5 → 3)
                 for (const e of r.exercises) {
