@@ -14,6 +14,7 @@ import { weightDropped } from '../../engine/volume'
 import { easeRemaining } from '../../logic/volumeActions'
 import { BreakScreen, type BreakState } from './BreakScreen'
 import { CantFinishSheet } from './CantFinishSheet'
+import { TimeCheckSheet } from './TimeCheckSheet'
 
 // ============================================================
 // Focus mode, guided: each set is intro'd (name, set, reps at
@@ -64,6 +65,7 @@ export function FocusView({
   const [caption, setCaption] = useState('')
   const [howToOpen, setHowToOpen] = useState(false)
   const [cantFinish, setCantFinish] = useState(false)
+  const [timeCheck, setTimeCheck] = useState(false)
   // The how-to rolls away when work starts. Tapping STEPS brings it back.
   const [stepsOpen, setStepsOpen] = useState(false)
   const data = useAppStore((s) => s.data)
@@ -564,20 +566,23 @@ export function FocusView({
             {current.setIdx + 1 === totalSetsThisEx ? 'SET DONE. NEXT' : 'NEXT SET ✓'}
           </button>
         )}
-        <div className="mt-2.5 flex items-center justify-center gap-2 pb-1">
+        <div className="mt-2.5 flex items-center justify-center gap-1.5 pb-1">
           {staleOnFirst && (
-            <button onClick={restartFresh} className="rounded-full bg-white/[0.07] px-4 py-2.5 text-[12px] font-bold text-cyan active:scale-95">
+            <button onClick={restartFresh} className="whitespace-nowrap rounded-full bg-white/[0.07] px-3 py-2.5 text-[11.5px] font-bold text-cyan active:scale-95">
               ↻ Fresh time
             </button>
           )}
           <button
             onClick={() => setHowToOpen(true)}
-            className="rounded-full bg-white/[0.07] px-4 py-2.5 text-[12px] font-bold text-ink-dim active:scale-95"
+            className="whitespace-nowrap rounded-full bg-white/[0.07] px-3 py-2.5 text-[11.5px] font-bold text-ink-dim active:scale-95"
           >
             How do I do this?
           </button>
-          <button onClick={() => setCantFinish(true)} className="rounded-full bg-danger/15 px-4 py-2.5 text-[12px] font-bold text-danger active:scale-95">
+          <button onClick={() => setCantFinish(true)} className="whitespace-nowrap rounded-full bg-danger/15 px-3 py-2.5 text-[11.5px] font-bold text-danger active:scale-95">
             Can't finish
+          </button>
+          <button onClick={() => setTimeCheck(true)} className="whitespace-nowrap rounded-full bg-white/[0.07] px-3 py-2.5 text-[11.5px] font-bold text-ink-dim active:scale-95">
+            Short on time?
           </button>
         </div>
       </div>
@@ -614,6 +619,12 @@ export function FocusView({
         exIdx={current.exIdx}
         setIdx={current.setIdx}
         weightLb={set.weightLb}
+        onFinishSession={onFinish}
+      />
+      <TimeCheckSheet
+        open={timeCheck}
+        onClose={() => setTimeCheck(false)}
+        session={session}
         onFinishSession={onFinish}
       />
       {howToOpen && <HowToSlides def={def} onClose={() => setHowToOpen(false)} />}
