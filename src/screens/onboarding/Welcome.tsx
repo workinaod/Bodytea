@@ -46,7 +46,7 @@ export function Welcome({
 }) {
   return (
     <div className="flex flex-1 flex-col justify-center">
-      <div className="eyebrow text-accent">Bodytea</div>
+      <div className="eyebrow text-accent">BodyT</div>
       <h1 className="mt-2 text-display font-black">
         Name any goal
         <br />

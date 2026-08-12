@@ -20,8 +20,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Bodytea — Your goal. Your booklet.',
-        short_name: 'Bodytea',
+        name: 'BodyT. Your goal. Your booklet.',
+        short_name: 'BodyT',
         description:
           'Your goal in your own words becomes a full training booklet: workouts with photo demos, meals, progress, a global leaderboard, and a coach that keeps you honest.',
         theme_color: '#07070d',

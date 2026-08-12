@@ -191,7 +191,7 @@ export function RunReactionCard({ log, reaction }: { log: RunLog; reaction: Reac
 
         {/* type */}
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
-          <span className="font-display text-[15px] font-bold tracking-tight text-accent">BODYTEA</span>
+          <span className="font-display text-[15px] font-bold tracking-tight text-accent">BODYT</span>
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-faint">
             {log.activity === 'bike' ? 'Ride' : 'Run'} · {log.date}
           </span>

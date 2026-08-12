@@ -115,7 +115,7 @@ async function maybeNotify(): Promise<void> {
   // the daily throttle: three of these a year is not spam.
   if (meta.reviewReadyMark && meta.reviewNotifiedMark !== meta.reviewReadyMark) {
     await self.registration.showNotification(
-      `Bodytea · ${meta.reviewReadyLabel || 'Milestone review'} is ready`,
+      `BodyT · ${meta.reviewReadyLabel || 'Milestone review'} is ready`,
       {
         body: 'Deltas, before/after, and the honest read on gains vs effort. Two minutes. You earned the look.',
         tag: 'naod-review-ready',
@@ -130,7 +130,7 @@ async function maybeNotify(): Promise<void> {
   const now0 = new Date()
   const today0 = `${now0.getFullYear()}-${String(now0.getMonth() + 1).padStart(2, '0')}-${String(now0.getDate()).padStart(2, '0')}`
   if (meta.checkinDueToday && now0.getHours() >= 8 && meta.checkinNotifiedDate !== today0 && meta.todayDate === today0) {
-    await self.registration.showNotification('Bodytea · Weekly check-in day', {
+    await self.registration.showNotification('BodyT · Weekly check-in day', {
       body: 'Two minutes with the scale and the tape. The trends only work if you feed them.',
       tag: 'naod-checkin',
       icon: 'icons/pwa-192.png',
@@ -176,7 +176,7 @@ async function maybeNotify(): Promise<void> {
     meta.makeupNotifiedDate !== today0 &&
     meta.todayDate === today0
   ) {
-    await self.registration.showNotification('Bodytea · Make-up day', {
+    await self.registration.showNotification('BodyT · Make-up day', {
       body: `You missed ${meta.makeupTitle} this week. Off day, open window. Let's make it up today.`,
       tag: 'naod-makeup-week',
       icon: 'icons/pwa-192.png',
@@ -209,7 +209,7 @@ async function maybeNotify(): Promise<void> {
     ? 'Session done ✓. Any cardio today? Run or game, pre or post, log it.'
     : NUDGES[now.getDate() % NUDGES.length]
   await self.registration.showNotification(
-    cardioNudge ? 'Bodytea · Cardio check' : `Bodytea · ${meta.todayTitle}`,
+    cardioNudge ? 'BodyT · Cardio check' : `BodyT · ${meta.todayTitle}`,
     {
       body,
       tag: cardioNudge ? 'naod-cardio-nudge' : 'naod-train-reminder',

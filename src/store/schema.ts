@@ -9,8 +9,9 @@ import { addDaysISO } from '../engine/calendar'
 // or an import file passes through migrate() then zod.
 // ============================================================
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
-const weekday = z.number().int().min(0).max(6)
+import { isoDate, weekday } from './primitives'
+// Session shapes live in ./sessionSchema, beside the types they mirror.
+import { sessionSchema } from './sessionSchema'
 
 const settingsSchema = z.object({
   phaseStartDate: isoDate,
@@ -120,41 +121,6 @@ export const planConfigSchema = z.object({
     ),
     lateNight: z.object({ yes: z.array(z.string()), no: z.array(z.string()) }),
   }),
-})
-
-const setLogSchema = z.object({
-  targetReps: z.string(),
-  weightLb: z.number().optional(),
-  reps: z.number().optional(),
-  seconds: z.number().optional(),
-  done: z.boolean(),
-})
-
-const sessionSchema = z.object({
-  date: isoDate,
-  templateId: z.string(),
-  status: z.enum(['completed', 'partial', 'skipped', 'downgraded-completed']),
-  startedAt: z.string().optional(),
-  endedAt: z.string().optional(),
-  readiness: z
-    .object({
-      flags: z.tuple([z.boolean(), z.boolean(), z.boolean(), z.boolean()]),
-      downgraded: z.boolean(),
-    })
-    .optional(),
-  intensity: z.enum(['full', 'lighter', 'minimum']).optional(),
-  makeupFor: isoDate.optional(),
-  trimmedFromIndex: z.number().optional(),
-  exercises: z.array(
-    z.object({
-      exerciseId: z.string(),
-      fromSlot: z.string().optional(),
-      sets: z.array(setLogSchema),
-      skipped: z.boolean().optional(),
-      feel: z.enum(['easy', 'right', 'hard']).optional(),
-    }),
-  ),
-  notes: z.string().optional(),
 })
 
 const weekSchema = z.object({
@@ -654,11 +620,11 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
 
 export function migrate(env: unknown): Envelope {
   if (typeof env !== 'object' || env === null) {
-    throw new Error('Not a Bodytea backup file')
+    throw new Error('Not a BodyT backup file')
   }
   let e = env as Record<string, unknown>
   let v = typeof e.schemaVersion === 'number' ? e.schemaVersion : 0
-  if (v === 0) throw new Error('Missing schema version, not a Bodytea backup file')
+  if (v === 0) throw new Error('Missing schema version, not a BodyT backup file')
   if (v > SCHEMA_VERSION) {
     throw new Error(`This backup is from a newer app version (schema ${v}). Update the app first.`)
   }

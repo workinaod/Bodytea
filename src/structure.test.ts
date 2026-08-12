@@ -46,21 +46,26 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   'plan/athleticExercises.ts': 1250,
   'plan/demos.ts': 900,
   'plan/athletic.ts': 735,
-  // Activity shapes moved to activityTypes.ts; the allowance follows.
-  'types.ts': 715,
+  // Activity shapes moved to activityTypes.ts, then the logged-session
+  // shapes to sessionTypes.ts; the allowance follows each time.
+  'types.ts': 670,
   // Real splits owed, in plan order.
   'screens/onboarding/Onboarding.tsx': 1095,
   'screens/meals/MealsScreen.tsx': 980,
   'plan/generator.ts': 920,
   // Was 835, which it blew through and broke three deploys on. Meal
-  // logging moved to logic/mealActions.ts and the allowance follows it
-  // down: an oversized file that shrinks does not keep the headroom.
-  'logic/actions.ts': 802,
+  // logging moved to logic/mealActions.ts, then the prescription (what
+  // load and how many reps to ask for) to logic/prescription.ts. The
+  // allowance follows it down each time: an oversized file that shrinks
+  // does not keep the headroom.
+  'logic/actions.ts': 761,
   // Was 836. The how-to reader and the rest screen both moved out, and
   // the allowance follows it down: an oversized file that shrinks does
   // not get to keep the headroom it earned.
   'screens/today/FocusView.tsx': 660,
-  'store/schema.ts': 680,
+  // Session shapes moved to store/sessionSchema.ts, beside the types they
+  // mirror, and the shared zod primitives to store/primitives.ts.
+  'store/schema.ts': 645,
   'engine/engine.test.ts': 705,
 }
 

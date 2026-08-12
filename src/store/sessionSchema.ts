@@ -1,0 +1,48 @@
+import { z } from 'zod'
+import { isoDate } from './primitives'
+
+// ============================================================
+// The zod mirror of sessionTypes.ts. Kept beside its types
+// rather than in schema.ts, which had reached its line
+// allowance with no room to add a field.
+//
+// Every field added here must also be added to
+// src/sessionTypes.ts, and vice versa. Optional fields need no
+// migration: zod parses older envelopes that lack them, which
+// is how ExerciseLog.feel already works.
+// ============================================================
+
+export const setLogSchema = z.object({
+  targetReps: z.string(),
+  weightLb: z.number().optional(),
+  reps: z.number().optional(),
+  seconds: z.number().optional(),
+  done: z.boolean(),
+})
+
+export const sessionSchema = z.object({
+  date: isoDate,
+  templateId: z.string(),
+  status: z.enum(['completed', 'partial', 'skipped', 'downgraded-completed']),
+  startedAt: z.string().optional(),
+  endedAt: z.string().optional(),
+  readiness: z
+    .object({
+      flags: z.tuple([z.boolean(), z.boolean(), z.boolean(), z.boolean()]),
+      downgraded: z.boolean(),
+    })
+    .optional(),
+  intensity: z.enum(['full', 'lighter', 'minimum']).optional(),
+  makeupFor: isoDate.optional(),
+  trimmedFromIndex: z.number().optional(),
+  exercises: z.array(
+    z.object({
+      exerciseId: z.string(),
+      fromSlot: z.string().optional(),
+      sets: z.array(setLogSchema),
+      skipped: z.boolean().optional(),
+      feel: z.enum(['easy', 'right', 'hard']).optional(),
+    }),
+  ),
+  notes: z.string().optional(),
+})

@@ -70,7 +70,7 @@ export async function showNotification(
     if (notificationSupport() !== 'granted') return false
     const reg = await navigator.serviceWorker.getRegistration()
     if (!reg) return false
-    await reg.showNotification(`Bodytea · ${title}`, {
+    await reg.showNotification(`BodyT · ${title}`, {
       body,
       tag,
       icon: 'icons/pwa-192.png',
@@ -120,7 +120,7 @@ export function deliveryNote(cap: DeliveryCapability): string {
     case 'periodic-sync':
       return 'Reminders arrive in the background on this device.'
     case 'foreground-only':
-      return 'This device only delivers while Bodytea is open. Add it to your home screen for the rest.'
+      return 'This device only delivers while BodyT is open. Add it to your home screen for the rest.'
     case 'none':
       return 'This browser cannot show notifications.'
   }

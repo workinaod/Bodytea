@@ -103,7 +103,7 @@ export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise
   x.textBaseline = 'top'
   x.fillStyle = '#ff4f30'
   x.font = `700 46px ${DISPLAY}`
-  x.fillText('BODYTEA', 72, 70)
+  x.fillText('BODYT', 72, 70)
   x.fillStyle = 'rgba(255,255,255,0.55)'
   x.font = `600 34px ${DISPLAY}`
   x.fillText(`${log.activity === 'bike' ? 'RIDE' : 'RUN'} · ${log.date}`, 72, 132)
@@ -215,7 +215,7 @@ export async function buildShareImage(log: RunLog, reaction?: Reaction): Promise
  * sheet genuinely isn't available or errored.
  */
 export async function shareRunCard(log: RunLog, blob: Blob): Promise<'shared' | 'downloaded' | 'cancelled'> {
-  const file = new File([blob], `bodytea-${log.activity}-${log.date}.png`, { type: 'image/png' })
+  const file = new File([blob], `bodyt-${log.activity}-${log.date}.png`, { type: 'image/png' })
   const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean }
   if (nav.canShare?.({ files: [file] }) && navigator.share) {
     try {

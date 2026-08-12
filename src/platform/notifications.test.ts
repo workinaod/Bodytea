@@ -82,7 +82,7 @@ describe('delivery', () => {
       },
     })
     expect(await showNotification('Session open', 'Body', 'tag')).toBe(true)
-    expect(shown).toEqual(['Bodytea · Session open'])
+    expect(shown).toEqual(['BodyT · Session open'])
   })
 })
 
@@ -90,7 +90,7 @@ describe('honesty about delivery', () => {
   it('every capability has a sentence a user can act on', () => {
     expect(deliveryNote('push')).toMatch(/open or not/)
     // The iPhone case: say the limit instead of pretending the switch works
-    expect(deliveryNote('foreground-only')).toMatch(/only delivers while Bodytea is open/)
+    expect(deliveryNote('foreground-only')).toMatch(/only delivers while BodyT is open/)
     expect(deliveryNote('periodic-sync')).toMatch(/background/)
     expect(deliveryNote('none')).toMatch(/cannot/)
   })
