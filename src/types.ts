@@ -316,6 +316,9 @@ export * from './activityTypes'
 
 export type MealEntrySource = 'chip' | 'mealTemplate' | 'custom' | 'recent'
 
+/** An adaptation the athlete tapped to accept. */
+export type AdaptChoice = 'hold-load' | 'reduce-volume'
+
 export interface MealEntry {
   id: string
   at: string
@@ -554,6 +557,21 @@ export interface AppData {
    * plan returns tomorrow.
    */
   dayLoad: Record<ISODate, 'trimmed'>
+  /**
+   * Adaptation proposals the athlete has ACCEPTED, per date.
+   *
+   * Kept apart from dayLoad because they are different decisions.
+   * dayLoad is one blunt "make today lighter" covering sets, load and
+   * jumping together. These are the specific offers engine/adapt.ts
+   * makes off specific evidence, and holding the load is not the same
+   * thing as taking a set off: one is about not climbing this week, the
+   * other about the size of today.
+   *
+   * Only accepted ones are stored. A proposal nobody took leaves no
+   * trace, which is what keeps a declined suggestion from quietly
+   * shaping next week.
+   */
+  adapt: Record<ISODate, AdaptChoice[]>
   /** GPS-tracked runs & rides, newest last. */
   runs: RunLog[]
 }
@@ -625,6 +643,7 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, pla
     cardio: {},
     swaps: {},
     dayLoad: {},
+    adapt: {},
     runs: [],
   }
 }

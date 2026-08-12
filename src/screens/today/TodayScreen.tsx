@@ -17,6 +17,7 @@ import { makeupCandidate } from '../../engine/reconcile'
 import { sessionGrade } from '../../engine/stats'
 import { streakDays } from '../../engine/streak'
 import { quitCopy } from '../../engine/quit'
+import { AdaptProposals } from './AdaptProposals'
 import { swapCandidatesFor } from '../../plan/subs'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
@@ -187,6 +188,8 @@ export function TodayScreen() {
       {day.banners.map((b) => (
         <BannerRow key={b.id} banner={b} />
       ))}
+
+      <AdaptProposals date={date} />
 
       {/* Trimmed-day escape hatch: the meeting got cancelled after all */}
       {!session && data.dayLoad[date] === 'trimmed' && (
@@ -568,3 +571,5 @@ export function TodayScreen() {
     </div>
   )
 }
+
+

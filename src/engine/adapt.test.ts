@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { defaultWeekState, emptyAppData, type AppData, type EquipTag, type ResolvedExercise } from '../types'
 import { getExercise } from '../plan/exercises'
 import { MOVEMENT } from '../plan/movement'
+import { adaptSession } from './adapt'
 import {
   applyAutomatic,
   planAdjustments,
@@ -72,7 +73,7 @@ describe('reading what actually happened', () => {
   it('notices two hours of basketball nobody planned', () => {
     const d = base()
     d.cardio['2026-08-13'] = [
-      { id: 'c1', activityId: 'basketball', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
+      { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
     ] as never
     const extra = readSignals(d, TODAY).find((s) => s.kind === 'extra-load')
     expect(extra).toBeDefined()
@@ -82,7 +83,7 @@ describe('reading what actually happened', () => {
   it('ignores a short walk, which is not a training load', () => {
     const d = base()
     d.cardio['2026-08-13'] = [
-      { id: 'c1', activityId: 'walk', minutes: EXTRA_LOAD_MINUTES - 15, at: '2026-08-13T20:00:00.000Z' },
+      { id: 'c1', activityId: 'walk', label: 'Walk', when: 'solo', minutes: EXTRA_LOAD_MINUTES - 15, at: '2026-08-13T20:00:00.000Z' },
     ] as never
     expect(readSignals(d, TODAY).some((s) => s.kind === 'extra-load')).toBe(false)
   })
@@ -222,7 +223,7 @@ describe('tired, and already loaded up', () => {
     const both = base()
     both.weeks[MONDAY].badSleepDates = ['2026-08-12', '2026-08-13']
     both.cardio['2026-08-13'] = [
-      { id: 'c1', activityId: 'basketball', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
+      { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
     ] as never
     const adj = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(both, TODAY) })
     expect(adj.some((a) => a.kind === 'reduce-volume')).toBe(true)
@@ -233,7 +234,7 @@ describe('tired, and already loaded up', () => {
     const both = base()
     both.weeks[MONDAY].badSleepDates = ['2026-08-12', '2026-08-13']
     both.cardio['2026-08-13'] = [
-      { id: 'c1', activityId: 'basketball', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
+      { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
     ] as never
     for (const a of planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(both, TODAY) })) {
       expect(a.kind).not.toBe('add-volume')
@@ -249,7 +250,7 @@ describe('the week the body actually had', () => {
       exercises: [{ exerciseId: 'front-squat', sets: [{ targetReps: '5', done: true }, { targetReps: '5', done: true }] }],
     })
     d.cardio['2026-08-13'] = [
-      { id: 'c1', activityId: 'basketball', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
+      { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
     ] as never
     const load = weekLoad(d, TODAY)
     expect(load.planned).toBeGreaterThan(0)
@@ -258,5 +259,91 @@ describe('the week the body actually had', () => {
 
   it('reads zero for a week with nothing in it', () => {
     expect(weekLoad(base(), TODAY)).toEqual({ planned: 0, unplanned: 0 })
+  })
+})
+
+
+describe('coming back after missing sessions', () => {
+  const missedTwice = () => {
+    const d = base()
+    d.sessions['2026-08-11'] = session('2026-08-11', { status: 'skipped' })
+    d.sessions['2026-08-12'] = session('2026-08-12', { status: 'skipped' })
+    return d
+  }
+
+  it('proposes holding the weight rather than picking up where the plan expected', () => {
+    const adj = planAdjustments([ex('goblet-squat')], {
+      owned: GYM,
+      signals: readSignals(missedTwice(), TODAY),
+    })
+    const hold = adj.find((a) => a.kind === 'hold-load')
+    expect(hold?.automatic).toBe(false)
+    expect(hold?.because).toContain('Coming back')
+  })
+
+  it('does not say it twice when they are also exhausted', () => {
+    // Missing sessions and being wrecked call for the same answer, and
+    // stacking both onto one screen reads as the app panicking.
+    const d = missedTwice()
+    d.weeks[MONDAY].badSleepDates = ['2026-08-12', '2026-08-13']
+    const holds = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(d, TODAY) })
+      .filter((a) => a.kind === 'hold-load')
+    expect(holds).toHaveLength(1)
+  })
+})
+
+describe('a proposal the athlete actually took', () => {
+  const day = [ex('goblet-squat', 4), ex('flat-db-press', 3), ex('couch-stretch', 2)]
+
+  it('does nothing at all until it is accepted', () => {
+    const d = base()
+    expect(adaptSession(day, d, TODAY, [...GYM], nameOf).exercises.map((e) => e.sets)).toEqual([4, 3, 2])
+  })
+
+  it('does not ANNOUNCE a proposal as though it had been applied', () => {
+    // adaptSession filters to the automatic adjustments before it writes
+    // any note. Drop that filter and the day grows a banner explaining a
+    // change nobody agreed to and nothing actually made, which is worse
+    // than either doing it or staying quiet.
+    const d = base()
+    d.weeks[MONDAY].badSleepDates = ['2026-08-12', '2026-08-13']
+    d.cardio['2026-08-13'] = [
+      { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
+    ] as never
+    const out = adaptSession(day, d, TODAY, [...GYM], nameOf)
+    expect(readSignals(d, TODAY).length).toBeGreaterThan(0) // the offers exist
+    expect(out.notes).toEqual([]) // and the day says nothing about them
+    expect(out.exercises.map((e) => e.sets)).toEqual([4, 3, 2])
+  })
+
+  it('takes one set off each lift once accepted', () => {
+    const d = base()
+    d.adapt[TODAY] = ['reduce-volume']
+    const out = adaptSession(day, d, TODAY, [...GYM], nameOf)
+    expect(out.exercises.map((e) => e.sets)).toEqual([3, 2, 2])
+    expect(out.notes.join(' ')).toContain('set off each lift')
+  })
+
+  it('leaves stretching alone, because cutting a set of that is not a reduction', () => {
+    const d = base()
+    d.adapt[TODAY] = ['reduce-volume']
+    const out = adaptSession([ex('couch-stretch', 3)], d, TODAY, [...GYM], nameOf)
+    expect(out.exercises[0].sets).toBe(3)
+  })
+
+  it('never cuts a lift below the point where it stops training anything', () => {
+    const d = base()
+    d.adapt[TODAY] = ['reduce-volume']
+    const out = adaptSession([ex('goblet-squat', 2)], d, TODAY, [...GYM], nameOf)
+    expect(out.exercises[0].sets).toBe(2)
+  })
+
+  it('holding the load is NOT the same switch as cutting sets', () => {
+    // Two different decisions off two different pieces of evidence. Running
+    // them through one control is how "take it easy" quietly became three
+    // reductions stacked on one session.
+    const d = base()
+    d.adapt[TODAY] = ['hold-load']
+    expect(adaptSession(day, d, TODAY, [...GYM], nameOf).exercises.map((e) => e.sets)).toEqual([4, 3, 2])
   })
 })

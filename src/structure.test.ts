@@ -53,7 +53,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // Activity shapes moved to activityTypes.ts, the logged-session shapes
   // to sessionTypes.ts, the engine's day output to resolvedTypes.ts; the
   // allowance follows each time.
-  'types.ts': 644,
+  'types.ts': 663,
   // Real splits owed, in plan order.
   'screens/onboarding/Onboarding.tsx': 1095,
   'screens/meals/MealsScreen.tsx': 1011,
@@ -79,7 +79,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // Migrations only ever accumulate: every schema bump adds a step that
   // can never be deleted while any device might still hold the old shape.
   // This one is the +21 for v19 → v20, the calorie-floor repair.
-  'store/schema.ts': 639,
+  'store/schema.ts': 640,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,

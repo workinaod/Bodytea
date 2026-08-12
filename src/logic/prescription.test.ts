@@ -203,3 +203,39 @@ describe('prefillFor: the one session check-in drives the load', () => {
     expect(prefillFor(TODAY, SQUAT, { repRange: { low: 6, high: 8 } }).weightLb).toBe(105)
   })
 })
+
+describe('an accepted "hold the load"', () => {
+  // The wrap is what pays the progression: reaching the top of the rep
+  // range is the moment the weight goes up. Holding cancels exactly that
+  // and nothing else.
+  function withHistory(hold: boolean) {
+    const d = emptyAppData('2026-08-03', '2026-08-10')
+    d.settings.onboarded = true
+    // Last session cleared the TOP of 6-8, which earns the load step.
+    d.sessions['2026-08-03'] = {
+      date: '2026-08-03',
+      templateId: 'monday',
+      status: 'completed',
+      exercises: [
+        {
+          exerciseId: 'goblet-squat',
+          sets: [
+            { targetReps: '8', reps: 8, weightLb: 50, done: true },
+            { targetReps: '8', reps: 8, weightLb: 50, done: true },
+          ],
+        },
+      ],
+    }
+    if (hold) d.adapt['2026-08-10'] = ['hold-load']
+    useAppStore.setState({ data: d })
+    return prefillFor('2026-08-10', 'goblet-squat', { repRange: { low: 6, high: 8 } })
+  }
+
+  it('climbs normally when nothing was accepted', () => {
+    expect(withHistory(false).weightLb).toBeGreaterThan(50)
+  })
+
+  it('stays put when the athlete took the offer', () => {
+    expect(withHistory(true).weightLb).toBe(50)
+  })
+})

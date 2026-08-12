@@ -42,7 +42,14 @@ export function prefillFor(
   // the same walk through history: the wrap that earns more weight, and
   // the fell-short-and-felt-heavy that gives some back.
   const step = opts.repRange ? repStepFor(data, exerciseId, opts.repRange, date) : null
-  const wrapStep = step?.wrapped ? loadStepLb(exerciseId) : 0
+  // An accepted "hold the load" cancels the climb and nothing else.
+  //
+  // The back-off is deliberately still paid: that one fires on a session
+  // that fell short AND felt heavy, which is evidence the weight is
+  // already too much, and holding a weight somebody could not lift is
+  // not what anybody agreed to.
+  const holding = (data.adapt[date] ?? []).includes('hold-load')
+  const wrapStep = step?.wrapped && !holding ? loadStepLb(exerciseId) : 0
   const backOff = step?.backOff ? -loadStepLb(exerciseId) : 0
 
   const sessions = Object.values(data.sessions)

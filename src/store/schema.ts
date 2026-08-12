@@ -255,6 +255,7 @@ const appDataSchema = z.object({
   cardio: z.record(z.string(), z.array(cardioEntrySchema)),
   swaps: z.record(z.string(), z.record(z.string(), z.string())),
   dayLoad: z.record(z.string(), z.literal('trimmed')),
+  adapt: z.record(z.string(), z.array(z.enum(['hold-load', 'reduce-volume']))).default({}),
   runs: z.array(runLogSchema),
 })
 

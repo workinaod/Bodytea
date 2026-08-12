@@ -81,3 +81,37 @@ test('one complaint is not enough to rewrite anybody\'s plan', async ({ page }) 
   await boot(page, state)
   await expect(page.getByText(/shoulder has been complaining/)).toHaveCount(0)
 })
+
+test('a proposal is offered, taken, and actually changes the day', async ({ page }) => {
+  const state = seed((d) => {
+    // Two bad nights AND two unplanned hours of sport: the combination
+    // that earns both offers.
+    d.weeks['2026-08-10'].badSleepDates = ['2026-08-09', '2026-08-10']
+    d.cardio['2026-08-10'] = [
+      { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-10T20:00:00.000Z' },
+    ] as never
+  })
+  await boot(page, state)
+
+  // Offered, not applied.
+  const offer = page.getByText('A set off each lift', { exact: true })
+  await expect(offer).toBeVisible()
+  await expect(page.getByText(/because you asked for it/)).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Do that' }).last().click()
+
+  // Taken: the day says so, and the offer flips to an undo.
+  await expect(page.getByText(/because you asked for it/)).toBeVisible()
+  await expect(page.getByRole('button', { name: /Never mind/ }).last()).toBeVisible()
+})
+
+test('declining leaves no trace', async ({ page }) => {
+  const state = seed((d) => {
+    d.weeks['2026-08-10'].badSleepDates = ['2026-08-09', '2026-08-10']
+  })
+  await boot(page, state)
+
+  await expect(page.getByText('Hold the weights today')).toBeVisible()
+  // Ignore it entirely and move on. Nothing about the session changed.
+  await expect(page.getByText(/because you asked for it/)).toHaveCount(0)
+})

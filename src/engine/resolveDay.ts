@@ -478,7 +478,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
       return { name: def.name, kind: def.kind, restSec: def.restSec }
     })
     exercises = adapted.exercises
-    if (adapted.note) banners.push({ id: 'adapted', text: adapted.note, tone: 'info' })
+    adapted.notes.forEach((text, i) => banners.push({ id: `adapted-${i}`, text, tone: 'info' }))
   }
 
   // --- One rep number, never a range. LAST, after every decision ---

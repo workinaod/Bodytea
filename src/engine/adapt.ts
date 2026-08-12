@@ -277,6 +277,7 @@ export function planAdjustments(
   // 3. PROPOSAL: the body has been saying it is tired, in more than one way.
   const tired = ctx.signals.find((s) => s.kind === 'poor-sleep' || s.kind === 'accumulated-fatigue')
   const extra = ctx.signals.find((s) => s.kind === 'extra-load')
+  const missed = ctx.signals.find((s) => s.kind === 'missed')
   if (tired || extra) {
     const reasons = [tired?.detail, extra?.detail].filter(Boolean).join(' ')
     out.push({
@@ -292,6 +293,23 @@ export function planAdjustments(
         because: 'Tired AND already loaded up this week. A set off each lift keeps the session useful without adding to the hole.',
       })
     }
+  } else if (missed) {
+    // 4. PROPOSAL: coming back after a gap.
+    //
+    // The instinct after missing sessions is to make them up, and it is
+    // the wrong one: a fortnight with holes in it has left you slightly
+    // detrained, and the load that was right before the gap is not right
+    // on the way back. Holding it for one session costs nothing and is
+    // the difference between resuming and re-injuring.
+    //
+    // Deliberately in the ELSE branch. Missing sessions and being
+    // exhausted call for the same answer, and saying it twice on one
+    // screen reads as the app panicking.
+    out.push({
+      kind: 'hold-load',
+      automatic: false,
+      because: `${missed.detail} Coming back, hold the weight where it was rather than picking up where the plan expected you to be. One session at the old number, then climb.`,
+    })
   }
 
   return out
@@ -393,18 +411,40 @@ export function adaptSession(
   dateISO: ISODate,
   equipment: EquipTag[],
   nameOf: (id: string) => { name: string; kind: ResolvedExercise['kind']; restSec: number },
-): { exercises: ResolvedExercise[]; note: string | null } {
+): { exercises: ResolvedExercise[]; notes: string[] } {
+  const notes: string[] = []
+  let out = exercises
+
   const owned = new Set<EquipTag>(['none', ...equipment])
   const automatic = planAdjustments(exercises, {
     owned,
     signals: readSignals(data, dateISO),
   }).filter((a) => a.automatic)
-  if (automatic.length === 0) return { exercises, note: null }
-  return {
-    exercises: applyAutomatic(exercises, automatic, nameOf),
-    note:
+  if (automatic.length > 0) {
+    out = applyAutomatic(out, automatic, nameOf)
+    notes.push(
       automatic.length === 1
         ? automatic[0].because
         : `${automatic.length} movements swapped today. ${automatic[0].because}`,
+    )
   }
+
+  // A proposal the athlete actually took. Only the SETS come off here.
+  // Holding the load is the prescription's business rather than the day's
+  // shape, and running both through one switch is how "take it easy"
+  // turned into three different reductions stacking on one session.
+  if ((data.adapt[dateISO] ?? []).includes('reduce-volume')) {
+    out = out.map((e) =>
+      KIND_COUNTS_AS_LIFTING.has(e.kind) && e.sets > MIN_SETS_AFTER_CUT ? { ...e, sets: e.sets - 1 } : e,
+    )
+    notes.push('A set off each lift, because you asked for it. Same movements, same weights, smaller day.')
+  }
+
+  return { exercises: out, notes }
 }
+
+/** Below this a movement stops training anything, so a cut leaves it alone. */
+const MIN_SETS_AFTER_CUT = 2
+
+/** Cutting a set off a stretch or a warm-up is not a reduction anybody feels. */
+const KIND_COUNTS_AS_LIFTING = new Set<ResolvedExercise['kind']>(['lift', 'core', 'carry'])

@@ -1,4 +1,4 @@
-import type { FatigueReason, ISODate } from '../types'
+import type { AdaptChoice, FatigueReason, ISODate } from '../types'
 import { regionsFor, sameGroupAhead } from '../engine/fatigue'
 import { useAppStore } from '../store/appStore'
 
@@ -80,4 +80,29 @@ export function endGroupAhead(date: ISODate, exIdx: number): number {
     }
   })
   return idxs.size
+}
+
+// ---------- Accepting an adaptation ----------
+
+/**
+ * Take an offer the coach made off the last fortnight's evidence.
+ *
+ * Stored per date and only when ACCEPTED. A proposal nobody took leaves
+ * no trace at all, which is what stops a declined suggestion quietly
+ * shaping next week: engine/adapt.ts re-derives its offers from the
+ * signals every time, so a decline is simply the absence of a yes.
+ */
+export function acceptAdaptation(date: ISODate, choice: AdaptChoice): void {
+  store().update((d) => {
+    const taken = d.adapt[date] ?? []
+    if (!taken.includes(choice)) d.adapt[date] = [...taken, choice]
+  })
+}
+
+export function undoAdaptation(date: ISODate, choice: AdaptChoice): void {
+  store().update((d) => {
+    const taken = (d.adapt[date] ?? []).filter((c) => c !== choice)
+    if (taken.length) d.adapt[date] = taken
+    else delete d.adapt[date]
+  })
 }
