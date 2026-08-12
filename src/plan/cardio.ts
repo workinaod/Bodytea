@@ -363,17 +363,22 @@ const ACTIVITY_TRACKING: Record<string, ActivityTracking> = {
     met: { low: 4.0, standard: 6.0, high: 8.0 },
   },
 
-  // ---- Combat: steps read effort, but they are not travel ----
+  // ---- Combat ----
   combat: {
     steps: true,
-    // Footwork is measurable. Distance is not a thing anyone covers
-    // in a boxing ring, and reporting one would be theatre.
-    distance: 'none',
+    distance: 'steps',
+    // The shortest stride in the table by a distance. A fighter in
+    // stance moves in inches: shuffles, pivots, half-steps in and out.
+    // Anything near a walking stride would report a boxing round as a
+    // stroll across a car park.
+    stride: 0.2,
     band: { low: 2000, high: 5000 },
     met: { low: 5.3, standard: 7.8, high: 10.3 },
   },
 
   // ---- Counted, but not travelled ----
+  // The one activity that is all footfall and no ground. A skipper
+  // lands ten thousand times on the same square metre.
   'jump-rope': {
     steps: true,
     distance: 'none',

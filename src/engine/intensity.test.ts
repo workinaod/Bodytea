@@ -96,6 +96,17 @@ describe('the tracking table', () => {
     expect(drifted.map((a) => a.id)).toEqual([])
   })
 
+  it('reports distance for everything it counts steps for, bar the rope', () => {
+    // The rule, stated: if the phone can count your footfalls it can
+    // say how far you moved, and it should. Jump rope is the one
+    // exception and it is a real one, not a gap: a skipper lands ten
+    // thousand times on the same square metre.
+    const missing = CARDIO_ACTIVITIES.filter(
+      (a) => trackingFor(a.id).steps && a.id !== 'jump-rope',
+    ).filter((a) => trackingFor(a.id).distance === 'none')
+    expect(missing.map((a) => a.id)).toEqual([])
+  })
+
   it('keeps steps off the water, the wheels and the blades', () => {
     for (const id of ['swim', 'row-erg', 'bike', 'hockey', 'snow']) {
       expect(tracksSteps(id)).toBe(false)
@@ -240,7 +251,7 @@ describe('distance', () => {
   it('is blank wherever a number would be theatre', () => {
     // No ground is covered in a boxing ring, a lane, an erg or a
     // skipping rope. A mileage figure for any of them is invented.
-    for (const id of ['combat', 'jump-rope', 'swim', 'row-erg', 'hockey', 'snow']) {
+    for (const id of ['jump-rope', 'swim', 'row-erg', 'hockey', 'snow']) {
       expect(distanceSourceFor(id)).toBe('none')
       expect(stepDistanceMi(id, 9000, 69)).toBeNull()
     }
@@ -415,5 +426,27 @@ describe('stepsPerHour', () => {
     expect(stepsPerHour(3000, 30)).toBe(6000)
     expect(stepsPerHour(1000, 10)).toBe(6000)
     expect(stepsPerHour(6000, 0)).toBe(0)
+  })
+})
+
+describe('a combat round', () => {
+  it('covers ground, and not much of it', () => {
+    // A fighter in stance moves in inches. An hour of hard work is
+    // somewhere under a mile of actual travel, and a number near a
+    // walking stride would report a boxing round as a stroll across a
+    // car park.
+    const mi = stepDistanceMi('combat', 4000, 69) as number
+    expect(mi).not.toBeNull()
+    expect(mi).toBeGreaterThan(0.5)
+    expect(mi).toBeLessThan(1.2)
+    // Shorter per step than the smallest court in the table.
+    expect(stepDistanceMi('combat', 5000, 69)!).toBeLessThan(stepDistanceMi('pickleball', 5000, 69)!)
+  })
+
+  it('still stays out of lifetime mileage', async () => {
+    // Ground covered on a mat is real and it is not travel, same as
+    // every court sport. It has its own row; it does not join the hikes.
+    const { travelMiles } = await import('./activityLog')
+    expect(travelMiles({ activityId: 'combat', miles: 0.9 })).toBe(0)
   })
 })

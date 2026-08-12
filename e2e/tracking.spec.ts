@@ -42,8 +42,16 @@ test('it only promises a measurement it can actually take', async ({ page }) => 
   await onboard(page)
 
   // Basketball is counted but not mapped: a court is shorter than GPS
-  // error, so distance comes from the step count.
+  // error, so its distance comes from the step count. It is still a
+  // distance, and the screen says so.
   await openTracker(page, 'Basketball')
+  await expect(timer(page)).toContainText('counts your steps and distance')
+  await page.getByRole('button', { name: 'Close' }).click()
+  await page.waitForTimeout(300)
+
+  // Jump rope is the one thing counted that covers no ground: ten
+  // thousand landings on the same square metre.
+  await openTracker(page, 'Jump rope')
   await expect(timer(page)).toContainText('counts your steps')
   await expect(timer(page)).not.toContainText('and distance')
   await page.getByRole('button', { name: 'Close' }).click()
@@ -280,4 +288,62 @@ test('a walk gets the same tracker whichever door you come through', async ({ pa
   await page.waitForTimeout(500)
   await expect(page.locator('.fixed.inset-0.z-\\[80\\]')).toHaveCount(1)
   await expect(page.locator('.fixed.inset-0.z-\\[90\\]')).toHaveCount(0)
+})
+
+test('a combat round reports how far you moved', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+  await onboard(page)
+  await openTracker(page, 'Combat sport')
+  await expect(timer(page)).toContainText('counts your steps and distance')
+
+  await page.getByRole('button', { name: /Start combat/i }).click()
+  // Motion permission resolves on a promise, so the counter is not
+  // listening the instant the tap lands.
+  await page.waitForTimeout(400)
+
+  // Headless reports no device motion, so the accelerometer stream is
+  // synthesised. Timestamps are set explicitly because the detector
+  // enforces a 250ms refractory between footfalls: dispatching as fast
+  // as the loop runs produces four steps a second of wall time, not a
+  // session.
+  const stepped = await page.evaluate(() => {
+    let t = 1000
+    for (let i = 0; i < 900; i++) {
+      t += 150
+      const ev = new Event('devicemotion')
+      Object.defineProperty(ev, 'timeStamp', { value: t })
+      Object.defineProperty(ev, 'accelerationIncludingGravity', {
+        value: { x: 0, y: 0, z: 9.81 + (i % 2 === 0 ? 5 : -5) },
+      })
+      window.dispatchEvent(ev)
+    }
+    return t
+  })
+  expect(stepped).toBeGreaterThan(0)
+
+  await page.clock.runFor(20 * 60_000)
+  await page.waitForTimeout(600)
+  await page.getByRole('button', { name: 'Finish' }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(500)
+
+  const entry = await page.evaluate(() => {
+    const env = JSON.parse(localStorage.getItem('naod.state')!)
+    return (
+      Object.values(env.data.cardio).flat() as {
+        steps?: number
+        miles?: number
+        distanceSource?: string
+      }[]
+    )[0]
+  })
+  expect(entry.steps).toBeGreaterThan(200)
+  // Ground covered, from steps at a fighter's stride, and labelled as
+  // coming from the step count rather than passed off as a route.
+  expect(entry.miles).toBeGreaterThan(0)
+  expect(entry.distanceSource).toBe('steps')
+  await expect(timer(page)).toContainText('mi')
 })
