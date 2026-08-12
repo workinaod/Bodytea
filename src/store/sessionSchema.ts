@@ -45,4 +45,17 @@ export const sessionSchema = z.object({
     }),
   ),
   notes: z.string().optional(),
+  fatigue: z
+    .array(
+      z.object({
+        exerciseId: z.string(),
+        reason: z.enum(['fried', 'form', 'pain', 'empty']),
+        atSetIdx: z.number().int().min(0),
+        // Regions are the muscle vocabulary, but validated as plain strings:
+        // a note written before a region was renamed must still load.
+        regions: z.array(z.string()),
+        note: z.string().optional(),
+      }),
+    )
+    .optional(),
 })
