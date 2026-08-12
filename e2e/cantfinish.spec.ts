@@ -62,7 +62,7 @@ test('the sheet opens ABOVE the session and takes a real tap', async ({ page }) 
   await page.getByRole('button', { name: "Can't finish" }).click()
   await page.waitForTimeout(400)
 
-  const chip = page.getByRole('button', { name: /Fried/ })
+  const chip = page.getByRole('button', { name: /Muscle fatigue/ })
   await expect(chip).toBeVisible()
 
   // The z-50 bug: the sheet rendered under FocusView's z-70, so it was
@@ -72,14 +72,14 @@ test('the sheet opens ABOVE the session and takes a real tap', async ({ page }) 
   const onTop = await page.evaluate(
     ([x, y]) => {
       const el = document.elementFromPoint(x, y)
-      return !!el?.closest('button')?.textContent?.includes('Fried')
+      return !!el?.closest('button')?.textContent?.includes('Muscle fatigue')
     },
     [box.x + box.width / 2, box.y + box.height / 2],
   )
   expect(onTop, 'something is covering the sheet').toBe(true)
 })
 
-test('fried drops the weight on the set you are standing in', async ({ page }) => {
+test('muscle fatigue drops the weight on the set you are standing in', async ({ page }) => {
   test.setTimeout(120_000)
   await page.clock.install({ time: new Date(2026, 7, 11, 9, 0) })
   await page.goto('./')
@@ -90,7 +90,7 @@ test('fried drops the weight on the set you are standing in', async ({ page }) =
   expect(before, 'no weight to drop from').toBeGreaterThan(0)
 
   await page.getByRole('button', { name: "Can't finish" }).click()
-  await page.getByRole('button', { name: /Fried/ }).click()
+  await page.getByRole('button', { name: /Muscle fatigue/ }).click()
   await page.getByRole('button', { name: /Drop to \d+ lb/ }).click()
   await page.getByRole('button', { name: 'Back to the set' }).click()
   await page.waitForTimeout(400)

@@ -16,20 +16,23 @@ import { endExercise, endGroupAhead, logFatigue } from '../../logic/fatigueActio
 // day has to be abandoned. And it asked nothing, so every reason
 // a set dies got the same response, which is no response.
 //
-// Four answers because they want four different things, one word
-// each, over one box you never have to use. Nothing here happens
-// without a tap: the sheet offers, the athlete chooses.
+// Four answers because they want four different things, named as
+// plainly as they can be, over one box you never have to use.
+// Nothing here happens without a tap: the sheet offers, the
+// athlete chooses.
 //
 // Built from the kit rather than from raw boxes. Translucent
 // glass and a hairline ring, never an opaque grey with a border,
 // which is the look Button.tsx calls cheap and is right about.
 // ============================================================
 
+// Ids are the stored values and never change: they are what the engine
+// reads and what is already on disk. Labels are free to say it better.
 const REASONS: { id: FatigueReason; emoji: string; label: string; sub: string }[] = [
-  { id: 'fried', emoji: '🔥', label: 'Fried', sub: 'The muscle is done. Nothing clean left.' },
+  { id: 'fried', emoji: '🔥', label: 'Muscle fatigue', sub: 'This muscle is done. Nothing clean left.' },
   { id: 'form', emoji: '📉', label: 'Form', sub: 'Could grind it out. It would be ugly.' },
   { id: 'pain', emoji: '🩹', label: 'Hurts', sub: 'Sharp or wrong, not the normal burn.' },
-  { id: 'empty', emoji: '🪫', label: 'Empty', sub: 'Whole body, not one muscle.' },
+  { id: 'empty', emoji: '🪫', label: 'No energy', sub: 'Whole body, not one muscle.' },
 ]
 
 /** A thing the athlete can tap. `tone` decides how loudly it is offered. */
