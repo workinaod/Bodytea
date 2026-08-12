@@ -174,3 +174,26 @@ describe('the cardio mirror of a GPS session', () => {
     expect(mirror.label).toBe('Hike')
   })
 })
+
+describe('the played mark agrees with the tier the screens show', () => {
+  it('takes the shown tier over the one frozen at save time', () => {
+    // entry.intensity is the population band on the day it was saved.
+    // Every display re-derives against the athlete's calibrated band.
+    // Left unresolved, one Week row could read "🏀 played" and "easy"
+    // in the same line, under the app's own rule that easy is not a
+    // game day.
+    expect(playedFrom({ activityId: 'basketball', intensity: 'standard' }, 'low')).toBe(false)
+    expect(playedFrom({ activityId: 'basketball', intensity: 'low' }, 'high')).toBe(true)
+  })
+
+  it('still lets the athlete own answer beat both', () => {
+    expect(
+      playedFrom({ activityId: 'basketball', intensity: 'low', feltIntensity: 'high' }, 'low'),
+    ).toBe(true)
+  })
+
+  it('falls back to the stored tier when nothing was shown', () => {
+    expect(playedFrom({ activityId: 'basketball', intensity: 'high' }, null)).toBe(true)
+    expect(playedFrom({ activityId: 'basketball', intensity: 'low' }, null)).toBe(false)
+  })
+})

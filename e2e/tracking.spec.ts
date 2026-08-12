@@ -247,3 +247,37 @@ test('a session that runs past midnight logs to the day it began', async ({ page
   )
   expect(dates).toEqual(['2026-08-10'])
 })
+
+test('a walk gets the same tracker whichever door you come through', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+  await onboard(page)
+
+  // Through the Track button: the GPS recorder, which portals at z-80.
+  await page.getByRole('button', { name: 'Track a run or ride' }).click()
+  await page.clock.runFor(600)
+  await page.waitForTimeout(500)
+  await page.getByRole('button', { name: /^🚶\s*Walk$/ }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(500)
+  await expect(page.locator('.fixed.inset-0.z-\\[80\\]')).toHaveCount(1)
+  await page.getByRole('button', { name: /Cancel|Back/ }).first().click()
+  await page.waitForTimeout(400)
+
+  // Through the cardio sheet: it listed only run and bike, so a walk
+  // landed on the plain timer instead. Same walk, two different
+  // receipts, and two different calorie models behind them.
+  await page.getByText('Cardio today?').click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(500)
+  await page.getByRole('button', { name: 'Track it Start now' }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(400)
+  await page.getByRole('button', { name: /^🚶\s*Walk$/ }).click()
+  await page.clock.runFor(400)
+  await page.waitForTimeout(500)
+  await expect(page.locator('.fixed.inset-0.z-\\[80\\]')).toHaveCount(1)
+  await expect(page.locator('.fixed.inset-0.z-\\[90\\]')).toHaveCount(0)
+})
