@@ -53,6 +53,21 @@ import { MOVEMENT, sessionFatigue, substitutesFor, type Joint } from '../plan/mo
 // arriving on time rather than extra credit.
 // ============================================================
 
+/**
+ * Two bad nights immediately before today, which is the condition the
+ * resolver already cuts a third of the volume on.
+ *
+ * Lives here rather than in resolveDay so there is ONE definition: this
+ * file has to know whether that cut has already happened before it
+ * offers another one, and two copies of the rule would drift.
+ */
+export function twoConsecutiveBadNightsBefore(data: AppData, dateISO: ISODate): boolean {
+  const week = data.weeks[mondayOf(dateISO)]
+  if (!week) return false
+  const all = new Set(week.badSleepDates)
+  return all.has(addDaysISO(dateISO, -1)) && all.has(addDaysISO(dateISO, -2))
+}
+
 /** How far back the reading goes. Beyond two weeks it is history, not context. */
 export const SIGNAL_WINDOW_DAYS = 14
 
@@ -221,6 +236,13 @@ export interface Adjustment {
 export interface AdaptContext {
   owned: Set<EquipTag>
   signals: Signal[]
+  /**
+   * The resolver has ALREADY cut a third off today for two consecutive
+   * bad nights. Offering another set off on top would be two reductions
+   * for one night's sleep, which is how "take it easy" turns into half a
+   * session nobody agreed to.
+   */
+  alreadyCutForSleep?: boolean
 }
 
 const can = (owned: Set<EquipTag>) => (id: string) => canDo(id, owned)
@@ -274,43 +296,55 @@ export function planAdjustments(
     }
   }
 
-  // 3. PROPOSAL: the body has been saying it is tired, in more than one way.
-  const tired = ctx.signals.find((s) => s.kind === 'poor-sleep' || s.kind === 'accumulated-fatigue')
+  // 3-4. PROPOSALS, and WHICH proposal is the whole point.
+  //
+  // Sleep loss and a training gap both mean "something is off", and the
+  // correct response to each is close to the OPPOSITE of the other. Being
+  // vague about that is how an app ends up making somebody take a day off
+  // for no reason.
+  //
+  // SHORT SLEEP: maximal strength on a single effort is largely
+  // preserved. What degrades is REPEATED effort, time to exhaustion and
+  // reaction time, while perceived exertion goes up — the same set feels
+  // harder than it is. So the answer is fewer SETS, at the same weight,
+  // and definitely not a day off. Somebody who sleeps badly twice a week
+  // and is told to skip is somebody who trains half as much as they
+  // should for the rest of their life.
+  //
+  // A TRAINING GAP is the mirror image. Nothing is fatigued; if anything
+  // there is slight detraining, so the VOLUME is wanted and it is the
+  // LOAD that should not pick up where the plan expected. Cutting sets
+  // here would be the exactly wrong medicine.
+  //
+  // UNPLANNED LOAD sits with sleep: the systemic cost is already banked,
+  // so the sets come off. ACCUMULATED FATIGUE, three heavy sessions in a
+  // week, gets both, because it is the one case where the load itself is
+  // the evidence.
+  const shortSleep = ctx.signals.find((s) => s.kind === 'poor-sleep')
+  const wornDown = ctx.signals.find((s) => s.kind === 'accumulated-fatigue')
   const extra = ctx.signals.find((s) => s.kind === 'extra-load')
   const missed = ctx.signals.find((s) => s.kind === 'missed')
-  if (tired || extra) {
-    const reasons = [tired?.detail, extra?.detail].filter(Boolean).join(' ')
+
+  const cutReasons = [shortSleep, wornDown, extra].filter(Boolean)
+  if (cutReasons.length > 0 && !ctx.alreadyCutForSleep) {
     out.push({
-      kind: 'hold-load',
+      kind: 'reduce-volume',
       automatic: false,
-      because: `${reasons} Keeping the weights where they are today is not a step back, it is how the next one lands.`,
-    })
-    if (tired && extra) {
-      out.push({
-        kind: 'reduce-volume',
-        automatic: false,
-        sets: 1,
-        because: 'Tired AND already loaded up this week. A set off each lift keeps the session useful without adding to the hole.',
-      })
-    }
-  } else if (missed) {
-    // 4. PROPOSAL: coming back after a gap.
-    //
-    // The instinct after missing sessions is to make them up, and it is
-    // the wrong one: a fortnight with holes in it has left you slightly
-    // detrained, and the load that was right before the gap is not right
-    // on the way back. Holding it for one session costs nothing and is
-    // the difference between resuming and re-injuring.
-    //
-    // Deliberately in the ELSE branch. Missing sessions and being
-    // exhausted call for the same answer, and saying it twice on one
-    // screen reads as the app panicking.
-    out.push({
-      kind: 'hold-load',
-      automatic: false,
-      because: `${missed.detail} Coming back, hold the weight where it was rather than picking up where the plan expected you to be. One session at the old number, then climb.`,
+      sets: 1,
+      because: `${cutReasons.map((s) => s!.detail).join(' ')} A set off each lift, same weight on the bar. Short sleep costs you repeated efforts long before it costs you strength, so the sets are what should give.`,
     })
   }
+
+  // Holding the load is a SECOND question, asked at most once. Cutting
+  // sets and not chasing a number are different decisions, so both can be
+  // on screen; two versions of the same decision cannot.
+  const holdReason =
+    wornDown || (shortSleep && extra)
+      ? 'Also worth not chasing a new number today. Same weight as last time is a session that still counts; a failed PR on a bad week is one that does not.'
+      : missed
+        ? `${missed.detail} Coming back, the volume is wanted — you are undertrained, not overtrained — but the LOAD should not pick up where the plan expected you to be. One session at the old weight, then climb.`
+        : null
+  if (holdReason) out.push({ kind: 'hold-load', automatic: false, because: holdReason })
 
   return out
 }
@@ -419,6 +453,7 @@ export function adaptSession(
   const automatic = planAdjustments(exercises, {
     owned,
     signals: readSignals(data, dateISO),
+    alreadyCutForSleep: twoConsecutiveBadNightsBefore(data, dateISO),
   }).filter((a) => a.automatic)
   if (automatic.length > 0) {
     out = applyAutomatic(out, automatic, nameOf)

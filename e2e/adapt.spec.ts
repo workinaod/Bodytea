@@ -98,11 +98,32 @@ test('a proposal is offered, taken, and actually changes the day', async ({ page
   await expect(offer).toBeVisible()
   await expect(page.getByText(/because you asked for it/)).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Do that' }).last().click()
+  // Scoped to the card, not `.last()`. There are two offers on screen and
+  // which one is second is a layout detail the test should not depend on.
+  const card = page.locator('div').filter({ hasText: /^A set off each lift/ }).last()
+  await card.getByRole('button', { name: 'Do that' }).click()
 
-  // Taken: the day says so, and the offer flips to an undo.
+  // Taken: the day says so, and the offer flips to an undo. Re-queried
+  // rather than reusing `card`, because accepting prefixes the title with
+  // a tick and the original locator no longer matches.
   await expect(page.getByText(/because you asked for it/)).toBeVisible()
-  await expect(page.getByRole('button', { name: /Never mind/ }).last()).toBeVisible()
+  await expect(page.getByText('✓ A set off each lift', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Never mind/ })).toHaveCount(1)
+})
+
+test('short sleep offers fewer SETS, never a day off', async ({ page }) => {
+  // The correction: sleep loss spares maximal strength and costs repeated
+  // effort, so the sets give and the weight stays. "Hold the weights
+  // today" also read as "hold OFF on the weights today" to a real person
+  // looking at the card, which is a title that WILL be misread.
+  const state = seed((d) => {
+    d.weeks['2026-08-10'].badSleepDates = ['2026-08-09', '2026-08-10']
+  })
+  await boot(page, state)
+  await expect(page.getByText('A set off each lift', { exact: true })).toBeVisible()
+  await expect(page.getByText(/same weight on the bar/)).toBeVisible()
+  await expect(page.getByText(/Hold the weights/)).toHaveCount(0)
+  await expect(page.getByText(/rest day|skip|take today off/i)).toHaveCount(0)
 })
 
 test('declining leaves no trace', async ({ page }) => {
@@ -111,7 +132,7 @@ test('declining leaves no trace', async ({ page }) => {
   })
   await boot(page, state)
 
-  await expect(page.getByText('Hold the weights today')).toBeVisible()
+  await expect(page.getByText('A set off each lift', { exact: true })).toBeVisible()
   // Ignore it entirely and move on. Nothing about the session changed.
   await expect(page.getByText(/because you asked for it/)).toHaveCount(0)
 })

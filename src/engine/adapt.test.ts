@@ -201,32 +201,65 @@ describe('a shoulder that keeps complaining', () => {
   })
 })
 
-describe('tired, and already loaded up', () => {
-  it('proposes holding the load rather than doing it silently', () => {
+describe('short sleep cuts SETS, not the session', () => {
+  // Sleep restriction largely preserves maximal strength on a single
+  // effort. What degrades is repeated effort, time to exhaustion and
+  // reaction time, while perceived exertion climbs — the same set feels
+  // harder than it is. So the sets are what should give, at the same
+  // weight, and a day off is the wrong answer entirely. Somebody who
+  // sleeps badly twice a week and is told to skip trains half as much as
+  // they should for the rest of their life.
+  const badlySlept = () => {
     const d = base()
     d.weeks[MONDAY].badSleepDates = ['2026-08-12', '2026-08-13']
-    const adj = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(d, TODAY) })
-    const hold = adj.find((a) => a.kind === 'hold-load')
-    expect(hold?.automatic).toBe(false)
-    expect(hold?.because).toContain('bad nights')
+    return d
+  }
+
+  it('offers fewer sets at the same weight, off sleep alone', () => {
+    const adj = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(badlySlept(), TODAY) })
+    const cut = adj.find((a) => a.kind === 'reduce-volume')
+    expect(cut?.automatic).toBe(false)
+    expect(cut?.because).toContain('same weight')
   })
 
-  it('only cuts volume when tired AND already loaded, not for either alone', () => {
-    const tiredOnly = base()
-    tiredOnly.weeks[MONDAY].badSleepDates = ['2026-08-12', '2026-08-13']
-    expect(
-      planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(tiredOnly, TODAY) }).some(
-        (a) => a.kind === 'reduce-volume',
-      ),
-    ).toBe(false)
+  it('does NOT tell somebody to hold the load off one bad stretch of sleep', () => {
+    // Strength is the thing sleep loss spares. Holding it would be
+    // treating the one preserved quality as the damaged one.
+    const adj = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(badlySlept(), TODAY) })
+    expect(adj.some((a) => a.kind === 'hold-load')).toBe(false)
+  })
 
-    const both = base()
-    both.weeks[MONDAY].badSleepDates = ['2026-08-12', '2026-08-13']
-    both.cardio['2026-08-13'] = [
+  it('never proposes skipping, whatever the signals say', () => {
+    const d = badlySlept()
+    d.cardio['2026-08-13'] = [
       { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
     ] as never
-    const adj = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(both, TODAY) })
+    for (const a of planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(d, TODAY) })) {
+      expect(['substitute', 'reduce-volume', 'hold-load', 'add-recovery']).toContain(a.kind)
+      if (a.sets !== undefined) expect(a.sets).toBe(1)
+    }
+  })
+
+  it('does not cut a SECOND time when the resolver already cut for sleep', () => {
+    // Two consecutive bad nights already costs a third of the day's
+    // volume inside resolveDay. Another set on top is two reductions for
+    // one night's sleep.
+    const adj = planAdjustments([ex('goblet-squat')], {
+      owned: GYM,
+      signals: readSignals(badlySlept(), TODAY),
+      alreadyCutForSleep: true,
+    })
+    expect(adj.some((a) => a.kind === 'reduce-volume')).toBe(false)
+  })
+
+  it('adds the hold-load only once unplanned load is stacked on top', () => {
+    const d = badlySlept()
+    d.cardio['2026-08-13'] = [
+      { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
+    ] as never
+    const adj = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(d, TODAY) })
     expect(adj.some((a) => a.kind === 'reduce-volume')).toBe(true)
+    expect(adj.some((a) => a.kind === 'hold-load')).toBe(true)
   })
 
   it('never makes a day harder than the plan called for', () => {
@@ -281,14 +314,23 @@ describe('coming back after missing sessions', () => {
     expect(hold?.because).toContain('Coming back')
   })
 
-  it('does not say it twice when they are also exhausted', () => {
-    // Missing sessions and being wrecked call for the same answer, and
-    // stacking both onto one screen reads as the app panicking.
+  it('keeps the VOLUME after a gap, which is the opposite of the sleep case', () => {
+    // The mirror image, and the reason these two must not share an
+    // answer. Nothing is fatigued after a gap; if anything there is
+    // slight detraining, so the volume is wanted and it is the LOAD that
+    // should not pick up where the plan expected.
+    const adj = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(missedTwice(), TODAY) })
+    expect(adj.some((a) => a.kind === 'reduce-volume')).toBe(false)
+    expect(adj.some((a) => a.kind === 'hold-load')).toBe(true)
+  })
+
+  it('says the load thing once, not twice, when they are also short of sleep', () => {
     const d = missedTwice()
     d.weeks[MONDAY].badSleepDates = ['2026-08-12', '2026-08-13']
-    const holds = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(d, TODAY) })
-      .filter((a) => a.kind === 'hold-load')
-    expect(holds).toHaveLength(1)
+    const adj = planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(d, TODAY) })
+    expect(adj.filter((a) => a.kind === 'hold-load')).toHaveLength(1)
+    // And the acute problem still wins on volume.
+    expect(adj.some((a) => a.kind === 'reduce-volume')).toBe(true)
   })
 })
 

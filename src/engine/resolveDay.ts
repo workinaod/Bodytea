@@ -26,7 +26,7 @@ import { parseRepRange, repLabel } from './reps'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
 import { MIN_KCAL_REST, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
-import { adaptSession } from './adapt'
+import { adaptSession, twoConsecutiveBadNightsBefore } from './adapt'
 
 // ============================================================
 // The pipeline: (date, state) → ResolvedDay.
@@ -62,13 +62,6 @@ function tierTemplateId(plan: PlanConfig, tier: Tier, weekday: Weekday, week: We
   const role = (Object.keys(placement) as TierDayRole[]).find((r) => placement[r] === weekday)
   if (!role) return null
   return plan.tierRoleTemplates[tier][role] ?? null
-}
-
-function twoConsecutiveBadNightsBefore(week: WeekState, dateISO: ISODate): boolean {
-  const d1 = addDaysISO(dateISO, -1)
-  const d2 = addDaysISO(dateISO, -2)
-  const all = new Set(week.badSleepDates)
-  return all.has(d1) && all.has(d2)
 }
 
 // ---------- Custom life events (defs in plan, days per week) ----------
@@ -398,7 +391,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     })
   }
   // --- Two consecutive bad-sleep nights ---
-  if (twoConsecutiveBadNightsBefore(week, dateISO) && template.kind === 'session') {
+  if (twoConsecutiveBadNightsBefore(data, dateISO) && template.kind === 'session') {
     exercises = applyBadSleepCut(exercises)
     banners.push({
       id: 'bad-sleep',

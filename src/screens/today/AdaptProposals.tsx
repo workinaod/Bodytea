@@ -8,6 +8,13 @@ import { acceptAdaptation, undoAdaptation } from '../../logic/fatigueActions'
 /**
  * What the coach has noticed, and what it is offering to do about it.
  *
+ * The headline used to read "Hold the weights today", which everybody
+ * parses as "hold OFF on the weights today" — skip the session. It never
+ * meant that: it cancels the progression step and nothing else, so the
+ * session runs in full at last week's weight. A title that can be read
+ * as "take a day off" on a card the athlete taps in two seconds is a
+ * title that WILL be read that way.
+ *
  * OFFERING. engine/adapt.ts already applies the changes that are not a
  * choice — a movement whose equipment is missing, one loading a joint
  * flagged twice — and those arrive as banners above. Everything here is
@@ -51,7 +58,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
           >
             <p className="text-[12.5px] font-black tracking-tight text-ink">
               {accepted ? '✓ ' : ''}
-              {p.kind === 'hold-load' ? 'Hold the weights today' : 'A set off each lift'}
+              {p.kind === 'hold-load' ? 'Same weight as last time' : 'A set off each lift'}
             </p>
             <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{p.because}</p>
             <button
