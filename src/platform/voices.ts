@@ -63,6 +63,27 @@ export const COACH_VOICES = /\b(samantha|tessa|jamie|jaime|allison|nathan|zoe)\b
 export const COACH_VOICE_NAMES = ['Samantha', 'Allison', 'Nathan', 'Zoe', 'Jamie', 'Tessa'] as const
 
 /**
+ * Bumped whenever COACH_VOICES changes.
+ *
+ * This is what actually retires a removed voice. A saved choice is a
+ * device URI: the voice stays installed, so it keeps resolving, and it
+ * kept speaking long after the picker stopped offering it. Refusing to
+ * honour any un-shortlisted URI fixed that but broke the other half —
+ * a voice deliberately chosen from the full device list is also not on
+ * the shortlist, and it was being ignored too.
+ *
+ * So the stored choice is cleared ONCE, when the list it was made from
+ * is no longer the list on offer. After that an explicit choice is
+ * honoured whatever it is, which is what "explicit" should mean.
+ */
+export const COACH_VOICE_SET_VERSION = 2
+
+/** Was this choice made against an older shortlist? */
+export function voiceChoiceIsStale(storedVersion: number | undefined): boolean {
+  return storedVersion !== COACH_VOICE_SET_VERSION
+}
+
+/**
  * Shortlisted voices this device does not have.
  *
  * Empty when NONE of them are present, which means this is not an Apple
@@ -172,20 +193,14 @@ export function pickVoice(
   // is actually for.
   const pool = coachVoices(en.length ? en : all)
 
-  // An explicit choice wins — but only among voices still on offer.
-  //
-  // This used to honour ANY stored URI unconditionally, and that is how
-  // a voice kept talking after it was taken off the shortlist. The
-  // setting is a device URI saved months ago; the voice is still
-  // installed, so it still resolved, so the coach still used it, and
-  // nothing in the picker could show what was happening because the
-  // picker only lists what it offers. Removing a voice has to actually
-  // remove it.
-  //
-  // Checked against `pool` rather than the shortlist regex, so the
-  // Android and desktop fallback still honours choices made there.
+  // An explicit choice wins, whatever it is, as long as the voice is
+  // still installed. Retiring a removed voice is COACH_VOICE_SET_VERSION's
+  // job: it clears the stale setting once, at the source, rather than
+  // second-guessing every choice here forever. Doing it here instead
+  // also silently overrode voices picked from the full device list,
+  // which are legitimate and equally un-shortlisted.
   if (preferredURI) {
-    const chosen = pool.find((v) => v.voiceURI === preferredURI)
+    const chosen = all.find((v) => v.voiceURI === preferredURI)
     if (chosen) return chosen
   }
 

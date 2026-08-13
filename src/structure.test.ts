@@ -58,7 +58,8 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // +11 for the journey key and the re-export of journeyTypes.ts, then
   // +23 for the places somebody can train (track, trail, pool, bike)
   // and FoodLimits, which is what dairy-free and allergies are.
-  'types.ts': 697,
+  // +1: voiceSetVersion, kept on one line beside the voiceURI it dates.
+  'types.ts': 698,
   // screens/onboarding/Onboarding.tsx came off this list too, which
   // empties the "real splits owed" section entirely. The chip tables and
   // the one goal heuristic went to onboardingData.ts, the goal step, the
@@ -98,7 +99,9 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // This one is the +21 for v19 → v20, the calorie-floor repair.
   // +6: the journey key, defaulted like `adapt` so an old envelope
   // parses with an empty ladder and needs no migration.
-  'store/schema.ts': 646,
+  // +1: voiceSetVersion, optional, so an envelope written before the
+  // coach shortlist changed parses unchanged and retires its own pick.
+  'store/schema.ts': 647,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,

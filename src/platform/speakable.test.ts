@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { intoChunks, speakable } from './speakable'
-import { coachVoices, missingCoachVoices, pickVoice, scoreVoice } from './voices'
+import {
+  coachVoices,
+  missingCoachVoices,
+  pickVoice,
+  scoreVoice,
+  voiceChoiceIsStale,
+  COACH_VOICE_SET_VERSION,
+} from './voices'
 
 // Every input below is a real string from the catalog or the coach.
 
@@ -303,20 +310,29 @@ describe('the coach voice shortlist', () => {
     expect(pickVoice(IOS_LIST, tessa.voiceURI)).toBe(tessa)
   })
 
-  it('will not speak with a saved voice that is no longer offered', () => {
-    // The reported bug, exactly. Karen was chosen while she was on the
-    // list, the URI is still in settings, and she is still installed on
-    // the phone — so she still resolved and still spoke, long after the
-    // picker stopped offering her. Removing a voice has to remove it.
-    const karen = IOS_LIST.find((v) => v.name === 'Karen') as SpeechSynthesisVoice
-    const picked = pickVoice(IOS_LIST, karen.voiceURI)
-    expect(picked?.name).not.toBe('Karen')
-    expect(['Samantha', 'Tessa', 'Jamie', 'Allison', 'Nathan', 'Zoe']).toContain(picked?.name)
+  it('retires a choice made against an older shortlist', () => {
+    // The reported bug. Karen was chosen while she was on the list, the
+    // URI is still in settings, and she is still installed — so she kept
+    // resolving and kept speaking after the picker stopped offering her.
+    //
+    // The cure is the version stamp, not a rule inside pickVoice: the
+    // stored choice is cleared ONCE when the list it came from changes.
+    expect(voiceChoiceIsStale(undefined)).toBe(true)
+    expect(voiceChoiceIsStale(1)).toBe(true)
+    expect(voiceChoiceIsStale(COACH_VOICE_SET_VERSION)).toBe(false)
   })
 
-  it('ignores a stored choice for a voice that was never offered', () => {
+  it('honours a voice picked from the full device list', () => {
+    // The other half, which a pickVoice-side rule got wrong: a voice
+    // chosen deliberately from everything the phone reports is also not
+    // on the shortlist, and it must still be the voice that speaks.
     const ava = voice('Ava', 'com.apple.voice.premium.en-US.Ava')
-    expect(pickVoice([...IOS_LIST, ava], ava.voiceURI)?.name).not.toBe('Ava')
+    expect(pickVoice([...IOS_LIST, ava], ava.voiceURI)).toBe(ava)
+  })
+
+  it('falls back to the shortlist when the saved voice is gone from the device', () => {
+    const picked = pickVoice(IOS_LIST, 'com.apple.voice.premium.en-US.Uninstalled')
+    expect(['Samantha', 'Tessa', 'Jamie', 'Allison', 'Nathan', 'Zoe']).toContain(picked?.name)
   })
 
   it('still honours a choice made from the Android fallback list', () => {
