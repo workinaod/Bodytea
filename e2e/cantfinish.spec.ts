@@ -18,7 +18,7 @@ async function onboard(page: Page) {
   await page.getByLabel('Height').fill('510')
   await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
-  await page.getByText('⬆️ Jump higher').click()
+  await page.getByText('Jump higher').click()
   await page.getByPlaceholder(/before my wedding/).fill('by June')
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()

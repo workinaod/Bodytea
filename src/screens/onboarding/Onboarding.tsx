@@ -7,7 +7,8 @@ import { saveMeasurement } from '../../logic/actions'
 import { generatePlan, type FocusArea, type OnboardingAnswers } from '../../plan/generator'
 import { byorNutrition, makeEmptyByorPlan, normalizeBooklet } from '../../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../../plan/analyze'
-import { Btn, Card, ChoiceChip, Reveal } from '../../components/ui'
+import { Reveal } from '../../components/ui'
+import { Bar, Kicker, Label, Lane, OnPaper, Tag, Title, fieldCls, fieldStyle } from './kit'
 import { AmbientBackdrop } from '../../components/AmbientBackdrop'
 import { Welcome } from './Welcome'
 import { chipIndexForGoal, ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS, QUICK_GOALS } from './onboardingData'
@@ -31,6 +32,13 @@ import { GearStep } from './GearStep'
 const FOLLOWUPS = 12
 const MEALS = 13
 const PERMISSIONS = 14
+
+/**
+ * Every question arrives on paper. The landing screen IS the room, and
+ * the routine builder (8-11) is a tool rather than a question, so both
+ * keep the app's own dark chrome.
+ */
+const ON_PAPER = new Set([1, 2, 3, 4, 5, 7, FOLLOWUPS, MEALS, PERMISSIONS])
 
 // ============================================================
 // Onboarding v2: a goal-driven wizard that generates the user's
@@ -284,14 +292,20 @@ export function Onboarding() {
   }
 
   return (
-    <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-[max(env(safe-area-inset-top),24px)]">
-      <AmbientBackdrop />
-      {/* Everything the user touches sits above the field. */}
+    <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-8 pt-[max(env(safe-area-inset-top),22px)]">
+      {/* The room. Sharp on the first screen, because there it IS the
+          screen; out of focus from the second on, so the paper pinned
+          over it is the only thing in focus. */}
+      <AmbientBackdrop blurred={step > 0} />
+      {/* Everything the user touches sits above the room. */}
       <div className="relative z-10 flex flex-1 flex-col">
       {step > 0 && (
-        <div className="mb-4 flex items-center justify-between">
-          <button onClick={back} className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-bold text-ink-dim">
-            ‹ back
+        <div className="-mx-5 mb-7 flex items-center justify-between border-b border-white/[0.14] px-5 pb-3.5">
+          <button
+            onClick={back}
+            className="press text-[10px] font-black uppercase tracking-[0.22em] text-ink-faint"
+          >
+            ← Back
           </button>
           <div className="flex gap-1">
             {Array.from({ length: GEN_FLOW.length - 1 }, (_, i) => {
@@ -300,7 +314,7 @@ export function Onboarding() {
               return (
                 <span
                   key={i}
-                  className={`h-1 rounded-full transition-all ${i === here ? 'w-5 bg-accent' : i < here ? 'w-2 bg-accent/50' : 'w-2 bg-white/[0.07]'}`}
+                  className={`h-[3px] transition-all ${i === here ? 'w-6 bg-accent' : i < here ? 'w-3 bg-accent/45' : 'w-3 bg-white/[0.12]'}`}
                 />
               )
             })}
@@ -332,6 +346,7 @@ export function Onboarding() {
         />
       )}
 
+      <OnPaper on={ON_PAPER.has(step)}>
       {step === 1 && (
         <MeStep
           displayName={displayName}
@@ -399,28 +414,30 @@ export function Onboarding() {
 
       {step === 3 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[30px]">How many days a week?</h2>
-          <p className="mt-1 text-center text-[13px] text-ink-dim">A plan you stick to beats a bigger one you skip.</p>
-          <div className="mx-auto mt-6 grid w-full max-w-[22rem] grid-cols-4 gap-2.5">
+          <Kicker>Entry 04</Kicker>
+          <Title sub="A plan you stick to beats a bigger one you skip.">How many days a week?</Title>
+          <div className="mt-6 grid grid-cols-4 gap-1.5">
             {([3, 4, 5, 6] as const).map((d) => (
               <button
                 key={d}
                 onClick={() => setDaysPick(d)}
-                className={`rounded-2xl border py-5 text-center ${days === d ? 'border-accent bg-accent/15 text-accent' : 'border-edge bg-white/[0.05] text-ink-dim'}`}
+                aria-pressed={days === d}
+                className={`press rounded-[2px] py-5 text-center transition-colors ${
+                  days === d ? 'bg-accent text-black' : 'text-ink ring-1 ring-inset ring-white/[0.16]'
+                }`}
               >
-                <div className="text-[24px] font-black">{d}</div>
-                <div className="text-[10px] font-bold uppercase">days</div>
+                <div className="num text-[26px] font-black leading-none tracking-[-0.03em]">{d}</div>
+                <div className="mt-1 text-[9px] font-black uppercase tracking-[0.2em] opacity-70">days</div>
               </button>
             ))}
           </div>
 
           {/* Their real week, seeds life events so every coach note speaks their schedule */}
-          <Reveal when={daysPick !== null} className="mt-6">
-            <div className="text-center text-[15px] font-bold">What else is going on in your week?</div>
-            <p className="mt-1 text-center text-[12px] leading-snug text-ink-faint">Your plan works around whatever you pick.</p>
-            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+          <Reveal when={daysPick !== null} className="mt-8">
+            <Label note="works around it">What else is in your week?</Label>
+            <div className="flex flex-wrap gap-1.5">
               {LIFE_CHIPS.map((c) => (
-                <ChoiceChip
+                <Tag
                   key={c.id}
                   selected={lifePicks.has(c.id)}
                   onClick={() =>
@@ -432,35 +449,36 @@ export function Onboarding() {
                     })
                   }
                 >
-                  {c.chip}
-                </ChoiceChip>
+                  {c.chip.replace(/^\S+\s/, '')}
+                </Tag>
               ))}
             </div>
             <input
               value={customLife}
               onChange={(e) => setCustomLife(e.target.value)}
               placeholder="Your own: a DJ set, league night, choir…"
-              className="mx-auto mt-3 block w-full max-w-[19rem] rounded-2xl bg-white/[0.05] px-3.5 py-2.5 text-center text-[13.5px] text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] placeholder:text-ink-faint/60 focus:bg-white/[0.08] focus:ring-accent/55"
+              className={`mt-4 ${fieldCls} text-[14px]`}
+              style={fieldStyle}
             />
             {customLife.trim() && (
-              <div className="mt-2 flex justify-center gap-1.5">
+              <div className="mt-3 flex gap-1.5">
                 {(
                   [
-                    ['late-night', '🌙 keeps me up late'],
-                    ['on-feet', '🦵 hours on my feet'],
+                    ['late-night', 'Keeps me up late'],
+                    ['on-feet', 'Hours on my feet'],
                   ] as const
                 ).map(([k, l]) => (
-                  <ChoiceChip key={k} selected={customLifeKind === k} onClick={() => setCustomLifeKind(k)}>
+                  <Tag key={k} selected={customLifeKind === k} onClick={() => setCustomLifeKind(k)}>
                     {l}
-                  </ChoiceChip>
+                  </Tag>
                 ))}
               </div>
             )}
           </Reveal>
 
-          <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next: my gear
-          </Btn>
+          <div className="mt-auto pt-10">
+            <Bar onClick={next}>Next: my gear</Bar>
+          </div>
         </div>
       )}
 
@@ -478,29 +496,29 @@ export function Onboarding() {
 
       {step === 5 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[30px]">How long have you trained?</h2>
-          <div className="mx-auto mt-5 w-full max-w-[22rem] space-y-2.5">
+          <Kicker>Entry 06</Kicker>
+          <Title>How long have you trained?</Title>
+          <div className="mt-6 border-t border-white/[0.14]">
             {(
               [
-                ['new', 'New to this', 'First year of real training.'],
-                ['returning', 'Coming back', 'Trained before, been away a while.'],
-                ['trained', 'Consistent', 'Training regularly right now.'],
+                ['new', 'New to this'],
+                ['returning', 'Coming back'],
+                ['trained', 'Training now'],
               ] as const
-            ).map(([id, title, sub]) => (
-              <Card key={id} onClick={() => setExperience(id)} className={experience === id ? '!border-accent/60' : ''}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[15px] font-black">{title}</div>
-                    <div className="text-[12px] text-ink-dim">{sub}</div>
-                  </div>
-                  <span className={`h-4 w-4 rounded-full border-2 ${experience === id ? 'border-accent bg-accent' : 'border-edge'}`} />
-                </div>
-              </Card>
+            ).map(([id, title], i) => (
+              <Lane
+                key={id}
+                n={i + 1}
+                selected={experience === id}
+                onClick={() => setExperience(id)}
+              >
+                {title}
+              </Lane>
             ))}
           </div>
-          <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next: food
-          </Btn>
+          <div className="mt-auto pt-10">
+            <Bar onClick={next}>Next: food</Bar>
+          </div>
         </div>
       )}
 
@@ -551,6 +569,7 @@ export function Onboarding() {
         commitPlan={commitPlan}
         onReady={() => setStep(PERMISSIONS)}
       />
+      </OnPaper>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import type { Goal } from '../../types'
 import { buildFollowups, type GoalFollowup } from '../../plan/followups'
-import { Btn, ChoiceChip } from '../../components/ui'
+import { Bar, Kicker, Label, Tag, Title, fieldCls, fieldStyle } from './kit'
 
 // ============================================================
 // The coach's questions, on their own screen.
@@ -18,8 +18,7 @@ import { Btn, ChoiceChip } from '../../components/ui'
 // attention.
 // ============================================================
 
-const field =
-  'w-full rounded-2xl bg-white/[0.05] px-4 py-3 text-[15px] text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] placeholder:text-ink-faint/60 focus:bg-white/[0.08] focus:ring-accent/55'
+const field = fieldCls
 
 function Question({
   fq,
@@ -32,18 +31,18 @@ function Question({
 }) {
   return (
     <div>
-      <p className="text-center text-[15px] font-bold text-ink">{fq.q}</p>
+      <Label>{fq.q}</Label>
       {fq.kind === 'number' ? (
-        <div className="mx-auto mt-2.5 flex max-w-[15rem] gap-2">
+        <div className="flex items-baseline gap-3">
           <input
             inputMode="decimal"
             value={value ?? ''}
             onChange={(e) => onPick(e.target.value)}
             placeholder={fq.placeholder}
-            className={field}
+            className={field} style={fieldStyle}
           />
           {fq.unit && (
-            <span className="flex items-center rounded-xl bg-white/[0.05] px-3 text-[13px] font-bold text-ink-faint">
+            <span className="shrink-0 pb-3 text-[11px] font-black uppercase tracking-[0.18em] text-ink-faint">
               {fq.unit}
             </span>
           )}
@@ -53,14 +52,14 @@ function Question({
           value={value ?? ''}
           onChange={(e) => onPick(e.target.value)}
           placeholder={fq.placeholder}
-          className={`mx-auto mt-2.5 block max-w-[19rem] text-center ${field}`}
+          className={field} style={fieldStyle}
         />
       ) : (
-        <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {(fq.options ?? []).map((o) => (
-            <ChoiceChip key={o} selected={value === o} onClick={() => onPick(o)}>
+            <Tag key={o} selected={value === o} onClick={() => onPick(o)}>
               {o}
-            </ChoiceChip>
+            </Tag>
           ))}
         </div>
       )}
@@ -99,12 +98,12 @@ export function FollowupStep({
 
   return (
     <div className="flex flex-1 flex-col">
-      <h2 className="headline text-center text-[30px]">
+      <Kicker>Entry 03</Kicker>
+      <Title sub="Every answer changes your plan.">
         {firstName ? `A few things, ${firstName}` : 'A few things'}
-      </h2>
-      <p className="mt-1 text-center text-[13px] text-ink-dim">Every answer changes your plan.</p>
+      </Title>
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-7 space-y-8">
         {shown.map((fq) => (
           <div key={fq.id + (fq.showIf?.id ?? '')} className="enter">
             <Question
@@ -130,9 +129,9 @@ export function FollowupStep({
       {/* Always the same label. Every question here is optional, so
           there is nothing to "skip" — offering skip made answering two
           of six look like giving up rather than being finished. */}
-      <Btn className="mt-7 w-full py-4" onClick={onNext}>
-        Next: my week
-      </Btn>
+      <div className="mt-auto pt-10">
+        <Bar onClick={onNext}>Next: my week</Bar>
+      </div>
     </div>
   )
 }

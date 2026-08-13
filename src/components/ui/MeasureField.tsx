@@ -12,11 +12,17 @@ import { useState } from 'react'
 // the unit next to the number instead of underneath it.
 // ============================================================
 
-const wrap =
-  'mx-auto flex w-full max-w-[15rem] items-center justify-center gap-2 rounded-2xl bg-white/[0.05] px-5 py-3.5 ring-1 ring-white/[0.07] transition-[background,box-shadow] focus-within:bg-white/[0.08] focus-within:ring-accent/55'
+// Underlined rather than boxed: a measurement is a blank to fill in,
+// and a rounded card around a single number is the shape every
+// generated app reaches for first.
+// Underlined rather than boxed: a measurement is a blank to fill in,
+// and a rounded card around a single number is the shape every
+// generated app reaches for first. Colours come from the caller, so the
+// same field works on the app's dark chrome and on onboarding's paper.
+const wrap = 'flex w-full items-baseline gap-2 border-b-2 border-current/25 transition-colors focus-within:border-current'
 const digits =
-  'num min-w-0 flex-1 bg-transparent text-center text-[30px] font-black text-ink outline-none placeholder:text-ink-faint/60 focus-visible:outline-none'
-const unit = 'shrink-0 text-[14px] font-bold text-ink-faint'
+  'num min-w-0 flex-1 bg-transparent py-2.5 text-[38px] font-black tracking-[-0.03em] text-current outline-none placeholder:text-[26px] placeholder:font-bold placeholder:opacity-35 ring-owned'
+const unit = 'shrink-0 pb-3 text-[12px] font-black uppercase tracking-[0.18em] opacity-50'
 
 /** Inches → the way people say it. */
 export const formatHeight = (inches: number): string => `${Math.floor(inches / 12)}' ${inches % 12}"`

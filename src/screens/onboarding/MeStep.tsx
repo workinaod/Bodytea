@@ -1,5 +1,7 @@
-import { Btn, ChoiceChip, HeightField, Reveal, WeightField } from '../../components/ui'
+import { Reveal } from '../../components/ui'
 import { DEFAULT_HEIGHT_IN } from '../../plan/reach'
+import { HeightField, WeightField } from '../../components/ui'
+import { Bar, Kicker, Label, Quiet, Tag, Title, fieldCls, fieldStyle } from './kit'
 
 // ============================================================
 // Who is training. Four answers, one at a time.
@@ -23,8 +25,6 @@ import { DEFAULT_HEIGHT_IN } from '../../plan/reach'
 // about tape formulas is the app talking about its own
 // internals; the question is the question.
 // ============================================================
-
-const label = 'text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint'
 
 export function MeStep({
   displayName,
@@ -53,69 +53,49 @@ export function MeStep({
   const ready = named && sex !== null && heightIn !== null && weight !== null
 
   return (
-    <div className="flex flex-1 flex-col items-center text-center">
-      <h2 className="headline text-[30px]">What should we call you?</h2>
+    <div className="flex flex-1 flex-col">
+      <Kicker>Entry 01</Kicker>
+      <Title>Who is training?</Title>
+
       <input
         value={displayName}
         onChange={(e) => setDisplayName(e.target.value)}
         placeholder="Display name"
-        className="mt-6 w-full max-w-[19rem] rounded-2xl bg-white/[0.05] px-4 py-3.5 text-center text-[16px] font-semibold text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] placeholder:text-ink-faint/60 focus:bg-white/[0.08] focus:ring-accent/55"
+        className={`mt-6 ${fieldCls}`} style={fieldStyle}
       />
 
-      <Reveal when={named} className="mt-8 w-full">
-        <p className={label}>Sex</p>
-        <div className="mt-2.5 flex justify-center gap-2">
-          <ChoiceChip
-            selected={sex === 'male'}
-            onClick={() => setSex('male')}
-            className="min-w-[6.5rem]"
-          >
+      <Reveal when={named} className="mt-8">
+        <Label>Sex</Label>
+        <div className="flex gap-2">
+          <Tag selected={sex === 'male'} onClick={() => setSex('male')} className="flex-1">
             Male
-          </ChoiceChip>
-          <ChoiceChip selected={sex === 'female'} onClick={() => setSex('female')} className="min-w-[6.5rem]">
+          </Tag>
+          <Tag selected={sex === 'female'} onClick={() => setSex('female')} className="flex-1">
             Female
-          </ChoiceChip>
+          </Tag>
         </div>
       </Reveal>
 
-      <Reveal when={showHeight} className="mt-8 w-full">
-        <p className={label}>Height</p>
-        <div className="mt-2.5">
-          <HeightField value={heightIn} onChange={setHeightIn} />
-        </div>
+      <Reveal when={showHeight} className="mt-8">
+        <Label note="tap 5 1 0">Height</Label>
+        <HeightField value={heightIn} onChange={setHeightIn} />
+        {heightIn === null && sex && (
+          <div className="mt-1">
+            <Quiet onClick={() => setHeightIn(DEFAULT_HEIGHT_IN[sex])}>I would rather not say</Quiet>
+          </div>
+        )}
       </Reveal>
 
-      <Reveal when={showWeight} className="mt-8 w-full">
-        <p className={label}>Weight</p>
-        <div className="mt-2.5">
-          <WeightField value={weight} onChange={setWeight} />
-        </div>
+      <Reveal when={showWeight} className="mt-8">
+        <Label>Weight</Label>
+        <WeightField value={weight} onChange={setWeight} />
       </Reveal>
 
-      <Btn className="mt-10 w-full max-w-[21rem] py-4" onClick={onNext} disabled={!ready}>
-        Next: the goal
-      </Btn>
-      {named && !ready && (
-        <p className="mt-2.5 text-[11.5px] text-ink-faint">
-          {sex === null
-            ? ' '
-            : heightIn === null
-              ? `Type it like 5 1 0 for 5' 10"`
-              : 'And your weight.'}
-        </p>
-      )}
-      {/* The reference height for their sex, one tap, for anybody who
-          would rather not say. Skipping is a real answer: it lands on
-          the average, which is exactly the plan they got before height
-          was ever asked for. */}
-      {showHeight && heightIn === null && sex && (
-        <button
-          onClick={() => setHeightIn(DEFAULT_HEIGHT_IN[sex])}
-          className="press mt-3 py-1 text-[12px] font-semibold text-ink-faint underline decoration-white/20 underline-offset-4"
-        >
-          I would rather not say
-        </button>
-      )}
+      <div className="mt-auto pt-10">
+        <Bar onClick={onNext} disabled={!ready}>
+          Next: the goal
+        </Bar>
+      </div>
     </div>
   )
 }

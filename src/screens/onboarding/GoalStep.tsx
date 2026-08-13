@@ -2,8 +2,9 @@ import { useState, type Dispatch, type SetStateAction } from 'react'
 import type { RoutineGoal } from '../../types'
 import { FOCUS_LABELS, type FocusArea } from '../../plan/generator'
 import { ROUTINE_GOAL_LABELS } from '../../plan/bookletOps'
-import { Btn, ChoiceChip, Reveal } from '../../components/ui'
+import { Reveal } from '../../components/ui'
 import { GOAL_CHIPS, inferGoal, visibleGoalChips } from './onboardingData'
+import { Bar, Kicker, Label, Tag, Title, fieldCls, fieldStyle } from './kit'
 
 // ============================================================
 // The step the whole plan is built from.
@@ -53,6 +54,7 @@ export function GoalStep(p: {
   const blocked = mode === 'byor'
     ? routineGoals.size === 0 || goalStatement.trim().length < 4
     : goalChip === null
+  const first = displayName.trim().split(/\s+/)[0]
 
   return (
     <div
@@ -64,26 +66,22 @@ export function GoalStep(p: {
         if (picked) setMovedOn(true)
       }}
     >
-      <h2 className="headline text-center text-[30px]">
-        {mode === 'byor'
-          ? 'What is this routine chasing?'
-          : `What are your goals${displayName.trim() ? `, ${displayName.trim().split(/\s+/)[0]}` : ''}?`}
-      </h2>
-      <p className="mt-1 text-center text-[13px] text-ink-dim">
-        {mode === 'byor' ? 'Pick every one that applies.' : 'Pick one, or type your own.'}
-      </p>
+      <Kicker>{mode === 'byor' ? 'Your routine' : 'Entry 02'}</Kicker>
+      <Title sub={mode === 'byor' ? 'Pick every one that applies.' : 'Pick one, or type your own.'}>
+        {mode === 'byor' ? 'What is it chasing?' : first ? `What are your goals, ${first}?` : 'What are your goals?'}
+      </Title>
 
-      <div className="mt-5 flex flex-wrap justify-center gap-2">
+      <div className="mt-5 flex flex-wrap gap-1.5">
         {mode === 'byor'
           ? (Object.keys(ROUTINE_GOAL_LABELS) as RoutineGoal[]).map((g) => (
-              <ChoiceChip key={g} selected={routineGoals.has(g)} onClick={() => toggleRoutineGoal(g)}>
+              <Tag key={g} selected={routineGoals.has(g)} onClick={() => toggleRoutineGoal(g)}>
                 {ROUTINE_GOAL_LABELS[g]}
-              </ChoiceChip>
+              </Tag>
             ))
           : visibleGoalChips({ heightIn: heightIn ?? undefined, weightLb }).map((i) => (
-              <ChoiceChip key={GOAL_CHIPS[i].label} selected={goalChip === i} onClick={() => setGoalChip(i)}>
-                {GOAL_CHIPS[i].label}
-              </ChoiceChip>
+              <Tag key={GOAL_CHIPS[i].label} selected={goalChip === i} onClick={() => setGoalChip(i)}>
+                {GOAL_CHIPS[i].label.replace(/^\S+\s/, '')}
+              </Tag>
             ))}
       </div>
 
@@ -92,20 +90,20 @@ export function GoalStep(p: {
           rather than asking again — the old screen made you choose a
           goal and then type the same goal out longhand. */}
       {mode !== 'byor' && goalChip !== null ? (
-        <Reveal when className="mt-5">
-          <p className="text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint">Let's get specific</p>
+        <Reveal when className="mt-8">
+          <Label note="optional">Let's get specific</Label>
           <textarea
             value={goalDetail}
             onChange={(e) => setGoalDetail(e.target.value)}
             onFocus={() => setMovedOn(true)}
-            placeholder={'"before my wedding in June"  ·  "30 lb"  ·  "my knees are bad"'}
+            placeholder={'"before my wedding in June" · "30 lb" · "my knees are bad"'}
             rows={2}
-            className="mt-2.5 w-full resize-none rounded-2xl bg-white/[0.05] px-4 py-3 text-center text-[14px] font-semibold text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] focus:bg-white/[0.08] focus:ring-accent/55"
+            className={`resize-none ${fieldCls} text-[15px]`} style={fieldStyle}
           />
         </Reveal>
       ) : (
-        <>
-          <p className="mt-6 text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint">Or say it yourself</p>
+        <div className="mt-8">
+          <Label>Or say it yourself</Label>
           <textarea
             value={goalStatement}
             onChange={(e) => {
@@ -115,20 +113,18 @@ export function GoalStep(p: {
               const g = inferGoal(e.target.value)
               if (g !== null) setGoalChip(g)
             }}
-            placeholder={'"lose 30 lb before the summer"  ·  "keep up with my kids"  ·  "run a 10K"'}
+            placeholder={'"lose 30 lb before the summer" · "run a 10K"'}
             rows={2}
-            className="mt-2.5 w-full resize-none rounded-2xl bg-white/[0.05] px-4 py-3 text-center text-[14px] font-semibold text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] focus:bg-white/[0.08] focus:ring-accent/55"
+            className={`resize-none ${fieldCls} text-[15px]`} style={fieldStyle}
           />
-        </>
+        </div>
       )}
 
-      <Reveal when={showFocus} className="mt-5">
-        <p className="text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint">
-          Anywhere you want to focus on <span className="font-semibold normal-case tracking-normal">(up to 4)</span>
-        </p>
-        <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
+      <Reveal when={showFocus} className="mt-8">
+        <Label note="up to 4">Anywhere you want to focus on</Label>
+        <div className="flex flex-wrap gap-1.5">
           {(Object.entries(FOCUS_LABELS) as [FocusArea, string][]).map(([id, label]) => (
-            <ChoiceChip
+            <Tag
               key={id}
               selected={focusAreas.has(id)}
               onClick={() =>
@@ -141,20 +137,17 @@ export function GoalStep(p: {
               }
             >
               {label}
-            </ChoiceChip>
+            </Tag>
           ))}
         </div>
       </Reveal>
 
       {/* Never hidden. A section can wait its turn; the way out cannot. */}
-      <Btn className="mt-6 w-full py-4" onClick={p.onNext} disabled={blocked}>
-        {mode === 'byor' ? 'Next: build my week' : 'Next: a few questions'}
-      </Btn>
-      {blocked && (
-        <p className="mt-2 text-center text-[11.5px] text-ink-faint">
-          {mode === 'byor' ? 'Pick one, and say it in your own words.' : 'Pick one, or type your own.'}
-        </p>
-      )}
+      <div className="mt-auto pt-10">
+        <Bar onClick={p.onNext} disabled={blocked}>
+          {mode === 'byor' ? 'Next: build my week' : 'Next: a few questions'}
+        </Bar>
+      </div>
     </div>
   )
 }

@@ -11,7 +11,7 @@ async function onboardGenerated(page: Page) {
   await page.getByLabel('Height').fill('510')
   await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
-  await page.getByText('⬆️ Jump higher').click()
+  await page.getByText('Jump higher').click()
   await page.getByPlaceholder(/before my wedding/).fill('by June')
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
@@ -36,7 +36,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.goto('./')
 
   // ---- Onboarding v2 generates a personal booklet ----
-  await expect(page.getByText('What are your goals?')).toBeVisible()
+  await expect(page.getByRole('heading', { name: /What are\s+your goals\?/ })).toBeVisible()
   await onboardGenerated(page)
 
   // ---- Today renders a resolved day ----

@@ -1,7 +1,8 @@
 import { useState, type Dispatch, type SetStateAction } from 'react'
 import type { DietStyle } from '../../types'
 import type { MealsPerDay } from '../../plan/foods'
-import { Btn, ChoiceChip, Reveal } from '../../components/ui'
+import { Reveal } from '../../components/ui'
+import { Bar, Kicker, Label, Quiet, Tag, Title, fieldCls, fieldStyle } from './kit'
 
 // ============================================================
 // Food, last, and skippable.
@@ -59,57 +60,56 @@ export function MealStep({
   const [chose, setChose] = useState(false)
   return (
     <div className="flex flex-1 flex-col">
-      <h2 className="headline text-center text-[30px]">Want a food plan too?</h2>
+      <Kicker>Entry 07</Kicker>
+      <Title>Want a food plan?</Title>
 
-      <p className="text-center text-[15px] font-bold text-ink">How do you eat?</p>
-      <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
+      <div className="mt-7" />
+      <Label>How do you eat?</Label>
+      <div className="flex flex-wrap gap-1.5">
         {DIETS.map((d) => (
-          <ChoiceChip key={d.id} selected={dietStyle === d.id} onClick={() => {
+          <Tag key={d.id} selected={dietStyle === d.id} onClick={() => {
               setChose(true)
               setDietStyle(d.id)
             }}>
             {d.label}
-          </ChoiceChip>
+          </Tag>
         ))}
       </div>
 
       {/* Dairy free is not a fifth diet — it stacks on any of the four.
           Sitting in that row it read as one more of them. */}
       <Reveal when={chose} className="mt-6">
-        <p className="text-center text-[15px] font-bold text-ink">Anything you cannot eat?</p>
-        <div className="mt-2.5 flex justify-center">
-          <ChoiceChip selected={dairyFree} onClick={() => setDairyFree((v) => !v)}>
+        <Label>Anything you cannot eat?</Label>
+        <div className="flex">
+          <Tag selected={dairyFree} onClick={() => setDairyFree((v) => !v)}>
             Dairy free
-          </ChoiceChip>
+          </Tag>
         </div>
         <input
           value={allergies}
           onChange={(e) => setAllergies(e.target.value)}
           placeholder="Nuts, shellfish, gluten…"
-          className="mx-auto mt-2.5 block w-full max-w-[19rem] rounded-2xl bg-white/[0.05] px-4 py-3 text-center text-[15px] text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] placeholder:text-ink-faint/60 focus:bg-white/[0.08] focus:ring-accent/55"
+          className={`mt-3 ${fieldCls} text-[15px]`} style={fieldStyle}
         />
       </Reveal>
 
       <Reveal when={chose} className="mt-6">
-        <p className="text-center text-[15px] font-bold text-ink">How many times a day?</p>
-        <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
+        <Label>How many times a day?</Label>
+        <div className="flex flex-wrap gap-1.5">
           {MEALS.map((m) => (
-            <ChoiceChip key={m.n} selected={mealsPerDay === m.n} onClick={() => setMealsPerDay(m.n)}>
+            <Tag key={m.n} selected={mealsPerDay === m.n} onClick={() => setMealsPerDay(m.n)}>
               {m.label}
-            </ChoiceChip>
+            </Tag>
           ))}
         </div>
       </Reveal>
 
-      <Btn className="mt-8 w-full py-4" onClick={onBuild}>
-        Build my plan
-      </Btn>
-      <button
-        onClick={onSkip}
-        className="mt-3 py-2 text-center text-[12.5px] font-semibold text-ink-faint underline"
-      >
-        Skip food for now
-      </button>
+      <div className="mt-auto pt-10">
+        <Bar onClick={onBuild}>Build my plan</Bar>
+        <div className="mt-1">
+          <Quiet onClick={onSkip}>Skip food for now</Quiet>
+        </div>
+      </div>
     </div>
   )
 }

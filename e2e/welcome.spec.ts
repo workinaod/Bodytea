@@ -18,6 +18,7 @@ test('a welcome goal chip seeds the wizard with that goal', async ({ page }) => 
   await page.goto('./')
 
   await page.getByRole('button', { name: /Run a 5K/ }).click()
+  await page.getByRole('button', { name: "Let's go" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByLabel('Height').fill('510')
@@ -44,6 +45,7 @@ test('a different chip seeds a completely different plan', async ({ page }) => {
   await page.goto('./')
 
   await page.getByRole('button', { name: /Build muscle/ }).click()
+  await page.getByRole('button', { name: "Let's go" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByLabel('Height').fill('510')

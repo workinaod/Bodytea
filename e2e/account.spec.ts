@@ -15,7 +15,7 @@ test('account sheet: cloud module lazy-loads and the signed-out flow renders', a
   await page.getByLabel('Height').fill('510')
   await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
-  await page.getByText('🎯 All-round fitness').click()
+  await page.getByText('All-round fitness').click()
   await page.getByPlaceholder(/before my wedding/).fill('stay dangerous year-round')
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()

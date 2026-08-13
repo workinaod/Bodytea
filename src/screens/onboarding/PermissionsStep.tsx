@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ASK_LABEL, askState, requestAsk, type AskId, type AskState } from '../../platform/permissions'
 import { enableReminders } from '../../logic/reminders'
-import { Btn } from '../../components/ui'
+import { Bar, Kicker, Title } from './kit'
 
 // ============================================================
 // The last thing, and the only screen that asks the phone for
@@ -50,9 +50,10 @@ export function PermissionsStep({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <h2 className="headline text-center text-[30px]">Last thing</h2>
+      <Kicker>Entry 08</Kicker>
+      <Title>Last thing</Title>
 
-      <div className="mx-auto mt-7 w-full max-w-[22rem] space-y-2.5">
+      <div className="mt-7 border-t border-white/[0.14]">
         {live.map((id) => {
           const st = state[id]
           const on = st === 'granted'
@@ -68,26 +69,28 @@ export function PermissionsStep({ onDone }: { onDone: () => void }) {
                   .then((next) => setState((p) => ({ ...p, [id]: next })))
                   .finally(() => setAsking(null))
               }}
-              className={`press flex w-full items-center justify-between rounded-2xl px-4 py-4 text-left ring-1 ${
-                on
-                  ? 'bg-lime/10 ring-lime/40'
-                  : st === 'denied'
-                    ? 'bg-white/[0.04] ring-white/[0.06]'
-                    : 'bg-white/[0.07] ring-white/[0.08]'
+              className={`press -mx-5 flex w-[calc(100%+2.5rem)] items-center justify-between border-b px-5 py-4 text-left transition-colors ${
+                on ? 'border-lime/50 bg-lime/[0.08]' : 'border-white/[0.09] active:bg-white/[0.04]'
               }`}
             >
-              <span className={`text-[15px] font-bold ${on ? 'text-lime' : 'text-ink'}`}>{ASK_LABEL[id]}</span>
-              <span className={`text-[12.5px] font-bold ${on ? 'text-lime' : 'text-ink-faint'}`}>
-                {on ? 'On' : busy ? 'Asking…' : st === 'denied' ? 'Blocked' : 'Allow'}
+              <span className={`headline text-[19px] uppercase leading-none tracking-[-0.02em] ${on ? 'text-lime' : 'text-ink'}`}>
+                {ASK_LABEL[id]}
+              </span>
+              <span
+                className={`text-[10px] font-black uppercase tracking-[0.2em] ${on ? 'text-lime' : 'text-ink-faint'}`}
+              >
+                {on ? 'On' : busy ? 'Asking' : st === 'denied' ? 'Blocked' : 'Allow'}
               </span>
             </button>
           )
         })}
       </div>
 
-      <Btn className="mx-auto mt-8 w-full max-w-[22rem] py-4" onClick={onDone} disabled={asking !== null}>
-        {answered === live.length ? 'Done' : 'Skip'}
-      </Btn>
+      <div className="mt-auto pt-10">
+        <Bar onClick={onDone} disabled={asking !== null}>
+          {answered === live.length ? 'Done' : 'Skip'}
+        </Bar>
+      </div>
     </div>
   )
 }
