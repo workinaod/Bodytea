@@ -132,8 +132,8 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await expect(page.getByText(/below the Adam’s apple/i)).toBeVisible() // step-by-step guidance
   await page.getByRole('button', { name: 'Next site' }).click() // neck 15" default
   await page.getByRole('button', { name: 'Calculate' }).click() // waist 34" default
-  await expect(page.getByText('18%', { exact: true })).toBeVisible() // published formula, at the height given at signup
-  await page.getByRole('button', { name: /Use 18% in this check-in/ }).click()
+  await expect(page.getByText('17.5%', { exact: true })).toBeVisible() // published formula, at the height given at signup
+  await page.getByRole('button', { name: /Use 17.5% in this check-in/ }).click()
   await page.getByRole('button', { name: 'Save check-in' }).click()
 
   // Saving rolls the Wrapped-style weekly recap, tap out of the story
@@ -185,8 +185,9 @@ test('midnight rollover advances the app without a reload', async ({ page }) => 
   await page.getByRole('button', { name: 'Skipped, no proof' }).click()
   await expect(page.getByText(/unaccounted for/)).not.toBeVisible()
 
-  // Meals follow too: Thursday is a rest day → the GENERATED rest target
-  // (180 lb vertical plan: 2700 base + 200 goal − 300 rest = 2600)
+  // Meals follow too: Thursday is a rest day → the GENERATED rest target.
+  // 180 lb vertical plan at 5'10": 2700 bodyweight base, +25 because an
+  // inch over the reference height is a real inch, +200 goal, −300 rest.
   await page.getByRole('button', { name: 'Meals', exact: true }).click()
-  await expect(page.getByText(/Rest day · 2600 kcal/)).toBeVisible()
+  await expect(page.getByText(/Rest day · 2625 kcal/)).toBeVisible()
 })
