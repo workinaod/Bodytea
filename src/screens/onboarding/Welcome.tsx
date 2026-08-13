@@ -55,12 +55,15 @@ export function Welcome({
 }) {
   return (
     <div className="flex flex-1 flex-col justify-center py-6">
+      {/* The name, at the size a name should be. It was a 10px eyebrow —
+          the app introduced itself in the smallest type on its own front
+          door. The T is the mark: it is the only capital in the word and
+          the one letter that is not "body". */}
       <div className="text-center">
-        <div className="eyebrow text-accent">BodyT</div>
-        <h1 className="mt-2 text-display font-black">What do you want?</h1>
-        <p className="mx-auto mt-2 max-w-[19rem] text-[13.5px] leading-snug text-ink-dim">
-          Pick one and you have a plan in about a minute.
-        </p>
+        <div className="headline text-[46px] leading-none tracking-[-0.035em]">
+          Body<span className="text-accent">T</span>
+        </div>
+        <h1 className="mt-3 text-[19px] font-bold tracking-tight text-ink-dim">What are your goals?</h1>
       </div>
 
       {/* The goals ARE the screen. Full-width rows, biggest thing here,

@@ -10,7 +10,7 @@ async function buildPlan(page: Page, startLabel: string, goalChip: string, state
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText(goalChip).click()
-  await page.getByPlaceholder(/dunk on a 10-ft rim/).fill(statement)
+  await page.getByPlaceholder(/before my wedding/).fill(statement)
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '4 days' }).click()

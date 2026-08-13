@@ -10,7 +10,7 @@ async function throughGoal(page: Page, entry: string, chip: string, statement: s
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText(chip).click()
-  await page.getByPlaceholder(/dunk on a 10-ft rim/).fill(statement)
+  await page.getByPlaceholder(/before my wedding/).fill(statement)
 }
 
 test('bring your own routine: build week → notes → track it', async ({ page }) => {
@@ -99,14 +99,14 @@ test('generated booklet: fine-tune before starting', async ({ page }) => {
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
-  await expect(page.getByText('Vertical Project · 6-Day')).toBeVisible()
+  await expect(page.getByText('Jump Higher · 6-Day')).toBeVisible()
 
   await page.getByRole('button', { name: /Fine-tune it first/ }).click()
   await expect(page.getByRole('heading', { name: 'Fine-tune your booklet' })).toBeVisible()
 
   // Rename the booklet, then lock it in
   const nameInput = page.getByRole('textbox').first()
-  await expect(nameInput).toHaveValue('Vertical Project · 6-Day')
+  await expect(nameInput).toHaveValue('Jump Higher · 6-Day')
   await nameInput.fill('My Dunk Plan')
   await page.getByRole('button', { name: 'Lock it in, start Week 1' }).click()
 

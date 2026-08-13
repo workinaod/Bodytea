@@ -71,16 +71,17 @@ export function MealStep({
             {d.label}
           </ChoiceChip>
         ))}
-        <ChoiceChip selected={dairyFree} onClick={() => {
-            setChose(true)
-            setDairyFree((v) => !v)
-          }}>
-          Dairy free
-        </ChoiceChip>
       </div>
 
+      {/* Dairy free is not a fifth diet — it stacks on any of the four.
+          Sitting in that row it read as one more of them. */}
       <Reveal when={chose} className="mt-6">
         <p className="text-[14px] font-bold text-ink">Anything you cannot eat?</p>
+        <div className="mt-2">
+          <ChoiceChip selected={dairyFree} onClick={() => setDairyFree((v) => !v)}>
+            Dairy free
+          </ChoiceChip>
+        </div>
         <input
           value={allergies}
           onChange={(e) => setAllergies(e.target.value)}

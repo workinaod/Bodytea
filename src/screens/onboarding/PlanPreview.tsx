@@ -82,9 +82,14 @@ export function PlanPreview(p: {
             {/* The plan's thinking, spelled out. Deep beats generic. */}
             {preview.strategy.length > 0 && (
               <div className="mt-3 rounded-2xl bg-white/[0.05] p-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">How this plan thinks</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">Why this plan</p>
+                {/* Three, not six. The rest go to the coach feed, where
+                    there is room to read them. Six paragraphs on the
+                    screen between somebody and their first session is a
+                    wall, and the two that were theirs sat at the bottom
+                    of it — see deepGoalStrategy for the reordering. */}
                 <ul className="mt-2 space-y-2">
-                  {preview.strategy.map((s, i) => (
+                  {preview.strategy.slice(0, 3).map((s, i) => (
                     <li key={i} className="flex gap-2 text-[12.5px] leading-snug text-ink-dim">
                       <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-gold/70" />
                       <span>{s}</span>
@@ -95,8 +100,7 @@ export function PlanPreview(p: {
             )}
 
             <p className="mt-3 text-center text-[12px] leading-relaxed text-ink-dim">
-              4-week blocks with a built-in deload · exercises AND rep schemes rotate every block · A/B weeks ·
-              busy-week fallback tiers · every movement with photo demos and muscle maps · a coach that keeps receipts.
+              Rebuilt every 4 weeks · lighter weeks built in · demos and muscle maps on every move.
             </p>
 
             <Btn

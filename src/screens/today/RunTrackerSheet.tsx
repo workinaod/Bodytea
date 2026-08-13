@@ -25,6 +25,7 @@ import { MAX_ZOOM, MIN_ZOOM, RouteMap } from '../../components/RouteMap'
 import { RunReactionCard } from '../../components/RunReactionCard'
 import { acceptsAltitude, currentGradePct, elevationStats } from '../../engine/elevation'
 import { requestMotionPermission, startStepCounter, type StepCounter } from '../../platform/motion'
+import { askState } from '../../platform/permissions'
 import { stepDistanceMi, tracksSteps } from '../../engine/intensity'
 
 type Phase = 'acquiring' | 'live' | 'done' | 'denied'
@@ -84,7 +85,14 @@ export function RunTrackerSheet({
   useEffect(() => {
     if (!countsSteps) return
     let live = true
-    void requestMotionPermission().then((ok) => {
+    // iOS only reports motion when the request came out of a user
+    // gesture, and this effect runs after paint — outside that window.
+    // For anyone who said yes on the last onboarding screen the answer
+    // is already known, so the counter starts without asking again;
+    // everyone else still gets the best-effort request, which is what
+    // Android and desktop have always needed.
+    const asked = askState('motion') === 'granted' ? Promise.resolve(true) : requestMotionPermission()
+    void asked.then((ok) => {
       // The permission prompt can resolve after the screen is gone. Without
       // this the listener attaches to a dead component and never comes off.
       if (ok && live) stepsRef.current = startStepCounter()
