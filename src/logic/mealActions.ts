@@ -1,4 +1,4 @@
-import type { ISODate, MealEntry } from '../types'
+import type { ISODate, MealEntry, MealTemplateDef } from '../types'
 import { FOODS } from '../plan/foods'
 import { DEFAULT_SUPPLEMENTS } from '../types'
 import { uid, useAppStore } from '../store/appStore'
@@ -71,6 +71,29 @@ export function cycleDayTypeOverride(date: ISODate): void {
     day.dayTypeOverride =
       day.dayTypeOverride === undefined ? 'training' : day.dayTypeOverride === 'training' ? 'rest' : undefined
   })
+}
+
+/**
+ * The plan meals a day's log sheet should offer, one tap each.
+ *
+ * Meals belong to a day type, so a rest day gets the rest-day plan and
+ * that is the whole rule almost always. The exception is the one we
+ * invite: "clear these and build yours" wipes BOTH days, and somebody
+ * who then writes only their training day used to open the log sheet on
+ * a rest day and find no plan meals at all — not a smaller list, an
+ * absent section, with the meals they had just written unreachable.
+ * Standing the other day in beats showing a user an empty list they
+ * built themselves. `borrowed` is so the sheet can say so rather than
+ * quietly mislabel a training day's food as today's plan.
+ */
+export function loggableTemplates(
+  templates: MealTemplateDef[],
+  dayType: 'training' | 'rest',
+): { list: MealTemplateDef[]; borrowed: boolean } {
+  const mine = templates.filter((m) => m.dayType === dayType)
+  if (mine.length) return { list: mine, borrowed: false }
+  const other = templates.filter((m) => m.dayType !== dayType)
+  return { list: other, borrowed: other.length > 0 }
 }
 
 export function nutritionTargets(date: ISODate) {

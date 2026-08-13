@@ -587,6 +587,7 @@ export function writeOffWeek(monday: ISODate, reason: ExcuseReason, proofPhotoId
 export {
   addMealEntry,
   cycleDayTypeOverride,
+  loggableTemplates,
   nutritionTargets,
   removeMealEntry,
   setMealServings,

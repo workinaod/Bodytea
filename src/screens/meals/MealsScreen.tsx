@@ -14,6 +14,7 @@ import { Sheet } from '../../components/Sheet'
 import {
   addMealEntry,
   cycleDayTypeOverride,
+  loggableTemplates,
   removeMealEntry,
   setMealServings,
   toggleSupplement,
@@ -238,7 +239,9 @@ export function MealsScreen() {
         </>
       )}
 
-      {view === 'plan' && <PlanView onEditStack={() => setStackOpen(true)} onSetup={() => setSetupOpen(true)} />}
+      {view === 'plan' && (
+        <PlanView opensOn={dayType} onEditStack={() => setStackOpen(true)} onSetup={() => setSetupOpen(true)} />
+      )}
       {view === 'grocery' && <GroceryList />}
 
       {logOpen && <LogSheet date={date} dayType={dayType} onClose={() => setLogOpen(false)} />}
@@ -261,7 +264,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
   const [protein, setProtein] = useState('')
   const [kcal, setKcal] = useState('')
 
-  const templates = data.plan.mealPlan.templates.filter((m) => m.dayType === dayType)
+  const { list: templates, borrowed } = loggableTemplates(data.plan.mealPlan.templates, dayType)
 
   const recents = useMemo(() => {
     const freq = new Map<string, { label: string; proteinG: number; kcal: number; count: number }>()
@@ -297,7 +300,7 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
         {templates.length > 0 && (
           <div>
             <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
-              From my plan, one tap
+              {borrowed ? `From my ${dayType === 'training' ? 'rest' : 'training'}-day plan` : 'From my plan, one tap'}
             </div>
             <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
               {templates.map((t, i) => (
@@ -444,11 +447,25 @@ function LogSheet({ date, dayType, onClose }: { date: string; dayType: 'training
 // own plan by clearing the starter meals and adding yours.
 // ============================================================
 
-function PlanView({ onEditStack, onSetup }: { onEditStack: () => void; onSetup: () => void }) {
+function PlanView({
+  opensOn,
+  onEditStack,
+  onSetup,
+}: {
+  opensOn: 'training' | 'rest'
+  onEditStack: () => void
+  onSetup: () => void
+}) {
   const plan = useAppStore((s) => s.data.plan.mealPlan)
   const diet = useAppStore((s) => s.data.plan.dietStyle)
   const update = useAppStore((s) => s.update)
-  const [dt, setDt] = useState<'training' | 'rest'>('training')
+  // Opens on the day you are actually in, not always the training day.
+  // "+ Add a meal" writes whichever tab is showing, so a hardcoded
+  // 'training' meant a meal added on a rest day was filed under training
+  // and then missing from that evening's log sheet — added, saved,
+  // visible on this screen, and nowhere to be found when it was time to
+  // eat it. The tab is still a tab; it just starts where the user is.
+  const [dt, setDt] = useState<'training' | 'rest'>(opensOn)
   const [openMeal, setOpenMeal] = useState<MealTemplateDef | null>(null)
   const [editing, setEditing] = useState<MealTemplateDef | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)

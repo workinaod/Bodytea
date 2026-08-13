@@ -58,7 +58,12 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   'types.ts': 663,
   // Real splits owed, in plan order.
   'screens/onboarding/Onboarding.tsx': 1095,
-  'screens/meals/MealsScreen.tsx': 1020,
+  // +17, comment and prop-plumbing, for the day-type mismatch: the plan
+  // screen filed new meals under "training" whatever day it was, and the
+  // log sheet filters by the real day, so a saved meal could be
+  // unreachable at the moment you wanted to eat it. The rule itself went
+  // to logic/mealActions.ts where it could be tested.
+  'screens/meals/MealsScreen.tsx': 1037,
   // +20 for proteinContextFor: the protein target now depends on whether
   // the athlete is cutting, building or running, which is a decision the
   // generator is the right place to make and a table it is not.
@@ -69,7 +74,8 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // writing sport to the log to logic/cardioActions.ts. The allowance
   // follows it down each time: an oversized file that shrinks does not
   // keep the headroom.
-  'logic/actions.ts': 651,
+  // +1: one name added to the mealActions re-export block.
+  'logic/actions.ts': 652,
   // Was 836. The how-to reader and the rest screen both moved out, and
   // the allowance follows it down: an oversized file that shrinks does
   // not get to keep the headroom it earned.
