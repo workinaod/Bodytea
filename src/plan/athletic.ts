@@ -8,6 +8,8 @@
 // PRIMARY quality, a max-velocity slot never becomes cardio.
 // ============================================================
 
+import { ATHLETIC_COVERAGE_META } from './athleticCoverage'
+
 export type AthleticQuality =
   | 'acceleration'
   | 'max-velocity'
@@ -674,6 +676,10 @@ export const ATHLETIC: Record<string, AthleticMeta> = {
 }
 
 /** Structured athletic metadata, when this exercise has it. */
+// The coverage-gap drills carry identical metadata and merge in here, so
+// every function below sees one library rather than two.
+Object.assign(ATHLETIC, ATHLETIC_COVERAGE_META)
+
 export function athleticFor(id: string): AthleticMeta | null {
   return ATHLETIC[id] ?? null
 }

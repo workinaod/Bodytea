@@ -940,6 +940,16 @@ Object.assign(EXERCISE_DEMOS, {
   // Floor core holds.
   'prone-rear-delt-raise': EXERCISE_DEMOS['prone-y-raise'],
   'underhand-inverted-row': EXERCISE_DEMOS['inverted-row'],
+  // ---- Athletic coverage-gap drills ----
+  'jog-to-stop': EXERCISE_DEMOS['decel-stick'],
+  'decel-to-backpedal': EXERCISE_DEMOS['decel-stick'],
+  'reaction-start': EXERCISE_DEMOS['falling-start-sprint'],
+  'relaxed-stride': EXERCISE_DEMOS['build-up-sprint'],
+  'mb-side-throw': EXERCISE_DEMOS['mb-rotational-throw'],
+  'mb-step-through-throw': EXERCISE_DEMOS['mb-rotational-throw'],
+  'single-leg-pogo-hold': EXERCISE_DEMOS['single-leg-pogo'],
+  'single-leg-rdl-hop': EXERCISE_DEMOS['single-leg-rdl'],
+  'accel-to-flying': EXERCISE_DEMOS['build-up-sprint'],
   'bird-dog': EXERCISE_DEMOS['dead-bug'],
   'superman-hold': EXERCISE_DEMOS['plank-side-plank'],
 })

@@ -218,6 +218,17 @@ export const EXERCISE_MUSCLES: Record<string, MuscleActivation> = {
   'bodyweight-calf-raise': { primary: ['calves'], secondary: ['achilles-feet'] },
   'prone-rear-delt-raise': { primary: ['delts-rear'], secondary: ['traps', 'mid-back', 'lower-back'] },
   'underhand-inverted-row': { primary: ['biceps', 'lats'], secondary: ['mid-back', 'forearms', 'abs'] },
+
+  // ---- Athletic coverage-gap drills ----
+  'jog-to-stop': { primary: ['quads', 'glutes'], secondary: ['hamstrings', 'calves', 'abs'] },
+  'decel-to-backpedal': { primary: ['quads', 'glutes'], secondary: ['hamstrings', 'calves'] },
+  'reaction-start': { primary: ['glutes', 'quads'], secondary: ['hamstrings', 'calves'] },
+  'relaxed-stride': { primary: ['hamstrings', 'glutes'], secondary: ['quads', 'calves', 'hip-flexors'] },
+  'mb-side-throw': { primary: ['obliques', 'abs'], secondary: ['glutes', 'chest', 'delts-front'] },
+  'mb-step-through-throw': { primary: ['obliques', 'abs'], secondary: ['glutes', 'quads', 'chest'] },
+  'single-leg-pogo-hold': { primary: ['calves', 'achilles-feet'], secondary: ['quads', 'glutes', 'tibialis'] },
+  'single-leg-rdl-hop': { primary: ['hamstrings', 'glutes'], secondary: ['calves', 'lower-back', 'abs'] },
+  'accel-to-flying': { primary: ['glutes', 'hamstrings'], secondary: ['quads', 'calves', 'hip-flexors'] },
 }
 
 export function musclesFor(exerciseId: string): MuscleActivation {

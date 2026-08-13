@@ -48,8 +48,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // existing keyframe shape they share.
   'plan/exercises.ts': 1840,
   'plan/athleticExercises.ts': 1250,
-  'plan/demos.ts': 955,
-  'plan/athletic.ts': 735,
+  'plan/demos.ts': 963,
+  // +3 for merging the coverage-gap drills' metadata in, so every
+  // function in the file sees one library rather than two.
+  'plan/athletic.ts': 738,
   // Activity shapes moved to activityTypes.ts, the logged-session shapes
   // to sessionTypes.ts, the engine's day output to resolvedTypes.ts; the
   // allowance follows each time.

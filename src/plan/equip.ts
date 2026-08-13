@@ -212,6 +212,17 @@ export const EXERCISE_EQUIP: Record<string, EquipTag[]> = {
   'bodyweight-calf-raise': ['none'],
   'prone-rear-delt-raise': ['none'],
   'underhand-inverted-row': ['none'],
+
+  // ---- Athletic coverage-gap drills ----
+  'jog-to-stop': ['open-space'],
+  'decel-to-backpedal': ['open-space'],
+  'reaction-start': ['open-space'],
+  'relaxed-stride': ['open-space'],
+  'mb-side-throw': ['med-ball'],
+  'mb-step-through-throw': ['med-ball', 'open-space'],
+  'single-leg-pogo-hold': [],
+  'single-leg-rdl-hop': [],
+  'accel-to-flying': ['open-space'],
 }
 
 export function equipFor(id: string): EquipTag[] {

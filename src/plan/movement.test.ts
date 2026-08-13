@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EXERCISES } from './exercises'
-import { ATHLETIC } from './athletic'
+import { ATHLETIC, QUALITY_LABELS } from './athletic'
 import { EXERCISE_EQUIP, canDo } from './equip'
 import type { EquipTag } from '../types'
 import {
@@ -267,6 +267,86 @@ describe('the metadata itself is sane', () => {
     for (const p of trainable) {
       const any = Object.entries(MOVEMENT).some(([id, m]) => m.pattern === p && bodyweightOnly(id))
       expect(any, `no bodyweight option for ${p}`).toBe(true)
+    }
+  })
+})
+
+// ============================================================
+// The athletic library, asked the same question the equipment
+// profiles were asked: not "how many drills" but "what can
+// somebody actually START on, and where do they go next".
+// ============================================================
+
+describe('the athletic library covers every quality it claims', () => {
+  it('gives every quality a foundation-level way in', () => {
+    // The one that mattered: deceleration had six drills, three of them
+    // advanced, and NOTHING anybody new could begin on — while change of
+    // direction had six advanced options. Stopping is the prerequisite
+    // for cutting, and the braking step is where the forces are highest.
+    // A library that teaches cutting before stopping is pointed the wrong
+    // way.
+    const noEntry = Object.keys(QUALITY_LABELS).filter(
+      (q) =>
+        !Object.values(ATHLETIC).some(
+          (m) => m.qualities.includes(q as never) && m.level === 'foundation',
+        ),
+    )
+    expect(noEntry, `no foundation drill for: ${noEntry.join(', ')}`).toEqual([])
+  })
+
+  it('gives every quality more than one option', () => {
+    // Rotational power had exactly one drill, for every sport built on a
+    // throw, a swing or a shot.
+    const thin = Object.keys(QUALITY_LABELS).filter(
+      (q) => Object.values(ATHLETIC).filter((m) => m.qualities.includes(q as never)).length < 2,
+    )
+    expect(thin, `only one drill trains: ${thin.join(', ')}`).toEqual([])
+  })
+
+  it('never sends a progression downhill in level', () => {
+    const rank = { foundation: 0, intermediate: 1, advanced: 2 }
+    for (const [id, m] of Object.entries(ATHLETIC)) {
+      for (const p of m.progressions ?? []) {
+        const to = ATHLETIC[p]
+        if (!to) continue
+        expect(rank[to.level], `${id} → ${p} progresses DOWN a level`).toBeGreaterThanOrEqual(rank[m.level])
+      }
+      for (const r of m.regressions ?? []) {
+        const to = ATHLETIC[r]
+        if (!to) continue
+        expect(rank[to.level], `${id} → ${r} regresses UP a level`).toBeLessThanOrEqual(rank[m.level])
+      }
+    }
+  })
+
+  it('every progression edge points at a drill that exists', () => {
+    for (const [id, m] of Object.entries(ATHLETIC)) {
+      for (const p of [...(m.progressions ?? []), ...(m.regressions ?? [])]) {
+        expect(EXERCISES[p], `${id} points at ${p}, which is not in the catalog`).toBeDefined()
+      }
+    }
+  })
+
+  it('warns on the drills that can actually hurt somebody', () => {
+    // Max-effort top-speed running and lengthened-hamstring plyos are the
+    // two highest-force things in here. Both carry a warning.
+    for (const id of ['accel-to-flying', 'single-leg-rdl-hop']) {
+      expect(ATHLETIC[id]?.warning, `${id} has no warning`).toBeTruthy()
+    }
+  })
+
+  it('marks the max-intent work as fresh-only', () => {
+    // A max-intent drill done tired trains a slow version of a fast
+    // quality, which is worse than not doing it at all.
+    //
+    // Scoped to what `fresh` is actually about, which is not "high CNS".
+    // A heavy front squat is cns 2 and is meant to be done with some
+    // fatigue in the tank; a depth jump is not. The first draft of this
+    // caught the front squat and would have been "fixed" by mislabelling
+    // real data to satisfy a rule that was too broad.
+    for (const [id, m] of Object.entries(ATHLETIC)) {
+      const maxIntent = m.cns === 3 || (m.cns >= 2 && (m.emphasis === 'elastic' || m.emphasis === 'reactive'))
+      if (maxIntent) expect(m.fresh, `${id} is max-intent but not fresh-only`).toBe(true)
     }
   })
 })
