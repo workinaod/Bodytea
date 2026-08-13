@@ -2,13 +2,12 @@ name: Deploy to GitHub Pages
 
 on:
   push:
+    # main is the only source of truth for what ships. Listing working
+    # branches here is what let two of them race to publish gh-pages, so
+    # whichever pushed last decided the live site. Merge to main instead;
+    # use workflow_dispatch to republish without a new commit.
     branches:
       - main
-      - claude/fitness-tracking-app-ugo5xt
-      # The working branch. gh-pages was publishing from the line above
-      # while every commit for the last stretch landed here, so the live
-      # site sat 23 commits behind the code.
-      - claude/app-audit-refinement-sjw2va
   workflow_dispatch:
 
 permissions:
@@ -31,7 +30,9 @@ jobs:
       - run: npm run typecheck
       - run: npx vitest run
       - run: npm run build
-      # Publishing the gh-pages branch auto-enables GitHub Pages on public repos.
+      # Pushing gh-pages does NOT enable Pages on its own: this job published
+      # here for 112 commits while the site served a 404, until Pages was
+      # pointed at gh-pages/(root) by hand in Settings. Keep that setting.
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
