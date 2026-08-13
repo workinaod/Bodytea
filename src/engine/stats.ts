@@ -36,9 +36,13 @@ function bestSetOf(session: SessionLog, exerciseId: string): { weightLb: number;
   if (!log) return null
   let best: { weightLb: number; reps: number } | null = null
   for (const s of log.sets) {
-    if (!s.done || s.weightLb === undefined || !s.reps) continue
-    if (!best || e1RM(s.weightLb, s.reps) > e1RM(best.weightLb, best.reps)) {
-      best = { weightLb: s.weightLb, reps: s.reps }
+    // What was actually done outranks what was asked for. `reps` is the
+    // prescription copied in when the session was built, so on a set that
+    // came up short it overstates the work and the estimate with it.
+    const reps = s.achieved ?? s.reps
+    if (!s.done || s.weightLb === undefined || !reps) continue
+    if (!best || e1RM(s.weightLb, reps) > e1RM(best.weightLb, best.reps)) {
+      best = { weightLb: s.weightLb, reps }
     }
   }
   return best

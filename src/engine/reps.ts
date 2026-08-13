@@ -1,5 +1,7 @@
 import type { AppData, ISODate } from '../types'
+import type { ExerciseLog, SessionLog } from '../sessionTypes'
 import { musclesFor } from '../plan/muscles'
+import { daysBetween } from './calendar'
 
 // ============================================================
 // One rep number, never a range.
@@ -59,12 +61,34 @@ function suffixOf(text: string): string {
  * Only completed sets count, and an exercise nobody finished is
  * not evidence of anything.
  */
-function clearedTarget(sets: { done: boolean; reps?: number }[], target: number): boolean {
+function clearedTarget(sets: { done: boolean; achieved?: number }[], target: number): boolean {
   const done = sets.filter((s) => s.done)
   if (done.length === 0 || done.length < sets.length) return false
-  // Reps are not always logged. When they are not, finishing every
-  // prescribed set is the best evidence available and counts as a clear.
-  return done.every((s) => s.reps === undefined || s.reps >= target)
+  // `achieved` is written only when the athlete came up short, so its
+  // absence is a completed set at the number that was asked for.
+  //
+  // This deliberately does NOT read `reps`. That field is a copy of the
+  // prescription taken when the session was built and never updated, so
+  // comparing it against a target that climbs every week meant the
+  // comparison failed forever the moment the target passed it. The lift
+  // then never cleared, never wrapped, and never earned more weight.
+  return done.every((s) => s.achieved === undefined || s.achieved >= target)
+}
+
+/**
+ * Did THIS movement take everything the athlete had?
+ *
+ * Asked of the exercise first and the day second. The day-wide answer is
+ * one tap at the halfway point, and using it alone meant a session that
+ * was honestly hard held the reps on every lift in it, including the
+ * ones that flew. Reps in reserve is the most direct answer, the
+ * per-exercise chip is the next best, and the whole-day feel is the
+ * fallback for sessions logged before either existed.
+ */
+function feltHeavy(log: ExerciseLog, session: SessionLog): boolean {
+  if (log.rir !== undefined) return log.rir <= 0
+  if (log.feel !== undefined) return log.feel === 'hard'
+  return session.feel === 'heavy'
 }
 
 export interface RepStep {
@@ -90,7 +114,31 @@ export interface RepStep {
    * opposite of coaching.
    */
   backOff: boolean
+  /**
+   * Load steps to give back because the lift has not been trained in a
+   * long time, 0 when it is current.
+   *
+   * Both sides of the prescription used to walk history all the way to
+   * the beginning and take the first match, with no sense of when it
+   * happened. Someone returning after six months was handed the last
+   * weight they ever lifted, on the reps they were on the day they
+   * stopped. That is not a plan, it is a stale receipt.
+   */
+  staleSteps: number
 }
+
+/**
+ * Long enough away that the rep target should start over at the bottom
+ * of the range. Three weeks is roughly where a missed block stops being
+ * a gap in the log and starts being detraining.
+ */
+export const STALE_DAYS = 21
+
+/** Beyond this, the load gives a step back for every further four weeks. */
+export const LAYOFF_STEP_DAYS = 28
+
+/** Never hand back more than this, however long the layoff. */
+export const MAX_STALE_STEPS = 3
 
 /**
  * One step of double progression, and what it says about the load.
@@ -122,17 +170,31 @@ export function repStepFor(
     const prescribed = Number((log.sets[0]?.targetReps ?? '').match(/^\d+/)?.[0])
     if (!Number.isFinite(prescribed)) continue
     const last = Math.min(Math.max(prescribed, range.low), range.high)
-    const heavy = session.feel === 'heavy'
-    if (!clearedTarget(log.sets, last)) return { reps: last, wrapped: false, backOff: heavy }
+
+    // Away long enough that the last number stopped being true. Start the
+    // range again from the bottom, and past a month hand some load back
+    // too, one step per further four weeks.
+    const away = daysBetween(session.date, before)
+    if (away > STALE_DAYS) {
+      return {
+        reps: range.low,
+        wrapped: false,
+        backOff: false,
+        staleSteps: Math.min(MAX_STALE_STEPS, Math.floor(away / LAYOFF_STEP_DAYS)),
+      }
+    }
+
+    const heavy = feltHeavy(log, session)
+    if (!clearedTarget(log.sets, last)) return { reps: last, wrapped: false, backOff: heavy, staleSteps: 0 }
     // Cleared it, but it took everything. Hold, do not ask for more.
-    if (heavy) return { reps: last, wrapped: false, backOff: false }
+    if (heavy) return { reps: last, wrapped: false, backOff: false, staleSteps: 0 }
     // Top of the range means the next step is load, not reps.
     return last >= range.high
-      ? { reps: range.low, wrapped: true, backOff: false }
-      : { reps: last + 1, wrapped: false, backOff: false }
+      ? { reps: range.low, wrapped: true, backOff: false, staleSteps: 0 }
+      : { reps: last + 1, wrapped: false, backOff: false, staleSteps: 0 }
   }
   // Never trained it: start at the load end.
-  return { reps: range.low, wrapped: false, backOff: false }
+  return { reps: range.low, wrapped: false, backOff: false, staleSteps: 0 }
 }
 
 /** The rep number alone, for the places that only print it. */

@@ -18,6 +18,8 @@ export const setLogSchema = z.object({
   reps: z.number().optional(),
   seconds: z.number().optional(),
   done: z.boolean(),
+  achieved: z.number().optional(),
+  light: z.boolean().optional(),
 })
 
 export const sessionSchema = z.object({
@@ -42,6 +44,7 @@ export const sessionSchema = z.object({
       sets: z.array(setLogSchema),
       skipped: z.boolean().optional(),
       feel: z.enum(['easy', 'right', 'hard']).optional(),
+      rir: z.number().optional(),
     }),
   ),
   notes: z.string().optional(),

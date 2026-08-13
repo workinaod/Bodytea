@@ -21,6 +21,32 @@ export interface SetLog {
   reps?: number
   seconds?: number
   done: boolean
+  /**
+   * Reps actually completed, and ONLY when they differed from the ask.
+   *
+   * `reps` above cannot answer this. It is written once when the session
+   * skeleton is built and never touched again, so it is a copy of the
+   * prescription, not a record of the work. Progression read it anyway
+   * and compared it against a rep target that climbs every week, so the
+   * moment the target passed that frozen number every set stopped
+   * counting as cleared, the range never wrapped, and the load never
+   * went up again. An athlete doing everything right froze in week four.
+   *
+   * Absent means the target was met. That keeps the common case free of
+   * typing, and it means every session logged before this field existed
+   * reads as the clean set of clears it actually was.
+   */
+  achieved?: number
+  /**
+   * This set's weight was scaled down by a rule, not chosen by the
+   * athlete: a deload, a bad-sleep cut, or a readiness downgrade.
+   *
+   * Worth a flag because the load side looks backwards for the last
+   * working weight, and an 85% day is not one. Without the mark those
+   * reduced numbers became the new baseline, and two light weeks in a
+   * row compounded to roughly 72% of where the athlete actually was.
+   */
+  light?: boolean
 }
 
 export interface ExerciseLog {
@@ -30,6 +56,18 @@ export interface ExerciseLog {
   skipped?: boolean
   /** Mid-rest check-in: how the weight felt. Drives the ±5 lb nudge next session. */
   feel?: 'easy' | 'right' | 'hard'
+  /**
+   * Reps left in the tank on this movement, asked once, around its
+   * midpoint, and always skippable.
+   *
+   * Optional on purpose. The session-level "how is today sitting"
+   * question is one answer for the whole day, and it was being used to
+   * decide progression on every exercise in that day: one honest
+   * "heavy" tap after a brutal squat also froze the curls. This is the
+   * same question asked where the answer actually applies, so a lift
+   * that went well keeps climbing even on a hard day.
+   */
+  rir?: number
 }
 
 export type SessionStatus =

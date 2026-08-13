@@ -178,6 +178,7 @@ describe('repStepFor: the wrap that hands the next step to the bar', () => {
       reps: 8,
       wrapped: false,
       backOff: false,
+      staleSteps: 0,
     })
   })
 })

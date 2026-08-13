@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { SessionFeel } from '../../types'
 import { say } from '../../platform/speech'
+import { EffortAsk } from './EffortAsk'
 import { Stepper } from '../../components/ui'
 import { ExerciseDemo } from '../../components/ExerciseDemo'
 import { MuscleMap } from '../../components/MuscleMap'
@@ -20,6 +21,10 @@ export interface BreakState {
   easeOffer?: boolean
   /** Drives the preview of what is coming. */
   nextExerciseId?: string
+  /** Reps the set just finished asked for, so a shortfall can be one tap. */
+  justTarget?: number
+  /** Roughly the midpoint of the movement just worked: ask what is left. */
+  askRir?: boolean
 }
 
 // ============================================================
@@ -43,6 +48,8 @@ export function BreakScreen({
   onDone,
   onSessionFeel,
   onEase,
+  onShort,
+  onRir,
   weightLb,
   loadLabel,
   onWeight,
@@ -59,6 +66,10 @@ export function BreakScreen({
   onSessionFeel?: (f: SessionFeel) => void
   /** Shorten what is left. Returns a line describing what changed. */
   onEase?: () => string
+  /** The set just finished got fewer reps than it asked for. */
+  onShort?: (achieved: number) => void
+  /** Reps left in the tank on the movement just worked. */
+  onRir?: (rir: number) => void
 }) {
   const endsAt = useRef(Date.now() + brk.seconds * 1000)
   const [remaining, setRemaining] = useState(brk.seconds)
@@ -195,6 +206,14 @@ export function BreakScreen({
         </div>
       )}
       {feelDone && <div className="mt-7 text-[11.5px] font-bold text-lime">Got it. Next session adjusts.</div>}
+
+      <EffortAsk
+        target={brk.justTarget}
+        onShort={onShort}
+        askRir={brk.askRir}
+        onRir={onRir}
+      />
+
       <button onClick={onDone} className="mt-8 rounded-full bg-white/[0.07] px-5 py-2.5 text-[12.5px] font-bold text-ink-dim">
         skip the rest, I'm ready
       </button>

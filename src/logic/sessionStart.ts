@@ -63,8 +63,20 @@ export function startSession(
         sets: Array.from({ length: r.sets }, () => ({
           targetReps: r.repText,
           weightLb: r.kind === 'lift' || r.kind === 'carry' ? pre.weightLb : undefined,
-          reps: r.repsNum ?? pre.reps,
+          // The number actually being asked for, not the static one the
+          // generator wrote months ago. repText has already been collapsed
+          // to a single value by the rep engine, and it is the one on
+          // screen, so it is the honest echo for the strength estimate to
+          // read back. Only for genuine rep counts: a timed carry keeps
+          // its own handling.
+          reps:
+            r.repsNum !== undefined
+              ? Number((r.repText.match(/^\d+/) ?? [])[0]) || r.repsNum
+              : pre.reps,
           done: false,
+          // Mark the day the plan made lighter, so next week's baseline
+          // knows this weight was the rule's choice and not the athlete's.
+          ...(r.lightMode ? { light: true } : {}),
         })),
       }
     }),

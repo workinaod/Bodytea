@@ -1,9 +1,45 @@
 import type { ISODate, SessionFeel } from '../types'
+import type { ExerciseLog, SessionLog, SetLog } from '../sessionTypes'
 import { getExercise } from '../plan/exercises'
 import { suggestedStartWeight } from '../engine/startWeight'
 import { useAppStore } from '../store/appStore'
 import { loadStepLb, repStepFor, type RepRange } from '../engine/reps'
 import { lightLoad } from '../engine/fatigue'
+import { e1RM } from '../engine/stats'
+
+interface Baseline {
+  best: SetLog
+  log: ExerciseLog
+  session: SessionLog
+}
+
+/**
+ * How informative a set is about what the movement is being worked at.
+ *
+ * Estimated 1RM rather than raw weight, because the heaviest set is not
+ * always the most telling one. Picking by weight alone meant a single
+ * heavy rep logged among sets of ten became every set's opening weight
+ * the following week.
+ */
+const worthOf = (s: SetLog) => e1RM(s.weightLb ?? 0, s.achieved ?? s.reps ?? 1)
+
+/** The most recent set that establishes a working weight for this movement. */
+function lastWorkingSet(
+  sessions: SessionLog[],
+  exerciseId: string,
+  allowLight: boolean,
+): Baseline | null {
+  for (const session of sessions) {
+    const log = session.exercises.find((e) => e.exerciseId === exerciseId)
+    if (!log) continue
+    const done = log.sets.filter(
+      (x) => x.done && x.weightLb !== undefined && (allowLight || !x.light),
+    )
+    if (!done.length) continue
+    return { best: done.reduce((a, b) => (worthOf(a) >= worthOf(b) ? a : b)), log, session }
+  }
+  return null
+}
 
 // ============================================================
 // What load and how many reps go in front of you.
@@ -51,45 +87,53 @@ export function prefillFor(
   const holding = (data.adapt[date] ?? []).includes('hold-load')
   const wrapStep = step?.wrapped && !holding ? loadStepLb(exerciseId) : 0
   const backOff = step?.backOff ? -loadStepLb(exerciseId) : 0
+  // Time away is paid on the load as well as on the reps. Coming back to
+  // the last weight ever lifted, months later, is how a plan loses an
+  // athlete in its first week back.
+  const staleGiveBack = step?.staleSteps ? -step.staleSteps * loadStepLb(exerciseId) : 0
 
   const sessions = Object.values(data.sessions)
     .filter((s) => s.date < date && s.status !== 'skipped')
     .sort((a, b) => (a.date > b.date ? -1 : 1))
-  for (const s of sessions) {
-    const log = s.exercises.find((e) => e.exerciseId === exerciseId)
-    if (!log) continue
-    const done = log.sets.filter((x) => x.done && x.weightLb !== undefined)
-    if (done.length) {
-      const best = done.reduce((a, b) => ((a.weightLb ?? 0) >= (b.weightLb ?? 0) ? a : b))
-      // The weight moves on two signals only, both from the rep engine:
-      // the wrap earns it, falling short on a heavy day gives it back.
-      // A "heavy" answer on its own is NOT one of them. Treating it as
-      // one meant an honest run of hard weeks stripped the load to zero
-      // while the rep target kept climbing.
-      const bump =
-        wrapStep > 0 || backOff < 0 || s.feel !== undefined
-          ? 0
-          : // Legacy per-exercise feel, for sessions logged before the
-            // session-level question existed. Never for newer ones.
-            log.feel === 'easy'
-            ? 5
-            : log.feel === 'hard'
-              ? -5
-              : 0
-      // A back-off must never walk the load down to nothing. Repeated
-      // misses take it down a step at a time, and without a floor an
-      // honest run of bad weeks ends at 0 lb, which is not a
-      // prescription, it is the absence of one. Below a single step
-      // there is no lift left to make lighter.
-      const floor = backOff < 0 ? loadStepLb(exerciseId) : 0
-      const w =
-        best.weightLb !== undefined
-          ? Math.max(floor, best.weightLb + bump + wrapStep + backOff)
-          : undefined
-      return {
-        weightLb: w !== undefined && opts.lightMode ? lightLoad(w) : w,
-        reps: best.reps,
-      }
+
+  // A day the plan deliberately made lighter does not establish a working
+  // weight. Those numbers came from a deload or a bad-sleep rule, not from
+  // what the athlete can do, and letting one set the baseline walked the
+  // load down 15% at a time: two such weeks running landed at roughly 72%
+  // of where they actually were, with nothing on screen to say so. Still
+  // better than an empty stepper, so they remain the fallback.
+  const found =
+    lastWorkingSet(sessions, exerciseId, false) ?? lastWorkingSet(sessions, exerciseId, true)
+  if (found) {
+    const { best, log, session } = found
+    // The weight moves on two signals only, both from the rep engine:
+    // the wrap earns it, falling short on a heavy day gives it back.
+    // A "heavy" answer on its own is NOT one of them. Treating it as
+    // one meant an honest run of hard weeks stripped the load to zero
+    // while the rep target kept climbing.
+    const bump =
+      wrapStep > 0 || backOff < 0 || staleGiveBack < 0 || session.feel !== undefined
+        ? 0
+        : // Legacy per-exercise feel, for sessions logged before the
+          // session-level question existed. Never for newer ones.
+          log.feel === 'easy'
+          ? 5
+          : log.feel === 'hard'
+            ? -5
+            : 0
+    // A back-off must never walk the load down to nothing. Repeated
+    // misses take it down a step at a time, and without a floor an
+    // honest run of bad weeks ends at 0 lb, which is not a
+    // prescription, it is the absence of one. Below a single step
+    // there is no lift left to make lighter.
+    const floor = backOff < 0 || staleGiveBack < 0 ? loadStepLb(exerciseId) : 0
+    const w =
+      best.weightLb !== undefined
+        ? Math.max(floor, best.weightLb + bump + wrapStep + backOff + staleGiveBack)
+        : undefined
+    return {
+      weightLb: w !== undefined && opts.lightMode ? lightLoad(w) : w,
+      reps: best.achieved ?? best.reps,
     }
   }
   // No history yet: seed from bodyweight + training background so day one
@@ -118,5 +162,46 @@ export function setSessionFeel(date: ISODate, feel: SessionFeel): void {
   store().update((d) => {
     const s = d.sessions[date]
     if (s) s.feel = feel
+  })
+}
+
+/**
+ * What the athlete actually got, recorded only when it was not what was
+ * asked for.
+ *
+ * Written nowhere else and asked for nowhere else. A set that is simply
+ * ticked off stays unmarked, which is the whole point: the common case
+ * costs no taps, and silence means the ask was met. Progression reads
+ * this and nothing else, because the field beside it is a copy of the
+ * prescription that never changes.
+ */
+export function setAchievedReps(
+  date: ISODate,
+  exIdx: number,
+  setIdx: number,
+  achieved: number,
+): void {
+  store().update((d) => {
+    const set = d.sessions[date]?.exercises[exIdx]?.sets[setIdx]
+    if (!set) return
+    const asked = Number((set.targetReps.match(/^\d+/) ?? [])[0])
+    // Matching the ask is the default, so it is stored as nothing at all.
+    if (Number.isFinite(asked) && achieved >= asked) delete set.achieved
+    else set.achieved = Math.max(0, Math.round(achieved))
+  })
+}
+
+/**
+ * Reps left in the tank on one movement, asked once and always
+ * skippable.
+ *
+ * Per exercise rather than per day because the day-wide question was
+ * deciding progression for every lift in it: one "heavy" after a brutal
+ * squat also held the curls that flew.
+ */
+export function setExerciseRir(date: ISODate, exIdx: number, rir: number): void {
+  store().update((d) => {
+    const log = d.sessions[date]?.exercises[exIdx]
+    if (log) log.rir = Math.max(0, Math.round(rir))
   })
 }

@@ -6,7 +6,7 @@ import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../..
 import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../platform/speech'
 import { useAppStore } from '../../store/appStore'
 import { abandonSession, patchSet, restartSession, setWeightForward} from '../../logic/actions'
-import { setSessionFeel } from '../../logic/prescription'
+import { setAchievedReps, setExerciseRir, setSessionFeel } from '../../logic/prescription'
 import { Stepper } from '../../components/ui'
 import { HowToSlides } from './HowToSlides'
 import { ExerciseBrief } from './ExerciseBrief'
@@ -235,9 +235,12 @@ export function FocusView({
 
   // ---- Advance ----
   const autoStartNext = useRef(false)
+  /** The set the rest screen is resting FROM, so its answers land on it. */
+  const justRef = useRef<{ exIdx: number; setIdx: number } | null>(null)
   const advance = useCallback(() => {
     if (!current) return
     clearTimers()
+    justRef.current = { exIdx: current.exIdx, setIdx: current.setIdx }
     patchSet(session.date, current.exIdx, current.setIdx, { done: true })
     const rest = restAfter(session, current)
     const next = nextFocusItem(session, current)
@@ -260,6 +263,10 @@ export function FocusView({
         askSessionFeel,
         easeOffer: weightDropped(justEx.sets),
         nextExerciseId: nextDef.id,
+        justTarget: Number((justEx.sets[current.setIdx]?.targetReps.match(/^\d+/) ?? [])[0]) || undefined,
+        // Once per movement, around its midpoint: late enough to know, early
+        // enough that the answer still describes the sets that are left.
+        askRir: justEx.rir === undefined && current.setIdx + 1 >= Math.ceil(justEx.sets.length / 2),
       })
       setPhase('go')
     } else if (rest <= 15 && next) {
@@ -595,6 +602,8 @@ export function FocusView({
           onSessionFeel={
             breakState.askSessionFeel ? (f) => setSessionFeel(session.date, f) : undefined
           }
+          onShort={(n) => justRef.current && setAchievedReps(session.date, justRef.current.exIdx, justRef.current.setIdx, n)}
+          onRir={(r) => justRef.current && setExerciseRir(session.date, justRef.current.exIdx, r)}
           onEase={() => {
             const cuts = easeRemaining(session.date)
             if (cuts.length === 0) return 'Nothing left worth cutting. Finish it.'
