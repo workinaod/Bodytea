@@ -157,9 +157,16 @@ describe('the coach voice shortlist', () => {
     voice('Bahh', 'com.apple.speech.synthesis.voice.Bahh'),
     voice('Bells', 'com.apple.speech.synthesis.voice.Bells'),
     voice('Samantha', 'com.apple.ttsbundle.Samantha-compact'),
+    voice('Allison', 'com.apple.ttsbundle.Allison-compact'),
+    voice('Nathan', 'com.apple.ttsbundle.Nathan-compact'),
+    voice('Zoe', 'com.apple.ttsbundle.Zoe-compact'),
+    voice('Jamie', 'com.apple.ttsbundle.Jamie-compact', 'en-GB'),
+    voice('Tessa', 'com.apple.ttsbundle.Tessa-compact', 'en-ZA'),
+    // Taken off the shortlist. Still installed on the device, which is
+    // exactly why they are still in this fixture: the interesting case
+    // is a voice that resolves fine and must not be used anyway.
     voice('Karen', 'com.apple.ttsbundle.Karen-compact', 'en-AU'),
     voice('Moira', 'com.apple.ttsbundle.Moira-compact', 'en-IE'),
-    voice('Tessa', 'com.apple.ttsbundle.Tessa-compact', 'en-ZA'),
     voice('Fred', 'com.apple.speech.synthesis.voice.Fred'),
     voice('Rocko', 'com.apple.eloquence.en-US.Rocko'),
     // Neither a joke voice nor shortlisted, and deliberately the HIGHEST
@@ -170,13 +177,29 @@ describe('the coach voice shortlist', () => {
     voice('Daniel', 'com.apple.voice.premium.en-GB.Daniel', 'en-GB'),
   ]
 
-  it('offers exactly the four, and nothing else', () => {
+  it('offers exactly the shortlist, and nothing else', () => {
     expect(coachVoices(IOS_LIST).map((v) => v.name).sort()).toEqual([
-      'Karen',
-      'Moira',
+      'Allison',
+      'Jamie',
+      'Nathan',
       'Samantha',
       'Tessa',
+      'Zoe',
     ])
+  })
+
+  it('does not offer a voice that was taken off the list', () => {
+    const names = coachVoices(IOS_LIST).map((v) => v.name)
+    expect(names).not.toContain('Karen')
+    expect(names).not.toContain('Moira')
+  })
+
+  it('matches Jamie however the device spells it', () => {
+    // Apple's English voice is Jamie; Jaime is its Spanish one. Both
+    // spellings resolve so no device is left without it, and the
+    // Spanish voice never reaches here because callers filter to en-*.
+    const jaime = [voice('Jaime', 'com.apple.ttsbundle.Jaime-compact', 'en-GB')]
+    expect(coachVoices(jaime).map((v) => v.name)).toEqual(['Jaime'])
   })
 
   it('keeps every quality cut of a shortlisted voice, so the good one is pickable', () => {
@@ -218,7 +241,7 @@ describe('the coach voice shortlist', () => {
     // compact Samantha at 9, so "Reset to automatic" returned a voice the
     // picker refuses to show. Scoring cannot express set membership.
     const picked = pickVoice(IOS_LIST)
-    expect(['Samantha', 'Karen', 'Moira', 'Tessa']).toContain(picked?.name)
+    expect(['Samantha', 'Tessa', 'Jamie', 'Allison', 'Nathan', 'Zoe']).toContain(picked?.name)
   })
 
   it('still prefers the better CUT of a shortlisted voice', () => {
@@ -230,8 +253,34 @@ describe('the coach voice shortlist', () => {
     expect(picked?.voiceURI).toBe('com.apple.voice.premium.en-US.Samantha')
   })
 
-  it('an explicit choice still wins over the shortlist', () => {
+  it('an explicit choice wins among the voices on offer', () => {
+    const tessa = IOS_LIST.find((v) => v.name === 'Tessa') as SpeechSynthesisVoice
+    expect(pickVoice(IOS_LIST, tessa.voiceURI)).toBe(tessa)
+  })
+
+  it('will not speak with a saved voice that is no longer offered', () => {
+    // The reported bug, exactly. Karen was chosen while she was on the
+    // list, the URI is still in settings, and she is still installed on
+    // the phone — so she still resolved and still spoke, long after the
+    // picker stopped offering her. Removing a voice has to remove it.
+    const karen = IOS_LIST.find((v) => v.name === 'Karen') as SpeechSynthesisVoice
+    const picked = pickVoice(IOS_LIST, karen.voiceURI)
+    expect(picked?.name).not.toBe('Karen')
+    expect(['Samantha', 'Tessa', 'Jamie', 'Allison', 'Nathan', 'Zoe']).toContain(picked?.name)
+  })
+
+  it('ignores a stored choice for a voice that was never offered', () => {
     const ava = voice('Ava', 'com.apple.voice.premium.en-US.Ava')
-    expect(pickVoice([...IOS_LIST, ava], ava.voiceURI)).toBe(ava)
+    expect(pickVoice([...IOS_LIST, ava], ava.voiceURI)?.name).not.toBe('Ava')
+  })
+
+  it('still honours a choice made from the Android fallback list', () => {
+    // Where none of the shortlist exists, the offered set IS the decent
+    // voices, so a choice made there must keep working.
+    const android = [
+      voice('Google US English', 'Google US English'),
+      voice('Google UK English Female', 'Google UK English Female', 'en-GB'),
+    ]
+    expect(pickVoice(android, 'Google UK English Female')?.name).toBe('Google UK English Female')
   })
 })

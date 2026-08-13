@@ -22,7 +22,8 @@ const NOVELTY =
   /\b(albert|fred|zarvox|junior|whisper|bells|organ|cellos|bad news|good news|bahh|boing|bubbles|deranged|hysterical|pipe organ|trinoids|wobble|jester|superstar)\b/i
 
 /** Voices that actually sound like a person reading. */
-const WARM = /\b(samantha|ava|allison|zoe|susan|karen|serena|moira|nicky|tom|aaron|evan|nathan)\b/i
+const WARM =
+  /\b(samantha|ava|allison|zoe|susan|karen|serena|moira|nicky|tom|aaron|evan|nathan|jamie|jaime|tessa)\b/i
 
 /**
  * The coach's shortlist.
@@ -33,12 +34,18 @@ const WARM = /\b(samantha|ava|allison|zoe|susan|karen|serena|moira|nicky|tom|aar
  * a comedy voice, a funeral dirge, a sheep and a carillon — while
  * Samantha sat below the fold. The veto existed and nothing consulted it.
  *
- * These four are the ones worth offering: natural-sounding, distinct
- * from each other, and each a different English accent (US, AU, IE, ZA)
- * so the choice is a real choice rather than four shades of the same
- * voice.
+ * These are the ones worth offering: natural-sounding, distinct from
+ * each other, and spread across accents and registers so the choice is
+ * a real choice rather than shades of the same voice. Samantha, Allison,
+ * Nathan and Zoe are US, Jamie is British, Tessa South African, and
+ * Nathan is the one male voice on the list.
+ *
+ * Spelled both ways on purpose. Apple's English voice is JAMIE; JAIME
+ * is its Spanish one, so a device that ships either spelling in English
+ * is matched, and the Spanish Jaime cannot reach the picker anyway
+ * because everything upstream filters to en-*.
  */
-export const COACH_VOICES = /\b(samantha|karen|moira|tessa)\b/i
+export const COACH_VOICES = /\b(samantha|tessa|jamie|jaime|allison|nathan|zoe)\b/i
 
 /**
  * The shortlist, or an honest fallback.
@@ -120,11 +127,6 @@ export function pickVoice(
   preferredURI?: string,
 ): SpeechSynthesisVoice | null {
   if (!all.length) return null
-  // An explicit choice always wins. Scoring is only a guess at taste.
-  if (preferredURI) {
-    const chosen = all.find((v) => v.voiceURI === preferredURI)
-    if (chosen) return chosen
-  }
   const en = all.filter((v) => (v.lang ?? '').toLowerCase().startsWith('en'))
   // Automatic picks from the SAME set the picker offers, by construction.
   //
@@ -136,6 +138,24 @@ export function pickVoice(
   // try to. Quality still decides WITHIN the set, which is what scoring
   // is actually for.
   const pool = coachVoices(en.length ? en : all)
+
+  // An explicit choice wins — but only among voices still on offer.
+  //
+  // This used to honour ANY stored URI unconditionally, and that is how
+  // a voice kept talking after it was taken off the shortlist. The
+  // setting is a device URI saved months ago; the voice is still
+  // installed, so it still resolved, so the coach still used it, and
+  // nothing in the picker could show what was happening because the
+  // picker only lists what it offers. Removing a voice has to actually
+  // remove it.
+  //
+  // Checked against `pool` rather than the shortlist regex, so the
+  // Android and desktop fallback still honours choices made there.
+  if (preferredURI) {
+    const chosen = pool.find((v) => v.voiceURI === preferredURI)
+    if (chosen) return chosen
+  }
+
   const best = [...pool].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0]
   // Everything scored as a joke voice: better to take the engine default.
   return best && scoreVoice(best) > -100 ? best : null

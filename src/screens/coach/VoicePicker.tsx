@@ -47,6 +47,26 @@ export function VoicePicker() {
     return onVoicesChanged(read)
   }, [])
 
+  // A saved choice that is no longer offered clears itself.
+  //
+  // pickVoice already refuses to SPEAK with a de-listed voice, so this
+  // is not what stops the wrong voice being heard. It is what stops the
+  // setting sitting there pointing at nothing: without it the stored URI
+  // survives forever, no row shows a tick, and "Reset to automatic"
+  // offers to undo a choice the user can no longer see.
+  //
+  // Guarded on a loaded list. The voice list arrives asynchronously and
+  // is empty on first render, and clearing against an empty list would
+  // wipe a perfectly good choice every launch.
+  useEffect(() => {
+    if (voices.length === 0 || !chosen) return
+    if (voices.some((v) => v.voiceURI === chosen)) return
+    update((d) => {
+      delete d.settings.voiceURI
+    })
+    setPreferredVoice(undefined)
+  }, [voices, chosen, update])
+
   if (voices.length === 0) return null
 
   const best = bestQualityAvailable(voices)
