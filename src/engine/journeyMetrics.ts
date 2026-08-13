@@ -1,13 +1,13 @@
 import type { AppData, ISODate } from '../types'
-import type { RungMetric } from '../journeyTypes'
+import type { StageMetric } from '../journeyTypes'
 import {
   MAX_ETA_WEEKS,
   MIN_OBSERVED_DAYS,
   MIN_OBSERVED_POINTS,
   NOISE_FLOOR,
   OBSERVED_CAP_MULTIPLE,
-  RUNG_DECAY,
-  type RungSpec,
+  STAGE_DECAY,
+  type StageSpec,
 } from '../plan/milestones'
 import { addDaysISO, daysBetween } from './calendar'
 import { currentStreak, latestBodyweightLb, liftSeries, totalSessions } from './stats'
@@ -38,13 +38,13 @@ export type EtaBasis = 'observed' | 'modelled' | 'none'
  * The current value of a metric, or null when the app genuinely does
  * not know.
  *
- * Exhaustive over RungMetric on purpose: the switch has no default, so
+ * Exhaustive over StageMetric on purpose: the switch has no default, so
  * adding a variant to the union without teaching this function to read
- * it fails the build. That is what makes "no rung the app cannot
+ * it fails the build. That is what makes "no stage the app cannot
  * verify" a property of the type system instead of a promise in a
  * comment.
  */
-export function readMetric(data: AppData, m: RungMetric, exerciseId?: string, today?: ISODate): number | null {
+export function readMetric(data: AppData, m: StageMetric, exerciseId?: string, today?: ISODate): number | null {
   switch (m) {
     case 'weightLb':
       return latestBodyweightLb(data)
@@ -95,7 +95,7 @@ export function readMetric(data: AppData, m: RungMetric, exerciseId?: string, to
       // The app's day, not the wall clock. currentStreak defaults to
       // todayISO() and every other date in this engine comes from
       // useToday(), so leaving it to default made the one metric that
-      // can fall to zero read a different day from the rest of the rail
+      // can fall to zero read a different day from the rest of the path
       // — and made it untestable, which is how it was found.
       return currentStreak(data, today)
   }
@@ -178,7 +178,7 @@ interface EtaInput {
   gap: number
   modelledPerWeek: number
   observedPerWeek: number | null
-  metric: RungMetric
+  metric: StageMetric
   /** Position in this track's remaining ladder, 0 = the next one. */
   index: number
 }
@@ -194,10 +194,10 @@ interface EtaInput {
 export function estimateWeeks(a: EtaInput): { weeks?: number; basis: EtaBasis; note?: string } {
   if (a.gap <= 0) return { basis: 'none' }
 
-  // Later rungs are further out than a straight line says. A novice's
+  // Later stages are further out than a straight line says. A novice's
   // hot first block, drawn forward, goes straight through the plateau
   // every single one of them hits.
-  const decay = RUNG_DECAY ** a.index
+  const decay = STAGE_DECAY ** a.index
   const modelled = a.modelledPerWeek * decay
 
   const floor = NOISE_FLOOR[a.metric]
@@ -232,23 +232,23 @@ export function estimateWeeks(a: EtaInput): { weeks?: number; basis: EtaBasis; n
 
 // ---------------- Did they reach it ----------------
 
-const MEASUREMENT_METRICS: RungMetric[] = ['weightLb', 'waistIn', 'bodyFatPct']
+const MEASUREMENT_METRICS: StageMetric[] = ['weightLb', 'waistIn', 'bodyFatPct']
 
 /**
- * Whether a rung counts as reached.
+ * Whether a stage counts as reached.
  *
  * Two classes, deliberately scored differently:
  *
  *   PERFORMANCES — a squat, a vertical, a first half marathon — count
  *   on one verified effort. You did it or you did not, and making
- *   somebody do it twice to see it on the rail would be absurd.
+ *   somebody do it twice to see it on the path would be absurd.
  *
  *   MEASUREMENTS — the scale, the tape — count on a trailing mean, or
  *   on two readings four days apart that are both past. A scale swings
- *   two pounds on salt and sleep, and a rung that lights up on a dry
+ *   two pounds on salt and sleep, and a stage that lights up on a dry
  *   morning and stays lit is a lie the athlete catches themselves.
  */
-export function reachedNow(data: AppData, spec: RungSpec, current: number | null, descending: boolean): boolean {
+export function reachedNow(data: AppData, spec: StageSpec, current: number | null, descending: boolean): boolean {
   if (current === null) return false
   const past = (v: number) => (descending ? v <= spec.target : v >= spec.target)
   if (!MEASUREMENT_METRICS.includes(spec.metric)) return past(current)
@@ -260,7 +260,7 @@ export function reachedNow(data: AppData, spec: RungSpec, current: number | null
   const window = series.filter((p) => daysBetween(p.date, last.date) <= 7)
   // A "trailing mean" of one reading is just the reading, which defeats
   // the entire point of smoothing it: a scale that reads 199.5 once on a
-  // dry Tuesday would light the 200 rung and leave it lit. Two readings
+  // dry Tuesday would light the 200 stage and leave it lit. Two readings
   // minimum, or fall through to the two-confirmations rule below.
   const mean = window.length >= 2 ? window.reduce((a, b) => a + b.value, 0) / window.length : null
   if (mean !== null && past(mean)) return true

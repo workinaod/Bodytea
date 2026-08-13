@@ -1,9 +1,9 @@
 import type { Goal } from '../types'
-import type { RungMetric, TrackId } from '../journeyTypes'
+import type { StageMetric, TrackId } from '../journeyTypes'
 import { WEEKLY_CHANGE_PCT } from './sportsNutrition'
 
 // ============================================================
-// How fast a person actually changes, and the rungs worth
+// How fast a person actually changes, and the stages worth
 // putting in front of them.
 //
 // Layer 0: pure data and week arithmetic, no AppData, no dates.
@@ -95,9 +95,9 @@ export function weeksPerLoadStep(args: {
   sessionsPerWeek: number
   age: TrainingAge
 }): number {
-  const rungsInRange = Math.max(1, args.repHigh - args.repLow + 1)
+  const stepsInRange = Math.max(1, args.repHigh - args.repLow + 1)
   const perWeek = Math.max(0.5, args.sessionsPerWeek)
-  return (rungsInRange / perWeek) * DELOAD_TAX * STALL[args.age]
+  return (stepsInRange / perWeek) * DELOAD_TAX * STALL[args.age]
 }
 
 /**
@@ -166,7 +166,7 @@ export const vertInPerWeek = (age: TrainingAge): number => VERT_IN_PER_WEEK[age]
  * week falls under the floor, an ETA computed off it is arithmetic on
  * noise, and the app says that instead of printing a date.
  */
-export const NOISE_FLOOR: Partial<Record<RungMetric, number>> = {
+export const NOISE_FLOOR: Partial<Record<StageMetric, number>> = {
   weightLb: 1.0,
   waistIn: 0.5,
   vertIn: 0.5,
@@ -177,14 +177,14 @@ export const NOISE_FLOOR: Partial<Record<RungMetric, number>> = {
 export const MAX_ETA_WEEKS = 104
 
 /**
- * Rungs further out are further out than they look.
+ * Stages further out are further out than they look.
  *
  * A straight line drawn through a novice's first good block projects
- * through the plateau every one of them hits. Each successive rung gets
+ * through the plateau every one of them hits. Each successive stage gets
  * the modelled rate cut by 15 %, which is a crude stand-in for a curve
  * that flattens but is much closer than not doing it.
  */
-export const RUNG_DECAY = 0.85
+export const STAGE_DECAY = 0.85
 
 /** An observed rate needs this much behind it before it beats the model. */
 export const MIN_OBSERVED_POINTS = 3
@@ -209,16 +209,16 @@ export const OBSERVED_CAP_MULTIPLE = 1.5
  */
 export const DEFICIT_WATER_DAYS = 10
 
-// ---------------- The rungs ----------------
+// ---------------- The stages ----------------
 
-export interface RungSpec {
+export interface StageSpec {
   track: TrackId
-  metric: RungMetric
+  metric: StageMetric
   /** Absolute target. NEVER anchor-relative — see the id-stability note. */
   target: number
   unit: string
   label: string
-  /** One honest sentence about why this rung is worth wanting. */
+  /** One honest sentence about why this stage is worth wanting. */
   detail: string
   exerciseId?: string
 }
@@ -226,26 +226,26 @@ export interface RungSpec {
 /**
  * THE ID-STABILITY RULE, which is the whole correctness story.
  *
- * A rung id must never change for the same real-world target, or the
- * persisted hit orphans and the rung silently un-achieves — a rail that
- * walks backwards, which is worse than no rail.
+ * A stage id must never change for the same real-world target, or the
+ * persisted hit orphans and the stage silently un-achieves — a path that
+ * walks backwards, which is worse than no path.
  *
  * So every target is an ABSOLUTE number and never a percentage of a
  * moving anchor. 185 on the bench, 200 on the scale, 13.1 miles. The
- * anchor decides WHICH rungs appear; it never decides where one sits.
- * A rising anchor drops rungs off the bottom and adds none in the
- * middle. Nothing already on the rail moves.
+ * anchor decides WHICH stages appear; it never decides where one sits.
+ * A rising anchor drops stages off the bottom and adds none in the
+ * middle. Nothing already on the path moves.
  *
  * It also happens to be how people actually think. Nobody is chasing
  * "+12 % on my bench"; they are chasing two plates.
  */
-export const rungId = (s: RungSpec): string =>
+export const stageId = (s: StageSpec): string =>
   `${s.track}:${s.metric}:${s.exerciseId ?? '-'}:${Math.round(s.target * 10)}`
 
 /** The plates, which is how lifters count. */
 const PLATE_LADDER = [95, 135, 185, 225, 275, 315, 365, 405, 495]
 
-export function strengthRungs(exerciseId: string, liftLabel: string, fromLb: number, toLb: number): RungSpec[] {
+export function strengthStages(exerciseId: string, liftLabel: string, fromLb: number, toLb: number): StageSpec[] {
   return PLATE_LADDER.filter((w) => w > fromLb && w <= toLb).map((w) => ({
     track: 'strength' as const,
     metric: 'topSetLb' as const,
@@ -265,15 +265,15 @@ export function strengthRungs(exerciseId: string, liftLabel: string, fromLb: num
 }
 
 /**
- * Bodyweight rungs on the fives, because that is where a scale reading
+ * Bodyweight stages on the fives, because that is where a scale reading
  * feels like it crossed something.
  */
-export function weightRungs(fromLb: number, toLb: number): RungSpec[] {
+export function weightStages(fromLb: number, toLb: number): StageSpec[] {
   const down = toLb < fromLb
   const step = 5
-  const out: RungSpec[] = []
+  const out: StageSpec[] = []
   const first = down ? Math.floor((fromLb - 0.01) / step) * step : Math.ceil((fromLb + 0.01) / step) * step
-  // The same sentence under four rungs in a row reads as filler and
+  // The same sentence under four stages in a row reads as filler and
   // trains people to stop reading the row at all, so the ladder says
   // something different as it goes: what the number means changes.
   const DOWN = [
@@ -295,7 +295,7 @@ export function weightRungs(fromLb: number, toLb: number): RungSpec[] {
       target: w,
       unit: 'lb',
       label: `${w} lb`,
-      // Cycled, not clamped: clamping meant every rung past the fourth
+      // Cycled, not clamped: clamping meant every stage past the fourth
       // got the same sentence, which on a long cut is the same line
       // under six rows in a row.
       detail: (down ? DOWN : UP)[out.length % DOWN.length],
@@ -314,7 +314,7 @@ const RUN_LADDER: { mi: number; label: string; detail: string }[] = [
   { mi: 26.2, label: 'Marathon', detail: 'Every long run to here has been rehearsal.' },
 ]
 
-export function runRungs(fromMi: number, toMi: number): RungSpec[] {
+export function runStages(fromMi: number, toMi: number): StageSpec[] {
   return RUN_LADDER.filter((r) => r.mi > fromMi && r.mi <= toMi + 0.01).map((r) => ({
     track: 'engine',
     metric: 'longRunMi',
@@ -344,7 +344,7 @@ export const VERT_LADDER: { gapIn: number; label: string; detail: string }[] = [
   { gapIn: 24, label: 'Dunk', detail: 'Ball through, one hand. The whole reason for the rest of it.' },
 ]
 
-export function vertRungs(fromIn: number, toIn: number): RungSpec[] {
+export function vertStages(fromIn: number, toIn: number): StageSpec[] {
   return VERT_LADDER.filter((v) => v.gapIn > fromIn && v.gapIn <= toIn + 0.01).map((v) => ({
     track: 'explosive',
     metric: 'vertIn',
@@ -363,12 +363,12 @@ export function vertRungs(fromIn: number, toIn: number): RungSpec[] {
  * happen. Everything here is counted straight off the log, so it needs
  * no anchor, no measurement and no estimate.
  */
-export const SESSION_RUNGS = [10, 25, 50, 100, 200, 500]
-export const STREAK_RUNGS = [7, 14, 30, 60, 100]
+export const SESSION_STAGES = [10, 25, 50, 100, 200, 500]
+export const STREAK_STAGES = [7, 14, 30, 60, 100]
 
-export function consistencyRungs(sessionsSoFar: number): RungSpec[] {
-  const out: RungSpec[] = []
-  for (const n of SESSION_RUNGS) {
+export function consistencyStages(sessionsSoFar: number): StageSpec[] {
+  const out: StageSpec[] = []
+  for (const n of SESSION_STAGES) {
     out.push({
       track: 'consistency',
       metric: 'sessions',
@@ -383,7 +383,7 @@ export function consistencyRungs(sessionsSoFar: number): RungSpec[] {
             : 'Work in the bank, whatever the scale says.',
     })
   }
-  for (const n of STREAK_RUNGS) {
+  for (const n of STREAK_STAGES) {
     out.push({
       track: 'consistency',
       metric: 'streakDays',
@@ -402,8 +402,8 @@ export function consistencyRungs(sessionsSoFar: number): RungSpec[] {
  *
  * Every goal gets consistency, and every goal gets at least two, so a
  * lean athlete whose scale stalls for a fortnight still watches their
- * squat-hold rung and their sessions rung advance. A single-track rail
- * is a rail that goes grey the first time one number sulks.
+ * squat-hold stage and their sessions stage advance. A single-track path
+ * is a path that goes grey the first time one number sulks.
  */
 export const TRACKS_FOR_GOAL: Record<Goal, TrackId[]> = {
   lean: ['body', 'strength', 'consistency'],

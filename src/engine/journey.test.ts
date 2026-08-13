@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData, type Measurement, type SessionLog } from '../types'
-import { buildJourney, newlyReached, orderRail } from './journey'
+import { buildJourney, newlyReached, orderPath } from './journey'
 import { addDaysISO } from './calendar'
 import { estimateWeeks, observedRatePerWeek, readMetric } from './journeyMetrics'
 
@@ -9,7 +9,7 @@ import { estimateWeeks, observedRatePerWeek, readMetric } from './journeyMetrics
 //
 // The rate tables are tested next door; this file is about the
 // three ways the feature could lie with correct arithmetic:
-// promising a date it cannot support, letting a reached rung
+// promising a date it cannot support, letting a reached stage
 // un-reach, and pretending to know something on day one.
 // ============================================================
 
@@ -41,14 +41,14 @@ describe('a brand-new account, which is where most people meet this', () => {
     // somebody to come back in a month. Consistency needs no anchor.
     const j = buildJourney(base(), TODAY)
     expect(j.totalCount).toBeGreaterThan(0)
-    expect(j.rail.some((r) => r.state === 'next')) .toBe(true)
+    expect(j.path.some((r) => r.state === 'next')) .toBe(true)
   })
 
   it('claims nothing it cannot measure', () => {
     const j = buildJourney(base(), TODAY)
-    for (const r of j.rail) {
+    for (const r of j.path) {
       if (r.blocker) continue
-      // Every rung with an estimate must have a number behind it.
+      // Every stage with an estimate must have a number behind it.
       if (r.etaWeeks !== undefined) expect(r.basis).not.toBe('none')
     }
   })
@@ -59,7 +59,7 @@ describe('a brand-new account, which is where most people meet this', () => {
     const d = base()
     d.plan.goal = 'lean'
     const j = buildJourney(d, TODAY)
-    const locked = j.rail.filter((r) => r.state === 'locked')
+    const locked = j.path.filter((r) => r.state === 'locked')
     for (const r of locked) expect(r.blocker && r.blocker.length > 8).toBe(true)
   })
 
@@ -67,7 +67,7 @@ describe('a brand-new account, which is where most people meet this', () => {
     const d = base()
     d.measurements = [weighIn('2026-08-01', 200)]
     const j = buildJourney(d, TODAY)
-    const body = j.rail.filter((r) => r.track === 'body' && r.etaWeeks !== undefined)
+    const body = j.path.filter((r) => r.track === 'body' && r.etaWeeks !== undefined)
     for (const r of body) expect(r.basis).toBe('modelled')
   })
 })
@@ -115,7 +115,7 @@ describe('the estimate, and every reason to refuse one', () => {
     expect(noisy.note).toMatch(/measured/i)
   })
 
-  it('pushes later rungs further out than a straight line would', () => {
+  it('pushes later stages further out than a straight line would', () => {
     const first = estimateWeeks({ ...ok, index: 0 }).weeks!
     const fourth = estimateWeeks({ ...ok, index: 3 }).weeks!
     expect(fourth).toBeGreaterThan(first)
@@ -182,7 +182,7 @@ describe('the observed rate', () => {
   })
 })
 
-describe('a rung that has been reached', () => {
+describe('a stage that has been reached', () => {
   it('scores a lift on the weight actually lifted, not an estimated max', () => {
     // Epley capped at 12 reps carries error wider than the 5 lb
     // increment being scored, so an e1RM-scored "bench 185" would light
@@ -196,10 +196,10 @@ describe('a rung that has been reached', () => {
     // THE case the stamp exists for, and the only metric that genuinely
     // falls back to zero. A max-over-history — a top set, a longest run
     // — can never regress, and the two-confirmations rule reads the
-    // whole series so a bodyweight rung survives on its own evidence.
+    // whole series so a bodyweight stage survives on its own evidence.
     // A streak is different: miss one day and currentStreak reads 0, so
-    // without the stamp the rung earned over a month in June goes dark
-    // in July. That is the rail walking backwards, on exactly the
+    // without the stamp the stage earned over a month in June goes dark
+    // in July. That is the path walking backwards, on exactly the
     // achievement that took the most to get.
     const d = base()
     let day = '2026-06-01'
@@ -214,16 +214,16 @@ describe('a rung that has been reached', () => {
     // Six weeks off. The streak is zero and the month still happened.
     d.journey = { hits: { [streakRung!]: '2026-07-05' } }
     const after = buildJourney(d, TODAY)
-    const rung = after.rail.find((r) => r.id === streakRung)
-    expect(rung?.current).toBe(0)
-    expect(rung?.state).toBe('done')
-    expect(rung?.hitOn).toBe('2026-07-05')
+    const stage = after.path.find((r) => r.id === streakRung)
+    expect(stage?.current).toBe(0)
+    expect(stage?.state).toBe('done')
+    expect(stage?.hitOn).toBe('2026-07-05')
   })
 
   it('survives the scale going back up, which is what a bulk is', () => {
     // The sharpest version of the property. They cut to 198, crossing
     // 200, and then spent three months eating to build — so the scale
-    // genuinely reads 207 today and the 200 rung is genuinely not
+    // genuinely reads 207 today and the 200 stage is genuinely not
     // satisfied by the current number. It happened. It stays.
     const d = base()
     d.plan.goal = 'lean'
@@ -239,14 +239,14 @@ describe('a rung that has been reached', () => {
     d.journey = { hits: { [twoHundred!]: '2026-04-20' } }
     d.measurements.push(weighIn('2026-08-14', 207))
     const after = buildJourney(d, TODAY)
-    const rung = after.rail.find((r) => r.id === twoHundred)
-    expect(rung?.state).toBe('done')
-    expect(rung?.hitOn).toBe('2026-04-20')
+    const stage = after.path.find((r) => r.id === twoHundred)
+    expect(stage?.state).toBe('done')
+    expect(stage?.hitOn).toBe('2026-04-20')
   })
 
   it('does not un-reach when the next block deloads', () => {
-    // THE property. A rung earned at 225 must survive the week that
-    // follows logging 185, or the rail walks backwards.
+    // THE property. A stage earned at 225 must survive the week that
+    // follows logging 185, or the path walks backwards.
     const d = base()
     d.plan.goal = 'strength'
     const lift = d.plan.trackedLifts[0].exerciseId
@@ -261,23 +261,23 @@ describe('a rung that has been reached', () => {
     d.sessions['2026-08-10'] = session('2026-08-10', lift, 165)
     const after = buildJourney(d, TODAY)
     for (const id of hit) {
-      expect(after.rail.find((r) => r.id === id)?.state).toBe('done')
+      expect(after.path.find((r) => r.id === id)?.state).toBe('done')
     }
   })
 
-  it('will not let a scale rung light up on one dry morning', () => {
+  it('will not let a scale stage light up on one dry morning', () => {
     // A scale swings two pounds on salt and sleep. One reading past a
-    // rung is not a rung reached; it is a Tuesday.
+    // stage is not a stage reached; it is a Tuesday.
     const d = base()
     d.plan.goal = 'lean'
     d.measurements = [weighIn('2026-06-01', 205), weighIn('2026-07-01', 202), weighIn('2026-08-14', 199.5)]
     const j = buildJourney(d, TODAY)
-    const twoHundred = j.rail.find((r) => r.track === 'body' && r.target === 200)
+    const twoHundred = j.path.find((r) => r.track === 'body' && r.target === 200)
     // 199.5 once, against a trailing mean still above 200.
     expect(twoHundred?.state).not.toBe('done')
   })
 
-  it('counts a scale rung once it is genuinely held', () => {
+  it('counts a scale stage once it is genuinely held', () => {
     const d = base()
     d.plan.goal = 'lean'
     d.measurements = [
@@ -287,7 +287,7 @@ describe('a rung that has been reached', () => {
       weighIn('2026-08-14', 198),
     ]
     const j = buildJourney(d, TODAY)
-    const twoHundred = j.rail.find((r) => r.track === 'body' && r.target === 200)
+    const twoHundred = j.path.find((r) => r.track === 'body' && r.target === 200)
     expect(twoHundred?.state).toBe('done')
   })
 
@@ -304,7 +304,7 @@ describe('a rung that has been reached', () => {
       { date: '2026-08-14', vertIn: 13, photoIds: {} },
     ]
     const j = buildJourney(d, TODAY)
-    const rim = j.rail.find((r) => r.label === 'Touch the rim')
+    const rim = j.path.find((r) => r.label === 'Touch the rim')
     expect(rim?.state).toBe('done')
   })
 
@@ -321,7 +321,7 @@ describe('a rung that has been reached', () => {
   })
 })
 
-describe('the rail as a thing on a screen', () => {
+describe('the path as a thing on a screen', () => {
   it('puts what is done above what is next, oldest first', () => {
     // The stack of ticks is the emotional payload of the whole screen,
     // and it only reads as a climb if it is in the order it happened.
@@ -329,26 +329,26 @@ describe('the rail as a thing on a screen', () => {
     d.plan.goal = 'general'
     d.journey = { hits: {} }
     const j = buildJourney(d, TODAY)
-    const states = j.rail.map((r) => r.state)
+    const states = j.path.map((r) => r.state)
     const lastDone = states.lastIndexOf('done')
     const firstAhead = states.findIndex((s) => s === 'next' || s === 'ahead')
     if (lastDone >= 0 && firstAhead >= 0) expect(lastDone).toBeLessThan(firstAhead)
   })
 
   it('orders deterministically, so rows do not swap between renders', () => {
-    // ETAs recompute on every store write. Sorting the rail by ETA
+    // ETAs recompute on every store write. Sorting the path by ETA
     // would let rows trade places mid-animation.
     const d = base()
-    const a = buildJourney(d, TODAY).rail.map((r) => r.id)
-    const b = buildJourney(d, TODAY).rail.map((r) => r.id)
+    const a = buildJourney(d, TODAY).path.map((r) => r.id)
+    const b = buildJourney(d, TODAY).path.map((r) => r.id)
     expect(a).toEqual(b)
-    expect(orderRail(buildJourney(d, TODAY).rail).map((r) => r.id)).toEqual(a)
+    expect(orderPath(buildJourney(d, TODAY).path).map((r) => r.id)).toEqual(a)
   })
 
-  it('points at the NEAREST rung on a cut, not the furthest', () => {
+  it('points at the NEAREST stage on a cut, not the furthest', () => {
     // Numeric order and climb order are opposites when the number is
     // going down. Sorted ascending, somebody at 198 lb was pointed at
-    // the 180 rung four months out while the 195 three weeks away sat
+    // the 180 stage four months out while the 195 three weeks away sat
     // at the bottom of the list.
     const d = base()
     d.plan.goal = 'lean'
@@ -363,24 +363,24 @@ describe('the rail as a thing on a screen', () => {
       weighIn('2026-08-08', 198.5),
       weighIn('2026-08-14', 198),
     ]
-    const body = buildJourney(d, TODAY).rail.filter((r) => r.track === 'body' && r.state !== 'done')
+    const body = buildJourney(d, TODAY).path.filter((r) => r.track === 'body' && r.state !== 'done')
     expect(body[0].target).toBe(195)
     expect(body[0].state).toBe('next')
     // and strictly descending down the list from there
     for (let i = 1; i < body.length; i++) expect(body[i].target).toBeLessThan(body[i - 1].target)
   })
 
-  it('marks exactly one rung per track as the one being climbed', () => {
+  it('marks exactly one stage per track as the one being climbed', () => {
     const d = base()
     const j = buildJourney(d, TODAY)
     for (const t of j.tracks) {
-      expect(t.rungs.filter((r) => r.state === 'next').length).toBeLessThanOrEqual(1)
+      expect(t.stages.filter((r) => r.state === 'next').length).toBeLessThanOrEqual(1)
     }
   })
 
-  it('gives every rung a sentence, because a bare number is not a goal', () => {
+  it('gives every stage a sentence, because a bare number is not a goal', () => {
     const j = buildJourney(base(), TODAY)
-    for (const r of j.rail) {
+    for (const r of j.path) {
       expect(r.label.length).toBeGreaterThan(2)
       expect(r.detail.length).toBeGreaterThan(10)
     }
@@ -394,11 +394,11 @@ describe('it updates when the athlete does something', () => {
     const lift = d.plan.trackedLifts[0].exerciseId
     d.sessions['2026-08-01'] = session('2026-08-01', lift, 140)
     const before = buildJourney(d, TODAY)
-    const beforeNext = before.rail.find((r) => r.exerciseId === lift && r.state === 'next')
+    const beforeNext = before.path.find((r) => r.exerciseId === lift && r.state === 'next')
 
     d.sessions['2026-08-12'] = session('2026-08-12', lift, 190)
     const after = buildJourney(d, TODAY)
-    const afterNext = after.rail.find((r) => r.exerciseId === lift && r.state === 'next')
+    const afterNext = after.path.find((r) => r.exerciseId === lift && r.state === 'next')
     expect(afterNext!.target).toBeGreaterThan(beforeNext!.target)
   })
 
@@ -412,7 +412,7 @@ describe('it updates when the athlete does something', () => {
       )
     }
     const j = buildJourney(d, TODAY)
-    const ten = j.rail.find((r) => r.metric === 'sessions' && r.target === 10)
+    const ten = j.path.find((r) => r.metric === 'sessions' && r.target === 10)
     expect(ten?.state).toBe('done')
   })
 })

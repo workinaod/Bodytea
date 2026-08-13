@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AppData, ISODate } from '../../types'
-import { buildJourney, type Rung } from '../../engine/journey'
+import { buildJourney, type Stage } from '../../engine/journey'
 import { formatShort } from '../../engine/calendar'
 import { SectionTitle } from '../../components/ui'
-import { RungSheet } from './RungSheet'
+import { StageSheet } from './StageSheet'
 
 // ============================================================
 // The climb, as a path you walk rather than a list you read.
 //
-// A vertical rail was the first version and it was legible and
+// A vertical path was the first version and it was legible and
 // completely inert — it read as a to-do list with dates, which
 // is the feeling the whole feature exists to get rid of. A
-// winding path with stops on it says something a list cannot:
+// winding path with stages on it says something a list cannot:
 // there is a route, you are ON it, and it ends somewhere.
 //
 // Horizontal, so the direction of travel is the direction you
@@ -20,16 +20,25 @@ import { RungSheet } from './RungSheet'
 //
 // Because a node has no room for a sentence, tapping one opens
 // it. That is the better split anyway: the path is the shape of
-// the journey, the sheet is the detail of one stop.
+// the journey, the sheet is the detail of one stage.
 // ============================================================
 
-/** Node spacing. Roughly 3.5 stops visible on a 390px screen. */
+/** Stage spacing. Roughly 3.5 stages visible on a 390px screen. */
 const STEP = 104
 const PAD_X = 56
 const HEIGHT = 208
-/** The two rails of the zigzag. */
-const Y_HIGH = 66
-const Y_LOW = 132
+
+/**
+ * The heights the path wanders between.
+ *
+ * Four positions rather than two. Strict high-low-high-low is a
+ * metronome — every segment is the same curve mirrored, and after three
+ * of them the eye quits reading it as a route and starts reading it as
+ * a zigzag chart. Passing through the middle on the way up and again on
+ * the way down gives a longer wave with no repeated segment, which is
+ * what makes it look walked rather than plotted.
+ */
+const Y_WAVE = [122, 78, 58, 96]
 
 const TONE_VAR: Record<string, string> = {
   accent: 'var(--color-accent)',
@@ -41,12 +50,12 @@ const TONE_VAR: Record<string, string> = {
 function pointsFor(count: number): { x: number; y: number }[] {
   return Array.from({ length: count }, (_, i) => ({
     x: PAD_X + i * STEP,
-    y: i % 2 === 0 ? Y_HIGH : Y_LOW,
+    y: Y_WAVE[i % Y_WAVE.length],
   }))
 }
 
 /**
- * A smooth road through the stops.
+ * A smooth road through the stages.
  *
  * Cubic segments with horizontal control handles, so the path leaves
  * and enters every node flat. Straight lines between alternating
@@ -64,32 +73,32 @@ function pathThrough(pts: { x: number; y: number }[]): string {
   return d
 }
 
-function shortEta(rung: Rung): string {
-  if (rung.blocker) return 'locked'
-  if (rung.etaWeeks === undefined) return '—'
-  return rung.etaWeeks <= 1 ? 'this week' : rung.etaWeeks < 9 ? `${rung.etaWeeks}w` : (rung.etaLabel ?? '')
+function shortEta(stage: Stage): string {
+  if (stage.blocker) return 'locked'
+  if (stage.etaWeeks === undefined) return '—'
+  return stage.etaWeeks <= 1 ? 'this week' : stage.etaWeeks < 9 ? `${stage.etaWeeks}w` : (stage.etaLabel ?? '')
 }
 
 export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: ISODate; onAnchor: () => void }) {
   const journey = useMemo(() => buildJourney(data, today), [data, today])
   const [track, setTrack] = useState<string | null>(null)
-  const [open, setOpen] = useState<Rung | null>(null)
+  const [open, setOpen] = useState<Stage | null>(null)
   const scroller = useRef<HTMLDivElement>(null)
 
-  const stops = track ? journey.rail.filter((r) => r.track === track) : journey.rail
-  // Exactly ONE stop is "you are here".
+  const stages = track ? journey.path.filter((r) => r.track === track) : journey.path
+  // Exactly ONE stage is "you are here".
   //
   // `next` is per-track, so the unfiltered path had three of them and
   // three nodes shouting HERE at once, which is no position at all. The
   // path is one road: the soonest of them is where the walker actually
   // stands, and the others are the head of their own strand and get a
   // quieter mark.
-  const hereIdx = stops.findIndex((r) => r.state === 'next')
-  const hereId = hereIdx >= 0 ? stops[hereIdx].id : null
-  const doneCount = stops.filter((r) => r.state === 'done').length
+  const hereIdx = stages.findIndex((r) => r.state === 'next')
+  const hereId = hereIdx >= 0 ? stages[hereIdx].id : null
+  const doneCount = stages.filter((r) => r.state === 'done').length
 
   // Land the view on where they are, not on where they started. Without
-  // this the path opens at stop one and a person eight months in has to
+  // this the path opens at stage one and a person eight months in has to
   // swipe past their whole history to find themselves.
   useEffect(() => {
     const el = scroller.current
@@ -100,11 +109,11 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
 
   if (journey.totalCount === 0) return null
 
-  const pts = pointsFor(stops.length)
-  const width = PAD_X * 2 + Math.max(0, stops.length - 1) * STEP
+  const pts = pointsFor(stages.length)
+  const width = PAD_X * 2 + Math.max(0, stages.length - 1) * STEP
   // The road behind is drawn in colour and the road ahead in grey, so
   // the fill IS the progress bar and there is no second one.
-  const walkedTo = hereIdx >= 0 ? hereIdx : stops.length - 1
+  const walkedTo = hereIdx >= 0 ? hereIdx : stages.length - 1
   const walked = pathThrough(pts.slice(0, Math.max(1, walkedTo + 1)))
   const whole = pathThrough(pts)
   const next = journey.next
@@ -161,7 +170,7 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
         ref={scroller}
         className="-mx-4 overflow-x-auto overflow-y-hidden px-0"
         style={{ scrollbarWidth: 'none' }}
-        aria-label="Your climb, stop by stop"
+        aria-label="Your climb, stage by stage"
       >
         <div className="relative" style={{ width, height: HEIGHT }}>
           <svg width={width} height={HEIGHT} className="absolute inset-0" aria-hidden>
@@ -178,7 +187,7 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
             )}
           </svg>
 
-          {stops.map((r, i) => {
+          {stages.map((r, i) => {
             const p = pts[i]
             const tone = journey.tracks.find((t) => t.id === r.track)?.tone ?? 'accent'
             const colour = TONE_VAR[tone]
@@ -230,10 +239,10 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
       </div>
 
       <p className="px-1 text-[10.5px] leading-snug text-ink-faint">
-        Tap any stop for what it takes. Targets never move — the dates do, and they are estimates, not promises.
+        Tap any stage for what it takes. Targets never move — the dates do, and they are estimates, not promises.
       </p>
 
-      {open && <RungSheet rung={open} onClose={() => setOpen(null)} />}
+      {open && <StageSheet stage={open} onClose={() => setOpen(null)} />}
     </>
   )
 }

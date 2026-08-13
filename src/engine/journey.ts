@@ -1,22 +1,22 @@
 import type { AppData, ISODate } from '../types'
-import type { RungMetric, TrackId } from '../journeyTypes'
+import type { StageMetric, TrackId } from '../journeyTypes'
 import {
-  consistencyRungs,
+  consistencyStages,
   fatLossPctPerWeek,
   gainPctPerWeek,
-  runRungs,
+  runStages,
   DEFICIT_WATER_DAYS,
-  rungId,
+  stageId,
   strengthLbPerWeek,
-  strengthRungs,
+  strengthStages,
   TRACK_LABEL,
   TRACK_TONE,
   TRACKS_FOR_GOAL,
   vertInPerWeek,
-  vertRungs,
+  vertStages,
   weeksToLongRun,
-  weightRungs,
-  type RungSpec,
+  weightStages,
+  type StageSpec,
   type TrainingAge,
 } from '../plan/milestones'
 import { loadStepLb } from './reps'
@@ -39,34 +39,34 @@ export { readMetric } from './journeyMetrics'
 // Turning a goal into a climb, and a climb into a date.
 //
 // Layer 1: this is the file that knows about AppData and the
-// calendar. plan/milestones.ts holds the rungs and the rate
+// calendar. plan/milestones.ts holds the stages and the rate
 // model and speaks only in weeks-from-now; converting weeks to
 // a month name happens here. That is also the only reason the
 // layering works — loadStepLb lives in engine/, so a rank-0
 // module could never have derived the strength rate itself.
 //
 // Everything below is DERIVED and rebuilt on every render. The
-// only persisted thing in the whole feature is the date a rung
+// only persisted thing in the whole feature is the date a stage
 // was first reached (journeyTypes.ts), because that is a
 // historical fact and re-deriving it would let a deload week or
 // a bad morning on the scale take it away again.
 // ============================================================
 
-export type RungState = 'done' | 'next' | 'ahead' | 'locked'
+export type StageState = 'done' | 'next' | 'ahead' | 'locked'
 
-export interface Rung {
+export interface Stage {
   id: string
   track: TrackId
-  metric: RungMetric
+  metric: StageMetric
   exerciseId?: string
   label: string
   detail: string
   target: number
   unit: string
-  state: RungState
+  state: StageState
   hitOn?: ISODate
   current?: number
-  /** 0..1 from the anchor to this rung's target. */
+  /** 0..1 from the anchor to this stage's target. */
   progress: number
   etaWeeks?: number
   etaLabel?: string
@@ -75,7 +75,7 @@ export interface Rung {
   note?: string
   /** state 'locked': the exact thing that would anchor it. */
   blocker?: string
-  /** True when reaching this rung means the number going DOWN. */
+  /** True when reaching this stage means the number going DOWN. */
   descending: boolean
 }
 
@@ -83,17 +83,17 @@ export interface Track {
   id: TrackId
   label: string
   tone: 'accent' | 'lime' | 'cyan' | 'gold'
-  rungs: Rung[]
+  stages: Stage[]
 }
 
 export interface Journey {
   tracks: Track[]
-  /** Every rung, ordered for the rail: reached ones oldest-first, then the rest. */
-  rail: Rung[]
+  /** Every stage, ordered for the path: reached ones oldest-first, then the rest. */
+  path: Stage[]
   doneCount: number
   totalCount: number
-  next?: Rung
-  summit?: Rung
+  next?: Stage
+  summit?: Stage
 }
 
 // ---------------- Building the climb ----------------
@@ -164,7 +164,7 @@ function repRangeFor(data: AppData, exerciseId: string): { low: number; high: nu
 }
 
 interface Built {
-  spec: RungSpec
+  spec: StageSpec
   modelledPerWeek: number
   descending: boolean
   observed: number | null
@@ -191,17 +191,17 @@ function buildSpecs(data: AppData, today: ISODate): Built[] {
     // The ladder runs from where they STARTED, not from where they are.
     //
     // Generating only what is ahead was the first version and it was
-    // wrong in a way that quietly gutted the feature: a rung was never
-    // on the rail at the moment it was cleared, so it could never be
+    // wrong in a way that quietly gutted the feature: a stage was never
+    // on the path at the moment it was cleared, so it could never be
     // scored, never stamped, and never appear as done. The stack of
     // ticks above the today line — the entire reason somebody scrolls
     // to this screen — would have been permanently empty.
     //
     // Safe to do precisely because targets are absolute. Extending the
-    // ladder downward adds rungs below; it renames nothing.
+    // ladder downward adds stages below; it renames nothing.
     const from = firstMeasured(data, 'weightLb') ?? bw
     const far = cutting ? bw - 30 : bw + 15
-    for (const spec of weightRungs(cutting ? Math.max(from, bw) : Math.min(from, bw), far).slice(0, 8)) {
+    for (const spec of weightStages(cutting ? Math.max(from, bw) : Math.min(from, bw), far).slice(0, 8)) {
       out.push({
         spec,
         modelledPerWeek: perWeek,
@@ -265,12 +265,12 @@ function buildSpecs(data: AppData, today: ISODate): Built[] {
       )
       // The ladder starts at the BASELINE — their first logged working
       // set — so every plate they have put on the bar since is on the
-      // rail as a tick. Not lower: a rung they cleared before they ever
+      // path as a tick. Not lower: a stage they cleared before they ever
       // opened the app is not something they did here, and a tick for
       // it would be the app taking credit for somebody else's work.
       const series = liftSeries(data, lift.exerciseId)
       const from = series.length ? Math.min(...series.map((p) => p.weightLb)) : cur
-      for (const spec of strengthRungs(lift.exerciseId, lift.label, from, cur + 150).slice(0, 7)) {
+      for (const spec of strengthStages(lift.exerciseId, lift.label, from, cur + 150).slice(0, 7)) {
         out.push({ spec, modelledPerWeek: perWeek, descending: false, observed: obs, from })
       }
     }
@@ -278,9 +278,9 @@ function buildSpecs(data: AppData, today: ISODate): Built[] {
 
   if (tracks.includes('engine')) {
     const cur = readMetric(data, 'longRunMi') ?? 0
-    // Distances already covered stay on the rail: a first 5K is a thing
+    // Distances already covered stay on the path: a first 5K is a thing
     // that happened, and it should read that way forever.
-    for (const spec of runRungs(0, Math.max(cur, 3.1) + 8).slice(0, 6)) {
+    for (const spec of runStages(0, Math.max(cur, 3.1) + 8).slice(0, 6)) {
       // Distance is the one metric whose model is not linear: carrying a
       // long run from 3 to 6 miles is not the same work as 20 to 23.
       const weeks = Math.max(1, weeksToLongRun(cur, spec.target))
@@ -316,18 +316,18 @@ function buildSpecs(data: AppData, today: ISODate): Built[] {
       // Same baseline rule as the bar: the landmarks they have reached
       // since the first jump they logged here.
       const from = firstMeasured(data, 'vertIn') ?? cur
-      for (const spec of vertRungs(Math.min(from, cur), 24)) {
+      for (const spec of vertStages(Math.min(from, cur), 24)) {
         out.push({ spec, modelledPerWeek: vertInPerWeek(age), descending: false, observed: obs, from })
       }
     }
   }
 
   // Consistency is on every ladder and needs no anchor, which is what
-  // makes day one of a brand-new account a real rail rather than a
+  // makes day one of a brand-new account a real path rather than a
   // screen of grey rows telling somebody to come back later.
   const sessions = totalSessions(data)
   const perWeekSessions = Math.max(1, data.plan.daysPerWeek)
-  for (const spec of consistencyRungs(sessions)) {
+  for (const spec of consistencyStages(sessions)) {
     out.push({
       spec,
       modelledPerWeek: spec.metric === 'sessions' ? perWeekSessions : 7,
@@ -351,11 +351,11 @@ export function buildJourney(data: AppData, today: ISODate): Journey {
   const hits = data.journey?.hits ?? {}
   const built = buildSpecs(data, today)
 
-  const byTrack = new Map<TrackId, Rung[]>()
+  const byTrack = new Map<TrackId, Stage[]>()
   const seenIndex = new Map<TrackId, number>()
 
   for (const b of built) {
-    const id = rungId(b.spec)
+    const id = stageId(b.spec)
     const current = b.blocker ? null : readMetric(data, b.spec.metric, b.spec.exerciseId, today)
     const hitOn = hits[id]
     const reached = Boolean(hitOn) || reachedNow(data, b.spec, current, b.descending)
@@ -376,7 +376,7 @@ export function buildJourney(data: AppData, today: ISODate): Journey {
     })
     if (!reached && !b.blocker) seenIndex.set(b.spec.track, idx + 1)
 
-    const rung: Rung = {
+    const stage: Stage = {
       id,
       track: b.spec.track,
       metric: b.spec.metric,
@@ -397,15 +397,15 @@ export function buildJourney(data: AppData, today: ISODate): Journey {
       descending: b.descending,
     }
     const list = byTrack.get(b.spec.track) ?? []
-    list.push(rung)
+    list.push(stage)
     byTrack.set(b.spec.track, list)
   }
 
-  // The rung being climbed on each track is the one that ARRIVES first,
+  // The stage being climbed on each track is the one that ARRIVES first,
   // not the one that happens to be built first.
   //
-  // Those differ: the consistency track builds every session rung before
-  // any streak rung, so "50 sessions" was being called the next stop
+  // Those differ: the consistency track builds every session stage before
+  // any streak stage, so "50 sessions" was being called the next stop
   // while a 7-day streak two weeks nearer sat behind it looking like
   // something for later. On a path that is not a cosmetic mislabel — it
   // points the walker at the wrong stop.
@@ -420,19 +420,19 @@ export function buildJourney(data: AppData, today: ISODate): Journey {
 
   const tracks: Track[] = TRACKS_FOR_GOAL[data.plan.goal]
     .filter((t) => byTrack.has(t))
-    .map((t) => ({ id: t, label: TRACK_LABEL[t], tone: TRACK_TONE[t], rungs: byTrack.get(t)! }))
+    .map((t) => ({ id: t, label: TRACK_LABEL[t], tone: TRACK_TONE[t], stages: byTrack.get(t)! }))
 
-  const all = tracks.flatMap((t) => t.rungs)
-  const rail = orderRail(all)
-  const next = rail.find((r) => r.state === 'next')
+  const all = tracks.flatMap((t) => t.stages)
+  const path = orderPath(all)
+  const next = path.find((r) => r.state === 'next')
   // The summit is the furthest thing on the board with a real estimate:
   // the one worth scrolling to the bottom for.
-  const ahead = rail.filter((r) => r.state !== 'done' && r.state !== 'locked')
+  const ahead = path.filter((r) => r.state !== 'done' && r.state !== 'locked')
   const summit = [...ahead].sort((a, b) => (b.etaWeeks ?? 0) - (a.etaWeeks ?? 0))[0]
 
   return {
     tracks,
-    rail,
+    path,
     doneCount: all.filter((r) => r.state === 'done').length,
     totalCount: all.length,
     next,
@@ -441,7 +441,7 @@ export function buildJourney(data: AppData, today: ISODate): Journey {
 }
 
 /**
- * How far along this rung is, measured FROM THE BASELINE.
+ * How far along this stage is, measured FROM THE BASELINE.
  *
  * The first version was current/target, and on a cut that made every
  * bar read ~95 % full: somebody at 198 lb is 98 % of the way from ZERO
@@ -460,7 +460,7 @@ function progressOf(
   if (reached) return 1
   if (current === null || target === 0) return 0
   if (from === undefined || from === target) {
-    // No baseline (behaviour rungs count up from nothing, which IS zero).
+    // No baseline (behaviour stages count up from nothing, which IS zero).
     return Math.max(0, Math.min(1, descending ? target / Math.max(current, 0.0001) : current / target))
   }
   const covered = descending ? from - current : current - from
@@ -472,32 +472,32 @@ function progressOf(
 /**
  * A deterministic order, which matters more than it sounds.
  *
- * ETAs recompute on every store write, so sorting the rail by ETA
+ * ETAs recompute on every store write, so sorting the path by ETA
  * would let rows swap places between renders while their fills are
- * mid-animation. Reached rungs go first in the order they were
+ * mid-animation. Reached stages go first in the order they were
  * reached — that stack of ticks is the emotional payload of the whole
  * screen — then everything ahead, grouped so a track stays together,
  * then the locked ones. Ties break on id so the order never wobbles.
  */
-export function orderRail(rungs: Rung[]): Rung[] {
-  const rank = (r: Rung) => (r.state === 'done' ? 0 : r.state === 'locked' ? 2 : 1)
-  return [...rungs].sort((a, b) => {
+export function orderPath(stages: Stage[]): Stage[] {
+  const rank = (r: Stage) => (r.state === 'done' ? 0 : r.state === 'locked' ? 2 : 1)
+  return [...stages].sort((a, b) => {
     const ra = rank(a)
     const rb = rank(b)
     if (ra !== rb) return ra - rb
     if (ra === 0) return (a.hitOn ?? '') < (b.hitOn ?? '') ? -1 : 1
     // Everything still ahead goes in the order it is expected to
     // ARRIVE, across all tracks, because the path is a timeline and a
-    // timeline that groups by track is not one. A rung with no honest
+    // timeline that groups by track is not one. A stage with no honest
     // estimate sorts to the far end rather than to the front — no date
     // means "further than we can see", not "any minute now".
     const ea = a.etaWeeks ?? Number.MAX_SAFE_INTEGER
     const eb = b.etaWeeks ?? Number.MAX_SAFE_INTEGER
     if (ea !== eb) return ea - eb
     if (a.track !== b.track) return a.track < b.track ? -1 : 1
-    // CLIMB order, not numeric order. On a cut the next rung is the
+    // CLIMB order, not numeric order. On a cut the next stage is the
     // HIGHEST number left, and sorting ascending put the furthest one
-    // at the top of the list and labelled it "next" — the rail pointing
+    // at the top of the list and labelled it "next" — the path pointing
     // somebody at a target four months out while the one three weeks
     // away sat at the bottom.
     if (a.target !== b.target) return a.descending ? b.target - a.target : a.target - b.target
@@ -506,7 +506,7 @@ export function orderRail(rungs: Rung[]): Rung[] {
 }
 
 /**
- * Rungs reached since the last time this ran, for the store to stamp.
+ * Stages reached since the last time this ran, for the store to stamp.
  *
  * Separated from buildJourney because building is a pure read that
  * happens on every render and stamping is a write that must happen
@@ -515,7 +515,7 @@ export function orderRail(rungs: Rung[]): Rung[] {
 export function newlyReached(data: AppData, today: ISODate): string[] {
   const hits = data.journey?.hits ?? {}
   return buildJourney(data, today)
-    .rail.filter((r) => r.state === 'done' && !hits[r.id])
+    .path.filter((r) => r.state === 'done' && !hits[r.id])
     .map((r) => r.id)
 }
 

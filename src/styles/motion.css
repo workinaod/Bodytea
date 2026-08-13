@@ -176,7 +176,7 @@
   transition: width var(--dur-slow) var(--ease-out);
 }
 /* The vertical twin. `.grow` transitions width and nothing else, so a
-   rail that fills downward gets nothing from it and jumps instead. */
+   path that fills downward gets nothing from it and jumps instead. */
 .grow-y {
   transition: height var(--dur-slow) var(--ease-out);
 }

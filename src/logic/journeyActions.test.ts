@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { emptyAppData, type Measurement } from '../types'
 import { useAppStore } from '../store/appStore'
-import { stampReachedRungs } from './journeyActions'
+import { stampReachedStages } from './journeyActions'
 import { buildJourney } from '../engine/journey'
 
 // ============================================================
 // The one write in the whole feature.
 //
-// Everything the rail shows is derived except this: the DAY a
-// rung was reached. It exists because "reached" is not
+// Everything the path shows is derived except this: the DAY a
+// stage was reached. It exists because "reached" is not
 // re-derivable — the evidence for it is not permanent — and the
 // two things that can go wrong are both silent. Forget to write
-// it and the rung goes out when the scale comes back up. Rewrite
+// it and the stage goes out when the scale comes back up. Rewrite
 // it and the athlete's history says they hit their first 225 last
 // Tuesday.
 // ============================================================
@@ -28,17 +28,17 @@ function seed(mutate: (d: ReturnType<typeof emptyAppData>) => void) {
   useAppStore.setState({ data: d })
 }
 
-describe('stamping a rung the moment it is reached', () => {
+describe('stamping a stage the moment it is reached', () => {
   beforeEach(() => {
     seed(() => {})
   })
 
   it('writes nothing when nothing has been reached', () => {
-    stampReachedRungs(TODAY)
+    stampReachedStages(TODAY)
     expect(useAppStore.getState().data.journey.hits).toEqual({})
   })
 
-  it('records the day a rung was reached', () => {
+  it('records the day a stage was reached', () => {
     seed((d) => {
       d.measurements = [
         weighIn('2026-04-01', 218),
@@ -49,16 +49,16 @@ describe('stamping a rung the moment it is reached', () => {
         weighIn('2026-08-14', 198),
       ]
     })
-    stampReachedRungs(TODAY)
+    stampReachedStages(TODAY)
     const hits = useAppStore.getState().data.journey.hits
     expect(Object.keys(hits).length).toBeGreaterThan(0)
     for (const day of Object.values(hits)) expect(day).toBe(TODAY)
   })
 
-  it('never rewrites the day a rung was FIRST reached', () => {
+  it('never rewrites the day a stage was FIRST reached', () => {
     // The one that matters. This runs on every finished session and
     // every check-in, so an unguarded write would drag every date on
-    // the rail forward to today and erase the shape of the whole climb
+    // the path forward to today and erase the shape of the whole climb
     // — the athlete's first 225 would read as having happened this
     // morning, every morning.
     seed((d) => {
@@ -71,23 +71,23 @@ describe('stamping a rung the moment it is reached', () => {
         weighIn('2026-08-14', 198),
       ]
     })
-    stampReachedRungs('2026-08-14')
+    stampReachedStages('2026-08-14')
     const first = { ...useAppStore.getState().data.journey.hits }
     expect(Object.keys(first).length).toBeGreaterThan(0)
 
     // Run it again on a later day, as the app will, many times.
-    stampReachedRungs('2026-09-30')
+    stampReachedStages('2026-09-30')
     expect(useAppStore.getState().data.journey.hits).toEqual(first)
   })
 
   it('is safe to call over and over, which is how it is actually called', () => {
-    stampReachedRungs(TODAY)
-    stampReachedRungs(TODAY)
-    stampReachedRungs(TODAY)
+    stampReachedStages(TODAY)
+    stampReachedStages(TODAY)
+    stampReachedStages(TODAY)
     expect(useAppStore.getState().data.journey.hits).toEqual({})
   })
 
-  it('makes the rail read done off the stamp alone', () => {
+  it('makes the path read done off the stamp alone', () => {
     seed((d) => {
       d.measurements = [
         weighIn('2026-04-01', 218),
@@ -98,7 +98,7 @@ describe('stamping a rung the moment it is reached', () => {
         weighIn('2026-08-14', 198),
       ]
     })
-    stampReachedRungs(TODAY)
+    stampReachedStages(TODAY)
     const stamped = Object.keys(useAppStore.getState().data.journey.hits)
 
     // Now regain the weight. The current number no longer satisfies a
@@ -107,7 +107,7 @@ describe('stamping a rung the moment it is reached', () => {
     d.measurements.push(weighIn('2026-08-20', 214))
     const j = buildJourney(d, '2026-08-20')
     for (const id of stamped) {
-      expect(j.rail.find((r) => r.id === id)?.state).toBe('done')
+      expect(j.path.find((r) => r.id === id)?.state).toBe('done')
     }
   })
 })

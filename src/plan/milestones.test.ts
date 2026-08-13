@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import {
-  consistencyRungs,
+  consistencyStages,
   fatLossPctPerWeek,
   gainPctPerWeek,
   MAX_ETA_WEEKS,
   NOISE_FLOOR,
-  runRungs,
-  RUNG_DECAY,
-  rungId,
+  runStages,
+  STAGE_DECAY,
+  stageId,
   strengthLbPerWeek,
-  strengthRungs,
+  strengthStages,
   TRACKS_FOR_GOAL,
   vertInPerWeek,
-  vertRungs,
+  vertStages,
   weeksPerLoadStep,
   weeksToLongRun,
-  weightRungs,
+  weightStages,
 } from './milestones'
 import type { Goal } from '../types'
 
@@ -162,22 +162,22 @@ describe('jumping, the goal with the biggest gap between sold and real', () => {
   })
 })
 
-describe('the rungs themselves', () => {
-  it('gives every rung an id that survives the athlete moving', () => {
+describe('the stages themselves', () => {
+  it('gives every stage an id that survives the athlete moving', () => {
     // THE correctness property. Targets are absolute, so a rising
-    // anchor drops rungs off the bottom and never renames one. If an id
-    // could change, a persisted hit would orphan and the rung would
-    // silently un-achieve — a rail that walks backwards.
-    const early = strengthRungs('bench', 'Bench', 95, 400)
-    const later = strengthRungs('bench', 'Bench', 200, 400)
-    const commonEarly = early.filter((r) => r.target >= 225).map(rungId)
-    const commonLater = later.filter((r) => r.target >= 225).map(rungId)
+    // anchor drops stages off the bottom and never renames one. If an id
+    // could change, a persisted hit would orphan and the stage would
+    // silently un-achieve — a path that walks backwards.
+    const early = strengthStages('bench', 'Bench', 95, 400)
+    const later = strengthStages('bench', 'Bench', 200, 400)
+    const commonEarly = early.filter((r) => r.target >= 225).map(stageId)
+    const commonLater = later.filter((r) => r.target >= 225).map(stageId)
     expect(commonEarly).toEqual(commonLater)
   })
 
   it('keeps ids stable for bodyweight in both directions', () => {
-    const cutting = weightRungs(220, 180).filter((r) => r.target <= 200).map(rungId)
-    const regained = weightRungs(210, 180).filter((r) => r.target <= 200).map(rungId)
+    const cutting = weightStages(220, 180).filter((r) => r.target <= 200).map(stageId)
+    const regained = weightStages(210, 180).filter((r) => r.target <= 200).map(stageId)
     expect(cutting).toEqual(regained)
   })
 
@@ -187,47 +187,47 @@ describe('the rungs themselves', () => {
     // is chosen by position in the ladder, so it moves when the anchor
     // moves; folding it into the id would orphan every persisted hit the
     // first time somebody got stronger.
-    const [r] = strengthRungs('bench-press', 'Bench', 180, 190)
-    expect(rungId(r)).toBe('strength:topSetLb:bench-press:1850')
-    const [w] = weightRungs(203, 180)
-    expect(rungId(w)).toBe('body:weightLb:-:2000')
+    const [r] = strengthStages('bench-press', 'Bench', 180, 190)
+    expect(stageId(r)).toBe('strength:topSetLb:bench-press:1850')
+    const [w] = weightStages(203, 180)
+    expect(stageId(w)).toBe('body:weightLb:-:2000')
   })
 
   it('keeps the id when the SAME target arrives with different copy', () => {
-    // The rung detail cycles down the ladder, so the identical target
+    // The stage detail cycles down the ladder, so the identical target
     // carries different prose depending on where the athlete started.
-    // Same rung, same id, whatever it says underneath.
-    const early = weightRungs(230, 180).find((r) => r.target === 200)!
-    const late = weightRungs(211, 180).find((r) => r.target === 200)!
+    // Same stage, same id, whatever it says underneath.
+    const early = weightStages(230, 180).find((r) => r.target === 200)!
+    const late = weightStages(211, 180).find((r) => r.target === 200)!
     expect(early.detail).not.toBe(late.detail)
-    expect(rungId(early)).toBe(rungId(late))
+    expect(stageId(early)).toBe(stageId(late))
   })
 
   it('counts in plates, because that is how lifters count', () => {
-    const labels = strengthRungs('bench', 'Bench', 100, 300).map((r) => r.target)
+    const labels = strengthStages('bench', 'Bench', 100, 300).map((r) => r.target)
     expect(labels).toContain(135)
     expect(labels).toContain(225)
     expect(labels).not.toContain(137)
   })
 
-  it('never puts a rung behind where the athlete already is', () => {
-    for (const r of strengthRungs('bench', 'Bench', 185, 400)) expect(r.target).toBeGreaterThan(185)
-    for (const r of runRungs(6.2, 26.2)) expect(r.target).toBeGreaterThan(6.2)
-    for (const r of vertRungs(12, 24)) expect(r.target).toBeGreaterThan(12)
-    for (const r of weightRungs(200, 180)) expect(r.target).toBeLessThan(200)
+  it('never puts a stage behind where the athlete already is', () => {
+    for (const r of strengthStages('bench', 'Bench', 185, 400)) expect(r.target).toBeGreaterThan(185)
+    for (const r of runStages(6.2, 26.2)) expect(r.target).toBeGreaterThan(6.2)
+    for (const r of vertStages(12, 24)) expect(r.target).toBeGreaterThan(12)
+    for (const r of weightStages(200, 180)) expect(r.target).toBeLessThan(200)
   })
 
   it('gives the jump goal landmarks, not inches', () => {
     // "28 inches" means nothing standing in a gym. "Touch the rim"
     // means everything, and you can go try it tonight.
-    const labels = vertRungs(0, 24).map((r) => r.label)
+    const labels = vertStages(0, 24).map((r) => r.label)
     expect(labels).toContain('Touch the rim')
     expect(labels).toContain('Dunk')
     expect(labels.join(' ')).not.toMatch(/\d+ in/)
   })
 
   it('gives the running goal real events, not round numbers', () => {
-    const labels = runRungs(0, 26.2).map((r) => r.label)
+    const labels = runStages(0, 26.2).map((r) => r.label)
     expect(labels).toContain('5K')
     expect(labels).toContain('Half marathon')
     expect(labels).not.toContain('7 miles')
@@ -235,8 +235,8 @@ describe('the rungs themselves', () => {
 
   it('never runs a bodyweight ladder away forever', () => {
     // A guard against the loop, not a design statement: a bad anchor
-    // must not build ten thousand rungs.
-    expect(weightRungs(200, -500).length).toBeLessThanOrEqual(41)
+    // must not build ten thousand stages.
+    expect(weightStages(200, -500).length).toBeLessThanOrEqual(41)
   })
 })
 
@@ -260,11 +260,11 @@ describe('every goal gets a climb, and more than one strand of it', () => {
     for (const g of GOALS) expect(TRACKS_FOR_GOAL[g]).toContain('consistency')
   })
 
-  it('gives a brand-new account real rungs with no data at all', () => {
-    const rungs = consistencyRungs(0)
-    expect(rungs.length).toBeGreaterThan(4)
+  it('gives a brand-new account real stages with no data at all', () => {
+    const stages = consistencyStages(0)
+    expect(stages.length).toBeGreaterThan(4)
     // Nothing here needs a weigh-in, a lift or a measurement.
-    for (const r of rungs) expect(['sessions', 'streakDays']).toContain(r.metric)
+    for (const r of stages) expect(['sessions', 'streakDays']).toContain(r.metric)
   })
 })
 
@@ -282,10 +282,10 @@ describe('the guards that stop an estimate becoming a claim', () => {
     expect(NOISE_FLOOR.waistIn).toBeGreaterThan(0)
   })
 
-  it('makes later rungs further away than a straight line says', () => {
+  it('makes later stages further away than a straight line says', () => {
     // A line drawn through a novice's hot first block goes straight
     // through the plateau every one of them hits.
-    expect(RUNG_DECAY).toBeLessThan(1)
-    expect(RUNG_DECAY).toBeGreaterThan(0.5)
+    expect(STAGE_DECAY).toBeLessThan(1)
+    expect(STAGE_DECAY).toBeGreaterThan(0.5)
   })
 })

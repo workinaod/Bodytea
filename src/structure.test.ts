@@ -77,8 +77,8 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // follows it down each time: an oversized file that shrinks does not
   // keep the headroom.
   // +1: one name added to the mealActions re-export block.
-  // +11: two stampReachedRungs calls with the comments explaining why a
-  // reached rung is written down rather than re-derived, plus the import.
+  // +11: two stampReachedStages calls with the comments explaining why a
+  // reached stage is written down rather than re-derived, plus the import.
   // The logic itself is in logic/journeyActions.ts.
   'logic/actions.ts': 663,
   // Was 836. The how-to reader and the rest screen both moved out, and
