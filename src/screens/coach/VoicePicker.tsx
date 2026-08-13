@@ -3,9 +3,9 @@ import { useAppStore } from '../../store/appStore'
 import {
   bestQualityAvailable,
   coachVoices,
-  listEnglishVoices,
   missingCoachVoices,
-  onVoicesChanged,
+  primeVoiceList,
+  watchVoices,
   voiceChoiceIsStale,
   voiceQuality,
   COACH_VOICE_SET_VERSION,
@@ -47,16 +47,17 @@ export function VoicePicker() {
   const [showAll, setShowAll] = useState(false)
 
   useEffect(() => {
-    // Shortlisted here rather than in listEnglishVoices, which is the
-    // raw platform read and stays raw.
-    const read = () => {
-      const english = listEnglishVoices()
+    // Prime first: on iOS the voice list stays short until the engine
+    // has been used once, so reading before that reports a phone with
+    // premium voices installed as having none.
+    primeVoiceList()
+    // Shortlisted here rather than in watchVoices, which is the raw
+    // platform read and stays raw.
+    return watchVoices((english) => {
       setAllEnglish(english)
       setVoices(coachVoices(english))
       setMissing(missingCoachVoices(english))
-    }
-    read()
-    return onVoicesChanged(read)
+    })
   }, [])
 
   // A choice made against an older shortlist clears itself, once.
@@ -152,6 +153,19 @@ export function VoicePicker() {
             Download {missing.length === 1 ? 'it' : 'any of them'} and{' '}
             {missing.length === 1 ? 'it appears' : 'they appear'} here automatically.
           </p>
+          {/* Already downloaded them and still reading this? iOS keeps
+              the full list back until the speech engine has run once,
+              and a tap is a user gesture, which is when it is most
+              willing to hand it over. */}
+          <button
+            onClick={() => {
+              primeVoiceList()
+              say('Checking for voices.', { interrupt: true })
+            }}
+            className="press mt-2 rounded-full bg-white/[0.07] px-3 py-1.5 text-[11px] font-bold text-ink"
+          >
+            Already downloaded? Check again
+          </button>
         </div>
       )}
 
@@ -200,14 +214,21 @@ export function VoicePicker() {
           be chosen. It is also the only honest way to tell "iOS is not
           exposing that voice to the browser" apart from "our list does
           not mention it", which no amount of guessing from here can. */}
-      {allEnglish.length > voices.length && (
-        <button
-          onClick={() => setShowAll((s) => !s)}
-          className="press text-[11.5px] font-bold text-ink-faint"
-        >
-          {showAll ? 'Hide' : `Not seeing a voice? Show all ${allEnglish.length} on this phone`}
-        </button>
-      )}
+      {/* Always offered, not just when the counts differ. A phone whose
+          engine has not woken up yet reports the SAME short list twice
+          over, and hiding the escape hatch exactly then leaves nothing
+          to look at and nothing to try. Tapping also re-primes: it is a
+          user gesture, which is the one moment iOS is most willing to
+          hand over the full list. */}
+      <button
+        onClick={() => {
+          primeVoiceList()
+          setShowAll((s) => !s)
+        }}
+        className="press text-[11.5px] font-bold text-ink-faint"
+      >
+        {showAll ? 'Hide' : `Not seeing a voice? Show all ${allEnglish.length} on this phone`}
+      </button>
 
       {showAll && (
         <div className="max-h-64 overflow-y-auto overscroll-contain rounded-2xl ring-1 ring-white/[0.07]">

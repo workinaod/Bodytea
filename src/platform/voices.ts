@@ -228,3 +228,71 @@ export function onVoicesChanged(cb: () => void): () => void {
   window.speechSynthesis.addEventListener('voiceschanged', cb)
   return () => window.speechSynthesis.removeEventListener('voiceschanged', cb)
 }
+
+/**
+ * Kick the speech engine so it publishes its full voice list.
+ *
+ * iOS hands back a short list — often just the default per locale —
+ * until the synthesiser has actually been used once. Downloaded
+ * Enhanced and Premium voices are missing from that first read, which
+ * is why a phone with them installed still showed two rows and a
+ * message insisting they were not there.
+ *
+ * Silent on purpose: volume 0, one space. This has to be able to run
+ * while the user is looking at Settings without the coach barking.
+ * Skipped when speech is already in flight, so it can never clip a
+ * live session's audio.
+ */
+export function primeVoiceList(): void {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+  try {
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return
+    const u = new SpeechSynthesisUtterance(' ')
+    u.volume = 0
+    window.speechSynthesis.speak(u)
+  } catch {
+    /* a failed prime just means the list stays as short as it was */
+  }
+}
+
+/**
+ * The English voices, and every later revision of that list.
+ *
+ * A single read at mount is not enough on any platform and is badly
+ * wrong on iOS: `voiceschanged` is the documented signal, but a
+ * standalone PWA frequently never fires it, so subscribing alone can
+ * leave the picker showing whatever the first synchronous read
+ * happened to catch — sometimes nothing at all.
+ *
+ * So this does all three: read now, subscribe, and re-read on a short
+ * decaying schedule while the engine warms up. The callback only fires
+ * when the list actually GREW, so a late empty read cannot wipe a
+ * populated picker.
+ */
+export function watchVoices(cb: (voices: SpeechSynthesisVoice[]) => void): () => void {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return () => {}
+  let alive = true
+  let seen = -1
+
+  const read = () => {
+    if (!alive) return
+    const v = listEnglishVoices()
+    if (v.length > seen) {
+      seen = v.length
+      cb(v)
+    }
+  }
+
+  read()
+  const off = onVoicesChanged(read)
+  // Front-loaded, then spaced out: most devices are ready within a few
+  // hundred milliseconds, and the late checks are for the slow ones
+  // rather than a poll that runs forever.
+  const timers = [80, 250, 600, 1200, 2000, 3500].map((ms) => setTimeout(read, ms))
+
+  return () => {
+    alive = false
+    off()
+    timers.forEach(clearTimeout)
+  }
+}
