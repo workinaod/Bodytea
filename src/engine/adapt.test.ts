@@ -199,6 +199,71 @@ describe('a shoulder that keeps complaining', () => {
     const adj = planAdjustments([ex('flat-db-press')], { owned: GYM, signals })
     expect(adj[0].because).toContain('shoulder')
   })
+
+  // ---- The joint the pattern cannot spare ----
+  //
+  // There is no way to press overhead without loading a shoulder: the
+  // pattern IS the stress, so substitutesFor correctly finds nothing.
+  // The engine used to go silent on exactly that case — a shoulder
+  // flagged three times, a standing press still on the card, and not a
+  // word about it, which reads as the app not having noticed.
+  it('does not go quiet about a joint it cannot route around', () => {
+    const adj = planAdjustments([ex('standing-ohp')], { owned: GYM, signals })
+    expect(adj).not.toEqual([])
+    const advice = adj.find((a) => a.kind === 'reduce-load')
+    expect(advice).toBeDefined()
+    expect(advice!.because).toContain('shoulder')
+  })
+
+  it('says keep it and go lighter, not stop', () => {
+    // Pain-guided loading, which is the actual recommendation. Both
+    // "train through it" and "rest it completely" are the wrong answer,
+    // and the app is not in a position to tell which complaint this is.
+    const [advice] = planAdjustments([ex('standing-ohp')], { owned: GYM, signals }).filter(
+      (a) => a.kind === 'reduce-load',
+    )
+    expect(advice.because).toMatch(/keep (it|them) in/i)
+    expect(advice.because).toMatch(/weight down|lighter/i)
+    expect(advice.because).not.toMatch(/\bskip\b|\brest it\b|\bstop training\b/i)
+  })
+
+  it('puts a clock on it rather than letting somebody manage pain forever', () => {
+    const [advice] = planAdjustments([ex('standing-ohp')], { owned: GYM, signals }).filter(
+      (a) => a.kind === 'reduce-load',
+    )
+    expect(advice.because).toMatch(/two weeks/i)
+    expect(advice.because).toMatch(/physio|clinician|doctor/i)
+  })
+
+  it('says it once for the joint, not once per movement', () => {
+    // Three overhead presses in a session is three ways to hear the same
+    // sentence, and a wall of identical cards is how a real warning gets
+    // scrolled past.
+    const adj = planAdjustments([ex('standing-ohp'), ex('db-shoulder-press'), ex('lat-pulldown')], {
+      owned: GYM,
+      signals,
+    })
+    expect(adj.filter((a) => a.kind === 'reduce-load')).toHaveLength(1)
+  })
+
+  it('never asks for a tap it cannot honour', () => {
+    // There is no per-movement load override to write, so this one is
+    // advice. Marked automatic it would claim to have changed something;
+    // given the proposal button it would write reduce-volume and cut a
+    // set off every lift in the session — the opposite of "keep it in".
+    const [advice] = planAdjustments([ex('standing-ohp')], { owned: GYM, signals }).filter(
+      (a) => a.kind === 'reduce-load',
+    )
+    expect(advice.automatic).toBe(false)
+    expect(advice.sets).toBeUndefined()
+  })
+
+  it('prefers a real swap and stays quiet when it has one', () => {
+    // The advice is the fallback, never the first answer. A flat press
+    // has somewhere to go, so it goes there.
+    const adj = planAdjustments([ex('flat-db-press')], { owned: GYM, signals })
+    expect(adj.map((a) => a.kind)).toEqual(['substitute'])
+  })
 })
 
 describe('short sleep cuts SETS, not the session', () => {
@@ -235,7 +300,7 @@ describe('short sleep cuts SETS, not the session', () => {
       { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-13T20:00:00.000Z' },
     ] as never
     for (const a of planAdjustments([ex('goblet-squat')], { owned: GYM, signals: readSignals(d, TODAY) })) {
-      expect(['substitute', 'reduce-volume', 'hold-load', 'add-recovery']).toContain(a.kind)
+      expect(['substitute', 'reduce-volume', 'hold-load', 'reduce-load']).toContain(a.kind)
       if (a.sets !== undefined) expect(a.sets).toBe(1)
     }
   })

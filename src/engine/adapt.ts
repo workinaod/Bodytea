@@ -219,7 +219,19 @@ export function readSignals(data: AppData, today: ISODate): Signal[] {
 
 // ---------------- Deciding what changes ----------------
 
-export type AdjustmentKind = 'substitute' | 'reduce-volume' | 'hold-load' | 'add-recovery'
+/**
+ * `add-recovery` used to sit in this union and nothing ever produced it.
+ * It stayed out on the rewrite rather than being given a producer: the
+ * evidence for prescribing recovery WORK — foam rolling, extra mobility,
+ * a "recovery session" — as a response to fatigue is thin, while sleep
+ * and food, which have the evidence, are not this engine's to adjust.
+ * A kind the UI has to branch on and the engine never emits is a promise
+ * in a type signature, and the honest version of it is fewer sets.
+ *
+ * `reduce-load` replaced it, for the one case that genuinely needed a
+ * fourth kind: a flagged joint the movement pattern cannot spare.
+ */
+export type AdjustmentKind = 'substitute' | 'reduce-volume' | 'hold-load' | 'reduce-load'
 
 export interface Adjustment {
   kind: AdjustmentKind
@@ -258,6 +270,8 @@ export function planAdjustments(
   const out: Adjustment[] = []
   const painJoints = ctx.signals.filter((s) => s.kind === 'joint-pain').flatMap((s) => s.joints ?? [])
   const avoid = [...new Set(painJoints)]
+  /** Flagged joints that no substitute can spare, gathered so the athlete hears it once. */
+  const unroutable = new Map<Joint, string[]>()
 
   for (const ex of exercises) {
     const meta = MOVEMENT[ex.exerciseId]
@@ -282,9 +296,9 @@ export function planAdjustments(
     //    Routing around pain should not cost a tap, and "train through it"
     //    is not a suggestion this app is willing to make.
     if (avoid.length && meta && meta.stress.some((j) => avoid.includes(j))) {
+      const joint = meta.stress.find((j) => avoid.includes(j))!
       const sub = substitutesFor(ex.exerciseId, { can: can(ctx.owned), avoid })[0]
       if (sub) {
-        const joint = meta.stress.find((j) => avoid.includes(j))!
         out.push({
           kind: 'substitute',
           automatic: true,
@@ -292,8 +306,38 @@ export function planAdjustments(
           toExerciseId: sub,
           because: `Your ${joint.replace('-', ' ')} has been complaining, so this trains the same pattern without loading it.`,
         })
+      } else {
+        unroutable.set(joint, [...(unroutable.get(joint) ?? []), ex.exerciseId])
       }
     }
+  }
+
+  // 2b. Some joints cannot be routed around, and the plan used to go
+  //     quiet about exactly those.
+  //
+  //     There is no way to press overhead without loading a shoulder —
+  //     the pattern IS the stress — so substitutesFor correctly returns
+  //     nothing, and the old code's `if (sub)` then dropped the whole
+  //     case on the floor. A shoulder flagged three times kept getting
+  //     prescribed a standing press with no comment at all, which reads
+  //     as the app not having noticed. It had noticed; it had nothing to
+  //     say. (Not a rare corner: a full-gym athlete has eight of these
+  //     for the shoulder alone, a bodyweight athlete six for the knee.)
+  //
+  //     What it says now is what a physio would: keep training it, drop
+  //     the load, stop at the first sharp one, and put a clock on it.
+  //     Pain-guided loading beats rest for tendon and joint complaints;
+  //     "train through it" and "stop training" are both wrong, and the
+  //     honest part is admitting an app cannot tell which one this is
+  //     after two weeks.
+  for (const [joint, ids] of unroutable) {
+    const j = joint.replace('-', ' ')
+    out.push({
+      kind: 'reduce-load',
+      automatic: false,
+      exerciseId: ids[0],
+      because: `Your ${j} keeps getting flagged, and every version of ${ids.length > 1 ? 'these movements' : 'this movement'} loads it — there is no swap that trains the pattern and spares the joint. So keep ${ids.length > 1 ? 'them' : 'it'} in and take the weight down instead: roughly a third off, stop the set at the first sharp one rather than at the rep count. If it is still there in two weeks, that is a question for a physio and not for an app.`,
+    })
   }
 
   // 3-4. PROPOSALS, and WHICH proposal is the whole point.

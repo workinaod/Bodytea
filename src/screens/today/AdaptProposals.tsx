@@ -44,9 +44,25 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // progress is not the moment to renegotiate its size.
   if (proposals.length === 0 || (session?.startedAt && !session.endedAt)) return null
 
+  // reduce-load is the one proposal with no switch behind it. "Take a
+  // third off the pressing" is not a shape the plan can hold — there is
+  // no per-movement load override — so it renders as something the coach
+  // SAYS rather than something the athlete taps. Giving it the same
+  // button as the others would be worse than useless: the accept path
+  // writes reduce-volume, so tapping a card that reads "go lighter"
+  // would cut a set off every lift in the session instead.
+  const offers = proposals.filter((p) => p.kind !== 'reduce-load')
+  const notices = proposals.filter((p) => p.kind === 'reduce-load')
+
   return (
     <div className="space-y-2">
-      {proposals.map((p) => {
+      {notices.map((p) => (
+        <div key={p.exerciseId ?? p.kind} className="rounded-2xl bg-gold/[0.07] px-4 py-3 ring-1 ring-gold/25">
+          <p className="text-[12.5px] font-black tracking-tight text-ink">Go lighter here, don't drop it</p>
+          <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{p.because}</p>
+        </div>
+      ))}
+      {offers.map((p) => {
         const choice = p.kind === 'hold-load' ? 'hold-load' : 'reduce-volume'
         const accepted = taken.includes(choice)
         return (
