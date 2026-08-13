@@ -48,6 +48,39 @@ const WARM =
 export const COACH_VOICES = /\b(samantha|tessa|jamie|jaime|allison|nathan|zoe)\b/i
 
 /**
+ * The shortlist as names, in the order worth reading.
+ *
+ * Exists so the picker can name what is MISSING. A web app can only
+ * speak with voices the device already has, and iOS ships exactly one
+ * compact voice per English locale — Samantha for US, Tessa for ZA and
+ * so on. Allison, Nathan, Zoe and Jamie are not shipped at all: they
+ * exist only as Enhanced or Premium downloads.
+ *
+ * So on a stock iPhone most of this list is simply absent, the picker
+ * shows two rows, and there is nothing on screen to explain why. That
+ * reads as a broken app rather than an uninstalled voice.
+ */
+export const COACH_VOICE_NAMES = ['Samantha', 'Allison', 'Nathan', 'Zoe', 'Jamie', 'Tessa'] as const
+
+/**
+ * Shortlisted voices this device does not have.
+ *
+ * Empty when NONE of them are present, which means this is not an Apple
+ * device at all — Android and desktop have their own voices and the
+ * fallback list already offers them. Listing six Apple voices as
+ * "missing" there would be advice nobody can act on.
+ */
+export function missingCoachVoices(all: SpeechSynthesisVoice[]): string[] {
+  const present = (name: string) => all.some((v) => new RegExp(`\\b${name}\\b`, 'i').test(v.name ?? ''))
+  const here = COACH_VOICE_NAMES.filter(present)
+  if (here.length === 0) return []
+  // Jamie and Jaime are the same voice spelled two ways; either counts.
+  return COACH_VOICE_NAMES.filter(
+    (n) => !present(n) && !(n === 'Jamie' && present('Jaime')),
+  )
+}
+
+/**
  * The shortlist, or an honest fallback.
  *
  * Hard-filtering would be wrong: these are Apple voices, and on Android

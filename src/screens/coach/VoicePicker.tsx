@@ -4,6 +4,7 @@ import {
   bestQualityAvailable,
   coachVoices,
   listEnglishVoices,
+  missingCoachVoices,
   onVoicesChanged,
   voiceQuality,
   type VoiceQuality,
@@ -38,11 +39,16 @@ export function VoicePicker() {
   const chosen = useAppStore((s) => s.data.settings.voiceURI)
   const update = useAppStore((s) => s.update)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [missing, setMissing] = useState<string[]>([])
 
   useEffect(() => {
     // Shortlisted here rather than in listEnglishVoices, which is the
     // raw platform read and stays raw.
-    const read = () => setVoices(coachVoices(listEnglishVoices()))
+    const read = () => {
+      const english = listEnglishVoices()
+      setVoices(coachVoices(english))
+      setMissing(missingCoachVoices(english))
+    }
     read()
     return onVoicesChanged(read)
   }, [])
@@ -110,6 +116,33 @@ export function VoicePicker() {
           </p>
           <p className="mt-1.5 text-[11px] leading-snug text-gold/70">
             Come back here after and it will show up in this list.
+          </p>
+        </div>
+      )}
+
+      {/* Names the ones that are missing rather than leaving a short list
+          with no explanation. A web app can only speak with voices the
+          phone already has, and most of the shortlist is a download that
+          nobody knows exists — so an absent voice looks like a bug in
+          the app instead of an empty slot on the device. */}
+      {missing.length > 0 && (
+        <div className="rounded-xl bg-white/[0.04] px-3.5 py-2.5 ring-1 ring-white/[0.07]">
+          <p className="text-[12.5px] font-bold">
+            {missing.length === 1 ? '1 more voice' : `${missing.length} more voices`} you can add
+          </p>
+          <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">
+            <span className="font-semibold text-ink">{missing.join(', ')}</span>{' '}
+            {missing.length === 1 ? "isn't" : "aren't"} on this phone yet. Apple ships one basic
+            voice per accent and keeps the rest as a free download.
+          </p>
+          {!onlyBasic && (
+            <p className="mt-1.5 text-[11.5px] font-semibold leading-snug text-ink">
+              Settings → Accessibility → Spoken Content → Voices → English
+            </p>
+          )}
+          <p className="mt-1.5 text-[11px] leading-snug text-ink-faint">
+            Download {missing.length === 1 ? 'it' : 'any of them'} and{' '}
+            {missing.length === 1 ? 'it appears' : 'they appear'} here automatically.
           </p>
         </div>
       )}

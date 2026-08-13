@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { intoChunks, speakable } from './speakable'
-import { coachVoices, pickVoice, scoreVoice } from './voices'
+import { coachVoices, missingCoachVoices, pickVoice, scoreVoice } from './voices'
 
 // Every input below is a real string from the catalog or the coach.
 
@@ -192,6 +192,51 @@ describe('the coach voice shortlist', () => {
     const names = coachVoices(IOS_LIST).map((v) => v.name)
     expect(names).not.toContain('Karen')
     expect(names).not.toContain('Moira')
+  })
+
+  it('names the shortlist voices a stock iPhone does not have', () => {
+    // What the phone actually reports: one basic voice per English
+    // accent. Allison, Nathan, Zoe and Jamie are not shipped at all,
+    // they are Enhanced/Premium downloads, so the picker showed two
+    // rows and no reason why.
+    const stockIphone = [
+      voice('Samantha', 'com.apple.ttsbundle.Samantha-compact'),
+      voice('Tessa', 'com.apple.ttsbundle.Tessa-compact', 'en-ZA'),
+      voice('Karen', 'com.apple.ttsbundle.Karen-compact', 'en-AU'),
+      voice('Daniel', 'com.apple.ttsbundle.Daniel-compact', 'en-GB'),
+    ]
+    expect(missingCoachVoices(stockIphone).sort()).toEqual(['Allison', 'Jamie', 'Nathan', 'Zoe'])
+  })
+
+  it('says nothing is missing once they are installed', () => {
+    const loaded = [
+      voice('Samantha', 'com.apple.voice.premium.en-US.Samantha'),
+      voice('Allison', 'com.apple.voice.premium.en-US.Allison'),
+      voice('Nathan', 'com.apple.voice.premium.en-US.Nathan'),
+      voice('Zoe', 'com.apple.voice.premium.en-US.Zoe'),
+      voice('Jamie', 'com.apple.voice.premium.en-GB.Jamie', 'en-GB'),
+      voice('Tessa', 'com.apple.ttsbundle.Tessa-compact', 'en-ZA'),
+    ]
+    expect(missingCoachVoices(loaded)).toEqual([])
+  })
+
+  it('counts Jaime as Jamie already installed', () => {
+    const withJaime = [
+      voice('Samantha', 'com.apple.ttsbundle.Samantha-compact'),
+      voice('Jaime', 'com.apple.ttsbundle.Jaime-compact', 'en-GB'),
+    ]
+    expect(missingCoachVoices(withJaime)).not.toContain('Jamie')
+  })
+
+  it('does not nag an Android phone about Apple voices', () => {
+    // None of the shortlist exists there, the fallback list already
+    // offers the device's own voices, and naming six voices that cannot
+    // be installed is advice nobody can act on.
+    const android = [
+      voice('Google US English', 'Google US English'),
+      voice('Google UK English Female', 'Google UK English Female', 'en-GB'),
+    ]
+    expect(missingCoachVoices(android)).toEqual([])
   })
 
   it('matches Jamie however the device spells it', () => {
