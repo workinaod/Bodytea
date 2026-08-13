@@ -356,7 +356,7 @@ export function buildJourney(data: AppData, today: ISODate): Journey {
 
   for (const b of built) {
     const id = rungId(b.spec)
-    const current = b.blocker ? null : readMetric(data, b.spec.metric, b.spec.exerciseId)
+    const current = b.blocker ? null : readMetric(data, b.spec.metric, b.spec.exerciseId, today)
     const hitOn = hits[id]
     const reached = Boolean(hitOn) || reachedNow(data, b.spec, current, b.descending)
 

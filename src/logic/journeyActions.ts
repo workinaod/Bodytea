@@ -35,14 +35,16 @@ const store = () => useAppStore.getState()
  * restore re-stamps whatever the history supports.
  */
 export function stampReachedRungs(today: ISODate): void {
+  // newlyReached already excludes anything stamped, which is where the
+  // never-overwrite rule actually lives. A second `if (!hits[id])` here
+  // looked like a safety net and was unreachable — a mutation test
+  // flipped it and nothing went red, because nothing could. Dead
+  // defensive code is worse than none: it reads as the guarantee while
+  // the real guarantee sits somewhere else, untested.
   const fresh = newlyReached(store().data, today)
   if (fresh.length === 0) return
   store().update((d) => {
     if (!d.journey) d.journey = { hits: {} }
-    for (const id of fresh) {
-      // Never overwrite: the FIRST time it was reached is the fact
-      // worth keeping, not the most recent.
-      if (!d.journey.hits[id]) d.journey.hits[id] = today
-    }
+    for (const id of fresh) d.journey.hits[id] = today
   })
 }

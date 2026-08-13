@@ -181,6 +181,28 @@ describe('the rungs themselves', () => {
     expect(cutting).toEqual(regained)
   })
 
+  it('builds the id out of the stable fields ONLY', () => {
+    // Pinned exactly, because the danger is not a wrong id — it is an id
+    // built from something that gets recomputed. `detail` in particular
+    // is chosen by position in the ladder, so it moves when the anchor
+    // moves; folding it into the id would orphan every persisted hit the
+    // first time somebody got stronger.
+    const [r] = strengthRungs('bench-press', 'Bench', 180, 190)
+    expect(rungId(r)).toBe('strength:topSetLb:bench-press:1850')
+    const [w] = weightRungs(203, 180)
+    expect(rungId(w)).toBe('body:weightLb:-:2000')
+  })
+
+  it('keeps the id when the SAME target arrives with different copy', () => {
+    // The rung detail cycles down the ladder, so the identical target
+    // carries different prose depending on where the athlete started.
+    // Same rung, same id, whatever it says underneath.
+    const early = weightRungs(230, 180).find((r) => r.target === 200)!
+    const late = weightRungs(211, 180).find((r) => r.target === 200)!
+    expect(early.detail).not.toBe(late.detail)
+    expect(rungId(early)).toBe(rungId(late))
+  })
+
   it('counts in plates, because that is how lifters count', () => {
     const labels = strengthRungs('bench', 'Bench', 100, 300).map((r) => r.target)
     expect(labels).toContain(135)

@@ -44,7 +44,7 @@ export type EtaBasis = 'observed' | 'modelled' | 'none'
  * verify" a property of the type system instead of a promise in a
  * comment.
  */
-export function readMetric(data: AppData, m: RungMetric, exerciseId?: string): number | null {
+export function readMetric(data: AppData, m: RungMetric, exerciseId?: string, today?: ISODate): number | null {
   switch (m) {
     case 'weightLb':
       return latestBodyweightLb(data)
@@ -92,7 +92,12 @@ export function readMetric(data: AppData, m: RungMetric, exerciseId?: string): n
     case 'sessions':
       return totalSessions(data)
     case 'streakDays':
-      return currentStreak(data)
+      // The app's day, not the wall clock. currentStreak defaults to
+      // todayISO() and every other date in this engine comes from
+      // useToday(), so leaving it to default made the one metric that
+      // can fall to zero read a different day from the rest of the rail
+      // — and made it untestable, which is how it was found.
+      return currentStreak(data, today)
   }
 }
 

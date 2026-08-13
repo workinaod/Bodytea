@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData, type Measurement, type SessionLog } from '../types'
 import { buildJourney, newlyReached, orderRail } from './journey'
+import { addDaysISO } from './calendar'
 import { estimateWeeks, observedRatePerWeek, readMetric } from './journeyMetrics'
 
 // ============================================================
@@ -130,6 +131,18 @@ describe('the observed rate', () => {
     expect(observedRatePerWeek(two, TODAY)).toBeNull()
   })
 
+  it('will not draw a trend through two points, however far apart', () => {
+    // Isolates the COUNT rule from the span rule: these are three months
+    // apart, so the span is ample and only the number of points is in
+    // question. Two points always fit a line perfectly, which is exactly
+    // why two points are not a trend.
+    const two = [
+      { date: '2026-05-01', value: 210 },
+      { date: '2026-08-14', value: 196 },
+    ]
+    expect(observedRatePerWeek(two, TODAY)).toBeNull()
+  })
+
   it('needs a real span, not three weigh-ins in one week', () => {
     const crammed = [
       { date: '2026-08-10', value: 200 },
@@ -177,6 +190,58 @@ describe('a rung that has been reached', () => {
     const d = base()
     d.sessions['2026-08-01'] = session('2026-08-01', 'bench-press', 135, 12)
     expect(readMetric(d, 'topSetLb', 'bench-press')).toBe(135)
+  })
+
+  it('keeps a 30-day streak after the streak breaks', () => {
+    // THE case the stamp exists for, and the only metric that genuinely
+    // falls back to zero. A max-over-history — a top set, a longest run
+    // — can never regress, and the two-confirmations rule reads the
+    // whole series so a bodyweight rung survives on its own evidence.
+    // A streak is different: miss one day and currentStreak reads 0, so
+    // without the stamp the rung earned over a month in June goes dark
+    // in July. That is the rail walking backwards, on exactly the
+    // achievement that took the most to get.
+    const d = base()
+    let day = '2026-06-01'
+    for (let i = 0; i < 35; i++) {
+      d.sessions[day] = session(day, 'front-squat', 150)
+      day = addDaysISO(day, 1)
+    }
+    const earned = newlyReached(d, '2026-07-05')
+    const streakRung = earned.find((id) => id.startsWith('consistency:streakDays'))
+    expect(streakRung).toBeDefined()
+
+    // Six weeks off. The streak is zero and the month still happened.
+    d.journey = { hits: { [streakRung!]: '2026-07-05' } }
+    const after = buildJourney(d, TODAY)
+    const rung = after.rail.find((r) => r.id === streakRung)
+    expect(rung?.current).toBe(0)
+    expect(rung?.state).toBe('done')
+    expect(rung?.hitOn).toBe('2026-07-05')
+  })
+
+  it('survives the scale going back up, which is what a bulk is', () => {
+    // The sharpest version of the property. They cut to 198, crossing
+    // 200, and then spent three months eating to build — so the scale
+    // genuinely reads 207 today and the 200 rung is genuinely not
+    // satisfied by the current number. It happened. It stays.
+    const d = base()
+    d.plan.goal = 'lean'
+    d.measurements = [
+      weighIn('2026-03-01', 218),
+      weighIn('2026-04-20', 199),
+      weighIn('2026-05-01', 198),
+    ]
+    const reached = newlyReached(d, '2026-05-01')
+    const twoHundred = reached.find((id) => id.endsWith(':2000'))
+    expect(twoHundred).toBeDefined()
+
+    d.journey = { hits: { [twoHundred!]: '2026-04-20' } }
+    d.measurements.push(weighIn('2026-08-14', 207))
+    const after = buildJourney(d, TODAY)
+    const rung = after.rail.find((r) => r.id === twoHundred)
+    expect(rung?.state).toBe('done')
+    expect(rung?.hitOn).toBe('2026-04-20')
   })
 
   it('does not un-reach when the next block deloads', () => {
@@ -278,6 +343,31 @@ describe('the rail as a thing on a screen', () => {
     const b = buildJourney(d, TODAY).rail.map((r) => r.id)
     expect(a).toEqual(b)
     expect(orderRail(buildJourney(d, TODAY).rail).map((r) => r.id)).toEqual(a)
+  })
+
+  it('points at the NEAREST rung on a cut, not the furthest', () => {
+    // Numeric order and climb order are opposites when the number is
+    // going down. Sorted ascending, somebody at 198 lb was pointed at
+    // the 180 rung four months out while the 195 three weeks away sat
+    // at the bottom of the list.
+    const d = base()
+    d.plan.goal = 'lean'
+    // Weekly weigh-ins, which is what a cut actually looks like: 205
+    // and 200 are both genuinely behind them, confirmed more than once.
+    d.measurements = [
+      weighIn('2026-04-01', 218),
+      weighIn('2026-05-01', 211),
+      weighIn('2026-06-01', 204),
+      weighIn('2026-07-01', 201),
+      weighIn('2026-07-20', 199),
+      weighIn('2026-08-08', 198.5),
+      weighIn('2026-08-14', 198),
+    ]
+    const body = buildJourney(d, TODAY).rail.filter((r) => r.track === 'body' && r.state !== 'done')
+    expect(body[0].target).toBe(195)
+    expect(body[0].state).toBe('next')
+    // and strictly descending down the list from there
+    for (let i = 1; i < body.length; i++) expect(body[i].target).toBeLessThan(body[i - 1].target)
   })
 
   it('marks exactly one rung per track as the one being climbed', () => {
