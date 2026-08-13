@@ -112,51 +112,44 @@ export function VoicePicker() {
         </div>
       </div>
 
+      {/* The old copy here told the user to go and download the good
+          voices. That advice is wrong on iOS, and worse, it is wrong in
+          a way that makes the app look broken to whoever has already
+          followed it: Safari is handed a fixed set of COMPACT system
+          voices, and the Enhanced and Premium downloads are simply not
+          published to web pages, however many of them are installed.
+          Native apps and Spoken Content get them. A browser does not. */}
       {onlyBasic && (
         <div className="rounded-xl border border-gold/30 bg-gold/8 px-3.5 py-2.5">
-          <p className="text-[12.5px] font-bold text-gold">Your phone only has the basic voices</p>
+          <p className="text-[12.5px] font-bold text-gold">These are the basic voices</p>
           <p className="mt-1 text-[11.5px] leading-snug text-gold/85">
-            That is the robotic one, and an app on the web can only use what the phone has
-            installed. The good ones are a free download, once:
-          </p>
-          <p className="mt-1.5 text-[11.5px] font-semibold leading-snug text-gold">
-            Settings → Accessibility → Spoken Content → Voices → English → pick a voice → download
-            the Enhanced or Premium version.
+            On an iPhone, a web app is only handed the basic cut of each voice. If you have already
+            downloaded the Enhanced or Premium versions, they are on your phone and working
+            everywhere else — Apple just does not hand them to the browser, so there is nothing to
+            fix on this screen.
           </p>
           <p className="mt-1.5 text-[11px] leading-snug text-gold/70">
-            Come back here after and it will show up in this list.
+            Recorded coach voices are coming, which is what solves this properly.
           </p>
         </div>
       )}
 
-      {/* Names the ones that are missing rather than leaving a short list
-          with no explanation. A web app can only speak with voices the
-          phone already has, and most of the shortlist is a download that
-          nobody knows exists — so an absent voice looks like a bug in
-          the app instead of an empty slot on the device. */}
+      {/* Names what the browser cannot see, without claiming to know why.
+          The app genuinely cannot tell "not installed" apart from
+          "installed and withheld from Safari" — both look like an absent
+          entry in getVoices() — so it says exactly that instead of
+          picking one and being wrong at the user. The earlier copy
+          picked "not installed", and told somebody who had downloaded
+          every one of them to go and download them. */}
       {missing.length > 0 && (
         <div className="rounded-xl bg-white/[0.04] px-3.5 py-2.5 ring-1 ring-white/[0.07]">
-          <p className="text-[12.5px] font-bold">
-            {missing.length === 1 ? '1 more voice' : `${missing.length} more voices`} you can add
-          </p>
+          <p className="text-[12.5px] font-bold">Not available to this browser</p>
           <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">
             <span className="font-semibold text-ink">{missing.join(', ')}</span>{' '}
-            {missing.length === 1 ? "isn't" : "aren't"} on this phone yet. Apple ships one basic
-            voice per accent and keeps the rest as a free download.
+            {missing.length === 1 ? "isn't" : "aren't"} being offered to the app. Either the voice
+            isn't installed, or it is and Apple keeps it for its own apps — a web page only ever
+            gets the basic cut, and it can't tell those two apart.
           </p>
-          {!onlyBasic && (
-            <p className="mt-1.5 text-[11.5px] font-semibold leading-snug text-ink">
-              Settings → Accessibility → Spoken Content → Voices → English
-            </p>
-          )}
-          <p className="mt-1.5 text-[11px] leading-snug text-ink-faint">
-            Download {missing.length === 1 ? 'it' : 'any of them'} and{' '}
-            {missing.length === 1 ? 'it appears' : 'they appear'} here automatically.
-          </p>
-          {/* Already downloaded them and still reading this? iOS keeps
-              the full list back until the speech engine has run once,
-              and a tap is a user gesture, which is when it is most
-              willing to hand it over. */}
           <button
             onClick={() => {
               primeVoiceList()
@@ -164,7 +157,7 @@ export function VoicePicker() {
             }}
             className="press mt-2 rounded-full bg-white/[0.07] px-3 py-1.5 text-[11px] font-bold text-ink"
           >
-            Already downloaded? Check again
+            Check again
           </button>
         </div>
       )}
