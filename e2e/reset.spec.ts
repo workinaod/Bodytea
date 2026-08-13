@@ -83,7 +83,7 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
 
   // Back in onboarding, told why, and told nothing was lost
   await expect(page.getByText('Your plan is being rebuilt.')).toBeVisible()
-  await expect(page.getByText(/Every session, meal, run and measurement you logged is untouched/)).toBeVisible()
+  await expect(page.getByText(/Everything you logged is safe/)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Rebuild my plan' })).toBeVisible()
 
   // Rebuild on a completely different goal

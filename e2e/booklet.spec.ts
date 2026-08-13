@@ -10,7 +10,7 @@ async function throughGoal(page: Page, entry: string, chip: string, statement: s
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText(chip).click()
-  await page.getByPlaceholder(/before my wedding/).fill(statement)
+  await page.locator('textarea').first().fill(statement)
 }
 
 test('bring your own routine: build week → notes → track it', async ({ page }) => {
@@ -21,7 +21,6 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   // Multi-select routine goals: muscle + athleticism together
   await throughGoal(page, 'I already have a routine', '💪 Gaining muscle', 'add 10 lb of lean muscle')
   await page.getByText('⚡ Gaining athleticism').click()
-  await page.getByRole('button', { name: 'Next: build my week' }).click()
   await page.getByRole('button', { name: 'Next: build my week' }).click()
 
   // Empty week fails validation with a clear message
@@ -62,6 +61,12 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await expect(page.getByText(/automatic deload/)).toBeVisible()
 
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+
+  // Bring-your-own-routine reaches the permissions screen too. It used
+  // to commit straight from the notes, which made it the one path never
+  // asked for notifications, motion or location at all.
+  await expect(page.getByRole('heading', { name: 'Last thing' })).toBeVisible()
+  await page.getByRole('button', { name: 'Skip' }).click()
 
   // Today runs THEIR routine
   await expect(page.getByText(/Week 1/).first()).toBeVisible()
