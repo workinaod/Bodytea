@@ -370,6 +370,42 @@ describe('the path as a thing on a screen', () => {
     for (let i = 1; i < body.length; i++) expect(body[i].target).toBeLessThan(body[i - 1].target)
   })
 
+  it('still walks a cut in the right direction when nothing has a date', () => {
+    // Ordering is by arrival, and everything past the horizon arrives
+    // at the same "never" — so on a track where no stage has an honest
+    // estimate, every one of them ties and the direction of travel is
+    // the ONLY thing left ordering them. Get that backwards and a
+    // dateless cut lists its furthest target first.
+    //
+    // Driven through orderPath directly because the tie is the whole
+    // point, and a fixture that produces four identical ETAs by
+    // accident would be testing the accident.
+    const stage = (target: number) =>
+      ({
+        id: `body:weightLb:-:${target * 10}`,
+        track: 'body' as const,
+        metric: 'weightLb' as const,
+        label: `${target} lb`,
+        detail: 'x',
+        target,
+        unit: 'lb',
+        state: 'ahead' as const,
+        progress: 0,
+        basis: 'none' as const,
+        descending: true,
+        etaWeeks: undefined,
+      })
+    const order = orderPath([stage(170), stage(195), stage(180), stage(190)])
+    expect(order.map((s) => s.target)).toEqual([195, 190, 180, 170])
+
+    // and the mirror image, so the flag is doing the work rather than
+    // the comparator happening to be reversed
+    const up = orderPath(
+      [225, 135, 185].map((t) => ({ ...stage(t), descending: false, track: 'strength' as const })),
+    )
+    expect(up.map((s) => s.target)).toEqual([135, 185, 225])
+  })
+
   it('marks exactly one stage per track as the one being climbed', () => {
     const d = base()
     const j = buildJourney(d, TODAY)
