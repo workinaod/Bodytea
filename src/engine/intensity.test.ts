@@ -164,6 +164,28 @@ describe('the research, replayed', () => {
     })
   }
 
+  it('gives a distance long before it will judge an intensity', () => {
+    // Laps in a garage: GPS sees nothing through four walls, so steps
+    // are the only evidence there is. 80 of them is not enough to call
+    // a session easy or all-out, but it is unambiguously some distance,
+    // and refusing to say so is what left the tracker reading 0.00 mi
+    // while somebody ran.
+    expect(stepDistanceMi('run', 80, 70)).not.toBeNull()
+    expect(stepDistanceMi('run', 80, 70) as number).toBeGreaterThan(0)
+    expect(classifyIntensity('run', 80, 5)).toBeNull()
+  })
+
+  it('still refuses a handful of stray steps', () => {
+    // A phone jostled in a bag is not a distance.
+    expect(stepDistanceMi('run', 5, 70)).toBeNull()
+  })
+
+  it('grows with every step taken', () => {
+    const a = stepDistanceMi('run', 100, 70) as number
+    const b = stepDistanceMi('run', 400, 70) as number
+    expect(b).toBeGreaterThan(a)
+  })
+
   it('turns basketball steps back into the distance the literature measured', () => {
     // 7,500 steps of full-court play should come back out as the
     // ~4.5 km per hour that tracking studies report, not as the 5.7 km

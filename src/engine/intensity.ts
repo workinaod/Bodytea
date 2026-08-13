@@ -53,6 +53,22 @@ export const MIN_MINUTES_TO_JUDGE = 5
  */
 export const MIN_STEPS_TO_JUDGE = 200
 
+/**
+ * Footfalls before steps may be turned into a DISTANCE.
+ *
+ * Much lower than MIN_STEPS_TO_JUDGE, because the two thresholds
+ * answer different questions. Judging intensity means deciding
+ * whether a whole session was easy or all-out, and 200 steps is the
+ * floor below which that verdict would be noise.
+ *
+ * Distance is not a verdict, it is arithmetic. Someone doing laps in
+ * a garage with the tracker open has already told the app they are
+ * moving; refusing to show them any distance until step 200 is how
+ * the readout sat at "0.00 mi" while they ran, and how a genuine
+ * session banked nothing at all.
+ */
+export const MIN_STEPS_FOR_DISTANCE = 20
+
 /** Feet per mile, so the stride math reads in one line. */
 const INCHES_PER_MILE = 63360
 
@@ -104,7 +120,7 @@ export function stepDistanceMi(
 ): number | null {
   const track = trackingFor(activityId)
   if (!track.steps || track.distance === 'none' || track.stride === undefined) return null
-  if (steps === undefined || steps < MIN_STEPS_TO_JUDGE) return null
+  if (steps === undefined || steps < MIN_STEPS_FOR_DISTANCE) return null
   const inches = steps * usableHeightIn(heightIn) * track.stride
   return Math.round((inches / INCHES_PER_MILE) * 100) / 100
 }

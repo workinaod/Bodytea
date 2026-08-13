@@ -148,14 +148,30 @@ export function RunTrackerSheet({
   }, [])
 
   const points = pointsRef.current
-  const distance = totalDistanceMi(points)
-  const pace = paceSecPerMi(distance, elapsed)
-  const mph = avgMph(distance, elapsed)
   const bodyweight = useAppStore(
     (st) => [...st.data.measurements].reverse().find((m) => m.weightLb !== undefined)?.weightLb ?? 175,
   )
   // Stride length scales with height, so indoor distance needs it.
   const heightIn = useAppStore((st) => st.data.profile.heightIn)
+
+  // Read straight off the counter. It lives in a ref, but the one-second
+  // clock below re-renders this component anyway, so the number on screen
+  // is never more than a second stale.
+  const liveSteps = countsSteps ? (stepsRef.current?.steps() ?? 0) : 0
+
+  // Distance, best evidence first — the SAME rule finish() banks by, so
+  // the live number and the saved one can never disagree.
+  //
+  // Four walls block GPS. Someone doing laps in a garage produces no
+  // fixes worth crediting, so distance stayed 0.00, pace stayed "--"
+  // and speed stayed 0 for the whole session while they ran. The
+  // pedometer saw every one of those steps the entire time.
+  const gpsMi = totalDistanceMi(points)
+  const stepMi = countsSteps ? stepDistanceMi(activity, liveSteps, heightIn) : null
+  const fromSteps = gpsMi < 0.05 && stepMi !== null && stepMi > 0
+  const distance = fromSteps ? (stepMi as number) : gpsMi
+  const pace = paceSecPerMi(distance, elapsed)
+  const mph = avgMph(distance, elapsed)
   // Recomputed on every fix, so climb, grade and calories move while
   // the session is running rather than appearing at the finish.
   const elev = useMemo(() => elevationStats(points), [points, points.length])
@@ -163,10 +179,12 @@ export function RunTrackerSheet({
   const liveKcal = estKcal(activity, distance, elapsed, bodyweight, elev.gainM)
   const label = activity === 'run' ? 'Run' : activity === 'bike' ? 'Ride' : activity === 'hike' ? 'Hike' : 'Walk'
 
-  // The map is a full-screen takeover, so its box is the viewport minus
-  // the fixed furniture: top bar, the stats band, and the finish button.
-  const mapW = Math.min(typeof window !== 'undefined' ? window.innerWidth : 390, 512) - 32
-  const mapH = Math.max(280, (typeof window !== 'undefined' ? window.innerHeight : 800) - 260)
+  // The map is the whole screen while recording. It used to be the
+  // viewport MINUS the furniture — a stats band and a button below it —
+  // which cost a third of the display and still left the clock pressed
+  // against the bottom edge. The furniture floats on top of it now.
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 390
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800
 
   const [scrapped, setScrapped] = useState(false)
   const [felt, setFelt] = useState<Intensity | undefined>(undefined)
@@ -199,10 +217,15 @@ export function RunTrackerSheet({
     // Each activity converts at its OWN stride: a hiking step over
     // uneven ground is not a walking step, and this used to hand both
     // of them the walking figure.
-    const stepMi = countsSteps ? stepDistanceMi(activity, steps, heightIn) : null
-    if (gpsMi < 0.05 && stepMi !== null && steps >= 50) {
+    // Same rule the live readout uses, so what was on screen for the
+    // whole session is what gets banked. The old `steps >= 50` gate
+    // here was a second, stricter threshold on top of the one inside
+    // stepDistanceMi, and between them a real indoor session could
+    // watch its distance climb and then save as 0.00 mi.
+    const finalStepMi = countsSteps ? stepDistanceMi(activity, steps, heightIn) : null
+    if (gpsMi < 0.05 && finalStepMi !== null && finalStepMi > 0) {
       log.steps = steps
-      log.distanceMi = stepMi
+      log.distanceMi = finalStepMi
       log.distanceSource = 'steps'
       log.avgPaceSec = log.distanceMi > 0 ? Math.round(elapsed / log.distanceMi) : 0
     } else {
@@ -226,16 +249,114 @@ export function RunTrackerSheet({
   // backdrop-blur makes it the containing block for fixed children.
   // Without this the full-screen tracker is trapped in the sheet.
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex flex-col overflow-y-auto bg-bg">
-      <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-4 pb-[max(env(safe-area-inset-bottom),16px)] pt-[max(env(safe-area-inset-top),14px)]">
-        {/* Top bar. While recording there is no title: the map is the screen. */}
-        <div className="flex shrink-0 items-center justify-between py-1">
-          <div className="eyebrow text-ink-dim">{phase === 'live' ? '' : `${label} tracker`}</div>
-          {phase !== 'live' && (
-            <button onClick={onClose} className="press rounded-full bg-white/[0.07] px-4 py-1.5 text-[12px] font-bold text-ink-dim">
-              {phase === 'done' ? '✕' : 'Cancel'}
+    <div className="fixed inset-0 z-[80] bg-bg">
+      {phase === 'live' && (
+        // Recording runs edge to edge: the map fills the screen and the
+        // numbers, zoom and finish button all float on top of it. This
+        // sits OUTSIDE the padded column below on purpose — inside it,
+        // the map could never reach the edges.
+        <div className="absolute inset-0">
+          <RouteMap points={points} live follow pannable flush zoom={zoom} width={vw} height={vh} />
+
+          {/* Zoom, held clear of the notch */}
+          <div className="absolute right-3 top-[max(env(safe-area-inset-top),14px)] flex flex-col overflow-hidden rounded-xl bg-black/55 ring-1 ring-white/15 backdrop-blur-sm">
+            <button
+              aria-label="Zoom in"
+              onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 1))}
+              className="press h-9 w-9 text-[18px] font-bold text-white/90"
+            >
+              +
             </button>
-          )}
+            <span aria-hidden className="h-px bg-white/15" />
+            <button
+              aria-label="Zoom out"
+              onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 1))}
+              className="press h-9 w-9 text-[18px] font-bold text-white/90"
+            >
+              −
+            </button>
+          </div>
+
+          {/* Everything else rides the bottom over a gradient dark enough
+              to hold white numerals against bright aerial imagery. */}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/85 to-transparent px-4 pb-[max(env(safe-area-inset-bottom),16px)] pt-14">
+            <div className="mx-auto w-full max-w-lg">
+              <div className="flex items-end justify-between gap-3 pb-2">
+                <div>
+                  <div className="num text-[46px] font-bold leading-none text-white">{fmtDuration(elapsed)}</div>
+                  <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-white/55">
+                    recording{liveKcal > 0 ? ` · ~${liveKcal} cal` : ''}
+                  </div>
+                </div>
+                <div className="flex gap-3.5 text-right">
+                  <div>
+                    <div className="num text-[24px] font-bold leading-none text-white">{distance.toFixed(2)}</div>
+                    {/* Says where the number came from. Indoors this is
+                        stride arithmetic, not a measured route, and the
+                        label is how the athlete can tell. */}
+                    <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-white/55">
+                      {fromSteps ? 'mi · steps' : 'mi'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="num text-[24px] font-bold leading-none text-white">
+                      {fmtPace(pace).replace('/mi', '')}
+                    </div>
+                    <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-white/55">pace</div>
+                  </div>
+                  <div>
+                    <div className="num text-[24px] font-bold leading-none text-white">{mph}</div>
+                    <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-white/55">mph</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Steps, climb and grade share one quiet line. Each appears
+                  only when the device is actually producing it. */}
+              {(countsSteps || elev.samples > 1) && (
+                <div className="flex items-center gap-4 pb-2.5 text-[10px] font-bold uppercase tracking-wider text-white/50">
+                  {countsSteps && (
+                    <span>
+                      <span className="num mr-1 text-[15px] text-white">{liveSteps.toLocaleString()}</span>steps
+                    </span>
+                  )}
+                  {elev.samples > 1 && (
+                    <>
+                      <span>
+                        <span className="num mr-1 text-[15px] text-white">{elev.gainFt.toLocaleString()}</span>ft climb
+                      </span>
+                      <span>
+                        <span className="num mr-1 text-[15px] text-white">
+                          {grade > 0 ? '+' : ''}
+                          {grade.toFixed(1)}
+                        </span>
+                        % grade
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <Btn kind="lime" className="w-full py-4 text-[15px]" onClick={finish}>
+                Finish {label.toLowerCase()}
+              </Btn>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Not rendered at all while recording. It is a full-height box, and
+          leaving it mounted over the map would put an invisible sheet
+          between the athlete's thumb and the thing they are trying to
+          pan. */}
+      {phase !== 'live' && (
+      <div className="mx-auto flex h-full w-full max-w-lg flex-col overflow-y-auto px-4 pb-[max(env(safe-area-inset-bottom),16px)] pt-[max(env(safe-area-inset-top),14px)]">
+        {/* Top bar */}
+        <div className="flex shrink-0 items-center justify-between py-1">
+          <div className="eyebrow text-ink-dim">{`${label} tracker`}</div>
+          <button onClick={onClose} className="press rounded-full bg-white/[0.07] px-4 py-1.5 text-[12px] font-bold text-ink-dim">
+            {phase === 'done' ? '✕' : 'Cancel'}
+          </button>
         </div>
 
         {phase === 'denied' && (
@@ -257,78 +378,6 @@ export function RunTrackerSheet({
               Locking onto GPS… step outside for a faster fix. Recording starts on the first fix.
             </p>
           </div>
-        )}
-
-        {phase === 'live' && (
-          <>
-            {/* The map IS the screen: it takes every pixel the layout can
-                spare, stays locked on the runner, and carries its own zoom. */}
-            <div className="relative min-h-0 flex-1">
-              <RouteMap points={points} live follow pannable zoom={zoom} width={mapW} height={mapH} />
-              <div className="absolute right-2 top-2 flex flex-col overflow-hidden rounded-xl bg-black/55 ring-1 ring-white/15 backdrop-blur-sm">
-                <button
-                  aria-label="Zoom in"
-                  onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 1))}
-                  className="press h-9 w-9 text-[18px] font-bold text-white/90"
-                >
-                  +
-                </button>
-                <span aria-hidden className="h-px bg-white/15" />
-                <button
-                  aria-label="Zoom out"
-                  onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 1))}
-                  className="press h-9 w-9 text-[18px] font-bold text-white/90"
-                >
-                  −
-                </button>
-              </div>
-            </div>
-            {/* One band of numbers, directly under the map */}
-            <div className="flex shrink-0 items-end justify-between gap-3 pb-3 pt-3">
-              <div>
-                <div className="num text-[46px] font-bold leading-none">{fmtDuration(elapsed)}</div>
-                <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-ink-faint">
-                  recording{liveKcal > 0 ? ` · ~${liveKcal} cal` : ''}
-                </div>
-              </div>
-              <div className="flex gap-3.5 text-right">
-                <div>
-                  <div className="num text-[24px] font-bold leading-none">{distance.toFixed(2)}</div>
-                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">mi</div>
-                </div>
-                <div>
-                  <div className="num text-[24px] font-bold leading-none">{fmtPace(pace).replace('/mi', '')}</div>
-                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">pace</div>
-                </div>
-                <div>
-                  <div className="num text-[24px] font-bold leading-none">{mph}</div>
-                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-ink-faint">mph</div>
-                </div>
-              </div>
-            </div>
-            {/* Climb sits on its own line rather than crowding into the
-                band above, and only once the phone has actually given a
-                usable altitude. A row reading "0 ft" for the whole of a
-                session indoors, or on a device whose GPS reports no
-                vertical at all, is worse than no row. */}
-            {elev.samples > 1 && (
-              <div className="flex shrink-0 items-center gap-4 pb-3 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
-                <span>
-                  <span className="num mr-1 text-[15px] text-ink">{elev.gainFt.toLocaleString()}</span>ft climb
-                </span>
-                <span>
-                  <span className="num mr-1 text-[15px] text-ink">
-                    {grade > 0 ? '+' : ''}
-                    {grade.toFixed(1)}
-                  </span>
-                  % grade
-                </span>
-              </div>
-            )}
-            <Btn kind="lime" className="w-full shrink-0 py-4 text-[15px]" onClick={finish}>
-              Finish {label.toLowerCase()}
-            </Btn>
-          </>
         )}
 
         {phase === 'done' && scrapped && (
@@ -437,6 +486,7 @@ export function RunTrackerSheet({
           </div>
         )}
       </div>
+      )}
     </div>,
     document.body,
   )

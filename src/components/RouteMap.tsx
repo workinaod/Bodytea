@@ -50,6 +50,7 @@ export function RouteMap({
   pannable = false,
   upTo,
   graded = false,
+  flush = false,
 }: {
   points: RunPoint[]
   height?: number
@@ -69,6 +70,8 @@ export function RouteMap({
   upTo?: number
   /** Colour the line by pace instead of drawing it one flat accent. */
   graded?: boolean
+  /** Drop the rounded corners and ring, for a map running edge to edge. */
+  flush?: boolean
 }) {
   // Drag offset in screen pixels. Non-zero means the user took over.
   const [pan, setPan] = useState<{ x: number; y: number } | null>(null)
@@ -220,7 +223,7 @@ export function RouteMap({
   return (
     <div
       ref={boxRef}
-      className="relative h-full overflow-hidden rounded-2xl bg-[#0b0d10] ring-1 ring-white/[0.07]"
+      className={`relative h-full overflow-hidden bg-[#0b0d10] ${flush ? '' : 'rounded-2xl ring-1 ring-white/[0.07]'}`}
       style={{ height, touchAction: pannable ? 'none' : undefined }}
     >
       {/* Satellite photography is bright and busy. Knocking it back
