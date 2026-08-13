@@ -58,12 +58,11 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   'types.ts': 663,
   // Real splits owed, in plan order.
   'screens/onboarding/Onboarding.tsx': 1095,
-  // +17, comment and prop-plumbing, for the day-type mismatch: the plan
-  // screen filed new meals under "training" whatever day it was, and the
-  // log sheet filters by the real day, so a saved meal could be
-  // unreachable at the moment you wanted to eat it. The rule itself went
-  // to logic/mealActions.ts where it could be tested.
-  'screens/meals/MealsScreen.tsx': 1037,
+  // screens/meals/MealsScreen.tsx came off this list. It was the second
+  // entry here and it is gone: the two alternate views and the five
+  // sheets moved to siblings, leaving a 244-line shell that keeps only
+  // its own Log view. No entry replaces it — the whole point of the list
+  // is that it gets shorter.
   // +20 for proteinContextFor: the protein target now depends on whether
   // the athlete is cutting, building or running, which is a decision the
   // generator is the right place to make and a table it is not.
