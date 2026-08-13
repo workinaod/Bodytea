@@ -55,7 +55,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // Activity shapes moved to activityTypes.ts, the logged-session shapes
   // to sessionTypes.ts, the engine's day output to resolvedTypes.ts; the
   // allowance follows each time.
-  'types.ts': 663,
+  // +11: the journey key on AppData, its emptyAppData entry, and the
+  // re-export of journeyTypes.ts — which is where the shapes actually
+  // live, same arrangement as the three above.
+  'types.ts': 674,
   // Real splits owed, in plan order.
   'screens/onboarding/Onboarding.tsx': 1095,
   // screens/meals/MealsScreen.tsx came off this list. It was the second
@@ -74,7 +77,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // follows it down each time: an oversized file that shrinks does not
   // keep the headroom.
   // +1: one name added to the mealActions re-export block.
-  'logic/actions.ts': 652,
+  // +11: two stampReachedRungs calls with the comments explaining why a
+  // reached rung is written down rather than re-derived, plus the import.
+  // The logic itself is in logic/journeyActions.ts.
+  'logic/actions.ts': 663,
   // Was 836. The how-to reader and the rest screen both moved out, and
   // the allowance follows it down: an oversized file that shrinks does
   // not get to keep the headroom it earned.
@@ -86,7 +92,9 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // Migrations only ever accumulate: every schema bump adds a step that
   // can never be deleted while any device might still hold the old shape.
   // This one is the +21 for v19 → v20, the calorie-floor repair.
-  'store/schema.ts': 640,
+  // +6: the journey key, defaulted like `adapt` so an old envelope
+  // parses with an empty ladder and needs no migration.
+  'store/schema.ts': 646,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,

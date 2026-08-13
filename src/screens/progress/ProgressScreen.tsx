@@ -24,6 +24,7 @@ import { WeeklyRecap } from './WeeklyRecap'
 import { TrophyCase } from './TrophyCase'
 import { BoardContent } from '../board/BoardScreen'
 import { ActivityLog } from './ActivityLog'
+import { GoalTimeline } from './GoalTimeline'
 
 function usePhotoUrl(id: string | undefined): string | null {
   const [url, setUrl] = useState<string | null>(null)
@@ -200,6 +201,14 @@ export function ProgressScreen() {
           <div className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">check-ins</div>
         </Card>
       </div>
+
+      {/* The climb.
+          Directly under the three counters, because those say what has
+          happened and this says where it is going — and "am I getting
+          anywhere" is the question the whole screen exists to answer.
+          Above the heatmap, which is the same question at one week's
+          resolution. */}
+      <GoalTimeline data={data} today={today} onAnchor={() => setCheckinOpen(true)} />
 
       {/* Adherence heatmap */}
       <SectionTitle

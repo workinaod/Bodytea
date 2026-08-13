@@ -312,6 +312,10 @@ export interface WeekState {
 import type { CardioEntry, RunLog } from './activityTypes'
 export * from './activityTypes'
 
+// Moved to journeyTypes.ts, same reason as the three above.
+import { emptyJourney, type JourneyState } from './journeyTypes'
+export * from './journeyTypes'
+
 // ---------- Meals ----------
 
 export type MealEntrySource = 'chip' | 'mealTemplate' | 'custom' | 'recent'
@@ -574,6 +578,12 @@ export interface AppData {
   adapt: Record<ISODate, AdaptChoice[]>
   /** GPS-tracked runs & rides, newest last. */
   runs: RunLog[]
+  /**
+   * Rungs reached on the way to the goal, and the day each was first
+   * reached. The only persisted part of the journey — everything else
+   * it renders is derived. See journeyTypes.ts for why this one is not.
+   */
+  journey: JourneyState
 }
 
 export const SCHEMA_VERSION = 20
@@ -645,6 +655,7 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, pla
     dayLoad: {},
     adapt: {},
     runs: [],
+    journey: emptyJourney(),
   }
 }
 

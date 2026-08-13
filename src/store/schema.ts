@@ -257,6 +257,12 @@ const appDataSchema = z.object({
   dayLoad: z.record(z.string(), z.literal('trimmed')),
   adapt: z.record(z.string(), z.array(z.enum(['hold-load', 'reduce-volume']))).default({}),
   runs: z.array(runLogSchema),
+  // Defaulted for the same reason `adapt` is: an envelope written before
+  // this key existed parses cleanly and starts with an empty ladder, so
+  // there is no migration and no SCHEMA_VERSION bump. Nothing is lost
+  // either way — an unstamped rung the athlete has genuinely reached
+  // gets re-derived from the history on the next render and re-stamped.
+  journey: z.object({ hits: z.record(z.string(), z.string()) }).default({ hits: {} }),
 })
 
 export const envelopeSchema = z.object({
