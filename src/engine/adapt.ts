@@ -4,6 +4,7 @@ import { addDaysISO, daysBetween, mondayOf } from './calendar'
 import { loggedSessions } from './activityLog'
 import { EXERCISE_EQUIP, canDo } from '../plan/equip'
 import { MOVEMENT, sessionFatigue, substitutesFor, type Joint } from '../plan/movement'
+import { blockedIds, limitedJoints } from '../prefsTypes'
 
 // ============================================================
 // What changed, and what should happen next because of it.
@@ -255,6 +256,17 @@ export interface AdaptContext {
    * session nobody agreed to.
    */
   alreadyCutForSleep?: boolean
+  /** Movements the athlete has said they will not do. */
+  blocked?: Set<string>
+  /**
+   * Joints from stated limitations, which do NOT expire.
+   *
+   * The pain signals beside them are inferred from a rolling 14-day
+   * window, so the only way to keep the plan off a bad shoulder was to
+   * keep hurting it at least once a fortnight. A limitation somebody
+   * typed in stays until they take it out.
+   */
+  limited?: Joint[]
 }
 
 const can = (owned: Set<EquipTag>) => (id: string) => canDo(id, owned)
@@ -269,12 +281,30 @@ export function planAdjustments(
 ): Adjustment[] {
   const out: Adjustment[] = []
   const painJoints = ctx.signals.filter((s) => s.kind === 'joint-pain').flatMap((s) => s.joints ?? [])
-  const avoid = [...new Set(painJoints)]
+  const avoid = [...new Set([...painJoints, ...(ctx.limited ?? [])])]
   /** Flagged joints that no substitute can spare, gathered so the athlete hears it once. */
   const unroutable = new Map<Joint, string[]>()
 
   for (const ex of exercises) {
     const meta = MOVEMENT[ex.exerciseId]
+
+    // 0. AUTOMATIC: they have told us they will not do this one. Asking
+    //    again is the app forgetting, and being asked to re-answer a
+    //    question you already answered is how software stops feeling like
+    //    it is on your side.
+    if (ctx.blocked?.has(ex.exerciseId)) {
+      const sub = substitutesFor(ex.exerciseId, { can: can(ctx.owned), avoid })[0]
+      if (sub) {
+        out.push({
+          kind: 'substitute',
+          automatic: true,
+          exerciseId: ex.exerciseId,
+          toExerciseId: sub,
+          because: 'You told me to keep this one out, so this covers the same pattern instead.',
+        })
+      }
+      continue
+    }
 
     // 1. AUTOMATIC: the equipment is not in the room. A session the
     //    athlete cannot physically perform is not a prompt, it is a bug.
@@ -498,6 +528,8 @@ export function adaptSession(
     owned,
     signals: readSignals(data, dateISO),
     alreadyCutForSleep: twoConsecutiveBadNightsBefore(data, dateISO),
+    blocked: blockedIds(data.prefs),
+    limited: limitedJoints(data.prefs) as Joint[],
   }).filter((a) => a.automatic)
   if (automatic.length > 0) {
     out = applyAutomatic(out, automatic, nameOf)

@@ -22,7 +22,7 @@ import {
   lighterCombinedPull,
 } from './transforms'
 import { phaseFor, phaseNote } from './phase'
-import { trimForVolume, type VolumeCut } from './volume'
+import { trimToFit, type VolumeCut } from './volume'
 import { capAccessorySets, orderSession } from './sequence'
 import { parseRepRange, repLabel } from './reps'
 import { EXERCISES, getExercise } from '../plan/exercises'
@@ -456,7 +456,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   // app shows is a day worth doing, for the preset and for generated
   // plans alike. Cardio is appended after this on purpose: a run is not
   // lifting volume.
-  const capped = trimForVolume(exercises)
+  const capped = trimToFit(exercises, 0, data.prefs.sessionMinutes)
   if (capped.cuts.length > 0) {
     exercises = capped.exercises
     const gone = capped.cuts.filter((c: VolumeCut) => c.to === 0)

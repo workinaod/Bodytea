@@ -51,7 +51,7 @@ export function phaseIndexFor(weekIndex: number): number {
   return Math.floor((Math.max(1, weekIndex) - 1) / PHASE_WEEKS) + 1
 }
 
-export type AnchorOutcome = 'promoted' | 'stalled' | 'untested' | 'topped-out'
+export type AnchorOutcome = 'promoted' | 'stalled' | 'untested' | 'topped-out' | 'pinned'
 
 export interface AnchorVerdict {
   slot: SlotId
@@ -134,6 +134,13 @@ export function anchorVerdicts(
     for (let p = 1; p < phaseIndex; p++) {
       const from = weekStartISO((p - 1) * PHASE_WEEKS + 1)
       const to = weekStartISO(p * PHASE_WEEKS + 1)
+      // Pinned means pinned. Somebody training for a competition lift, or
+      // just attached to the one movement they trust, does not want the
+      // app deciding they have earned a different one.
+      if (data.prefs.pinned.includes(current)) {
+        outcome = 'pinned'
+        continue
+      }
       const judged = verdictFor(data, current, from, to)
       if (judged !== 'earned') {
         outcome = judged

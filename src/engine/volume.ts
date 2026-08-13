@@ -1,6 +1,7 @@
 import type { ExerciseKind, ResolvedExercise } from '../types'
 import type { MuscleRegion } from '../plan/muscleRegions'
 import { EXERCISE_MUSCLES } from '../plan/muscles'
+import { estimateMinutes } from './focus'
 
 // ============================================================
 // Session volume, counted per MUSCLE instead of per exercise.
@@ -393,4 +394,34 @@ export function weightDropped(sets: { weightLb?: number; done: boolean }[]): boo
   const loaded = sets.filter((s) => s.done && s.weightLb !== undefined)
   if (loaded.length < 2) return false
   return loaded[loaded.length - 1].weightLb! < loaded[0].weightLb!
+}
+
+/** How much further the ceiling may be lowered chasing a time budget. */
+export const MAX_TIME_SLACK = 6
+
+/**
+ * The volume cut, and then as much again as it takes to fit the time the
+ * athlete actually has.
+ *
+ * There was no time budget at all before this. The app's only answer to
+ * "I have forty minutes" was a sheet offering to end the session early,
+ * which is not a plan for forty minutes, it is an abandoned plan for
+ * ninety. A stated budget shortens the day before it starts.
+ *
+ * Reuses the volume trim rather than inventing a second way to cut,
+ * because there should be exactly one set of rules about what a day can
+ * afford to lose. Lowering the ceiling is how this file already says
+ * "today has less room than usual".
+ */
+export function trimToFit(
+  exercises: ResolvedExercise[],
+  slack = 0,
+  budgetMin?: number,
+): TrimResult {
+  let result = trimForVolume(exercises, slack)
+  if (!budgetMin || budgetMin <= 0) return result
+  for (let extra = 1; extra <= MAX_TIME_SLACK && estimateMinutes(result.exercises) > budgetMin; extra++) {
+    result = trimForVolume(exercises, slack + extra)
+  }
+  return result
 }

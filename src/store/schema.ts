@@ -13,6 +13,7 @@ import { addDaysISO } from '../engine/calendar'
 import { isoDate, weekday } from './primitives'
 // Session and activity shapes live beside the types they mirror.
 import { sessionSchema } from './sessionSchema'
+import { prefsSchema } from './prefsSchema'
 import { cardioEntrySchema, runLogSchema } from './activitySchema'
 
 const settingsSchema = z.object({
@@ -263,6 +264,7 @@ const appDataSchema = z.object({
   // either way — an unstamped stage the athlete has genuinely reached
   // gets re-derived from the history on the next render and re-stamped.
   journey: z.object({ hits: z.record(z.string(), z.string()) }).default({ hits: {} }),
+  prefs: prefsSchema,
 })
 
 export const envelopeSchema = z.object({

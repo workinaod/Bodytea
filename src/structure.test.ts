@@ -58,7 +58,12 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // +11 for the journey key and the re-export of journeyTypes.ts, then
   // +23 for the places somebody can train (track, trail, pool, bike)
   // and FoodLimits, which is what dairy-free and allergies are.
-  'types.ts': 697,
+  // +6 for the prefs key and the re-export of prefsTypes.ts, the same
+  // arrangement and the same cost as the journey key above: what the
+  // athlete has told the app about themselves (movements they will not
+  // do, lifts to leave alone, injuries that do not expire on their own)
+  // is persisted state, and the shapes live in their own file.
+  'types.ts': 704,
   // screens/onboarding/Onboarding.tsx came off this list too, which
   // empties the "real splits owed" section entirely. The chip tables and
   // the one goal heuristic went to onboardingData.ts, the goal step, the
@@ -98,7 +103,9 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // This one is the +21 for v19 → v20, the calorie-floor repair.
   // +6: the journey key, defaulted like `adapt` so an old envelope
   // parses with an empty ladder and needs no migration.
-  'store/schema.ts': 646,
+  // +1: the prefs key. Its shapes went to store/prefsSchema.ts, beside
+  // the types they mirror, so what lands here is the field and its import.
+  'store/schema.ts': 648,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,

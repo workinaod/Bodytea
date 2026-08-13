@@ -77,3 +77,31 @@ export function focusProgress(session: SessionLog): { done: number; total: numbe
   const done = q.filter((i) => session.exercises[i.exIdx].sets[i.setIdx].done).length
   return { done, total: q.length }
 }
+
+/**
+ * Roughly how long a day will take, in minutes: the work plus the rest
+ * it owes between sets.
+ *
+ * Rough on purpose. Nobody needs this accurate to the minute, and a
+ * number pretending to be would be worse: it only has to be good enough
+ * to answer "will this fit in the forty minutes I actually have".
+ *
+ * The rest side is the same setRestSec the break screen counts down, so
+ * the estimate and the session cannot drift apart.
+ */
+export function estimateMinutes(
+  exercises: { exerciseId: string; sets: number; repsNum?: number; repText: string }[],
+): number {
+  let sec = 0
+  exercises.forEach((e, i) => {
+    const def = getExercise(e.exerciseId)
+    const timed = /(\d+)\s*(sec|min)/.exec(e.repText)
+    const work = timed
+      ? Number(timed[1]) * (timed[2] === 'min' ? 60 : 1)
+      : Math.max(30, (e.repsNum ?? 10) * 4)
+    const rest = setRestSec(def, e.repsNum, true)
+    // Every set costs its work; every set but the day's last also rests.
+    sec += e.sets * work + Math.max(0, e.sets - (i === exercises.length - 1 ? 1 : 0)) * rest
+  })
+  return Math.round(sec / 60)
+}

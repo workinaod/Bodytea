@@ -339,6 +339,10 @@ export * from './activityTypes'
 import { emptyJourney, type JourneyState } from './journeyTypes'
 export * from './journeyTypes'
 
+// Moved to prefsTypes.ts, same reason again.
+import { emptyPrefs, type Prefs } from './prefsTypes'
+export * from './prefsTypes'
+
 // ---------- Meals ----------
 
 export type MealEntrySource = 'chip' | 'mealTemplate' | 'custom' | 'recent'
@@ -607,6 +611,8 @@ export interface AppData {
    * it renders is derived. See journeyTypes.ts for why this one is not.
    */
   journey: JourneyState
+  /** What the athlete has said about themselves, and expects remembered. */
+  prefs: Prefs
 }
 
 export const SCHEMA_VERSION = 20
@@ -679,6 +685,7 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, pla
     adapt: {},
     runs: [],
     journey: emptyJourney(),
+    prefs: emptyPrefs(),
   }
 }
 
