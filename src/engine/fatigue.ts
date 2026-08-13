@@ -1,7 +1,7 @@
 import type { AppData, FatigueNote, FatigueReason, ISODate, SessionLog } from '../types'
 import type { MuscleRegion } from '../plan/muscleRegions'
 import { musclesFor } from '../plan/muscles'
-import { daysBetween } from './calendar'
+import { addDaysISO, daysBetween } from './calendar'
 
 // ============================================================
 // What "I can't finish this" means, and what to do about it.
@@ -140,9 +140,31 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)
  * pain outranks fatigue, and an exercise problem outranks a
  * whole-region volume problem, because it is the cheaper fix.
  */
+/** Sessions inside the window where a movement finished under its ask. */
+function shortfallsInWindow(data: AppData, today: ISODate): Map<string, number> {
+  const from = addDaysISO(today, -RECENT_DAYS)
+  const out = new Map<string, number>()
+  for (const s of Object.values(data.sessions)) {
+    if (s.date < from || s.date >= today || s.status === 'skipped') continue
+    for (const log of s.exercises) {
+      const short = log.sets.some((set) => {
+        if (set.achieved === undefined) return false
+        const asked = Number((set.targetReps.match(/^\d+/) ?? [])[0])
+        return Number.isFinite(asked) && asked - set.achieved >= 2
+      })
+      if (short) out.set(log.exerciseId, (out.get(log.exerciseId) ?? 0) + 1)
+    }
+  }
+  return out
+}
+
+/** Sessions a movement must come up short in before the load is questioned. */
+export const SHORT_SESSIONS_TO_ACT = 3
+
 export function nextSessionSuggestions(data: AppData, today: ISODate): FatigueSuggestion[] {
   const notes = notesInWindow(data, today)
-  if (notes.length === 0) return []
+  const shortfalls = shortfallsInWindow(data, today)
+  if (notes.length === 0 && shortfalls.size === 0) return []
 
   const byExercise = new Map<string, FatigueNote[]>()
   for (const n of notes) {
@@ -183,6 +205,29 @@ export function nextSessionSuggestions(data: AppData, today: ISODate): FatigueSu
         because: `You ran out on this ${gaveOut.length} times in the last ${RECENT_DAYS} days.`,
       })
     }
+  }
+
+  // 2b. The same story told by the log rather than by a tap.
+  //
+  //     Sections 1 and 2 only ever hear from the can't-finish sheet, so
+  //     the only athlete this engine learned from was one who stopped
+  //     mid-set and answered a question. Somebody who quietly grinds out
+  //     five of the eight, week after week, was invisible to it: the
+  //     shortfall reached the load engine inside the session and then
+  //     went nowhere.
+  //
+  //     Sets that came up short are the same evidence, already on disk.
+  for (const [exerciseId, count] of shortfallsInWindow(data, today)) {
+    if (spokenFor.has(exerciseId)) continue
+    if (count < SHORT_SESSIONS_TO_ACT) continue
+    spokenFor.add(exerciseId)
+    out.push({
+      kind: 'start-lighter',
+      exerciseId,
+      regions: regionsFor(exerciseId),
+      count,
+      because: `You came up short on this in ${count} of the last ${RECENT_DAYS} days.`,
+    })
   }
 
   // 3. A whole region keeps showing up across DIFFERENT movements.

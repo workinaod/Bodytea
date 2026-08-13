@@ -483,7 +483,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
       const def = getExercise(id)
       return { name: def.name, kind: def.kind, restSec: def.restSec }
     })
-    exercises = adapted.exercises
+    // Re-sequenced: a substitute inherits a slot it may not belong in.
+    exercises = orderSession(adapted.exercises)
     adapted.notes.forEach((text, i) => banners.push({ id: `adapted-${i}`, text, tone: 'info' }))
   }
 

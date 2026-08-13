@@ -72,7 +72,7 @@ export function prefillFor(
   date: ISODate,
   exerciseId: string,
   opts: { repRange?: RepRange; lightMode?: boolean } = {},
-): { weightLb?: number; reps?: number } {
+): { weightLb?: number; reps?: number; softened?: boolean } {
   const data = store().data
   // The rep engine owns both load signals, because both are decided by
   // the same walk through history: the wrap that earns more weight, and
@@ -99,8 +99,21 @@ export function prefillFor(
   const failing = nextSessionSuggestions(data, date).some(
     (s) => s.kind === 'start-lighter' && s.exerciseId === exerciseId,
   )
-  /** Light day first, then a movement with a pattern of dying. Never both. */
-  const soften = (w: number) => (opts.lightMode ? lightLoad(w) : failing ? dropTo(w) : w)
+  /**
+   * Light day first, then a movement with a pattern of dying. Never both,
+   * and never below a single load step.
+   *
+   * The floor is not decoration. Softening reads a baseline and returns a
+   * smaller number, so without one it composes with itself every time the
+   * pattern persists, and a movement somebody keeps failing walks to zero
+   * while still being prescribed. A weight of nothing is not a lighter
+   * prescription, it is the absence of one.
+   */
+  const softened = opts.lightMode === true || failing
+  const soften = (w: number) => {
+    const out = opts.lightMode ? lightLoad(w) : failing ? dropTo(w) : w
+    return Math.max(out, Math.min(w, loadStepLb(exerciseId)))
+  }
 
   const sessions = Object.values(data.sessions)
     .filter((s) => s.date < date && s.status !== 'skipped')
@@ -141,7 +154,11 @@ export function prefillFor(
       best.weightLb !== undefined
         ? Math.max(floor, best.weightLb + bump + wrapStep + backOff + staleGiveBack)
         : undefined
-    return { weightLb: w !== undefined ? soften(w) : undefined, reps: best.achieved ?? best.reps }
+    return {
+      weightLb: w !== undefined ? soften(w) : undefined,
+      reps: best.achieved ?? best.reps,
+      softened,
+    }
   }
   // No history yet: seed from bodyweight + training background so day one
   // never opens on an empty stepper. From here the feel check-in takes over.
@@ -154,7 +171,7 @@ export function prefillFor(
   }
   const seeded = suggestedStartWeight(getExercise(exerciseId), bw ?? 175, data.plan.experience ?? 'returning')
   if (seeded === null) return {}
-  return { weightLb: soften(seeded) }
+  return { weightLb: soften(seeded), softened }
 }
 
 /**

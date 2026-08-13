@@ -3,6 +3,7 @@ import { emptyAppData, type AppData, type SessionLog } from '../types'
 import type { SetLog } from '../sessionTypes'
 import { addDaysISO } from './calendar'
 import { repStepFor, STALE_DAYS } from './reps'
+import { nextSessionSuggestions, SHORT_SESSIONS_TO_ACT } from './fatigue'
 
 // ============================================================
 // The progression that stopped progressing.
@@ -203,6 +204,27 @@ describe('time away', () => {
     expect(after(90)).toBe(3)
     // Two years off is not twenty-six steps back.
     expect(after(730)).toBe(3)
+  })
+})
+
+describe('a shortfall the athlete never taps a button about', () => {
+  it('eventually tells the next session to start lighter', () => {
+    // The between-session engine only ever heard from the can't-finish
+    // sheet, so somebody who quietly grinds out five of the eight, week
+    // after week, was invisible to it. The shortfall reached the load
+    // engine inside the session and then went nowhere.
+    const d = fresh()
+    for (let i = 0; i < SHORT_SESSIONS_TO_ACT; i++) {
+      logged(d, addDaysISO(START, i * 3), 'goblet-squat', { target: 10, weightLb: 100, achieved: 6 })
+    }
+    const said = nextSessionSuggestions(d, addDaysISO(START, SHORT_SESSIONS_TO_ACT * 3 + 1))
+    expect(said.some((s) => s.kind === 'start-lighter' && s.exerciseId === 'goblet-squat')).toBe(true)
+  })
+
+  it('does not act on one bad day', () => {
+    const d = fresh()
+    logged(d, START, 'goblet-squat', { target: 10, weightLb: 100, achieved: 6 })
+    expect(nextSessionSuggestions(d, addDaysISO(START, 2))).toEqual([])
   })
 })
 

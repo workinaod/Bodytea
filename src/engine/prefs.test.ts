@@ -5,6 +5,7 @@ import { resolveDay } from './resolveDay'
 import { estimateMinutes } from './focus'
 import { phaseFor, PHASE_WEEKS } from './phase'
 import { planAdjustments, readSignals } from './adapt'
+import { isMisordered } from './sequence'
 import { limitedJoints } from '../prefsTypes'
 import { envelopeSchema } from '../store/schema'
 
@@ -71,6 +72,25 @@ describe('a movement they said to keep out', () => {
     const now = day(d)
     expect(was).toBeTruthy()
     expect(now?.exercises.some((e) => e.swappedFrom === 'romanian-deadlift')).toBe(true)
+  })
+})
+
+describe('a substitute landing in the right place', () => {
+  it('is re-sequenced, not left in the slot of the movement it replaced', () => {
+    // A blocked primary squat is swapped for a secondary one, and the
+    // secondary inherited the primary's opening position: a whole day of
+    // lifting led by a hack squat with two primaries queued behind it,
+    // every session, because the substitution ran after the sort.
+    const d = data()
+    d.prefs.blocked = [{ exerciseId: 'goblet-squat', reason: 'dislike', since: START }]
+    for (let i = 0; i < 28; i++) {
+      const r = resolveDay(addDaysISO(START, i), d)
+      if (r.kind !== 'session') continue
+      expect(
+        isMisordered(r.exercises),
+        `${r.date}: ${r.exercises.map((e) => e.exerciseId).join(' > ')}`,
+      ).toBe(false)
+    }
   })
 })
 

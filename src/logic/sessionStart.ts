@@ -74,9 +74,17 @@ export function startSession(
               ? Number((r.repText.match(/^\d+/) ?? [])[0]) || r.repsNum
               : pre.reps,
           done: false,
-          // Mark the day the plan made lighter, so next week's baseline
-          // knows this weight was the rule's choice and not the athlete's.
-          ...(r.lightMode ? { light: true } : {}),
+          // Mark every weight the plan chose rather than the athlete, so
+          // next week's baseline does not read it back as what they can do.
+          //
+          // Both doors matter. The obvious one is a deload or a readiness
+          // cut. The other is a movement flagged as repeatedly failing:
+          // that softening reads the baseline and returns a smaller
+          // number, so if the smaller number is then logged as an ordinary
+          // working set it becomes the next baseline and softens again.
+          // Twenty simulated weeks walked a barbell row from 130 lb to 5
+          // that way, one honest bad set at a time.
+          ...(r.lightMode || pre.softened ? { light: true } : {}),
         })),
       }
     }),

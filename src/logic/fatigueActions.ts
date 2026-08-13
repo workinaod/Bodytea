@@ -133,6 +133,22 @@ export function applySetFeedback(
   if (!isAutomatic(res.kind) || res.weightLb === undefined) return res
   const from = log.sets[setIdx].weightLb
   setWeightForward(date, exIdx, setIdx + 1, res.weightLb)
+  // Marked, for the same reason a deload day is marked: this weight was
+  // the rule's choice and not the athlete's, so it must not become next
+  // week's working weight.
+  //
+  // Without this the drop ratchets. Each shortfall writes a lighter
+  // number into the log, prefillFor reads the log to find the baseline,
+  // and the baseline is now the lighter number. Twenty simulated weeks
+  // took an overhead press from 90 lb to 5 and an incline press to
+  // nothing at all, one honest bad set at a time. That is the exact
+  // spiral this file's neighbours already guard against, arriving
+  // through a door nobody had shut.
+  store().update((d) => {
+    const sets = d.sessions[date]?.exercises[exIdx]?.sets
+    if (!sets) return
+    for (let i = setIdx + 1; i < sets.length; i++) sets[i].light = true
+  })
   return { ...res, from }
 }
 

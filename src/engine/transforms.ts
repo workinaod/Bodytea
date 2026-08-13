@@ -18,6 +18,9 @@ import { overloadedRegions } from './volume'
 // 1 set / 1 rep so a day never scales to zero.
 // ============================================================
 
+/** Only the day's main work can carry the extra set. */
+const ROLE_RAMP_RANK: Record<string, number> = { primary: 0, secondary: 1 }
+
 const EXPLOSIVE = new Set(['sprint', 'jump'])
 const UNTOUCHED_BY_DELOAD = new Set(['mobility', 'cardio', 'warmup'])
 
@@ -136,8 +139,16 @@ export function applyWeekRamp(
   weekInBlock: 1 | 2 | 3 | 4,
 ): ResolvedExercise[] {
   if (weekInBlock !== 3) return exercises
-  const lead = exercises.findIndex((e) => e.kind === 'lift' && MOVEMENT[e.exerciseId]?.role === 'primary')
-  if (lead < 0) return exercises
+  // The day's most important lift, which is not always a `primary` one.
+  // Requiring that role meant nobody training at home or off a pair of
+  // dumbbells ever got a build week: their best available squat, press
+  // and row are all classified secondary, so the ramp silently skipped
+  // half the people using the app. Whatever leads the day is what the
+  // day is built around.
+  const rank = (e: ResolvedExercise) => ROLE_RAMP_RANK[MOVEMENT[e.exerciseId]?.role ?? 'accessory'] ?? 9
+  const lifts = exercises.map((e, i) => ({ e, i })).filter((x) => x.e.kind === 'lift' && rank(x.e) <= 1)
+  if (lifts.length === 0) return exercises
+  const lead = lifts.reduce((a, b) => (rank(a.e) <= rank(b.e) ? a : b)).i
   const ramped = exercises.map((e, i) => (i === lead ? { ...e, sets: e.sets + 1 } : e))
   // Only onto a day with room for it. The volume ceiling runs after this
   // and cannot take the set back, because it refuses to cut the opening

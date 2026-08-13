@@ -239,3 +239,81 @@ describe('an accepted "hold the load"', () => {
     expect(withHistory(true).weightLb).toBe(50)
   })
 })
+
+// ============================================================
+// The other direction, found by simulating twenty people for
+// twenty weeks rather than by reading the code.
+//
+// Every reducer in here reads a baseline out of the log and
+// returns a smaller number. Write that smaller number back into
+// the log as an ordinary working set and it becomes the next
+// baseline, which gets reduced again. Nothing in a single session
+// looks wrong; the shape only appears over months.
+//
+// It walked an overhead press from 90 lb to 5 and a barbell row
+// from 130 to nothing, one honest bad set at a time, for an
+// athlete who kept turning up. Which is the same failure the
+// comments above already swore off, arriving through a door
+// nobody had shut.
+// ============================================================
+
+describe('a run of hard weeks', () => {
+  /** Someone who trains every week and misses the target on every set. */
+  function grind(weeks: number): number[] {
+    const d = emptyAppData('2026-01-05', '2026-01-05')
+    d.settings.onboarded = true
+    useAppStore.setState({ data: d })
+    const seen: number[] = []
+    let weight = 100
+    for (let w = 0; w < weeks; w++) {
+      const date = `2026-01-${String(5 + w * 7).padStart(2, '0')}`
+      if (w > 0) {
+        const pre = prefillFor(date, PRESS, { repRange: { low: 8, high: 12 } })
+        weight = pre.weightLb ?? weight
+        seen.push(weight)
+      }
+      useAppStore.getState().update((s) => {
+        s.sessions[date] = {
+          date,
+          templateId: 'monday',
+          status: 'completed',
+          exercises: [
+            {
+              exerciseId: PRESS,
+              sets: [0, 1, 2].map(() => ({
+                targetReps: '10',
+                weightLb: weight,
+                reps: 10,
+                achieved: 6, // short, every set, every week
+                done: true,
+              })),
+            },
+          ],
+        } as SessionLog
+      })
+    }
+    return seen
+  }
+
+  it('never walks the working weight down to nothing', () => {
+    const seen = grind(12)
+    expect(Math.min(...seen), `weights were ${seen.join(', ')}`).toBeGreaterThan(0)
+  })
+
+  it('stays in a band instead of compounding downwards', () => {
+    // A back-off is allowed, and so is a run of them. What is not allowed
+    // is each one being taken off the last one's output forever. Four
+    // months of missing every set should find a floor and sit near it,
+    // not converge on nothing.
+    const seen = grind(16)
+    expect(Math.min(...seen), `weights were ${seen.join(', ')}`).toBeGreaterThanOrEqual(25)
+  })
+
+  it('can still recover, so the floor is not a trap', () => {
+    // The series has to go up somewhere. A number that only ever falls is
+    // the spiral wearing a floor.
+    const seen = grind(16)
+    const rose = seen.some((w, i) => i > 0 && w > seen[i - 1])
+    expect(rose, `weights were ${seen.join(', ')}`).toBe(true)
+  })
+})

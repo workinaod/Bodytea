@@ -85,6 +85,22 @@ describe('the week ramp', () => {
     if (out !== day) expect(overloadedRegions(out)).toEqual([])
   })
 
+  it('reaches a day whose best lift is only a secondary one', () => {
+    // Home and minimal plans have no primary-role movement at all: their
+    // best available squat, press and row are all secondary. Requiring
+    // `primary` meant the build week silently skipped everyone training
+    // off a pair of dumbbells.
+    const day = [ex('split-squat', 3), ex('push-up', 3), ex('glute-bridge', 3, '10')]
+    const out = applyWeekRamp(day, 3)
+    expect(out).not.toBe(day)
+    expect(out.reduce((n, e) => n + e.sets, 0)).toBe(day.reduce((n, e) => n + e.sets, 0) + 1)
+  })
+
+  it('still refuses to hand the set to an accessory', () => {
+    const day = [ex('lateral-raise', 3, '15'), ex('ez-bar-curl', 3, '12')]
+    expect(applyWeekRamp(day, 3)).toBe(day)
+  })
+
   it('leaves a day with no main lift alone', () => {
     const day = [ex('lateral-raise', 3, '15'), ex('plank-side-plank', 3, '30 sec', 'core')]
     expect(applyWeekRamp(day, 3)).toBe(day)
