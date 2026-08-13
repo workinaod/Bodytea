@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import type { Goal } from '../../types'
 import { buildFollowups, type GoalFollowup } from '../../plan/followups'
-import { Btn, Chip } from '../../components/ui'
+import { Btn, ChoiceChip } from '../../components/ui'
 
 // ============================================================
 // The coach's questions, on their own screen.
@@ -58,9 +58,9 @@ function Question({
       ) : (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {(fq.options ?? []).map((o) => (
-            <Chip key={o} tone={value === o ? 'accent' : 'default'} onClick={() => onPick(o)}>
+            <ChoiceChip key={o} selected={value === o} onClick={() => onPick(o)}>
               {o}
-            </Chip>
+            </ChoiceChip>
           ))}
         </div>
       )}

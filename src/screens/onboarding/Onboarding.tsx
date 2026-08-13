@@ -7,7 +7,7 @@ import { saveMeasurement } from '../../logic/actions'
 import { generatePlan, type FocusArea, type OnboardingAnswers } from '../../plan/generator'
 import { makeEmptyByorPlan, normalizeBooklet } from '../../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../../plan/analyze'
-import { Btn, Card, Chip, Stepper } from '../../components/ui'
+import { Btn, Card, ChoiceChip, Stepper } from '../../components/ui'
 import { Welcome } from './Welcome'
 import { chipIndexForGoal, ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS, QUICK_GOALS } from './onboardingData'
 import { requestDurableStorage } from '../../platform/persistence'
@@ -397,9 +397,9 @@ export function Onboarding() {
             </p>
             <div className="mt-2.5 flex flex-wrap gap-1.5">
               {LIFE_CHIPS.map((c) => (
-                <Chip
+                <ChoiceChip
                   key={c.id}
-                  tone={lifePicks.has(c.id) ? 'accent' : 'default'}
+                  selected={lifePicks.has(c.id)}
                   onClick={() =>
                     setLifePicks((prev) => {
                       const n = new Set(prev)
@@ -410,7 +410,7 @@ export function Onboarding() {
                   }
                 >
                   {c.chip}
-                </Chip>
+                </ChoiceChip>
               ))}
             </div>
             <input
@@ -427,9 +427,9 @@ export function Onboarding() {
                     ['on-feet', '🦵 hours on my feet'],
                   ] as const
                 ).map(([k, l]) => (
-                  <Chip key={k} tone={customLifeKind === k ? 'accent' : 'default'} onClick={() => setCustomLifeKind(k)}>
+                  <ChoiceChip key={k} selected={customLifeKind === k} onClick={() => setCustomLifeKind(k)}>
                     {l}
-                  </Chip>
+                  </ChoiceChip>
                 ))}
               </div>
             )}
@@ -541,7 +541,6 @@ export function Onboarding() {
         <PlanPreview
           preview={preview}
           displayName={displayName}
-          weight={weight}
           setStep={setStep}
           back={back}
           tuneDraft={tuneDraft}
