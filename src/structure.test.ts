@@ -189,9 +189,6 @@ const PLATFORM_APIS =
 const PLATFORM_ALLOWED = new Set([
   // → platform/notifications.ts, with the push backend
   'logic/reminders.ts',
-  // PermissionsBlock moved here with the split; it is the same two
-  // prompts, asked in the same place in the flow, in a smaller file.
-  'screens/onboarding/RoutineNotes.tsx',
   // → platform/storage.ts, with the native build
   'store/storage.ts',
   'store/appStore.ts',

@@ -14,7 +14,7 @@ import { getExercise } from './exercises'
 import { canDo, equipFor, resolveForEquipment } from './equip'
 import { buildMealPlan, type MealsPerDay } from './foods'
 import { flooredTargets } from './kcalFloor'
-import { proteinTargetG, type ProteinContext } from './sportsNutrition'
+import { heightAdjustmentKcal, proteinTargetG, type ProteinContext } from './sportsNutrition'
 export * from './followups'
 
 // ============================================================
@@ -36,6 +36,9 @@ export interface OnboardingAnswers {
   extraEquip: EquipTag[]
   experience: 'new' | 'returning' | 'trained'
   bodyweightLb: number
+  /** Corrects the calorie baseline, which bodyweight alone cannot: two
+   *  people at the same weight and different heights do not eat the same. */
+  heightIn?: number
   /** Tunes the calorie baseline and defaults the body-fat tape formula. */
   sex?: 'male' | 'female'
   /** How they actually like to eat, the meal plan is built at this count. */
@@ -47,7 +50,7 @@ export interface OnboardingAnswers {
   dietStyle?: DietStyle
   /** Skip meal-plan generation; the Meals tab offers setup later. */
   skipMeals?: boolean
-  /** Up to two body areas that get guaranteed direct weekly work. */
+  /** Up to four body areas that get guaranteed direct weekly work. */
   focusAreas?: FocusArea[]
   /** One-tap answers to the goal follow-up questions (GOAL_FOLLOWUPS). */
   goalAnswers?: Record<string, string>
@@ -471,11 +474,15 @@ export function buildNutrition(
   bodyweightLb: number,
   sex?: 'male' | 'female',
   ans: Record<string, string> = {},
+  heightIn?: number,
 ) {
   const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
   // Same protein either way (1 g/lb); the calorie baseline runs a notch
   // lower for women (bw×14 vs ×15), standard TDEE difference.
-  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50
+  // Height then nudges it: a bodyweight multiplier cannot tell 5'2" from
+  // 6'5" at the same weight, and that gap is a real meal. Somebody of
+  // average height lands exactly where they did before, by construction.
+  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50 + heightAdjustmentKcal(heightIn, sex)
   const adj: Record<Goal, number> = { muscle: 300, strength: 250, vertical: 200, speed: 150, general: 100, lean: -300, endurance: 150 }
   let kcalTraining = base + adj[goal]
   // Follow-up answers sharpen the number. A 30+ lb cut needs a real
@@ -823,7 +830,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
       .filter((id) => ['lift', 'core', 'carry'].includes(getExercise(id).kind)),
   )]
 
-  const nutrition = buildNutrition(a.goal, a.bodyweightLb, a.sex, a.goalAnswers ?? {})
+  const nutrition = buildNutrition(a.goal, a.bodyweightLb, a.sex, a.goalAnswers ?? {}, a.heightIn)
 
   // Rep waves: the same lift slot moves through a different scheme each
   // 4-week block, volume, load, then a goal-flavored finisher.

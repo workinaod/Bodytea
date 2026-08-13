@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { Goal, PlanConfig } from '../../types'
 import type { RoutineNote } from '../../plan/analyze'
 import { buildNutrition } from '../../plan/generator'
-import { byorNutrition, normalizeBooklet, validateBooklet } from '../../plan/bookletOps'
+import { normalizeBooklet, validateBooklet } from '../../plan/bookletOps'
 import { BookletEditor } from '../booklet/BookletEditor'
 import { Btn } from '../../components/ui'
 import { NOTE_LABEL, NOTE_TONE } from './RoutineNotes'
@@ -35,11 +35,13 @@ export function RoutineSteps(p: {
   weight: number
   goal: Goal
   commitPlan: (plan: PlanConfig, proteinTargetG: number, notes?: RoutineNote[], strategy?: string[]) => void
+  /** The last screen before the plan starts, shared with the generated path. */
+  onReady: () => void
 }) {
   const {
     step, setStep, byorDraft, setByorDraft, byorProblems, setByorProblems, byorNotes,
     tuneDraft, setTuneDraft, tuneProblems, setTuneProblems, whyWorks, setWhyWorks, weight,
-    goal, commitPlan,
+    goal, commitPlan, onReady,
   } = p
   return (
     <>
@@ -131,16 +133,10 @@ export function RoutineSteps(p: {
               These land in your coach feed too, and refresh whenever you edit the booklet. Your routine,
               your call. The app tracks it exactly as you built it.
             </p>
-            <Btn
-              className="mt-5 w-full py-4 text-[16px]"
-              onClick={() =>
-                commitPlan(
-                  normalizeBooklet(byorDraft),
-                  byorNutrition(byorDraft.routineGoals ?? [], weight).proteinTargetG,
-                  byorNotes.filter((n) => n.tone !== 'info'),
-                )
-              }
-            >
+            {/* Bring-your-own-routine used to commit straight from here,
+                which meant it was the one path that never got asked for
+                notifications, motion or location at all. */}
+            <Btn className="mt-5 w-full py-4 text-[16px]" onClick={onReady}>
               Start Week 1, let's work
             </Btn>
             <button onClick={() => setStep(8)} className="mt-3 text-center text-[12px] font-semibold text-ink-faint underline">

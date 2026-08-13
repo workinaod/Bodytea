@@ -13,14 +13,15 @@ async function toPreview(page: import('@playwright/test').Page) {
   await page.goto('./')
   await page.getByRole('button', { name: /Lose weight/ }).click()
   await page.locator('input').first().fill('Maya')
+  await page.getByRole('button', { name: 'Female', exact: true }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByRole('button', { name: /Next: a few questions/ }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
-  await page.getByRole('button', { name: 'Next: numbers' }).click()
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Skip' }).click()
 }
 
 test('the protein card and the protein sentence say the same number', async ({ page }) => {
@@ -42,10 +43,20 @@ test('every onboarding choice is a real button', async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
   await page.getByRole('button', { name: /Lose weight/ }).click()
+  await page.locator('input').first().fill('Sam')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
 
-  for (const label of ['Build muscle', 'Get stronger', 'Arms', 'Core']) {
+  for (const label of ['Build muscle', 'Get stronger']) {
     await expect(page.getByRole('button', { name: new RegExp(label) }).first()).toBeVisible()
+  }
+
+  // Focus areas wait their turn behind the detail box, and arrive on the
+  // next tap — which is the "or nothing to add" answer.
+  await expect(page.getByRole('button', { name: 'Arms' })).toHaveCount(0)
+  await page.getByText("Let's get specific").click()
+  for (const label of ['Arms', 'Core']) {
+    await expect(page.getByRole('button', { name: label, exact: true })).toBeVisible()
   }
 
   await page.getByRole('button', { name: /Next: a few questions/ }).click()

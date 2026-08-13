@@ -1,7 +1,7 @@
-import type { Dispatch, SetStateAction } from 'react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
 import type { DietStyle } from '../../types'
 import type { MealsPerDay } from '../../plan/foods'
-import { Btn, ChoiceChip } from '../../components/ui'
+import { Btn, ChoiceChip, Reveal } from '../../components/ui'
 
 // ============================================================
 // Food, last, and skippable.
@@ -54,39 +54,51 @@ export function MealStep({
   onBuild: () => void
   onSkip: () => void
 }) {
+  // Diet is pre-selected at "I eat everything", so it is the choosing
+  // that opens the rest — not the value, which was already there.
+  const [chose, setChose] = useState(false)
   return (
     <div className="flex flex-1 flex-col">
       <h2 className="headline text-center text-[26px]">Want a food plan too?</h2>
-      <p className="mt-1 text-center text-[13px] text-ink-dim">Meals built round what you actually eat.</p>
 
       <p className="mt-6 text-[14px] font-bold text-ink">How do you eat?</p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {DIETS.map((d) => (
-          <ChoiceChip key={d.id} selected={dietStyle === d.id} onClick={() => setDietStyle(d.id)}>
+          <ChoiceChip key={d.id} selected={dietStyle === d.id} onClick={() => {
+              setChose(true)
+              setDietStyle(d.id)
+            }}>
             {d.label}
           </ChoiceChip>
         ))}
-        <ChoiceChip selected={dairyFree} onClick={() => setDairyFree((v) => !v)}>
+        <ChoiceChip selected={dairyFree} onClick={() => {
+            setChose(true)
+            setDairyFree((v) => !v)
+          }}>
           Dairy free
         </ChoiceChip>
       </div>
 
-      <p className="mt-6 text-[14px] font-bold text-ink">Anything you cannot eat?</p>
-      <input
-        value={allergies}
-        onChange={(e) => setAllergies(e.target.value)}
-        placeholder="Nuts, shellfish, gluten…"
-        className="mt-2 w-full rounded-xl bg-white/[0.07] px-4 py-3 text-[15px] text-ink outline-none ring-1 ring-white/[0.06] placeholder:text-ink-faint focus:ring-accent/60"
-      />
+      <Reveal when={chose} className="mt-6">
+        <p className="text-[14px] font-bold text-ink">Anything you cannot eat?</p>
+        <input
+          value={allergies}
+          onChange={(e) => setAllergies(e.target.value)}
+          placeholder="Nuts, shellfish, gluten…"
+          className="mt-2 w-full rounded-xl bg-white/[0.07] px-4 py-3 text-[15px] text-ink outline-none ring-1 ring-white/[0.06] placeholder:text-ink-faint focus:ring-accent/60"
+        />
+      </Reveal>
 
-      <p className="mt-6 text-[14px] font-bold text-ink">How many times a day?</p>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {MEALS.map((m) => (
-          <ChoiceChip key={m.n} selected={mealsPerDay === m.n} onClick={() => setMealsPerDay(m.n)}>
-            {m.label}
-          </ChoiceChip>
-        ))}
-      </div>
+      <Reveal when={chose} className="mt-6">
+        <p className="text-[14px] font-bold text-ink">How many times a day?</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {MEALS.map((m) => (
+            <ChoiceChip key={m.n} selected={mealsPerDay === m.n} onClick={() => setMealsPerDay(m.n)}>
+              {m.label}
+            </ChoiceChip>
+          ))}
+        </div>
+      </Reveal>
 
       <Btn className="mt-8 w-full py-4" onClick={onBuild}>
         Build my plan
