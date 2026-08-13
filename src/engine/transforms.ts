@@ -3,9 +3,12 @@ import type {
   MinViableRecipe,
   PlanConfig,
   ResolvedExercise,
+  SlotId,
   TemplateEntry,
 } from '../types'
 import { getExercise } from '../plan/exercises'
+import { MOVEMENT } from '../plan/movement'
+import { overloadedRegions } from './volume'
 
 // ============================================================
 // Pure transforms. Order in resolveDay:
@@ -54,8 +57,12 @@ export function buildFromTemplate(
   blockIndex: 1 | 2 | 3,
   abWeek: 'A' | 'B',
   plan: PlanConfig,
+  slotOverride?: Record<SlotId, string>,
 ): ResolvedExercise[] {
-  const slots = plan.slots[blockIndex]
+  // A later phase can replace an anchor lift with the next movement up
+  // its chain. The block map is still the base; the override only ever
+  // covers the anchors, and only once they have been earned.
+  const slots = slotOverride ? { ...plan.slots[blockIndex], ...slotOverride } : plan.slots[blockIndex]
   const out: ResolvedExercise[] = []
   const seen = new Set<string>()
 
@@ -102,6 +109,45 @@ function scaleRepOnly(r: ResolvedExercise, f: (n: number) => number): ResolvedEx
   if (r.repsNum === undefined) return r
   const n = Math.max(1, f(r.repsNum))
   return { ...r, repsNum: n, repText: String(n) }
+}
+
+/**
+ * Week 3 is the top of the block, and then you deload.
+ *
+ * Weeks 1, 2 and 3 were the same prescription three times over. The only
+ * week in a block that differed was the fourth one. Load and reps did
+ * move underneath, because double progression reads the log rather than
+ * the calendar, but nothing about the PLAN accumulated: a block with no
+ * build in it is three maintenance weeks and a rest, and the rest is not
+ * earned by anything.
+ *
+ * One extra set, on the ONE lift the day is built around.
+ *
+ * Giving it to every primary was the first attempt and it was worse than
+ * doing nothing: three extra sets pushed the day through its per-region
+ * ceiling, the volume trim took the overshoot back out of whichever
+ * movement happened to be last, and a push day came out with two more
+ * sets of incline and one fewer of overhead press. A ramp that has to be
+ * undone is not a ramp. The main lift accumulates and everything else
+ * holds still, which is what the extra set is for anyway.
+ */
+export function applyWeekRamp(
+  exercises: ResolvedExercise[],
+  weekInBlock: 1 | 2 | 3 | 4,
+): ResolvedExercise[] {
+  if (weekInBlock !== 3) return exercises
+  const lead = exercises.findIndex((e) => e.kind === 'lift' && MOVEMENT[e.exerciseId]?.role === 'primary')
+  if (lead < 0) return exercises
+  const ramped = exercises.map((e, i) => (i === lead ? { ...e, sets: e.sets + 1 } : e))
+  // Only onto a day with room for it. The volume ceiling runs after this
+  // and cannot take the set back, because it refuses to cut the opening
+  // movements and the opening movement is exactly where the ramp lands.
+  // A fifth set of pull-ups put the Friday biceps half a set over with
+  // nothing downstream willing to pay for it.
+  //
+  // "Already over" is not headroom either: a day the trim is about to
+  // cut is not a day to add to first.
+  return overloadedRegions(ramped).length > 0 ? exercises : ramped
 }
 
 /**

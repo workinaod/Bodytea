@@ -11,6 +11,7 @@ import type {
   Weekday,
 } from '../types'
 import { getExercise } from './exercises'
+import { ANCHOR_SLOTS } from './blocks'
 import { canDo, equipFor, resolveForEquipment } from './equip'
 import { buildMealPlan, type MealsPerDay } from './foods'
 import { flooredTargets } from './kcalFloor'
@@ -158,22 +159,6 @@ const POOLS: Record<string, string[]> = {
   coreA: ['hanging-leg-raise', 'weighted-situp', 'hollow-hold', 'dead-bug'],
   coreB: ['weighted-situp', 'plank-side-plank', 'dead-bug', 'hollow-hold'],
 }
-
-/**
- * The lifts the year is actually built on, which therefore do not rotate.
- *
- * These are the same four slots the rep waves act on, and that is the
- * point: a block should change ONE thing. Rotating the exercise and
- * changing the rep scheme at the same time means nothing carries across
- * the boundary, so nothing can be compared and nothing accumulates. The
- * movement stays and the scheme waves around it, which is how a squat
- * gets stronger over a year instead of three separate squats getting
- * slightly less unfamiliar.
- *
- * Everything else in POOLS still rotates every block. Accessories are
- * where variety costs nothing and buys interest.
- */
-const ANCHOR_SLOTS = ['squatVariation', 'press1', 'rowVariation', 'hamstring'] as const
 
 /** Per-goal promotions: this exercise leads the pool (→ Block 1). */
 const GOAL_FIRST: Partial<Record<Goal, Partial<Record<string, string>>>> = {

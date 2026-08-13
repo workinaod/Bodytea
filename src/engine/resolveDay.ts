@@ -17,9 +17,11 @@ import {
   applyDeload,
   applyLongShiftMonday,
   applyReadinessDowngrade,
+  applyWeekRamp,
   buildFromTemplate,
   lighterCombinedPull,
 } from './transforms'
+import { phaseFor, phaseNote } from './phase'
 import { trimForVolume, type VolumeCut } from './volume'
 import { capAccessorySets, orderSession } from './sequence'
 import { parseRepRange, repLabel } from './reps'
@@ -292,7 +294,8 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     }
   }
 
-  let exercises = buildFromTemplate(template, blockIndex, abWeek, plan)
+  const phase = phaseFor(data, dateISO)
+  let exercises = buildFromTemplate(template, blockIndex, abWeek, plan, phase.overrides)
 
   if (plan.lifeRules.djWeekend && weekday === 6 && week.friPushedToSat && templateId === 'saturday') {
     exercises = [...exercises, ...lighterCombinedPull()]
@@ -324,7 +327,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     })
   }
 
-  // --- Deload ---
+  // --- Where the week sits in the block: build, then unload ---
   if (isDeload && template.kind === 'session') {
     exercises = applyDeload(exercises)
     banners.push({
@@ -430,6 +433,16 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   // the presses and leave the lateral raises alone.
   exercises = capAccessorySets(orderSession(exercises))
 
+  // --- Top of the block: the main lift gets one more set. After ordering
+  //     and capping on purpose, because the ramp checks whether the day
+  //     can afford it and the raw set counts are not that day. ---
+  if (!isDeload && template.kind === 'session') {
+    const ramped = applyWeekRamp(exercises, weekInBlock)
+    const text = 'Top of the block: one more set on the main lift. Next week is the deload, so spend it.'
+    if (ramped !== exercises) banners.push({ id: 'peak-week', text, tone: 'info' })
+    exercises = ramped
+  }
+
   // --- Volume cap: the LAST lifting transform, before cardio is added ---
   //
   // Templates bind their slots late, so nobody authoring one can see
@@ -533,11 +546,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   }
 
   if (phaseComplete) {
-    banners.push({
-      id: 'phase-complete',
-      text: `Phase 1 (16 weeks) complete. The program loops (Block ${blockIndex}). It’s a 12-month project, keep climbing.`,
-      tone: 'success',
-    })
+    banners.push({ id: 'phase-complete', text: phaseNote(phase.index, phase.verdicts), tone: 'success' })
   }
 
   return {

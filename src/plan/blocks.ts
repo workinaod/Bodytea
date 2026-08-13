@@ -58,6 +58,20 @@ export const BLOCK_SLOTS: Record<1 | 2 | 3, Record<SlotId, string>> = {
 }
 
 /**
+ * The slots holding the lifts the year is built on.
+ *
+ * They do not rotate at the block boundary, they carry the rep waves,
+ * and they are the ones the progress charts follow. A block should
+ * change one thing: rotating the movement AND rewriting the rep scheme
+ * at the same boundary leaves nothing that carries across it, so nothing
+ * can be compared and nothing accumulates.
+ *
+ * They are also what a new phase re-examines. Sixteen weeks of getting
+ * stronger at a goblet squat has earned the front squat.
+ */
+export const ANCHOR_SLOTS = ['squatVariation', 'press1', 'rowVariation', 'hamstring'] as const
+
+/**
  * Rep-text overrides when a slot resolves to an exercise whose scheme
  * differs from the slot's default (e.g. planks are timed, good mornings
  * aren't per-leg).
