@@ -14,6 +14,9 @@ import {
   vertInPerWeek,
   vertStages,
   weeksPerLoadStep,
+  parseGoalTarget,
+  TRACK_OF_METRIC,
+  weeklyMileageStages,
   weeksToLongRun,
   weightStages,
 } from './milestones'
@@ -237,6 +240,66 @@ describe('the stages themselves', () => {
     // A guard against the loop, not a design statement: a bad anchor
     // must not build ten thousand stages.
     expect(weightStages(200, -500).length).toBeLessThanOrEqual(41)
+  })
+})
+
+describe('the number they typed in themselves', () => {
+  const LIFTS = [{ exerciseId: 'front-squat', label: 'Front Squat' }, { exerciseId: 'bench-press', label: 'Bench Press' }]
+  const t = (label: string, target: number, unit = '') => ({ label, target, unit })
+
+  it('reads the obvious ones', () => {
+    expect(parseGoalTarget(t('Vert', 30, 'in'), LIFTS)).toMatchObject({ metric: 'vertIn', target: 30 })
+    expect(parseGoalTarget(t('Waist', 32, 'in'), LIFTS)).toMatchObject({ metric: 'waistIn', target: 32 })
+    expect(parseGoalTarget(t('Bodyweight', 180, 'lb'), LIFTS)).toMatchObject({ metric: 'weightLb', target: 180 })
+    expect(parseGoalTarget(t('Body fat', 12, '%'), LIFTS)).toMatchObject({ metric: 'bodyFatPct', target: 12 })
+    expect(parseGoalTarget(t('Longest run', 13.1, 'mi'), LIFTS)).toMatchObject({ metric: 'longRunMi' })
+  })
+
+  it('matches a lift the athlete actually tracks, not a hardcoded name list', () => {
+    const hit = parseGoalTarget(t('Bench Press', 225, 'lb'), LIFTS)
+    expect(hit).toMatchObject({ metric: 'topSetLb', exerciseId: 'bench-press', target: 225 })
+  })
+
+  it('converts the units people actually type', () => {
+    // Half the world weighs in kilos and measures in centimetres, and a
+    // 100 kg target read as 100 lb is a goal somebody has already met.
+    expect(parseGoalTarget(t('Bodyweight', 100, 'kg'), LIFTS)!.target).toBe(220)
+    expect(parseGoalTarget(t('Vert', 76, 'cm'), LIFTS)!.target).toBeCloseTo(29.9, 1)
+    expect(parseGoalTarget(t('Longest run', 21.1, 'km'), LIFTS)!.target).toBeCloseTo(13.1, 1)
+  })
+
+  it('REFUSES anything it cannot actually score', () => {
+    // The important half. A stage that can never light up is a promise
+    // the app has quietly broken, so a label naming nothing measurable
+    // gets no stage rather than a guessed one.
+    expect(parseGoalTarget(t('Look good at the wedding', 1), LIFTS)).toBeNull()
+    expect(parseGoalTarget(t('Be less tired', 5), LIFTS)).toBeNull()
+    expect(parseGoalTarget(t('Confidence', 10), LIFTS)).toBeNull()
+    expect(parseGoalTarget(t('', 100), LIFTS)).toBeNull()
+    expect(parseGoalTarget(t('Vert', 0), LIFTS)).toBeNull()
+  })
+
+  it('puts every metric on exactly one track', () => {
+    // The stated target has to land somewhere, including on a track the
+    // goal chip would not have shown.
+    for (const m of Object.keys(TRACK_OF_METRIC)) {
+      expect(TRACK_OF_METRIC[m as keyof typeof TRACK_OF_METRIC]).toBeTruthy()
+    }
+    expect(TRACK_OF_METRIC.vertIn).toBe('explosive')
+    expect(TRACK_OF_METRIC.weeklyMi).toBe('engine')
+  })
+})
+
+describe('weekly mileage, the number that actually builds an engine', () => {
+  it('offers the volumes real plans are built on', () => {
+    const targets = weeklyMileageStages(0, 50).map((s) => s.target)
+    expect(targets).toContain(10)
+    expect(targets).toContain(20)
+    expect(targets).toContain(40)
+  })
+
+  it('never puts a volume behind where they already are', () => {
+    for (const s of weeklyMileageStages(20, 50)) expect(s.target).toBeGreaterThan(20)
   })
 })
 

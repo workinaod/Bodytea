@@ -212,15 +212,15 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
                       ? `3px solid ${colour}`
                       : done
                         ? 'none'
-                        : isTrackHead
+                        : isTrackHead || r.isGoal
                           ? `2px solid ${colour}`
                           : '2px dashed rgba(255,255,255,0.16)',
-                    color: done ? '#0a0a0a' : isHere || isTrackHead ? colour : 'var(--color-ink-faint)',
+                    color: done ? '#0a0a0a' : isHere || isTrackHead || r.isGoal ? colour : 'var(--color-ink-faint)',
                     fontSize: isHere ? 12.5 : 15,
                     boxShadow: isHere ? `0 0 22px -4px ${colour}` : 'none',
                   }}
                 >
-                  {done ? '✓' : isHere ? 'HERE' : r.blocker ? '🔒' : ''}
+                  {done ? '✓' : isHere ? 'HERE' : r.blocker ? '🔒' : r.isGoal ? '★' : ''}
                 </span>
                 <span
                   className={`mt-1.5 w-full truncate text-center text-[11px] font-bold leading-tight ${

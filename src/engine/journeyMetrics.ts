@@ -6,6 +6,7 @@ import {
   MIN_OBSERVED_POINTS,
   NOISE_FLOOR,
   OBSERVED_CAP_MULTIPLE,
+  parseGoalTarget,
   STAGE_DECAY,
   type StageSpec,
 } from '../plan/milestones'
@@ -107,6 +108,16 @@ export function lastMeasured(data: AppData, key: 'waistIn' | 'bodyFatPct' | 'ver
     if (typeof v === 'number') return v
   }
   return null
+}
+
+/**
+ * Their own stated target, parsed, or null when it names nothing this
+ * app can measure. Lives with the other readers because that is what it
+ * is: a read of one field on the plan, turned into something scoreable.
+ */
+export function statedTarget(data: AppData) {
+  const t = data.plan.customTargets[0]
+  return t ? parseGoalTarget(t, data.plan.trackedLifts) : null
 }
 
 /** Chronological (date, value) for a measurement metric, for the observed rate. */

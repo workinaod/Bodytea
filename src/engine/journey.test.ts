@@ -321,6 +321,59 @@ describe('a stage that has been reached', () => {
   })
 })
 
+describe('the goal they actually stated', () => {
+  it('puts their own number on the path, past our landmarks', () => {
+    const d = base()
+    d.plan.goal = 'lean'
+    d.plan.customTargets = [{ label: 'Waist', target: 32, unit: 'in' }]
+    d.measurements = [{ date: '2026-04-01', waistIn: 38, weightLb: 210, photoIds: {} }]
+    const goal = buildJourney(d, TODAY).path.find((s) => s.isGoal)
+    expect(goal).toBeDefined()
+    expect(goal!.target).toBe(32)
+    expect(goal!.metric).toBe('waistIn')
+  })
+
+  it('shows their target even on a track their goal chip would not have', () => {
+    // Somebody who picked "lose weight" and then typed "vert 30" in
+    // their own words is telling us something the chip cannot. Their
+    // number wins, or the path never mentions what they came for.
+    const d = base()
+    d.plan.goal = 'lean'
+    d.plan.customTargets = [{ label: 'Vert', target: 30, unit: 'in' }]
+    d.measurements = [{ date: '2026-04-01', vertIn: 18, weightLb: 200, photoIds: {} }]
+    const j = buildJourney(d, TODAY)
+    expect(j.tracks.map((t) => t.id)).toContain('explosive')
+    expect(j.path.find((s) => s.isGoal)?.metric).toBe('vertIn')
+  })
+
+  it('adds nothing at all when the target names nothing measurable', () => {
+    const d = base()
+    d.plan.customTargets = [{ label: 'Look good at the wedding', target: 1, unit: '' }]
+    expect(buildJourney(d, TODAY).path.some((s) => s.isGoal)).toBe(false)
+  })
+
+  it('does not give their own target a friendlier date than the landmarks', () => {
+    // It reuses the same rate the rest of that track is projected from.
+    // A goal stage that quietly got an easier model would be the one
+    // number on the screen the athlete most wants to believe.
+    const d = base()
+    d.plan.goal = 'lean'
+    d.plan.customTargets = [{ label: 'Bodyweight', target: 180, unit: 'lb' }]
+    d.measurements = [
+      weighIn('2026-04-01', 210),
+      weighIn('2026-06-01', 204),
+      weighIn('2026-08-14', 198),
+    ]
+    const j = buildJourney(d, TODAY)
+    const goal = j.path.find((s) => s.isGoal)!
+    const landmark = j.path.find((s) => s.metric === 'weightLb' && !s.isGoal && s.etaWeeks !== undefined)
+    if (landmark && goal.etaWeeks !== undefined) {
+      // Further target, never a sooner date.
+      expect(goal.etaWeeks).toBeGreaterThanOrEqual(landmark.etaWeeks!)
+    }
+  })
+})
+
 describe('the path as a thing on a screen', () => {
   it('puts what is done above what is next, oldest first', () => {
     // The stack of ticks is the emotional payload of the whole screen,
@@ -363,7 +416,11 @@ describe('the path as a thing on a screen', () => {
       weighIn('2026-08-08', 198.5),
       weighIn('2026-08-14', 198),
     ]
-    const body = buildJourney(d, TODAY).path.filter((r) => r.track === 'body' && r.state !== 'done')
+    // Scoped to ONE metric on purpose: a track carries several, and
+    // pounds against a body-fat percentage is not a comparison.
+    const body = buildJourney(d, TODAY).path.filter(
+      (r) => r.metric === 'weightLb' && r.state !== 'done' && !r.isGoal,
+    )
     expect(body[0].target).toBe(195)
     expect(body[0].state).toBe('next')
     // and strictly descending down the list from there

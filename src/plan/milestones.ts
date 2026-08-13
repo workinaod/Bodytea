@@ -221,6 +221,8 @@ export interface StageSpec {
   /** One honest sentence about why this stage is worth wanting. */
   detail: string
   exerciseId?: string
+  /** The athlete's OWN stated target, rather than one of ours. */
+  isGoal?: boolean
 }
 
 /**
@@ -314,6 +316,34 @@ const RUN_LADDER: { mi: number; label: string; detail: string }[] = [
   { mi: 26.2, label: 'Marathon', detail: 'Every long run to here has been rehearsal.' },
 ]
 
+/**
+ * Weekly volume, which is the number that actually builds the engine.
+ *
+ * A long run is the headline and weekly mileage is the work. Every
+ * distance plan worth the name is built on it, and it is the one
+ * endurance number the app was already computing and never showing a
+ * target for. The rungs are where training plans genuinely cluster:
+ * 10 is "I run", 20 is a half-marathon base, 40 is marathon territory.
+ */
+const WEEKLY_MI_STAGES: { mi: number; detail: string }[] = [
+  { mi: 10, detail: 'Ten a week is the line between running sometimes and being a runner.' },
+  { mi: 15, detail: 'Enough base that a 5K stops being an event and becomes a Tuesday.' },
+  { mi: 20, detail: 'The base most half-marathon plans assume you already have.' },
+  { mi: 30, detail: 'Marathon training territory. Sleep and food stop being optional here.' },
+  { mi: 40, detail: 'Serious volume. Worth more than any session you could add.' },
+]
+
+export function weeklyMileageStages(fromMi: number, toMi: number): StageSpec[] {
+  return WEEKLY_MI_STAGES.filter((r) => r.mi > fromMi && r.mi <= toMi + 0.01).map((r) => ({
+    track: 'engine',
+    metric: 'weeklyMi',
+    target: r.mi,
+    unit: 'mi/wk',
+    label: `${r.mi} miles a week`,
+    detail: r.detail,
+  }))
+}
+
 export function runStages(fromMi: number, toMi: number): StageSpec[] {
   return RUN_LADDER.filter((r) => r.mi > fromMi && r.mi <= toMi + 0.01).map((r) => ({
     track: 'engine',
@@ -395,6 +425,107 @@ export function consistencyStages(sessionsSoFar: number): StageSpec[] {
   }
   void sessionsSoFar
   return out
+}
+
+// ---------------- The one they typed in themselves ----------------
+
+/**
+ * The athlete's own stated target, turned into a stage — or refused.
+ *
+ * Onboarding asks for "a number to beat" as free text: a label, a
+ * number, a unit. Until now nothing scored it. It set a caption on one
+ * chart and fed a badge that decides whether somebody hit their goal by
+ * checking whether the word "weight" appears in a string they typed,
+ * which is wrong for anybody who wrote "bodyweight goal" or "waist".
+ *
+ * This is the honest version, and the important half is the REFUSAL. A
+ * label that does not clearly name something the app measures returns
+ * null and gets no stage at all. Guessing would put a target on the
+ * path that can never be scored, which is worse than leaving their
+ * number where they can still see it on the chart: a stage that can
+ * never light up is a promise the app has quietly broken.
+ */
+export interface GoalTargetHit {
+  metric: StageMetric
+  exerciseId?: string
+  /** Converted into the unit the app actually stores. */
+  target: number
+}
+
+const KG_TO_LB = 2.2046226
+const CM_TO_IN = 0.393701
+
+export function parseGoalTarget(
+  t: { label: string; target: number; unit: string },
+  lifts: { exerciseId: string; label: string }[] = [],
+): GoalTargetHit | null {
+  const label = t.label.toLowerCase().trim()
+  const unit = t.unit.toLowerCase().trim()
+  if (!label || !(t.target > 0)) return null
+
+  const lb = (n: number) => (unit.startsWith('kg') ? n * KG_TO_LB : n)
+  const inches = (n: number) => (unit.startsWith('cm') ? n * CM_TO_IN : n)
+
+  // A named lift wins over everything: "bench 225" is unambiguous, and
+  // matching the athlete's OWN tracked lifts means no separate list of
+  // exercise nicknames to drift out of date.
+  for (const l of lifts) {
+    const words = l.label.toLowerCase().split(/\s+/).filter((w) => w.length > 2)
+    if (words.length && words.every((w) => label.includes(w))) {
+      return { metric: 'topSetLb', exerciseId: l.exerciseId, target: Math.round(lb(t.target)) }
+    }
+  }
+  if (/\b(bench|squat|deadlift|press|ohp|clean|snatch)\b/.test(label) && lifts.length) {
+    const guess = lifts.find((l) => label.includes(l.label.toLowerCase().split(/\s+/).pop() ?? '§'))
+    if (guess) return { metric: 'topSetLb', exerciseId: guess.exerciseId, target: Math.round(lb(t.target)) }
+  }
+
+  if (/\b(vert|vertical|jump|rim|dunk|bounce|hops)\b/.test(label)) {
+    return { metric: 'vertIn', target: Math.round(inches(t.target) * 10) / 10 }
+  }
+  if (/\bwaist\b/.test(label)) return { metric: 'waistIn', target: Math.round(inches(t.target) * 10) / 10 }
+  if (/\b(body ?fat|bf|fat ?%)\b/.test(label) || unit === '%') {
+    return { metric: 'bodyFatPct', target: Math.round(t.target * 10) / 10 }
+  }
+  if (/\b(weigh|weight|scale|bodyweight|lean out|cut to)\b/.test(label)) {
+    return { metric: 'weightLb', target: Math.round(lb(t.target)) }
+  }
+  if (/\b(mile|miles|marathon|5 ?k|10 ?k|half|ultra|run|distance)\b/.test(label)) {
+    const miles = unit.startsWith('k') ? t.target * 0.621371 : t.target
+    return { metric: 'longRunMi', target: Math.round(miles * 10) / 10 }
+  }
+
+  // Not something this app measures. No stage, no guess.
+  return null
+}
+
+/** How each metric is written next to its number. */
+const UNITS: Record<StageMetric, string> = {
+  weightLb: 'lb',
+  waistIn: 'in',
+  bodyFatPct: '%',
+  vertIn: 'in',
+  topSetLb: 'lb',
+  repMax: '',
+  longRunMi: 'mi',
+  weeklyMi: 'mi/wk',
+  sessions: '',
+  streakDays: 'd',
+}
+export const unitOf = (m: StageMetric): string => UNITS[m]
+
+/** The track a stated target belongs on, so it shows even off-goal. */
+export const TRACK_OF_METRIC: Record<StageMetric, TrackId> = {
+  weightLb: 'body',
+  waistIn: 'body',
+  bodyFatPct: 'body',
+  vertIn: 'explosive',
+  topSetLb: 'strength',
+  repMax: 'strength',
+  longRunMi: 'engine',
+  weeklyMi: 'engine',
+  sessions: 'consistency',
+  streakDays: 'consistency',
 }
 
 /**

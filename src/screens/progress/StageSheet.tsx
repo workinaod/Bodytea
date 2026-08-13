@@ -48,6 +48,9 @@ export function StageSheet({ stage, onClose }: { stage: Stage; onClose: () => vo
           </div>
         )}
 
+        {stage.isGoal && (
+          <p className="text-[11.5px] font-black uppercase tracking-wider text-gold">★ The one you came for</p>
+        )}
         <p className="text-[13px] leading-snug text-ink">{stage.detail}</p>
 
         {!done && (

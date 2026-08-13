@@ -14,6 +14,9 @@ import {
   TRACKS_FOR_GOAL,
   vertInPerWeek,
   vertStages,
+  unitOf,
+  TRACK_OF_METRIC,
+  weeklyMileageStages,
   weeksToLongRun,
   weightStages,
   type StageSpec,
@@ -29,6 +32,7 @@ import {
   observedRatePerWeek,
   reachedNow,
   readMetric,
+  statedTarget,
   type EtaBasis,
 } from './journeyMetrics'
 
@@ -77,6 +81,8 @@ export interface Stage {
   blocker?: string
   /** True when reaching this stage means the number going DOWN. */
   descending: boolean
+  /** The athlete's OWN stated target, rather than one of our landmarks. */
+  isGoal?: boolean
 }
 
 export interface Track {
@@ -178,7 +184,18 @@ interface Built {
 
 function buildSpecs(data: AppData, today: ISODate): Built[] {
   const goal = data.plan.goal
-  const tracks = TRACKS_FOR_GOAL[goal]
+  const stated = statedTarget(data)
+  // What they typed outranks what we inferred from a chip.
+  //
+  // Somebody whose goal chip says "lean" and who then typed "vert 30"
+  // in their own words is telling us something the chip cannot. Their
+  // number gets its track whether or not the goal would have shown it,
+  // because the alternative is a path that never mentions the one
+  // thing they actually asked for.
+  const tracks: TrackId[] = [...TRACKS_FOR_GOAL[goal]]
+  if (stated && !tracks.includes(TRACK_OF_METRIC[stated.metric])) {
+    tracks.push(TRACK_OF_METRIC[stated.metric])
+  }
   const age = ageOf(data)
   const bw = latestBodyweightLb(data)
   const out: Built[] = []
@@ -292,6 +309,21 @@ function buildSpecs(data: AppData, today: ISODate): Built[] {
         from: 0,
       })
     }
+    // Weekly volume, which is what actually builds the engine. The long
+    // run is the headline; this is the work behind it, and it was the
+    // one endurance number the app already computed and never set a
+    // target for.
+    const wk = readMetric(data, 'weeklyMi') ?? 0
+    for (const spec of weeklyMileageStages(0, Math.max(wk, 10) + 20).slice(0, 5)) {
+      const weeks = Math.max(1, weeksToLongRun(Math.max(wk, 3), spec.target))
+      out.push({
+        spec,
+        modelledPerWeek: (spec.target - wk) / weeks,
+        descending: false,
+        observed: null,
+        from: 0,
+      })
+    }
   }
 
   if (tracks.includes('explosive')) {
@@ -333,6 +365,35 @@ function buildSpecs(data: AppData, today: ISODate): Built[] {
       modelledPerWeek: spec.metric === 'sessions' ? perWeekSessions : 7,
       descending: false,
       observed: null,
+    })
+  }
+
+  // Their own number goes on last, so it sits past our landmarks: it
+  // is the summit, and everything else is on the way to it.
+  if (stated) {
+    const cur = readMetric(data, stated.metric, stated.exerciseId)
+    const descending = stated.metric === 'weightLb' || stated.metric === 'waistIn' || stated.metric === 'bodyFatPct'
+      ? cur !== null && stated.target < cur
+      : false
+    const twin = out.find((b) => b.spec.metric === stated.metric && b.spec.exerciseId === stated.exerciseId)
+    out.push({
+      spec: {
+        track: TRACK_OF_METRIC[stated.metric],
+        metric: stated.metric,
+        exerciseId: stated.exerciseId,
+        target: stated.target,
+        unit: unitOf(stated.metric),
+        label: `${data.plan.customTargets[0]?.label ?? 'Your target'} ${stated.target}${unitOf(stated.metric)}`,
+        detail: 'The number you came here for, in your own words.',
+        isGoal: true,
+      },
+      // Reuses the rate the rest of that track is projected from, so
+      // the athlete's own target cannot quietly get a friendlier
+      // estimate than the landmarks leading up to it.
+      modelledPerWeek: twin?.modelledPerWeek ?? 0,
+      descending,
+      observed: twin?.observed ?? null,
+      from: twin?.from,
     })
   }
 
@@ -395,6 +456,7 @@ export function buildJourney(data: AppData, today: ISODate): Journey {
       note: eta.note,
       blocker: b.blocker,
       descending: b.descending,
+      isGoal: b.spec.isGoal,
     }
     const list = byTrack.get(b.spec.track) ?? []
     list.push(stage)
@@ -418,7 +480,12 @@ export function buildJourney(data: AppData, today: ISODate): Journey {
     soonest.state = 'next'
   }
 
-  const tracks: Track[] = TRACKS_FOR_GOAL[data.plan.goal]
+  const stated = statedTarget(data)
+  const trackOrder: TrackId[] = [...TRACKS_FOR_GOAL[data.plan.goal]]
+  if (stated && !trackOrder.includes(TRACK_OF_METRIC[stated.metric])) {
+    trackOrder.push(TRACK_OF_METRIC[stated.metric])
+  }
+  const tracks: Track[] = trackOrder
     .filter((t) => byTrack.has(t))
     .map((t) => ({ id: t, label: TRACK_LABEL[t], tone: TRACK_TONE[t], stages: byTrack.get(t)! }))
 
@@ -495,6 +562,12 @@ export function orderPath(stages: Stage[]): Stage[] {
     const eb = b.etaWeeks ?? Number.MAX_SAFE_INTEGER
     if (ea !== eb) return ea - eb
     if (a.track !== b.track) return a.track < b.track ? -1 : 1
+    // METRIC before target, because one track carries several of them
+    // and their numbers are not the same kind of thing. The body track
+    // holds pounds, inches and a percentage; sorting 10 (% body fat)
+    // against 180 (lb) as if they were comparable put a body-fat target
+    // in the middle of the bodyweight ladder.
+    if (a.metric !== b.metric) return a.metric < b.metric ? -1 : 1
     // CLIMB order, not numeric order. On a cut the next stage is the
     // HIGHEST number left, and sorting ascending put the furthest one
     // at the top of the list and labelled it "next" — the path pointing
