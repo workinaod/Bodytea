@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import type { DietStyle } from '../../types'
 import type { MealsPerDay } from '../../plan/foods'
-import { Btn, Chip } from '../../components/ui'
+import { Btn, ChoiceChip } from '../../components/ui'
 
 // ============================================================
 // Food, last, and skippable.
@@ -62,13 +62,13 @@ export function MealStep({
       <p className="mt-6 text-[14px] font-bold text-ink">How do you eat?</p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {DIETS.map((d) => (
-          <Chip key={d.id} tone={dietStyle === d.id ? 'accent' : 'default'} onClick={() => setDietStyle(d.id)}>
+          <ChoiceChip key={d.id} selected={dietStyle === d.id} onClick={() => setDietStyle(d.id)}>
             {d.label}
-          </Chip>
+          </ChoiceChip>
         ))}
-        <Chip tone={dairyFree ? 'accent' : 'default'} onClick={() => setDairyFree((v) => !v)}>
+        <ChoiceChip selected={dairyFree} onClick={() => setDairyFree((v) => !v)}>
           Dairy free
-        </Chip>
+        </ChoiceChip>
       </div>
 
       <p className="mt-6 text-[14px] font-bold text-ink">Anything you cannot eat?</p>
@@ -82,9 +82,9 @@ export function MealStep({
       <p className="mt-6 text-[14px] font-bold text-ink">How many times a day?</p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {MEALS.map((m) => (
-          <Chip key={m.n} tone={mealsPerDay === m.n ? 'accent' : 'default'} onClick={() => setMealsPerDay(m.n)}>
+          <ChoiceChip key={m.n} selected={mealsPerDay === m.n} onClick={() => setMealsPerDay(m.n)}>
             {m.label}
-          </Chip>
+          </ChoiceChip>
         ))}
       </div>
 

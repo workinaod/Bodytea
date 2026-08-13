@@ -1,5 +1,5 @@
 import type { EquipTag, Goal } from '../../types'
-import { Btn, Card, Chip } from '../../components/ui'
+import { Btn, Card, ChoiceChip } from '../../components/ui'
 import { accessFor, HOME_CHECKLIST } from './onboardingData'
 
 // ============================================================
@@ -54,13 +54,13 @@ export function GearStep(p: {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {HOME_CHECKLIST.map((e) => (
-                    <Chip
+                    <ChoiceChip
                       key={e.label}
-                      tone={e.tags.every((t) => extras.has(t)) ? 'accent' : 'default'}
+                      selected={e.tags.every((t) => extras.has(t))}
                       onClick={() => toggleItem(e.tags)}
                     >
                       {e.label}
-                    </Chip>
+                    </ChoiceChip>
                   ))}
                 </div>
               </>
@@ -68,13 +68,13 @@ export function GearStep(p: {
             <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Can you get to any of these?</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {accessFor(goal, profile).map((e) => (
-                <Chip
+                <ChoiceChip
                   key={e.label}
-                  tone={e.tags.every((t) => extras.has(t)) ? 'accent' : 'default'}
+                  selected={e.tags.every((t) => extras.has(t))}
                   onClick={() => toggleItem(e.tags)}
                 >
                   {e.label}
-                </Chip>
+                </ChoiceChip>
               ))}
             </div>
             <Btn className="mt-6 w-full py-4" onClick={next}>

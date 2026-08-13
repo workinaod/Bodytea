@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { RoutineGoal } from '../../types'
 import { FOCUS_LABELS, type FocusArea } from '../../plan/generator'
 import { ROUTINE_GOAL_LABELS } from '../../plan/bookletOps'
-import { Btn, Chip } from '../../components/ui'
+import { Btn, ChoiceChip } from '../../components/ui'
 import { GOAL_CHIPS, inferGoal } from './onboardingData'
 
 // ============================================================
@@ -46,14 +46,14 @@ export function GoalStep(p: {
             <div className="mt-4 flex flex-wrap gap-2">
               {mode === 'byor'
                 ? (Object.keys(ROUTINE_GOAL_LABELS) as RoutineGoal[]).map((g) => (
-                    <Chip key={g} tone={routineGoals.has(g) ? 'accent' : 'default'} onClick={() => toggleRoutineGoal(g)}>
+                    <ChoiceChip key={g} selected={routineGoals.has(g)} onClick={() => toggleRoutineGoal(g)}>
                       {ROUTINE_GOAL_LABELS[g]}
-                    </Chip>
+                    </ChoiceChip>
                   ))
                 : GOAL_CHIPS.map((g, i) => (
-                    <Chip key={g.label} tone={goalChip === i ? 'accent' : 'default'} onClick={() => setGoalChip(i)}>
+                    <ChoiceChip key={g.label} selected={goalChip === i} onClick={() => setGoalChip(i)}>
                       {g.label}
-                    </Chip>
+                    </ChoiceChip>
                   ))}
             </div>
             {/* Two ways in, and only one is open at a time.
@@ -100,9 +100,9 @@ export function GoalStep(p: {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {(Object.entries(FOCUS_LABELS) as [FocusArea, string][]).map(([id, label]) => (
-                    <Chip
+                    <ChoiceChip
                       key={id}
-                      tone={focusAreas.has(id) ? 'accent' : 'default'}
+                      selected={focusAreas.has(id)}
                       onClick={() =>
                         setFocusAreas((prev) => {
                           const n = new Set(prev)
@@ -113,7 +113,7 @@ export function GoalStep(p: {
                       }
                     >
                       {label}
-                    </Chip>
+                    </ChoiceChip>
                   ))}
                 </div>
               </>

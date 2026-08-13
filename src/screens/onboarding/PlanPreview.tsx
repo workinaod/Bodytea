@@ -2,7 +2,7 @@ import type { PlanConfig, Weekday } from '../../types'
 import type { RoutineNote } from '../../plan/analyze'
 import type { generatePlan } from '../../plan/generator'
 import { Btn, Card, Chip } from '../../components/ui'
-import { proteinPreview } from './RoutineNotes'
+
 import { WD_SHORT } from './onboardingData'
 
 // ============================================================
@@ -17,7 +17,6 @@ import { WD_SHORT } from './onboardingData'
 export function PlanPreview(p: {
   preview: ReturnType<typeof generatePlan>
   displayName: string
-  weight: number
   setStep: (n: number) => void
   back: () => void
   tuneDraft: PlanConfig | null
@@ -25,7 +24,7 @@ export function PlanPreview(p: {
   setTuneProblems: (p: string[]) => void
   commitPlan: (plan: PlanConfig, proteinTargetG: number, notes?: RoutineNote[], strategy?: string[]) => void
 }) {
-  const { preview, displayName, weight, setStep, tuneDraft, setTuneDraft, setTuneProblems, commitPlan, back } = p
+  const { preview, displayName, setStep, tuneDraft, setTuneDraft, setTuneProblems, commitPlan, back } = p
   return (
           <div className="flex flex-1 flex-col">
             <div className="text-center text-[11px] font-black uppercase tracking-[0.2em] text-accent">
@@ -67,7 +66,11 @@ export function PlanPreview(p: {
 
             <div className="mt-3 grid grid-cols-2 gap-2">
               <Card className="!p-3 text-center">
-                <div className="text-[20px] font-black text-accent">{proteinPreview(weight)}g</div>
+                {/* The number the plan actually saves and the strategy note
+                    quotes. This used to be a stand-in that just echoed
+                    bodyweight, so the card read 180 g while the sentence
+                    directly under it said 210 g. */}
+                <div className="text-[20px] font-black text-accent">{preview.proteinTargetG}g</div>
                 <div className="text-[10.5px] font-bold uppercase tracking-wider text-ink-faint">protein / day</div>
               </Card>
               <Card className="!p-3 text-center">

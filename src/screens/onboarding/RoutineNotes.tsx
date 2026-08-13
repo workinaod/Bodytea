@@ -4,9 +4,8 @@ import { enableReminders } from '../../logic/reminders'
 
 // ============================================================
 // The pieces the review steps are built from: how a routine
-// note is coloured, the protein line on the preview card, and
-// the permission prompts that ask in context rather than on
-// launch.
+// note is coloured, and the permission prompts that ask in
+// context rather than on launch.
 // ============================================================
 
 export const NOTE_TONE: Record<RoutineNote['tone'], string> = {
@@ -15,11 +14,6 @@ export const NOTE_TONE: Record<RoutineNote['tone'], string> = {
   info: 'border-cyan/30 bg-cyan/10 text-cyan',
 }
 export const NOTE_LABEL: Record<RoutineNote['tone'], string> = { warn: 'Fix this', good: 'Solid', info: 'Heads up' }
-
-/** Mirrors the generator's protein formula for the preview card. */
-export function proteinPreview(weightLb: number): number {
-  return Math.min(260, Math.max(120, Math.round(Math.min(330, Math.max(90, weightLb || 175)))))
-}
 
 /** Ask for what the app needs, in context, before the plan starts. */
 export function PermissionsBlock() {
