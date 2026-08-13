@@ -32,8 +32,15 @@ export const runLogSchema = z.object({
   steps: z.number().min(0).optional(),
   avgPaceSec: z.number().min(0),
   kcalEst: z.number().min(0).optional(),
+  elevGainFt: z.number().min(0).optional(),
+  elevLossFt: z.number().min(0).optional(),
   splits: z.array(z.number()),
-  points: z.array(z.tuple([z.number(), z.number(), z.number()])),
+  // The fourth slot is altitude in metres, and it is `.rest()` rather
+  // than a wider tuple so both shapes parse: three-element points from
+  // every session recorded before elevation existed, and four-element
+  // points from every one after. A stored run must never fail to load
+  // because the recorder learned a new trick.
+  points: z.array(z.tuple([z.number(), z.number(), z.number()]).rest(z.number())),
   feltIntensity: z.enum(['low', 'standard', 'high']).optional(),
 })
 
@@ -47,6 +54,7 @@ export const cardioEntrySchema = z.object({
   miles: z.number().optional(),
   minutes: z.number().optional(),
   mode: z.string().optional(),
+  floors: z.number().min(0).optional(),
   runId: z.string().optional(),
   // Only on live-tracked sessions. Everything logged before these
   // existed parses unchanged, which is the whole point of optional.

@@ -26,10 +26,20 @@ export interface CardioActivityDef {
   gps?: boolean
   /** Compendium MET for the default/moderate effort. */
   met: number
-  asks: { where?: boolean; miles?: boolean; minutes?: boolean }
+  asks: { where?: boolean; miles?: boolean; minutes?: boolean; floors?: boolean }
   /** Activity-specific question, e.g. running games vs shooting around. */
   modes?: { id: string; label: string; intense: boolean; met?: number }[]
 }
+
+/**
+ * Height of one floor on a stair machine, in metres.
+ *
+ * Stair climbers count "floors" and every manufacturer means something
+ * slightly different by it. 3.05 m (10 ft) is the figure StairMaster
+ * and Life Fitness consoles are built around, and it is also what
+ * phone step-counters assume, so a floor here matches a floor there.
+ */
+export const FLOOR_HEIGHT_M = 3.05
 
 export const CARDIO_ACTIVITIES: CardioActivityDef[] = [
   // ---- GPS-tracked: their own recorder, live pace and route ----
@@ -51,6 +61,23 @@ export const CARDIO_ACTIVITIES: CardioActivityDef[] = [
     ],
   },
   { id: 'row-erg', label: 'Row / erg', emoji: '🚣', conditioning: true, met: 7.0, asks: { minutes: true } },
+  {
+    // The one cardio machine whose whole point is vertical. GPS cannot
+    // see it — the body climbs while the phone stays put — and no
+    // browser exposes a barometer, so the floors come off the console.
+    // Compendium 8.8 covers a general stair-machine session; the floors
+    // then add the measured climb on top in engine/runs.ts.
+    id: 'stairs',
+    label: 'Stair climber',
+    emoji: '🪜',
+    conditioning: true,
+    met: 8.8,
+    asks: { minutes: true, floors: true },
+    modes: [
+      { id: 'steady', label: 'Steady climb', intense: false, met: 8.8 },
+      { id: 'intervals', label: 'Intervals / sprints', intense: true, met: 11.0 },
+    ],
+  },
   { id: 'jump-rope', label: 'Jump rope', emoji: '🪢', conditioning: true, met: 11.8, asks: { minutes: true } },
   { id: 'hike', label: 'Hike', emoji: '🥾', conditioning: true, gps: true, met: 6.0, asks: { miles: true, minutes: true } },
 
@@ -395,6 +422,12 @@ const ACTIVITY_TRACKING: Record<string, ActivityTracking> = {
   swim: { steps: false, distance: 'none' },
   'row-erg': { steps: false, distance: 'none' },
   hockey: { steps: false, distance: 'none' },
+  // A stair machine does produce footfalls, and counting them would be
+  // the wrong signal anyway: cadence barely moves between level 4 and
+  // level 14, while the work more than doubles. Floors off the console
+  // carry that difference, and they are charged as vertical work in
+  // engine/intensity.ts rather than guessed at from a step rate.
+  stairs: { steps: false, distance: 'none' },
   // Skiing rides back up. A lift at 10 mph and a gondola at 25 both
   // clear the teleport filter, so a GPS total for a ski day is roughly
   // double the distance actually skied, and there is no way from a

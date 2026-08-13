@@ -23,6 +23,7 @@ import { useAppStore } from '../../store/appStore'
 import { Btn } from '../../components/ui'
 import { MAX_ZOOM, MIN_ZOOM, RouteMap } from '../../components/RouteMap'
 import { RunReactionCard } from '../../components/RunReactionCard'
+import { acceptsAltitude, currentGradePct, elevationStats } from '../../engine/elevation'
 import { requestMotionPermission, startStepCounter, type StepCounter } from '../../platform/motion'
 import { stepDistanceMi, tracksSteps } from '../../engine/intensity'
 
@@ -115,7 +116,19 @@ export function RunTrackerSheet({
         const t = (Date.now() - startRef.current) / 1000
         const prev = pointsRef.current[pointsRef.current.length - 1] ?? null
         if (acceptFix(prev, pos.coords.latitude, pos.coords.longitude, t, pos.coords.accuracy ?? 99)) {
-          pointsRef.current.push([pos.coords.latitude, pos.coords.longitude, Math.round(t)])
+          // Altitude is gated separately from position: the same fix can
+          // be solid horizontally and useless vertically, and a point
+          // stored with a junk altitude is worse than one stored with
+          // none — the smoothing can bridge a gap, it cannot un-invent
+          // a 15 m spike.
+          const alt = acceptsAltitude(pos.coords.altitude, pos.coords.altitudeAccuracy)
+            ? pos.coords.altitude ?? undefined
+            : undefined
+          pointsRef.current.push(
+            alt === undefined
+              ? [pos.coords.latitude, pos.coords.longitude, Math.round(t)]
+              : [pos.coords.latitude, pos.coords.longitude, Math.round(t), Math.round(alt * 10) / 10],
+          )
           forceRender((n) => n + 1)
         }
       },
@@ -143,7 +156,11 @@ export function RunTrackerSheet({
   )
   // Stride length scales with height, so indoor distance needs it.
   const heightIn = useAppStore((st) => st.data.profile.heightIn)
-  const liveKcal = estKcal(activity, distance, elapsed, bodyweight)
+  // Recomputed on every fix, so climb, grade and calories move while
+  // the session is running rather than appearing at the finish.
+  const elev = useMemo(() => elevationStats(points), [points, points.length])
+  const grade = useMemo(() => currentGradePct(points), [points, points.length])
+  const liveKcal = estKcal(activity, distance, elapsed, bodyweight, elev.gainM)
   const label = activity === 'run' ? 'Run' : activity === 'bike' ? 'Ride' : activity === 'hike' ? 'Hike' : 'Walk'
 
   // The map is a full-screen takeover, so its box is the viewport minus
@@ -289,6 +306,25 @@ export function RunTrackerSheet({
                 </div>
               </div>
             </div>
+            {/* Climb sits on its own line rather than crowding into the
+                band above, and only once the phone has actually given a
+                usable altitude. A row reading "0 ft" for the whole of a
+                session indoors, or on a device whose GPS reports no
+                vertical at all, is worse than no row. */}
+            {elev.samples > 1 && (
+              <div className="flex shrink-0 items-center gap-4 pb-3 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
+                <span>
+                  <span className="num mr-1 text-[15px] text-ink">{elev.gainFt.toLocaleString()}</span>ft climb
+                </span>
+                <span>
+                  <span className="num mr-1 text-[15px] text-ink">
+                    {grade > 0 ? '+' : ''}
+                    {grade.toFixed(1)}
+                  </span>
+                  % grade
+                </span>
+              </div>
+            )}
             <Btn kind="lime" className="w-full shrink-0 py-4 text-[15px]" onClick={finish}>
               Finish {label.toLowerCase()}
             </Btn>

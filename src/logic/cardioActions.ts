@@ -6,6 +6,7 @@ import { uid, useAppStore } from '../store/appStore'
 import { stampReachedStages } from './journeyActions'
 import { mondayOf } from '../engine/calendar'
 import { estKcal } from '../engine/runs'
+import { ftToM } from '../engine/elevation'
 import type { Intensity } from '../engine/intensity'
 
 // ============================================================
@@ -153,7 +154,16 @@ export function saveRun(run: RunLog): void {
         break
       }
     }
-    run.kcalEst = estKcal(run.activity, run.distanceMi, run.durationSec, bw ?? 175)
+    // The climb is part of the bill. buildRunLog already measured it
+    // from the track, so a hill logged here costs what it cost to walk
+    // up, not what the same pace on the flat would have.
+    run.kcalEst = estKcal(
+      run.activity,
+      run.distanceMi,
+      run.durationSec,
+      bw ?? 175,
+      ftToM(run.elevGainFt ?? 0),
+    )
     d.runs.push(run)
   })
   logCardio(run.date, {

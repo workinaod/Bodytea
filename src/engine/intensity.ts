@@ -1,4 +1,5 @@
-import { cardioActivity, metFor, trackingFor } from '../plan/cardio'
+import { cardioActivity, FLOOR_HEIGHT_M, metFor, trackingFor } from '../plan/cardio'
+import { climbKcal } from './runs'
 
 // ============================================================
 // How hard was that, actually.
@@ -126,6 +127,16 @@ export interface CardioMeasure {
   mode?: string | null
   /** Footfalls counted across the session. */
   steps?: number
+  /**
+   * Floors climbed, off a stair machine's console.
+   *
+   * The one number in this struct the athlete reads off a screen and
+   * types in. There is no way to measure it: the body climbs while the
+   * phone stays still, GPS sees nothing, and no browser exposes a
+   * barometer. Entered honestly it is better data than anything the
+   * device could infer.
+   */
+  floors?: number
 }
 
 export interface KcalEstimate {
@@ -134,6 +145,8 @@ export interface KcalEstimate {
   /** What the number was built on, so the app can say so out loud. */
   basis: 'steps' | 'mode'
   intensity: Intensity | null
+  /** The share of kcal bought by climbing, when floors were entered. */
+  climbKcal: number
 }
 
 const toKg = (lb: number) => Math.min(150, Math.max(40, (lb || 175) * 0.4536))
@@ -166,8 +179,13 @@ export function cardioKcal(m: CardioMeasure): KcalEstimate {
       : (claimed ?? cardioActivity(m.activityId).met)
 
   const basis = measured !== null && (claimed === null || measured >= claimed) ? 'steps' : 'mode'
-  const kcal = m.minutes <= 0 ? 0 : Math.round(met * toKg(m.bodyweightLb) * (m.minutes / 60))
-  return { kcal, met, basis, intensity }
+  // Floors are vertical work and get charged as such, by the same
+  // physics the GPS activities use for a hill. The machine's MET
+  // already covers moving on it; this covers how far up it moved you,
+  // which is the whole difference between level 4 and level 14.
+  const climb = climbKcal((m.floors ?? 0) * FLOOR_HEIGHT_M, m.bodyweightLb)
+  const kcal = m.minutes <= 0 ? 0 : Math.round(met * toKg(m.bodyweightLb) * (m.minutes / 60)) + climb
+  return { kcal, met, basis, intensity, climbKcal: climb }
 }
 
 /**
