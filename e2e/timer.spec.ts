@@ -6,7 +6,7 @@ import { test, expect, type Page } from '@playwright/test'
 // with two close buttons and its title tucked behind one of them.
 // It portals to the body now. One X, edge to edge.
 async function onboard(page: Page) {
-  await page.getByRole('button', { name: 'Something else' }).click()
+  await page.getByRole('button', { name: "Let's get started" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByLabel('Height').fill('510')

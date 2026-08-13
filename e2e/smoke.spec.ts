@@ -5,7 +5,7 @@ test.describe.configure({ mode: 'serial' })
 
 /** Walk the generator onboarding: vertical goal, 6 days, a home gym with DBs + bench + bar. */
 async function onboardGenerated(page: Page) {
-  await page.getByRole('button', { name: 'Something else' }).click()
+  await page.getByRole('button', { name: "Let's get started" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByLabel('Height').fill('510')
@@ -19,7 +19,7 @@ async function onboardGenerated(page: Page) {
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   // Home gym assumes nothing, the checklist is the source of truth
   await page.getByText('Home gym').click()
-  await expect(page.getByText('Check everything you have')).toBeVisible()
+  await expect(page.getByText('Tick what you own')).toBeVisible()
   await page.getByText('Dumbbells', { exact: true }).click()
   await page.getByText('Flat bench').click()
   await page.getByText('Pull-up bar', { exact: true }).click()
@@ -36,7 +36,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.goto('./')
 
   // ---- Onboarding v2 generates a personal booklet ----
-  await expect(page.getByRole('heading', { name: /What are\s+your goals\?/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Tell us\s+your goals/ })).toBeVisible()
   await onboardGenerated(page)
 
   // ---- Today renders a resolved day ----

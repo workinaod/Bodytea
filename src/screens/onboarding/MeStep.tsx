@@ -54,8 +54,8 @@ export function MeStep({
 
   return (
     <div className="flex flex-1 flex-col">
-      <Kicker>Entry 01</Kicker>
-      <Title>Who is training?</Title>
+      <Kicker>First up</Kicker>
+      <Title>What should we call you?</Title>
 
       <input
         value={displayName}
@@ -65,7 +65,7 @@ export function MeStep({
       />
 
       <Reveal when={named} className="mt-8">
-        <Label>Sex</Label>
+        <Label>You are</Label>
         <div className="flex gap-2">
           <Tag selected={sex === 'male'} onClick={() => setSex('male')} className="flex-1">
             Male
@@ -77,17 +77,17 @@ export function MeStep({
       </Reveal>
 
       <Reveal when={showHeight} className="mt-8">
-        <Label note="tap 5 1 0">Height</Label>
+        <Label>How tall are you?</Label>
         <HeightField value={heightIn} onChange={setHeightIn} />
         {heightIn === null && sex && (
           <div className="mt-1">
-            <Quiet onClick={() => setHeightIn(DEFAULT_HEIGHT_IN[sex])}>I would rather not say</Quiet>
+            <Quiet onClick={() => setHeightIn(DEFAULT_HEIGHT_IN[sex])}>Skip this</Quiet>
           </div>
         )}
       </Reveal>
 
       <Reveal when={showWeight} className="mt-8">
-        <Label>Weight</Label>
+        <Label>And roughly how heavy?</Label>
         <WeightField value={weight} onChange={setWeight} />
       </Reveal>
 

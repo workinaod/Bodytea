@@ -243,7 +243,7 @@ export interface PlanConfig {
   /** How this user eats, filters generated meals + swap suggestions. */
   dietStyle?: DietStyle
   /** Training history from onboarding, seeds first-session weights. */
-  experience?: 'new' | 'returning' | 'trained'
+  experience?: 'new' | 'returning' | 'casual' | 'trained'
   /** One-tap goal follow-up answers, the coach's extra context. */
   goalAnswers?: Record<string, string>
 }

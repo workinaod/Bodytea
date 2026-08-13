@@ -7,8 +7,16 @@ import type { ExerciseDef } from '../types'
 // history take over; the user can always adjust by hand.
 // ============================================================
 
-export type Experience = 'new' | 'returning' | 'trained'
-const LEVEL: Record<Experience, number> = { new: 0, returning: 1, trained: 2 }
+export type Experience = 'new' | 'returning' | 'casual' | 'trained'
+/**
+ * Which column of the fraction tables to seed from.
+ *
+ * `casual` shares the middle column with `returning`: a starting weight
+ * is a coarse guess that the first session corrects either way, and
+ * splitting the tables four ways would be false precision. Where the two
+ * genuinely differ is RATE, and that lives in plan/milestones.ts.
+ */
+const LEVEL: Record<Experience, number> = { new: 0, returning: 1, casual: 1, trained: 2 }
 
 /** Fraction of bodyweight for a sane working set: [new, returning, trained]. */
 function fractions(def: ExerciseDef, perHand: boolean): [number, number, number] | null {

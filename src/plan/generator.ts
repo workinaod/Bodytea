@@ -34,7 +34,7 @@ export interface OnboardingAnswers {
   daysPerWeek: 3 | 4 | 5 | 6
   equipProfile: 'gym' | 'home-db' | 'minimal'
   extraEquip: EquipTag[]
-  experience: 'new' | 'returning' | 'trained'
+  experience: 'new' | 'returning' | 'casual' | 'trained'
   bodyweightLb: number
   /** Corrects the calorie baseline, which bodyweight alone cannot: two
    *  people at the same weight and different heights do not eat the same. */

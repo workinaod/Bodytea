@@ -1,6 +1,5 @@
 import type { EquipTag, Goal, LifeEventKind } from '../../types'
 import { canRealisticallyDunk, leadingGoal } from '../../plan/reach'
-import type { QuickGoal } from './Welcome'
 
 // ============================================================
 // What the wizard asks with: the chip sets, the checklists, and
@@ -121,37 +120,6 @@ export function visibleGoalChips(body: { heightIn?: number; weightLb?: number })
   // order behind it, and nothing on screen says why.
   const first = idx.filter((i) => GOAL_CHIPS[i].goal === lead)
   return [...first, ...idx.filter((i) => !first.includes(i))]
-}
-
-// Five goals with nothing in common, so the welcome screen demonstrates
-// the app's range instead of asserting it. `chip` indexes GOAL_CHIPS.
-/**
- * The five on the very first screen.
- *
- * The old five were one person's life — dunk a basketball, bench 225,
- * first marathon. Three of those are the tail end of two goals, so a
- * 45-year-old who wants to stop being out of breath opened the app and
- * saw nothing for her. These are the goals people actually arrive with,
- * and they still point five different directions — lose, build, feel
- * better, go further, get strong — so the screen proves the range
- * instead of asserting it.
- *
- * They name their goal rather than an INDEX into the chip list. The
- * index version silently broke the moment that list was reordered:
- * four of five landing chips seeded the wrong plan and nothing said so.
- */
-export const QUICK_GOALS: QuickGoal[] = [
-  { label: '🔥 Lose weight', statement: 'lose weight and keep it off', goal: 'lean' },
-  { label: '🫀 Get my energy back', statement: 'get my energy back', goal: 'general' },
-  { label: '💪 Build muscle', statement: 'put on muscle', goal: 'muscle' },
-  { label: '🏃 Run a 5K', statement: 'run a 5K without stopping', goal: 'endurance' },
-  { label: '🏋️ Get strong again', statement: 'get strong again', goal: 'strength' },
-]
-
-/** Where a landing goal lands in the chip grid. Never an index in data. */
-export const chipIndexForGoal = (goal: Goal): number | null => {
-  const i = GOAL_CHIPS.findIndex((c) => c.goal === goal)
-  return i === -1 ? null : i
 }
 
 /** Home-gym checklist: nothing is assumed, each item grants its tags. */

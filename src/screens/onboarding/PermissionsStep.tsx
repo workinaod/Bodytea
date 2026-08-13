@@ -50,8 +50,8 @@ export function PermissionsStep({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <Kicker>Entry 08</Kicker>
-      <Title>Last thing</Title>
+      <Kicker>That's everything</Kicker>
+      <Title>One last thing</Title>
 
       <div className="mt-7 border-t border-white/[0.14]">
         {live.map((id) => {

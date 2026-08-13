@@ -11,7 +11,7 @@ import { Reveal } from '../../components/ui'
 import { Bar, Kicker, Label, Lane, OnPaper, Tag, Title, fieldCls, fieldStyle } from './kit'
 import { AmbientBackdrop } from '../../components/AmbientBackdrop'
 import { Welcome } from './Welcome'
-import { chipIndexForGoal, ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS, QUICK_GOALS } from './onboardingData'
+import { ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS } from './onboardingData'
 import { requestDurableStorage } from '../../platform/persistence'
 import { PermissionsStep } from './PermissionsStep'
 import { GoalStep } from './GoalStep'
@@ -83,7 +83,7 @@ export function Onboarding() {
   const [daysPick, setDaysPick] = useState<3 | 4 | 5 | 6 | null>(null)
   const [profile, setProfile] = useState<'gym' | 'home-db' | 'minimal'>('gym')
   const [extras, setExtras] = useState<Set<EquipTag>>(new Set())
-  const [experience, setExperience] = useState<'new' | 'returning' | 'trained'>('returning')
+  const [experience, setExperience] = useState<'new' | 'returning' | 'casual' | 'trained'>('returning')
   const [mealsPick, setMealsPick] = useState<2 | 3 | 4 | 5 | null>(null)
   const [lifePicks, setLifePicks] = useState<Set<string>>(new Set())
   const [customLife, setCustomLife] = useState('')
@@ -326,15 +326,6 @@ export function Onboarding() {
       {step === 0 && (
         <Welcome
           rebuilding={rebuilding}
-          quickGoals={QUICK_GOALS}
-          onPickGoal={(g) => {
-            // Seed the goal so the tap is a head start, not just a page turn.
-            // Both stay editable at the goal step.
-            setMode('gen')
-            setGoalChip(chipIndexForGoal(g.goal))
-            setGoalStatement(g.statement)
-            next()
-          }}
           onBuild={() => {
             setMode('gen')
             next()
@@ -346,7 +337,7 @@ export function Onboarding() {
         />
       )}
 
-      <OnPaper on={ON_PAPER.has(step)}>
+      <OnPaper on={ON_PAPER.has(step)} step={step}>
       {step === 1 && (
         <MeStep
           displayName={displayName}
@@ -414,8 +405,8 @@ export function Onboarding() {
 
       {step === 3 && (
         <div className="flex flex-1 flex-col">
-          <Kicker>Entry 04</Kicker>
-          <Title sub="A plan you stick to beats a bigger one you skip.">How many days a week?</Title>
+          <Kicker>Your week</Kicker>
+          <Title sub="Be honest. A plan you keep beats a bigger one you skip.">How many days can you train?</Title>
           <div className="mt-6 grid grid-cols-4 gap-1.5">
             {([3, 4, 5, 6] as const).map((d) => (
               <button
@@ -434,7 +425,7 @@ export function Onboarding() {
 
           {/* Their real week, seeds life events so every coach note speaks their schedule */}
           <Reveal when={daysPick !== null} className="mt-8">
-            <Label note="works around it">What else is in your week?</Label>
+            <Label>What else is going on?</Label>
             <div className="flex flex-wrap gap-1.5">
               {LIFE_CHIPS.map((c) => (
                 <Tag
@@ -496,22 +487,18 @@ export function Onboarding() {
 
       {step === 5 && (
         <div className="flex flex-1 flex-col">
-          <Kicker>Entry 06</Kicker>
-          <Title>How long have you trained?</Title>
-          <div className="mt-6 border-t border-white/[0.14]">
+          <Kicker>Where you're at</Kicker>
+          <Title>How much have you trained?</Title>
+          <div className="enter-stagger mt-7">
             {(
               [
                 ['new', 'New to this'],
                 ['returning', 'Coming back'],
-                ['trained', 'Training now'],
+                ['casual', 'Casual'],
+                ['trained', 'Experienced'],
               ] as const
             ).map(([id, title], i) => (
-              <Lane
-                key={id}
-                n={i + 1}
-                selected={experience === id}
-                onClick={() => setExperience(id)}
-              >
+              <Lane key={id} n={i + 1} selected={experience === id} onClick={() => setExperience(id)}>
                 {title}
               </Lane>
             ))}

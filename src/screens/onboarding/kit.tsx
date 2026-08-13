@@ -67,8 +67,11 @@ export function Bib({ children }: { children: ReactNode }) {
  * rather than a question — both keep the app's own dark chrome. Every
  * question in between arrives on the bib.
  */
-export function OnPaper({ on, children }: { on: boolean; children: ReactNode }) {
-  return on ? <Bib>{children}</Bib> : <>{children}</>
+export function OnPaper({ on, step, children }: { on: boolean; step: number; children: ReactNode }) {
+  // Keyed on the step so every screen re-mounts and plays its entrance:
+  // the paper turns like a page rather than its contents swapping under
+  // a sheet that never moves.
+  return on ? <Bib key={step}>{children}</Bib> : <>{children}</>
 }
 
 /** The line above a title: where you are, in the app's voice. */

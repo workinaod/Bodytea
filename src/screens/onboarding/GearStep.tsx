@@ -30,9 +30,9 @@ export function GearStep(p: {
   const [chose, setChose] = useState(false)
   return (
           <div className="flex flex-1 flex-col">
-            <Kicker>Entry 05</Kicker>
-            <Title>Where do you train?</Title>
-            <div className="mt-6 border-t border-white/[0.14]">
+            <Kicker>Where you train</Kicker>
+            <Title>What have you got?</Title>
+            <div className="enter-stagger mt-6">
               {(
                 [
                   ['gym', 'Full gym'],
@@ -55,7 +55,7 @@ export function GearStep(p: {
             </div>
             {chose && profile === 'home-db' && (
               <Reveal when className="mt-8">
-                <Label>Check everything you have</Label>
+                <Label>Tick what you own</Label>
                 <div className="flex flex-wrap gap-1.5">
                   {HOME_CHECKLIST.map((e) => (
                     <Tag key={e.label} selected={e.tags.every((t) => extras.has(t))} onClick={() => toggleItem(e.tags)}>

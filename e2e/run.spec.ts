@@ -7,7 +7,7 @@ test.use({
 })
 
 async function quickOnboard(page: Page) {
-  await page.getByRole('button', { name: 'Something else' }).click()
+  await page.getByRole('button', { name: "Let's get started" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByLabel('Height').fill('510')

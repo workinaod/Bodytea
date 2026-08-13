@@ -11,8 +11,7 @@ import { test, expect } from '@playwright/test'
 async function toPreview(page: import('@playwright/test').Page) {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
-  await page.getByRole('button', { name: /Lose weight/ }).click()
-  await page.getByRole('button', { name: "Let's go" }).click()
+  await page.getByRole('button', { name: "Let's get started" }).click()
   await page.locator('input').first().fill('Maya')
   await page.getByRole('button', { name: 'Female', exact: true }).click()
   await page.getByLabel('Height').fill('510')
@@ -45,8 +44,7 @@ test('every onboarding choice is a real button', async ({ page }) => {
   // screen reader, and half the height a tap target should be.
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
-  await page.getByRole('button', { name: /Lose weight/ }).click()
-  await page.getByRole('button', { name: "Let's go" }).click()
+  await page.getByRole('button', { name: "Let's get started" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByLabel('Height').fill('510')

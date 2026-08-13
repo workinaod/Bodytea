@@ -1,114 +1,69 @@
-import { useState } from 'react'
-import type { Goal } from '../../types'
 
 // ============================================================
-// The first screen anyone sees, and the only one that is the
-// room itself rather than paper pinned over it.
+// The first screen anyone sees.
 //
-// Four versions before this. Ninety words of claims; then five
-// goal buttons that were one person's life; then the same five
-// rounded and glowing on a dark gradient, which is what every
-// generated app looks like.
+// Five versions. Ninety words of claims. Then five goal buttons
+// that were one person's life. Then the same five rounded and
+// glowing on a dark gradient, which is what every generated app
+// looks like. Then hard-edged tags on a tunnel, which looked
+// right and still made you choose something before the app had
+// said a single thing to you.
 //
-// This is a tunnel with the name built into the architecture.
-// The question is the biggest thing on screen, the goals are
-// hard-edged tags under it, and the way in is one block of
-// light.
+// This one says one thing and offers one door. The goals live
+// on the goal screen, where there are twelve of them and the
+// app already knows who it is talking to — asking here meant
+// asking twice with a worse list.
 // ============================================================
-
-export interface QuickGoal {
-  label: string
-  /** Pre-fills the goal, editable at the next step. */
-  statement: string
-  /** The goal itself, not a position in a list that can be reordered. */
-  goal: Goal
-}
 
 export function Welcome({
   rebuilding,
-  quickGoals,
-  onPickGoal,
   onBuild,
   onOwnRoutine,
 }: {
   rebuilding: boolean
-  quickGoals: QuickGoal[]
-  onPickGoal: (g: QuickGoal) => void
   onBuild: () => void
   onOwnRoutine: () => void
 }) {
-  // Selecting and starting are two taps here, not one. On a screen this
-  // sparse a single tap that both chooses and navigates gives you no
-  // moment to change your mind.
-  const [picked, setPicked] = useState<QuickGoal | null>(null)
-
   return (
     <div className="flex flex-1 flex-col">
       <div className="headline text-[24px] leading-none tracking-[-0.04em]">
         Body<span className="text-accent">T</span>
       </div>
 
-      <div className="mt-auto pt-16">
-        <h1 className="headline text-[52px] uppercase leading-[0.86] tracking-[-0.045em]">
-          What are
+      <div className="mt-auto">
+        <h1 className="headline text-[54px] uppercase leading-[0.86] tracking-[-0.045em]">
+          Tell us
           <br />
-          <span className="text-accent">your goals?</span>
+          your goals.
+          <br />
+          <span className="text-accent">We'll get</span>
+          <br />
+          <span className="text-accent">you there.</span>
         </h1>
-        <p className="mt-4 max-w-[17rem] text-[14px] leading-relaxed text-ink-dim">
-          Pick one. You get a plan built round your week, not somebody else's.
-        </p>
-
-        {/* Hard-edged tags, not pills. Selected is a solid block of
-            accent — no tint, no ring, no middle state. */}
-        <div className="enter-stagger mt-8 flex flex-wrap gap-2">
-          {quickGoals.map((g) => {
-            const on = picked?.goal === g.goal
-            return (
-              <button
-                key={g.label}
-                type="button"
-                aria-pressed={on}
-                onClick={() => setPicked(g)}
-                className={`press px-4 py-3 text-[12.5px] font-black uppercase leading-none tracking-[0.06em] transition-colors ${
-                  on
-                    ? 'bg-accent text-black'
-                    : 'text-ink shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]'
-                }`}
-              >
-                {g.label.replace(/^\S+\s/, '')}
-              </button>
-            )
-          })}
-          <button
-            type="button"
-            onClick={onBuild}
-            className="press px-4 py-3 text-[12.5px] font-black uppercase leading-none tracking-[0.06em] text-ink-faint shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]"
-          >
-            {rebuilding ? 'Rebuild' : 'Something else'}
-          </button>
-        </div>
       </div>
 
       {rebuilding && (
-        <p className="enter mt-6 border-l-2 border-accent py-1 pl-3 text-[12px] leading-snug text-ink-dim">
+        <p className="enter mt-7 border-l-2 border-accent py-1 pl-3 text-[12px] leading-snug text-ink-dim">
           <span className="font-black uppercase tracking-[0.08em] text-accent">Rebuilding.</span> Everything you
           logged is safe. Answer again and you get the better version.
         </p>
       )}
 
-      <div className="mt-9">
+      <div className="mt-10">
         <button
           type="button"
-          disabled={!picked}
-          onClick={() => picked && onPickGoal(picked)}
-          className="press w-full bg-[#EFEFEE] py-[18px] text-[14px] font-black uppercase tracking-[0.14em] text-[#0B0B0C] transition-opacity disabled:opacity-25"
+          onClick={onBuild}
+          className="press w-full bg-[#EFEFEE] py-[20px] text-[15px] font-black uppercase tracking-[0.14em] text-[#0B0B0C]"
         >
-          Let's go
+          {rebuilding ? 'Rebuild my plan' : "Let's get started"}
         </button>
+        {/* The only other door there is. It stays because it is the sole
+            way into bring-your-own-routine, and quiet because almost
+            nobody arrives already holding a programme. */}
         <button
           type="button"
           onClick={onOwnRoutine}
-          className="press mt-1 w-full py-3 text-[11px] font-black uppercase tracking-[0.18em] text-ink-faint"
+          className="press mt-1 w-full py-3.5 text-[11px] font-black uppercase tracking-[0.18em] text-ink-faint"
         >
           I already have a routine
         </button>

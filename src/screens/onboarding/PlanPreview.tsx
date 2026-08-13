@@ -37,7 +37,7 @@ export function PlanPreview(p: {
 
   return (
     <div className="flex flex-1 flex-col">
-      <Kicker>{displayName.trim() ? `Built for ${displayName.trim()}` : 'Your plan'}</Kicker>
+      <Kicker>{displayName.trim() ? `Here you go, ${displayName.trim()}` : 'Here you go'}</Kicker>
       <Title>{preview.plan.name}</Title>
       <p className="mt-3 text-[14px] font-bold italic leading-snug" style={{ color: RED }}>
         “{preview.plan.goalStatement}”
@@ -45,7 +45,7 @@ export function PlanPreview(p: {
 
       {/* The week, ruled out. A start list, not a stack of cards. */}
       <div className="mt-7">
-        <Label>The week</Label>
+        <Label>Your week</Label>
         {([1, 2, 3, 4, 5, 6, 0] as Weekday[]).map((wd) => {
           const tid = preview.plan.tier1ByWeekday[wd]
           const t = tid ? preview.plan.templates[tid] : null
@@ -106,7 +106,7 @@ export function PlanPreview(p: {
           at the bottom of it — see deepGoalStrategy for the reordering. */}
       {preview.strategy.length > 0 && (
         <div className="mt-7">
-          <Label>Why this plan</Label>
+          <Label>Why it looks like this</Label>
           <ul className="space-y-2.5">
             {preview.strategy.slice(0, 3).map((s, i) => (
               <li key={i} className="flex gap-2.5 text-[12.5px] leading-snug opacity-75">

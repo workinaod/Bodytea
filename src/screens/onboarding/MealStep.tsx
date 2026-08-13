@@ -60,8 +60,8 @@ export function MealStep({
   const [chose, setChose] = useState(false)
   return (
     <div className="flex flex-1 flex-col">
-      <Kicker>Entry 07</Kicker>
-      <Title>Want a food plan?</Title>
+      <Kicker>Nearly done</Kicker>
+      <Title>Want food sorted too?</Title>
 
       <div className="mt-7" />
       <Label>How do you eat?</Label>
@@ -79,7 +79,7 @@ export function MealStep({
       {/* Dairy free is not a fifth diet — it stacks on any of the four.
           Sitting in that row it read as one more of them. */}
       <Reveal when={chose} className="mt-6">
-        <Label>Anything you cannot eat?</Label>
+        <Label>Anything you can't eat?</Label>
         <div className="flex">
           <Tag selected={dairyFree} onClick={() => setDairyFree((v) => !v)}>
             Dairy free

@@ -66,12 +66,12 @@ export function GoalStep(p: {
         if (picked) setMovedOn(true)
       }}
     >
-      <Kicker>{mode === 'byor' ? 'Your routine' : 'Entry 02'}</Kicker>
-      <Title sub={mode === 'byor' ? 'Pick every one that applies.' : 'Pick one, or type your own.'}>
-        {mode === 'byor' ? 'What is it chasing?' : first ? `What are your goals, ${first}?` : 'What are your goals?'}
+      <Kicker>{mode === 'byor' ? 'Your routine' : `Good to meet you${first ? `, ${first}` : ''}`}</Kicker>
+      <Title sub={mode === 'byor' ? 'Pick every one that applies.' : 'Pick one, or say it your own way.'}>
+        {mode === 'byor' ? 'What is it chasing?' : 'So what are you after?'}
       </Title>
 
-      <div className="mt-5 flex flex-wrap gap-1.5">
+      <div className="enter-stagger mt-5 flex flex-wrap gap-1.5">
         {mode === 'byor'
           ? (Object.keys(ROUTINE_GOAL_LABELS) as RoutineGoal[]).map((g) => (
               <Tag key={g} selected={routineGoals.has(g)} onClick={() => toggleRoutineGoal(g)}>
@@ -91,7 +91,7 @@ export function GoalStep(p: {
           goal and then type the same goal out longhand. */}
       {mode !== 'byor' && goalChip !== null ? (
         <Reveal when className="mt-8">
-          <Label note="optional">Let's get specific</Label>
+          <Label note="optional">Anything we should know?</Label>
           <textarea
             value={goalDetail}
             onChange={(e) => setGoalDetail(e.target.value)}
@@ -103,7 +103,7 @@ export function GoalStep(p: {
         </Reveal>
       ) : (
         <div className="mt-8">
-          <Label>Or say it yourself</Label>
+          <Label>Say it your own way</Label>
           <textarea
             value={goalStatement}
             onChange={(e) => {
@@ -121,8 +121,8 @@ export function GoalStep(p: {
       )}
 
       <Reveal when={showFocus} className="mt-8">
-        <Label note="up to 4">Anywhere you want to focus on</Label>
-        <div className="flex flex-wrap gap-1.5">
+        <Label note="up to 4">Anywhere you want extra work?</Label>
+        <div className="enter-stagger flex flex-wrap gap-1.5">
           {(Object.entries(FOCUS_LABELS) as [FocusArea, string][]).map(([id, label]) => (
             <Tag
               key={id}

@@ -55,7 +55,7 @@ function Question({
           className={field} style={fieldStyle}
         />
       ) : (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="enter-stagger flex flex-wrap gap-1.5">
           {(fq.options ?? []).map((o) => (
             <Tag key={o} selected={value === o} onClick={() => onPick(o)}>
               {o}
@@ -98,8 +98,8 @@ export function FollowupStep({
 
   return (
     <div className="flex flex-1 flex-col">
-      <Kicker>Entry 03</Kicker>
-      <Title sub="Every answer changes your plan.">
+      <Kicker>Getting specific</Kicker>
+      <Title sub="Every answer changes what we build you.">
         {firstName ? `A few things, ${firstName}` : 'A few things'}
       </Title>
 

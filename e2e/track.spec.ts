@@ -5,7 +5,7 @@ import { expect } from '@playwright/test'
 // timer and into the log. Picking "Custom" and getting a session called
 // "Custom" is the failure this guards.
 async function onboard(page: Page) {
-  await page.getByRole('button', { name: 'Something else' }).click()
+  await page.getByRole('button', { name: "Let's get started" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByLabel('Height').fill('510')

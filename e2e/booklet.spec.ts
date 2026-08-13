@@ -97,7 +97,7 @@ test('generated booklet: fine-tune before starting', async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
 
-  await throughGoal(page, 'Something else', 'Jump higher', 'dunk on a 10-ft rim by June')
+  await throughGoal(page, "Let's get started", 'Jump higher', 'dunk on a 10-ft rim by June')
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '6 days' }).click()

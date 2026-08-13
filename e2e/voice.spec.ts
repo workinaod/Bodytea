@@ -69,8 +69,7 @@ test('the coach speaks English, not shorthand', async ({ page }) => {
   await page.goto('./')
 
   // A strength goal, so the session is full of loaded lifts with ranges
-  await page.getByRole('button', { name: /Get strong again/ }).click()
-  await page.getByRole('button', { name: "Let's go" }).click()
+  await page.getByRole('button', { name: "Let's get started" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByLabel('Height').fill('510')
@@ -108,8 +107,7 @@ test('the set intro is several utterances, not one flat sentence', async ({ page
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
 
-  await page.getByRole('button', { name: /Get strong again/ }).click()
-  await page.getByRole('button', { name: "Let's go" }).click()
+  await page.getByRole('button', { name: "Let's get started" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByLabel('Height').fill('510')
