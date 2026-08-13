@@ -321,6 +321,57 @@ const RULES: RuleDef[] = [
     ],
   },
   {
+    id: 'attendance-slipping',
+    area: 'consistency',
+    // Above the recovery and nutrition problems, below the goal-progress
+    // signals. Somebody who is not training does not have a sleep problem
+    // or a protein problem worth solving first, but a genuine jump PR is
+    // still the better thing to lead with. Only the top two insights ever
+    // reach the debrief, so this number is the difference between a rule
+    // that speaks and a rule that exists.
+    priority: 78,
+    cooldownDays: 14,
+    /**
+     * The one thing nobody was told.
+     *
+     * Sixteen rules watched protein, sleep, waistlines, vertical jumps and
+     * whether a deload was respected. Attendance had two, and both of them
+     * only ever spoke when it was going well. An athlete who quietly does
+     * half their sessions for two months got PRs celebrated, complete weeks
+     * congratulated, and total silence about the half that did not happen.
+     *
+     * Everything that DOES respond to a missed day needs the athlete to
+     * come and say so first: the reconcile flow, the tier change, the
+     * make-up. Somebody drifting away does not open the app to file a
+     * reason. They just stop, and the last thing the app ever said to them
+     * was well done.
+     */
+    evaluate: (data, today) => {
+      // Not counting the first fortnight: a new plan has too few scheduled
+      // days behind it for a ratio to mean anything.
+      if (daysBetween(data.settings.phaseStartDate, today) < 21) return null
+      let scheduled = 0
+      let trained = 0
+      for (let i = 1; i <= 28; i++) {
+        const d = addDaysISO(today, -i)
+        if (d < data.settings.phaseStartDate) continue
+        if (!scheduledTrainingDay(data, d)) continue
+        scheduled++
+        const log = data.sessions[d]
+        if (log && log.status !== 'skipped') trained++
+      }
+      if (scheduled < 8) return null
+      const pct = Math.round((trained / scheduled) * 100)
+      if (pct >= 65) return null
+      return { done: trained, scheduled, pct, missed: scheduled - trained }
+    },
+    variants: [
+      '{done} of {scheduled} sessions over the last month. Not a lecture: {pct}% is enough to hold ground and not quite enough to build on it. If the week is the problem rather than the training, the Week tab moves days around, and a lighter tier still counts.',
+      'The last four weeks came out at {done} of {scheduled}. The sessions you did do are logged and they count. The question worth answering is whether {scheduled} a week was ever the right number, because a smaller plan you finish beats a bigger one you do not.',
+      'You have missed {missed} of the last {scheduled} scheduled sessions. That usually means life changed rather than that you stopped caring. Drop a tier for a week, or move the days: both are in the app and both keep the streak honest.',
+    ],
+  },
+  {
     id: 'deload-respected',
     area: 'consistency',
     priority: 55,
@@ -404,8 +455,17 @@ const RULES: RuleDef[] = [
     priority: 35,
     cooldownDays: 7,
     evaluate: (data, today) => {
+      // Only days the app was actually here for.
+      //
+      // Every other rule in this file asks whether logged data shows a
+      // pattern, so an empty history simply fails them. This one asks the
+      // opposite question, and a day before installation looks exactly
+      // like a day somebody could not be bothered. Unclamped, the very
+      // first debrief a new athlete ever sees opened by telling them
+      // their food log had gone dark for seven days.
+      const lived = Math.min(7, Math.max(0, daysBetween(data.settings.installedAt, today)))
       let empty = 0
-      for (let i = 1; i <= 7; i++) {
+      for (let i = 1; i <= lived; i++) {
         if ((data.meals[addDaysISO(today, -i)]?.entries.length ?? 0) === 0) empty++
       }
       if (empty >= 4) return { empty }
@@ -418,6 +478,24 @@ const RULES: RuleDef[] = [
     ],
   },
 ]
+
+/**
+ * Was `date` a day the plan asked for, at the tier that week was run at?
+ *
+ * A local copy for the same reason blockMathLocal is one, and tier-aware
+ * on purpose: dropping to tier 2 for a hard week is a sanctioned move the
+ * app offers, and counting that week's untrained tier-1 days as misses
+ * would tell somebody off for taking the option the app gave them.
+ */
+function scheduledTrainingDay(data: AppData, date: ISODate): boolean {
+  const plan = data.plan
+  const weekday = weekdayOf(date)
+  const week = data.weeks[mondayOf(date)]
+  const tier = week?.tier ?? 1
+  if (tier === 1) return !!plan.tier1ByWeekday[weekday]
+  const placement = { ...plan.tierDefaultPlacement[tier], ...(week?.tierPlacement ?? {}) }
+  return Object.values(placement).includes(weekday)
+}
 
 // small local copy to avoid circular import with resolveDay's heavier deps
 function blockMathLocal(data: AppData, today: ISODate) {

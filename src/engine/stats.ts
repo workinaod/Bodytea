@@ -121,7 +121,13 @@ export function sessionTonnage(session: SessionLog): number {
   let total = 0
   for (const ex of session.exercises) {
     for (const s of ex.sets) {
-      if (s.done && s.weightLb && s.reps) total += s.weightLb * s.reps
+      // What was lifted, not what was asked for. `reps` is the prescription
+      // copied in when the session was built, so on a day somebody came up
+      // short this counted the reps they did not do and then congratulated
+      // them on the total. A number the athlete knows is generous is worse
+      // than no number: it is the moment they stop believing the other ones.
+      const reps = s.achieved ?? s.reps
+      if (s.done && s.weightLb && reps) total += s.weightLb * reps
     }
   }
   return Math.round(total)
