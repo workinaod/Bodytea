@@ -5,6 +5,10 @@ on:
     branches:
       - main
       - claude/fitness-tracking-app-ugo5xt
+      # The working branch. gh-pages was publishing from the line above
+      # while every commit for the last stretch landed here, so the live
+      # site sat 23 commits behind the code.
+      - claude/app-audit-refinement-sjw2va
   workflow_dispatch:
 
 permissions:
