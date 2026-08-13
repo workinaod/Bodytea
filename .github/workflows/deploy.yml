@@ -2,11 +2,13 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    # main is the only source of truth for what ships. Listing working
-    # branches here is what let two of them race to publish gh-pages, so
-    # whichever pushed last decided the live site. Merge to main instead;
-    # use workflow_dispatch to republish without a new commit.
+    # The working branch ships. Only ONE working branch is listed at a
+    # time and that is the point: when two were, both published to
+    # gh-pages and whichever pushed last decided the live site, which is
+    # how the live build ended up trailing the code by 23 commits.
+    # Moving to a new branch means editing this line, not adding to it.
     branches:
+      - claude/app-audit-refinement-sjw2va
       - main
   workflow_dispatch:
 
