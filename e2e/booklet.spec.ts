@@ -88,13 +88,15 @@ test('generated booklet: fine-tune before starting', async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
 
-  await throughGoal(page, 'Build my plan', '🏀 Dunk a basketball', 'dunk on a 10-ft rim by June')
+  await throughGoal(page, 'Something else', '⬆️ Jump higher', 'dunk on a 10-ft rim by June')
+  await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '6 days' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
   await page.getByRole('button', { name: 'Next: numbers' }).click()
-  await page.getByRole('button', { name: 'Generate my booklet' }).click()
+  await page.getByRole('button', { name: 'Next: food' }).click()
+  await page.getByRole('button', { name: 'Build my plan' }).click()
   await expect(page.getByText('Vertical Project · 6-Day')).toBeVisible()
 
   await page.getByRole('button', { name: /Fine-tune it first/ }).click()

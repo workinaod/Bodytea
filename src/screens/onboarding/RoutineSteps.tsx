@@ -45,8 +45,8 @@ export function RoutineSteps(p: {
     <>
         {step === 8 && byorDraft && (
           <div className="flex flex-1 flex-col">
-            <h2 className="headline text-[26px]">Build your week</h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
+            <h2 className="headline text-center text-[26px]">Build your week</h2>
+            <p className="mt-1 text-center text-[13px] leading-relaxed text-ink-dim">
               Lay out the routine you already run: training days, names, exercises, sets, reps.
             </p>
             {byorProblems.length > 0 && (
@@ -81,9 +81,9 @@ export function RoutineSteps(p: {
 
         {step === 9 && byorDraft && (
           <div className="flex flex-1 flex-col">
-            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">One honest question</div>
-            <h2 className="headline mt-1 text-[26px]">Why has this routine been working for you?</h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
+            <div className="text-center text-[11px] font-black uppercase tracking-[0.2em] text-accent">One honest question</div>
+            <h2 className="headline mt-1 text-center text-[26px]">Why has this routine been working for you?</h2>
+            <p className="mt-1 text-center text-[13px] leading-relaxed text-ink-dim">
               Be specific: “bench goes up every month”, “I actually show up when it's only 3 days”, “my
               knees stopped hurting”. The coach reads this before writing the notes.
             </p>
@@ -111,8 +111,8 @@ export function RoutineSteps(p: {
 
         {step === 11 && byorDraft && (
           <div className="flex flex-1 flex-col">
-            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">The read on your routine</div>
-            <h2 className="headline mt-1 text-[26px]">Straight notes, no fluff</h2>
+            <div className="text-center text-[11px] font-black uppercase tracking-[0.2em] text-accent">The read on your routine</div>
+            <h2 className="headline mt-1 text-center text-[26px]">Straight notes, no fluff</h2>
             {byorDraft.whyWorks && (
               <div className="mt-3 rounded-xl border-l-2 border-gold/50 bg-white/[0.05] px-3.5 py-2.5">
                 <div className="text-[10px] font-black uppercase tracking-[0.14em] text-gold">Your read</div>
@@ -151,8 +151,8 @@ export function RoutineSteps(p: {
 
         {step === 10 && tuneDraft && (
           <div className="flex flex-1 flex-col">
-            <h2 className="headline text-[26px]">Fine-tune your booklet</h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-ink-dim">
+            <h2 className="headline text-center text-[26px]">Fine-tune your booklet</h2>
+            <p className="mt-1 text-center text-[13px] leading-relaxed text-ink-dim">
               Swap exercises, change sets and reps, rename days, move the week around. Blocks, deloads, and busy-week
               tiers rebuild themselves around your edits.
             </p>

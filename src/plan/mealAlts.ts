@@ -20,8 +20,19 @@ export interface CommonMeal {
   proteinG: number
   kcal: number
   slots: MealSlotKind[]
-  /** Strictest diet this meal fits: omni = has meat/fish; vegetarian = eggs/dairy; vegan = plants only. */
-  diet: 'omni' | 'vegetarian' | 'vegan'
+  /**
+   * The strictest eater this meal suits.
+   *
+   *   omni         has meat
+   *   pescatarian  has fish but no meat
+   *   vegetarian   eggs or dairy, nothing that swam or walked
+   *   vegan        plants only
+   *
+   * Fish is its own rung rather than lumped in with meat because a
+   * pescatarian who gets offered tofu instead of the salmon they
+   * would happily eat has been served a worse plan for no reason.
+   */
+  diet: 'omni' | 'pescatarian' | 'vegetarian' | 'vegan'
 }
 
 // Macros are standard-serving estimates, consistent with plan/foods.ts.
@@ -40,7 +51,7 @@ export const COMMON_MEALS: CommonMeal[] = [
 
   // ---- Lunches & dinners (most work as either) ----
   { id: 'chicken-rice', name: 'Chicken & rice', ingredients: ['6 oz chicken breast', '1.5 cups rice', 'oil or butter'], proteinG: 58, kcal: 590, slots: ['lunch', 'dinner'], diet: 'omni' },
-  { id: 'tuna-sandwich', name: 'Tuna salad sandwich', ingredients: ['1 can tuna', 'mayo', '2 slices bread'], proteinG: 48, kcal: 490, slots: ['lunch', 'snack'], diet: 'omni' },
+  { id: 'tuna-sandwich', name: 'Tuna salad sandwich', ingredients: ['1 can tuna', 'mayo', '2 slices bread'], proteinG: 48, kcal: 490, slots: ['lunch', 'snack'], diet: 'pescatarian' },
   { id: 'spaghetti-meat', name: 'Spaghetti with meat sauce', ingredients: ['4 oz ground beef', '1.5 cups pasta', 'jarred sauce'], proteinG: 37, kcal: 640, slots: ['lunch', 'dinner'], diet: 'omni' },
   { id: 'turkey-sandwich', name: 'Turkey & cheese sandwich', ingredients: ['4 oz deli turkey', 'slice of cheese', '2 slices bread', 'mayo'], proteinG: 39, kcal: 520, slots: ['lunch', 'snack'], diet: 'omni' },
   { id: 'burger', name: 'Homemade burger', ingredients: ['1/4 lb beef patty', 'bun', 'slice of cheese'], proteinG: 43, kcal: 550, slots: ['lunch', 'dinner'], diet: 'omni' },
@@ -51,7 +62,7 @@ export const COMMON_MEALS: CommonMeal[] = [
   { id: 'egg-fried-rice', name: 'Egg fried rice', ingredients: ['3 eggs', '1.5 cups rice', 'frozen veg', 'oil'], proteinG: 27, kcal: 705, slots: ['lunch', 'dinner'], diet: 'vegetarian' },
   { id: 'rotisserie-plate', name: 'Rotisserie chicken plate', ingredients: ['1/4 rotisserie chicken', 'potato or rice', 'frozen veg'], proteinG: 42, kcal: 530, slots: ['lunch', 'dinner'], diet: 'omni' },
   { id: 'bean-burrito', name: 'Bean & cheese burrito', ingredients: ['1 cup canned beans', 'shredded cheese', 'tortilla', 'rice'], proteinG: 28, kcal: 580, slots: ['lunch', 'dinner'], diet: 'vegetarian' },
-  { id: 'salmon-rice', name: 'Baked salmon & rice', ingredients: ['6 oz salmon', '1 cup rice', 'frozen veg'], proteinG: 41, kcal: 605, slots: ['dinner'], diet: 'omni' },
+  { id: 'salmon-rice', name: 'Baked salmon & rice', ingredients: ['6 oz salmon', '1 cup rice', 'frozen veg'], proteinG: 41, kcal: 605, slots: ['dinner'], diet: 'pescatarian' },
   { id: 'chicken-salad', name: 'Grilled chicken salad', ingredients: ['6 oz chicken', 'bagged greens', 'dressing', 'croutons'], proteinG: 55, kcal: 550, slots: ['lunch', 'dinner'], diet: 'omni' },
   { id: 'pork-potato', name: 'Pork chop & potato', ingredients: ['6 oz pork chop', 'potato', 'applesauce or veg'], proteinG: 43, kcal: 590, slots: ['dinner'], diet: 'omni' },
   { id: 'mac-chicken', name: 'Mac & cheese + chicken', ingredients: ['1 cup mac & cheese', '4 oz chicken'], proteinG: 43, kcal: 500, slots: ['lunch', 'dinner'], diet: 'omni' },
@@ -70,7 +81,7 @@ export const COMMON_MEALS: CommonMeal[] = [
   { id: 'eggs-apple', name: 'Boiled eggs + apple', ingredients: ['3 boiled eggs', 'apple'], proteinG: 18, kcal: 305, slots: ['snack'], diet: 'vegetarian' },
   { id: 'cheese-jerky', name: 'Cheese, crackers & jerky', ingredients: ['cheese', 'crackers', '1 oz jerky'], proteinG: 19, kcal: 320, slots: ['snack'], diet: 'omni' },
   { id: 'cottage-pb', name: 'Cottage cheese + peanut butter', ingredients: ['1 cup cottage cheese', '1 tbsp peanut butter'], proteinG: 32, kcal: 275, slots: ['snack', 'late'], diet: 'vegetarian' },
-  { id: 'tuna-crackers', name: 'Tuna + crackers', ingredients: ['1 can tuna', 'crackers'], proteinG: 42, kcal: 330, slots: ['snack', 'lunch'], diet: 'omni' },
+  { id: 'tuna-crackers', name: 'Tuna + crackers', ingredients: ['1 can tuna', 'crackers'], proteinG: 42, kcal: 330, slots: ['snack', 'lunch'], diet: 'pescatarian' },
   { id: 'plant-shake', name: 'Plant protein shake + banana', ingredients: ['1 scoop plant protein', '1 cup soy milk', 'banana'], proteinG: 30, kcal: 340, slots: ['snack', 'late'], diet: 'vegan' },
   { id: 'edamame-snack', name: 'Edamame + rice crackers', ingredients: ['1 cup edamame', 'rice crackers'], proteinG: 18, kcal: 280, slots: ['snack', 'late'], diet: 'vegan' },
 ]
@@ -98,12 +109,17 @@ export function mealAlternatives(
   count = 3,
 ): CommonMeal[] {
   const kind = target.slot ? slotKindOf(target.slot) : null
-  const dietOk = (m: CommonMeal) =>
-    !target.diet || target.diet === 'omnivore'
-      ? true
-      : target.diet === 'vegetarian'
-        ? m.diet !== 'omni'
-        : m.diet === 'vegan'
+  // Written out rather than chained, because the chained version put
+  // anything it did not recognise into the vegan branch — so adding
+  // pescatarian would have quietly offered fish-eaters tofu and
+  // nothing else.
+  const ALLOWED: Record<DietStyle, CommonMeal['diet'][]> = {
+    omnivore: ['omni', 'pescatarian', 'vegetarian', 'vegan'],
+    pescatarian: ['pescatarian', 'vegetarian', 'vegan'],
+    vegetarian: ['vegetarian', 'vegan'],
+    vegan: ['vegan'],
+  }
+  const dietOk = (m: CommonMeal) => !target.diet || ALLOWED[target.diet].includes(m.diet)
   const notSelf = (m: CommonMeal) =>
     !target.excludeName || m.name.toLowerCase() !== target.excludeName.trim().toLowerCase()
   let pool = COMMON_MEALS.filter((m) => notSelf(m) && dietOk(m) && (kind === null || m.slots.includes(kind)))

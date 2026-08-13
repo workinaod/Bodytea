@@ -5,10 +5,11 @@ test.describe.configure({ mode: 'serial' })
 
 /** Walk the generator onboarding: vertical goal, 6 days, a home gym with DBs + bench + bar. */
 async function onboardGenerated(page: Page) {
-  await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Something else' }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
-  await page.getByText('🏀 Dunk a basketball').click()
-  await page.getByPlaceholder(/dunk on a 10-ft rim/).fill('dunk on a 10-ft rim by June')
+  await page.getByText('⬆️ Jump higher').click()
+  await page.getByPlaceholder(/before my wedding/).fill('by June')
+  await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '6 days' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
@@ -20,9 +21,10 @@ async function onboardGenerated(page: Page) {
   await page.getByText('Pull-up bar', { exact: true }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
   await page.getByRole('button', { name: 'Next: numbers' }).click()
-  await page.getByRole('button', { name: 'Generate my booklet' }).click()
+  await page.getByRole('button', { name: 'Next: food' }).click()
+  await page.getByRole('button', { name: 'Build my plan' }).click()
   await expect(page.getByText('Vertical Project · 6-Day')).toBeVisible()
-  await expect(page.getByText('“dunk on a 10-ft rim by June”')).toBeVisible()
+  await expect(page.getByText(/jump higher, by June/)).toBeVisible()
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
 }
 
@@ -30,7 +32,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.goto('./')
 
   // ---- Onboarding v2 generates a personal booklet ----
-  await expect(page.getByText('Name any goal')).toBeVisible()
+  await expect(page.getByText('What do you want?')).toBeVisible()
   await onboardGenerated(page)
 
   // ---- Today renders a resolved day ----

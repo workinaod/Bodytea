@@ -120,7 +120,23 @@ export type RoutineGoal = 'muscle' | 'lose-weight' | 'maintain' | 'athletic'
  * decides the effect: late-night → train that morning + short-sleep
  * caution; on-feet → the NEXT day drops a jump set (pre-fatigued legs).
  */
-export type DietStyle = 'omnivore' | 'vegetarian' | 'vegan'
+export type DietStyle = 'omnivore' | 'vegetarian' | 'vegan' | 'pescatarian'
+
+/**
+ * What somebody cannot eat, as opposed to what they choose not to.
+ *
+ * Dairy is its own flag rather than a diet style because it crosses
+ * all of them — plenty of omnivores and most vegetarians-who-are-
+ * really-vegans-about-milk need it. Allergies are free text because
+ * every chip list is missing somebody's allergy, and being missing
+ * from that list is the moment an app stops feeling like it is for
+ * you.
+ */
+export interface FoodLimits {
+  dairyFree?: boolean
+  /** In their words. Shown to the user, never parsed into a rule. */
+  allergies?: string
+}
 
 export type LifeEventKind = 'late-night' | 'on-feet'
 export interface LifeEventDef {
@@ -156,6 +172,13 @@ export type EquipTag =
   | 'trap-bar'
   | 'sled'
   | 'partner'
+  // Places rather than kit. Asked only of the goals they matter to: a
+  // track is the whole plan for a runner and noise for somebody with
+  // 40 lb to lose.
+  | 'track'
+  | 'trail'
+  | 'pool'
+  | 'bike'
 
 /** A user-stated measurable target ("vert 24 → 30 in"). */
 export interface CustomTarget {

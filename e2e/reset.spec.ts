@@ -9,12 +9,14 @@ async function buildPlan(page: Page, startLabel: string, goalChip: string, state
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText(goalChip).click()
   await page.getByPlaceholder(/dunk on a 10-ft rim/).fill(statement)
+  await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '4 days' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
   await page.getByRole('button', { name: 'Next: numbers' }).click()
-  await page.getByRole('button', { name: 'Generate my booklet' }).click()
+  await page.getByRole('button', { name: 'Next: food' }).click()
+  await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
   await expect(page.getByText(/Week \d+/).first()).toBeVisible()
 }
@@ -66,7 +68,7 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) }) // Monday
   await page.goto('./')
 
-  await buildPlan(page, 'Build my plan', '🏀 Dunk a basketball', 'dunk on a 10-ft rim by June')
+  await buildPlan(page, 'Something else', '⬆️ Jump higher', 'dunk on a 10-ft rim by June')
 
   // Log a meal so there is real history to protect
   await page.getByRole('button', { name: 'Meals', exact: true }).click()
@@ -101,7 +103,7 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
 test('v19 reset leaves the owner alone', async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
-  await buildPlan(page, 'Build my plan', '🏀 Dunk a basketball', 'dunk on a 10-ft rim by June')
+  await buildPlan(page, 'Something else', '⬆️ Jump higher', 'dunk on a 10-ft rim by June')
 
   // Make this look like the owner's hand-built booklet, then reset
   await rewindAndReload(page, true)

@@ -28,10 +28,10 @@ export function PlanPreview(p: {
   const { preview, displayName, weight, setStep, tuneDraft, setTuneDraft, setTuneProblems, commitPlan, back } = p
   return (
           <div className="flex flex-1 flex-col">
-            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">
+            <div className="text-center text-[11px] font-black uppercase tracking-[0.2em] text-accent">
               {displayName.trim() ? `Built for ${displayName.trim()}` : 'Your booklet'}
             </div>
-            <h2 className="mt-1 text-[30px] font-black leading-tight tracking-tight">{preview.plan.name}</h2>
+            <h2 className="mt-1 text-center text-[30px] font-black leading-tight tracking-tight">{preview.plan.name}</h2>
             <p className="mt-1 text-[13.5px] font-semibold italic text-gold">“{preview.plan.goalStatement}”</p>
 
             <Card className="mt-4 !p-3">
