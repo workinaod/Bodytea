@@ -241,6 +241,58 @@ describe('block periodization + sex-aware nutrition', () => {
     expect(a.slots).toEqual(a2.slots)
   })
 
+  // ============================================================
+  // The charts followed lifts the plan had stopped programming.
+  //
+  // trackedLifts was read off slots[1], and slots[1] is exactly the
+  // set that rotated away at the block boundary. So the app drew a
+  // strength line for a squat variation, swapped the squat out for
+  // eight of the next twelve weeks, and let the line go flat. The
+  // athlete sees a stalled chart and concludes the program stopped
+  // working, which is the point at which people go and write their
+  // own.
+  // ============================================================
+
+  it('keeps the anchor lifts in the plan for the whole year', () => {
+    for (const goal of GOALS) {
+      const plan = generatePlan({ ...base2, goal }).plan
+      for (const slot of ['squatVariation', 'press1', 'rowVariation', 'hamstring']) {
+        const b1 = plan.slots[1][slot]
+        if (!b1) continue
+        expect(plan.slots[2][slot], `${goal} ${slot} changed in block 2`).toBe(b1)
+        expect(plan.slots[3][slot], `${goal} ${slot} changed in block 3`).toBe(b1)
+      }
+    }
+  })
+
+  it('still rotates the accessories, because that is where variety is free', () => {
+    const plan = generatePlan({ ...base2, goal: 'muscle' }).plan
+    const rotates = ['lowerAccessory', 'press2', 'curl', 'calf', 'coreA', 'coreB'].some(
+      (s) => plan.slots[1][s] !== plan.slots[2][s] || plan.slots[2][s] !== plan.slots[3][s],
+    )
+    expect(rotates).toBe(true)
+  })
+
+  it('never charts a lift that leaves the plan', () => {
+    for (const goal of GOALS) {
+      for (const days of DAYS) {
+        const plan = generatePlan({ ...base2, goal, daysPerWeek: days }).plan
+        const inBlock = (b: 1 | 2 | 3) => new Set(Object.values(plan.slots[b]))
+        const fixedIds = new Set(
+          Object.values(plan.templates)
+            .flatMap((t) => t.entries)
+            .flatMap((e) => (e.entry === 'fixed' ? [e.exerciseId] : [])),
+        )
+        for (const t of plan.trackedLifts) {
+          const everywhere = ([1, 2, 3] as const).every(
+            (b) => fixedIds.has(t.exerciseId) || inBlock(b).has(t.exerciseId),
+          )
+          expect(everywhere, `${goal}/${days}d charts ${t.exerciseId}, which is not in every block`).toBe(true)
+        }
+      }
+    }
+  })
+
   it('female baseline runs a notch lower on calories, protein unchanged', () => {
     const m = buildNutrition('muscle', 160, 'male')
     const f = buildNutrition('muscle', 160, 'female')

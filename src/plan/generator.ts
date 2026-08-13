@@ -159,6 +159,22 @@ const POOLS: Record<string, string[]> = {
   coreB: ['weighted-situp', 'plank-side-plank', 'dead-bug', 'hollow-hold'],
 }
 
+/**
+ * The lifts the year is actually built on, which therefore do not rotate.
+ *
+ * These are the same four slots the rep waves act on, and that is the
+ * point: a block should change ONE thing. Rotating the exercise and
+ * changing the rep scheme at the same time means nothing carries across
+ * the boundary, so nothing can be compared and nothing accumulates. The
+ * movement stays and the scheme waves around it, which is how a squat
+ * gets stronger over a year instead of three separate squats getting
+ * slightly less unfamiliar.
+ *
+ * Everything else in POOLS still rotates every block. Accessories are
+ * where variety costs nothing and buys interest.
+ */
+const ANCHOR_SLOTS = ['squatVariation', 'press1', 'rowVariation', 'hamstring'] as const
+
 /** Per-goal promotions: this exercise leads the pool (→ Block 1). */
 const GOAL_FIRST: Partial<Record<Goal, Partial<Record<string, string>>>> = {
   strength: { squatVariation: 'front-squat', press1: 'standing-ohp', hamstring: 'good-morning' },
@@ -178,6 +194,12 @@ function pickSlots(goal: Goal, owned: Set<EquipTag>, seed = 0): Record<1 | 2 | 3
     const promoted = GOAL_FIRST[goal]?.[slot]
     const ordered = promoted ? [promoted, ...base.filter((id) => id !== promoted)] : base
     const legal = ordered.filter((id) => canDo(id, owned))
+    // An anchor lift is the same movement in every block, so the athlete
+    // trains it all year and the progress chart is one unbroken line.
+    if ((ANCHOR_SLOTS as readonly string[]).includes(slot)) {
+      for (const block of [1, 2, 3] as const) out[block][slot] = legal[0]
+      continue
+    }
     // Per-user variety: the goal's best pick always anchors block 1, but the
     // block 2/3 rotation order is seeded by WHO is asking, two people with
     // the same goal get different booklets, both quality-legal.
@@ -796,11 +818,31 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
   }
   for (const c of cardioOptions) referenced.add(c.exerciseId)
 
-  // Tracked lifts: loaded lifts the plan actually contains, anchors first
   const loaded = (id: string) => {
     const def = getExercise(id)
     return def.kind === 'lift' && equipFor(id).some((t) => t === 'dumbbell' || t === 'barbell' || t === 'machine')
   }
+
+  // The movements that are in the plan every week of the year: the fixed
+  // entries, which by definition never rotate, plus the anchor slots,
+  // which now hold one movement across all three blocks.
+  const coreMovers = [...new Set([
+    ...Object.values(templates)
+      .filter((t) => t.kind === 'session')
+      .flatMap((t) => t.entries)
+      .filter((e): e is Extract<TemplateEntry, { entry: 'fixed' }> => e.entry === 'fixed')
+      .map((e) => e.exerciseId)
+      .filter((id) => ['lift', 'core', 'carry'].includes(getExercise(id).kind)),
+    ...ANCHOR_SLOTS.map((s) => slots[1][s]).filter((id): id is string => !!id),
+  ])]
+
+  // What the progress charts follow. They were read off block 1 alone,
+  // which is exactly the set that used to rotate away in weeks 5 to 12:
+  // the app drew a strength line for a movement it had stopped
+  // programming, and then let the line flatten. A lift is only chartable
+  // if it is still in the plan next month, so the list is now drawn from
+  // the movements that never rotate.
+  const chartable = new Set(coreMovers)
   const trackedOrder = [
     slots[1].squatVariation,
     resolveForEquipment('romanian-deadlift', owned),
@@ -808,20 +850,11 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     slots[1].rowVariation,
     slots[1].hamstring,
     slots[1].lowerAccessory,
-  ].filter((id): id is string => !!id && loaded(id))
+  ].filter((id): id is string => !!id && loaded(id) && chartable.has(id))
   const trackedLifts = [...new Set(trackedOrder)].slice(0, 6).map((id) => ({
     exerciseId: id,
     label: getExercise(id).name.replace(/\s*\(.*\)$/, ''),
   }))
-
-  const coreMovers = [...new Set(
-    Object.values(templates)
-      .filter((t) => t.kind === 'session')
-      .flatMap((t) => t.entries)
-      .filter((e): e is Extract<TemplateEntry, { entry: 'fixed' }> => e.entry === 'fixed')
-      .map((e) => e.exerciseId)
-      .filter((id) => ['lift', 'core', 'carry'].includes(getExercise(id).kind)),
-  )]
 
   const nutrition = buildNutrition(a.goal, a.bodyweightLb, a.sex, a.goalAnswers ?? {})
 
@@ -836,9 +869,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     speed: { 1: { repText: '6-8', repsNum: 7 }, 2: { repText: '4-6', repsNum: 5 }, 3: { repText: '6-8', repsNum: 7 } },
     endurance: { 1: { repText: '8-10', repsNum: 9 }, 2: { repText: '6-8', repsNum: 7 }, 3: { repText: '12-15', repsNum: 13 } },
   }
-  const slotRepsByBlock = Object.fromEntries(
-    ['squatVariation', 'press1', 'rowVariation', 'hamstring'].map((s) => [s, REP_WAVES[a.goal]]),
-  )
+  const slotRepsByBlock = Object.fromEntries(ANCHOR_SLOTS.map((s) => [s, REP_WAVES[a.goal]]))
 
   const rationale = buildRationale(a.goal, a.goalStatement, [...referenced])
   for (const f of focusPicks) {

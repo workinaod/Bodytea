@@ -89,6 +89,28 @@ describe('block rotation', () => {
     for (const { exerciseId } of TRACKED_LIFTS) expect(EXERCISES[exerciseId], exerciseId).toBeDefined()
   })
 
+  it('never charts a lift that rotates out of the plan', () => {
+    // A tracked lift is one the athlete is meant to progress all year, so
+    // it has to be in the plan all year: either a fixed entry, or a slot
+    // whose pick does not change at the block boundary. Charting a
+    // block-1-only movement draws a line that goes flat for eight weeks
+    // out of twelve and reads as a stalled program.
+    const fixedIds = new Set(
+      Object.values(TEMPLATES)
+        .flatMap((t) => t.entries)
+        .flatMap((e) => (e.entry === 'fixed' ? [e.exerciseId] : [])),
+    )
+    for (const { exerciseId } of TRACKED_LIFTS) {
+      if (fixedIds.has(exerciseId)) continue
+      for (const b of [1, 2, 3] as const) {
+        expect(
+          Object.values(BLOCK_SLOTS[b]).includes(exerciseId),
+          `${exerciseId} is charted but missing from block ${b}`,
+        ).toBe(true)
+      }
+    }
+  })
+
   it('block 1 reproduces the PDF day tables (Mon HLR / Wed weighted sit-up)', () => {
     expect(BLOCK_SLOTS[1].coreMon).toBe('hanging-leg-raise')
     expect(BLOCK_SLOTS[1].coreWed).toBe('weighted-situp')
