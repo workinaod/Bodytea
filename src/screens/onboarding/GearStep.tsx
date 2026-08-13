@@ -29,8 +29,8 @@ export function GearStep(p: {
   const [chose, setChose] = useState(false)
   return (
           <div className="flex flex-1 flex-col">
-            <h2 className="headline text-center text-[26px]">Where do you train?</h2>
-            <div className="mt-4 space-y-2">
+            <h2 className="headline text-center text-[30px]">Where do you train?</h2>
+            <div className="mx-auto mt-5 w-full max-w-[22rem] space-y-2.5">
               {(
                 [
                   ['gym', 'Full gym', 'Racks, machines, cables, the works.'],
@@ -56,10 +56,10 @@ export function GearStep(p: {
             </div>
             {chose && profile === 'home-db' && (
               <Reveal when className="mt-5">
-                <p className="text-[12px] font-black uppercase tracking-wider text-ink-faint">
+                <p className="text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint">
                   Check everything you have
                 </p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2.5 flex flex-wrap justify-center gap-2">
                   {HOME_CHECKLIST.map((e) => (
                     <ChoiceChip
                       key={e.label}
@@ -73,8 +73,8 @@ export function GearStep(p: {
               </Reveal>
             )}
             <Reveal when={chose} className="mt-5">
-              <p className="text-[12px] font-black uppercase tracking-wider text-ink-faint">Can you get to any of these?</p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <p className="text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint">Can you get to any of these?</p>
+              <div className="mt-2.5 flex flex-wrap justify-center gap-2">
                 {accessFor(goal, profile, answers).map((e) => (
                   <ChoiceChip
                     key={e.label}

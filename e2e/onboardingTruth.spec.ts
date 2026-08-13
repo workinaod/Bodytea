@@ -14,6 +14,8 @@ async function toPreview(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: /Lose weight/ }).click()
   await page.locator('input').first().fill('Maya')
   await page.getByRole('button', { name: 'Female', exact: true }).click()
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByRole('button', { name: /Next: a few questions/ }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
@@ -45,6 +47,8 @@ test('every onboarding choice is a real button', async ({ page }) => {
   await page.getByRole('button', { name: /Lose weight/ }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
 
   for (const label of ['Build muscle', 'Get stronger']) {

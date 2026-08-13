@@ -100,6 +100,75 @@
   animation-delay: 280ms;
 }
 
+/* ---------- ambient: the field behind onboarding ----------
+
+   Light moving over a dark surface, not a lava lamp. Three soft
+   masses on long, deliberately unequal cycles so they never fall
+   into a loop the eye can catch, plus a grain layer — without it
+   a 70px blur bands visibly on an OLED panel, which is worse than
+   no gradient at all.
+
+   Transform and opacity only: both are composited, so this runs
+   on the GPU and never touches layout while somebody is typing. */
+
+.ambient {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.ambient-glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(72px);
+  will-change: transform;
+}
+@keyframes bt-drift-a {
+  0%,
+  100% {
+    transform: translate3d(-9%, -7%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(7%, 5%, 0) scale(1.14);
+  }
+}
+@keyframes bt-drift-b {
+  0%,
+  100% {
+    transform: translate3d(11%, 9%, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-7%, -9%, 0) scale(1);
+  }
+}
+@keyframes bt-drift-c {
+  0%,
+  100% {
+    transform: translate3d(0, 12%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-12%, -5%, 0) scale(1.18);
+  }
+}
+.drift-a {
+  animation: bt-drift-a 29s ease-in-out infinite;
+}
+.drift-b {
+  animation: bt-drift-b 37s ease-in-out infinite;
+}
+.drift-c {
+  animation: bt-drift-c 43s ease-in-out infinite;
+}
+
+/* Fine luminance noise, inlined so it costs no request. */
+.ambient-grain {
+  position: absolute;
+  inset: -50%;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.6'/></svg>");
+}
+
 /* ---------- confirm: something the user just did worked ---------- */
 
 @keyframes bt-confirm {
@@ -271,6 +340,13 @@
   .breathe-in,
   .enter-stagger > * {
     animation: bt-fade 120ms ease-out both !important;
+  }
+  /* The field stops moving and stays where it is. It is atmosphere, so
+     holding still costs nothing; removing it would flatten the screen. */
+  .drift-a,
+  .drift-b,
+  .drift-c {
+    animation: none !important;
   }
   .press:active,
   .press-soft:active {

@@ -50,9 +50,9 @@ export function PermissionsStep({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <h2 className="headline text-center text-[26px]">Last thing</h2>
+      <h2 className="headline text-center text-[30px]">Last thing</h2>
 
-      <div className="mt-6 space-y-2">
+      <div className="mx-auto mt-7 w-full max-w-[22rem] space-y-2.5">
         {live.map((id) => {
           const st = state[id]
           const on = st === 'granted'
@@ -85,7 +85,7 @@ export function PermissionsStep({ onDone }: { onDone: () => void }) {
         })}
       </div>
 
-      <Btn className="mt-8 w-full py-4" onClick={onDone} disabled={asking !== null}>
+      <Btn className="mx-auto mt-8 w-full max-w-[22rem] py-4" onClick={onDone} disabled={asking !== null}>
         {answered === live.length ? 'Done' : 'Skip'}
       </Btn>
     </div>

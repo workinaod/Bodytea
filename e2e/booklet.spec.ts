@@ -8,6 +8,8 @@ async function throughGoal(page: Page, entry: string, chip: string, statement: s
   await page.getByRole('button', { name: entry }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText(chip).click()
   await page.locator('textarea').first().fill(statement)

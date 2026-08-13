@@ -8,6 +8,7 @@ import { generatePlan, type FocusArea, type OnboardingAnswers } from '../../plan
 import { byorNutrition, makeEmptyByorPlan, normalizeBooklet } from '../../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../../plan/analyze'
 import { Btn, Card, ChoiceChip, Reveal } from '../../components/ui'
+import { AmbientBackdrop } from '../../components/AmbientBackdrop'
 import { Welcome } from './Welcome'
 import { chipIndexForGoal, ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS, QUICK_GOALS } from './onboardingData'
 import { requestDurableStorage } from '../../platform/persistence'
@@ -85,8 +86,11 @@ export function Onboarding() {
   const [dairyFree, setDairyFree] = useState(false)
   const [allergies, setAllergies] = useState('')
   const [focusAreas, setFocusAreas] = useState<Set<FocusArea>>(new Set())
-  const [weight, setWeight] = useState(180)
-  const [heightIn, setHeightIn] = useState(69)
+  // Null until they say. A default of 180 lb is the app inventing a
+  // person and then building that person a plan.
+  const [weight, setWeight] = useState<number | null>(null)
+  const [heightIn, setHeightIn] = useState<number | null>(null)
+  const bodyweightLb = weight ?? 175
 
   const goal: Goal = goalChip !== null ? GOAL_CHIPS[goalChip].goal : 'general'
   const days = daysPick ?? suggestedDays(goal, goalAnswers)
@@ -119,8 +123,8 @@ export function Onboarding() {
       equipProfile: profile,
       extraEquip: [...extras],
       experience,
-      bodyweightLb: weight,
-      heightIn,
+      bodyweightLb,
+      heightIn: heightIn ?? undefined,
       mealsPerDay,
       lifeSeeds: [
         ...LIFE_CHIPS.filter((c) => lifePicks.has(c.id)).map((c) => ({ label: c.label, kind: c.kind })),
@@ -132,7 +136,7 @@ export function Onboarding() {
       focusAreas: [...focusAreas],
       sex: sex ?? undefined,
     }
-  }, [goal, statement, goalAnswers, days, profile, extras, experience, weight, heightIn, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, dairyFree, allergies, skipMeals, focusAreas, sex])
+  }, [goal, statement, goalAnswers, days, profile, extras, experience, bodyweightLb, heightIn, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, dairyFree, allergies, skipMeals, focusAreas, sex])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
@@ -169,7 +173,7 @@ export function Onboarding() {
       d.settings.proteinTargetG = proteinTargetG
       d.profile.displayName = displayName.trim() || undefined
       if (sex) d.profile.bfFormula = sex
-      d.profile.heightIn = heightIn
+      if (heightIn !== null) d.profile.heightIn = heightIn
       const at = new Date().toISOString()
       for (const n of notes.slice(0, 4)) {
         d.coach.feed.unshift({ id: uid(), at, kind: 'insight', text: `📓 Routine notes: ${n.text}` })
@@ -191,11 +195,11 @@ export function Onboarding() {
     // rather than a stepper that asked for a number almost nobody knows.
     // Without it the climb's explosive track opens on "log a vertical to
     // start this one" for every athlete chasing one.
-    const vertIn = vertFromRimAnswer(goalAnswers['vert-now'], heightIn)
-    if (weight > 0 || vertIn !== null) {
+    const vertIn = vertFromRimAnswer(goalAnswers['vert-now'], heightIn ?? undefined)
+    if (weight !== null || vertIn !== null) {
       saveMeasurement({
         date: todayISO(),
-        weightLb: weight > 0 ? weight : undefined,
+        weightLb: weight ?? undefined,
         vertIn: vertIn ?? undefined,
         photoIds: {},
       })
@@ -220,8 +224,8 @@ export function Onboarding() {
       routineGoals: [...routineGoals],
       goalStatement,
       customTargets: answers.customTargets,
-      bodyweightLb: weight,
-      heightIn,
+      bodyweightLb,
+      heightIn: heightIn ?? undefined,
       sex: sex ?? undefined,
       mealsPerDay,
       lifeSeeds: answers.lifeSeeds,
@@ -280,7 +284,10 @@ export function Onboarding() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-[max(env(safe-area-inset-top),24px)]">
+    <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-[max(env(safe-area-inset-top),24px)]">
+      <AmbientBackdrop />
+      {/* Everything the user touches sits above the field. */}
+      <div className="relative z-10 flex flex-1 flex-col">
       {step > 0 && (
         <div className="mb-4 flex items-center justify-between">
           <button onClick={back} className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-bold text-ink-dim">
@@ -344,7 +351,7 @@ export function Onboarding() {
           mode={mode}
           displayName={displayName}
           heightIn={heightIn}
-          weightLb={weight}
+          weightLb={bodyweightLb}
           goalChip={goalChip}
           setGoalChip={setGoalChip}
           routineGoals={routineGoals}
@@ -392,9 +399,9 @@ export function Onboarding() {
 
       {step === 3 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[26px]">How many days a week?</h2>
+          <h2 className="headline text-center text-[30px]">How many days a week?</h2>
           <p className="mt-1 text-center text-[13px] text-ink-dim">A plan you stick to beats a bigger one you skip.</p>
-          <div className="mt-5 grid grid-cols-4 gap-2">
+          <div className="mx-auto mt-6 grid w-full max-w-[22rem] grid-cols-4 gap-2.5">
             {([3, 4, 5, 6] as const).map((d) => (
               <button
                 key={d}
@@ -409,11 +416,9 @@ export function Onboarding() {
 
           {/* Their real week, seeds life events so every coach note speaks their schedule */}
           <Reveal when={daysPick !== null} className="mt-6">
-            <div className="text-[14px] font-bold">What else is going on in your week?</div>
-            <p className="mt-0.5 text-[11.5px] leading-snug text-ink-faint">
-              Your plan works around whatever you pick.
-            </p>
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <div className="text-center text-[15px] font-bold">What else is going on in your week?</div>
+            <p className="mt-1 text-center text-[12px] leading-snug text-ink-faint">Your plan works around whatever you pick.</p>
+            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
               {LIFE_CHIPS.map((c) => (
                 <ChoiceChip
                   key={c.id}
@@ -435,10 +440,10 @@ export function Onboarding() {
               value={customLife}
               onChange={(e) => setCustomLife(e.target.value)}
               placeholder="Your own: a DJ set, league night, choir…"
-              className="mt-2 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint focus:ring-accent/45"
+              className="mx-auto mt-3 block w-full max-w-[19rem] rounded-2xl bg-white/[0.05] px-3.5 py-2.5 text-center text-[13.5px] text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] placeholder:text-ink-faint/60 focus:bg-white/[0.08] focus:ring-accent/55"
             />
             {customLife.trim() && (
-              <div className="mt-1.5 flex gap-1.5">
+              <div className="mt-2 flex justify-center gap-1.5">
                 {(
                   [
                     ['late-night', '🌙 keeps me up late'],
@@ -473,8 +478,8 @@ export function Onboarding() {
 
       {step === 5 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[26px]">How long have you trained?</h2>
-          <div className="mt-4 space-y-2">
+          <h2 className="headline text-center text-[30px]">How long have you trained?</h2>
+          <div className="mx-auto mt-5 w-full max-w-[22rem] space-y-2.5">
             {(
               [
                 ['new', 'New to this', 'First year of real training.'],
@@ -507,7 +512,7 @@ export function Onboarding() {
             if (mode === 'byor' && byorDraft) {
               commitPlan(
                 normalizeBooklet(byorDraft),
-                byorNutrition(byorDraft.routineGoals ?? [], weight, sex ?? undefined, heightIn).proteinTargetG,
+                byorNutrition(byorDraft.routineGoals ?? [], bodyweightLb, sex ?? undefined, heightIn ?? undefined).proteinTargetG,
                 byorNotes.filter((n) => n.tone !== 'info'),
               )
             } else next()
@@ -541,11 +546,12 @@ export function Onboarding() {
         setTuneProblems={setTuneProblems}
         whyWorks={whyWorks}
         setWhyWorks={setWhyWorks}
-        weight={weight}
+        weight={bodyweightLb}
         goal={goal}
         commitPlan={commitPlan}
         onReady={() => setStep(PERMISSIONS)}
       />
+      </div>
     </div>
   )
 }

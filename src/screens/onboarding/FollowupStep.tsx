@@ -19,7 +19,7 @@ import { Btn, ChoiceChip } from '../../components/ui'
 // ============================================================
 
 const field =
-  'w-full rounded-xl bg-white/[0.07] px-4 py-3 text-[15px] text-ink outline-none ring-1 ring-white/[0.06] placeholder:text-ink-faint focus:ring-accent/60'
+  'w-full rounded-2xl bg-white/[0.05] px-4 py-3 text-[15px] text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] placeholder:text-ink-faint/60 focus:bg-white/[0.08] focus:ring-accent/55'
 
 function Question({
   fq,
@@ -32,9 +32,9 @@ function Question({
 }) {
   return (
     <div>
-      <p className="text-[14px] font-bold text-ink">{fq.q}</p>
+      <p className="text-center text-[15px] font-bold text-ink">{fq.q}</p>
       {fq.kind === 'number' ? (
-        <div className="mt-2 flex gap-2">
+        <div className="mx-auto mt-2.5 flex max-w-[15rem] gap-2">
           <input
             inputMode="decimal"
             value={value ?? ''}
@@ -53,10 +53,10 @@ function Question({
           value={value ?? ''}
           onChange={(e) => onPick(e.target.value)}
           placeholder={fq.placeholder}
-          className={`mt-2 ${field}`}
+          className={`mx-auto mt-2.5 block max-w-[19rem] text-center ${field}`}
         />
       ) : (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
           {(fq.options ?? []).map((o) => (
             <ChoiceChip key={o} selected={value === o} onClick={() => onPick(o)}>
               {o}
@@ -99,12 +99,12 @@ export function FollowupStep({
 
   return (
     <div className="flex flex-1 flex-col">
-      <h2 className="headline text-center text-[26px]">
+      <h2 className="headline text-center text-[30px]">
         {firstName ? `A few things, ${firstName}` : 'A few things'}
       </h2>
       <p className="mt-1 text-center text-[13px] text-ink-dim">Every answer changes your plan.</p>
 
-      <div className="mt-5 space-y-5">
+      <div className="mt-6 space-y-6">
         {shown.map((fq) => (
           <div key={fq.id + (fq.showIf?.id ?? '')} className="enter">
             <Question

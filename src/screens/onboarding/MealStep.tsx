@@ -59,10 +59,10 @@ export function MealStep({
   const [chose, setChose] = useState(false)
   return (
     <div className="flex flex-1 flex-col">
-      <h2 className="headline text-center text-[26px]">Want a food plan too?</h2>
+      <h2 className="headline text-center text-[30px]">Want a food plan too?</h2>
 
-      <p className="mt-6 text-[14px] font-bold text-ink">How do you eat?</p>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <p className="text-center text-[15px] font-bold text-ink">How do you eat?</p>
+      <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
         {DIETS.map((d) => (
           <ChoiceChip key={d.id} selected={dietStyle === d.id} onClick={() => {
               setChose(true)
@@ -76,8 +76,8 @@ export function MealStep({
       {/* Dairy free is not a fifth diet — it stacks on any of the four.
           Sitting in that row it read as one more of them. */}
       <Reveal when={chose} className="mt-6">
-        <p className="text-[14px] font-bold text-ink">Anything you cannot eat?</p>
-        <div className="mt-2">
+        <p className="text-center text-[15px] font-bold text-ink">Anything you cannot eat?</p>
+        <div className="mt-2.5 flex justify-center">
           <ChoiceChip selected={dairyFree} onClick={() => setDairyFree((v) => !v)}>
             Dairy free
           </ChoiceChip>
@@ -86,13 +86,13 @@ export function MealStep({
           value={allergies}
           onChange={(e) => setAllergies(e.target.value)}
           placeholder="Nuts, shellfish, gluten…"
-          className="mt-2 w-full rounded-xl bg-white/[0.07] px-4 py-3 text-[15px] text-ink outline-none ring-1 ring-white/[0.06] placeholder:text-ink-faint focus:ring-accent/60"
+          className="mx-auto mt-2.5 block w-full max-w-[19rem] rounded-2xl bg-white/[0.05] px-4 py-3 text-center text-[15px] text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] placeholder:text-ink-faint/60 focus:bg-white/[0.08] focus:ring-accent/55"
         />
       </Reveal>
 
       <Reveal when={chose} className="mt-6">
-        <p className="text-[14px] font-bold text-ink">How many times a day?</p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <p className="text-center text-[15px] font-bold text-ink">How many times a day?</p>
+        <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
           {MEALS.map((m) => (
             <ChoiceChip key={m.n} selected={mealsPerDay === m.n} onClick={() => setMealsPerDay(m.n)}>
               {m.label}

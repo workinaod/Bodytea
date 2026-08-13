@@ -20,6 +20,8 @@ test('a welcome goal chip seeds the wizard with that goal', async ({ page }) => 
   await page.getByRole('button', { name: /Run a 5K/ }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
 
   // The goal came with it, so the chip is already chosen and the
@@ -44,6 +46,8 @@ test('a different chip seeds a completely different plan', async ({ page }) => {
   await page.getByRole('button', { name: /Build muscle/ }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByRole('button', { name: /Next/ }).click()
 
@@ -59,6 +63,8 @@ test('the coach asks which sport, which it never used to', async ({ page }) => {
   await page.getByRole('button', { name: 'Something else' }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: /Next/ }).click()
   await page.getByText('Get better at my sport').click()
   await page.getByRole('button', { name: /Next/ }).click()

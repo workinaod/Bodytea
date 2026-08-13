@@ -1,15 +1,14 @@
-import { useState } from 'react'
+import { Btn, ChoiceChip, HeightField, Reveal, WeightField } from '../../components/ui'
 import { DEFAULT_HEIGHT_IN } from '../../plan/reach'
-import { Btn, ChoiceChip, Reveal, Stepper } from '../../components/ui'
 
 // ============================================================
 // Who is training. Four answers, one at a time.
 //
 // These used to sit on a "Baseline numbers" screen near the END
 // of the wizard, which meant every plan was built and every
-// question was asked before the app knew whether it was talking
-// to a 5'2" woman or a 6'5" man. Two things depend on it from
-// the very first session:
+// question asked before the app knew whether it was talking to
+// a 5'2" woman or a 6'5" man. Two things depend on it from the
+// very first session:
 //
 //   Calories — bodyweight alone cannot tell 5'2" from 6'5" at
 //   the same weight, and the gap between them is real food.
@@ -25,7 +24,7 @@ import { Btn, ChoiceChip, Reveal, Stepper } from '../../components/ui'
 // internals; the question is the question.
 // ============================================================
 
-const label = 'text-[13px] font-black uppercase tracking-wider text-ink-faint'
+const label = 'text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint'
 
 export function MeStep({
   displayName,
@@ -42,100 +41,81 @@ export function MeStep({
   setDisplayName: (s: string) => void
   sex: 'male' | 'female' | null
   setSex: (s: 'male' | 'female') => void
-  heightIn: number
-  setHeightIn: (n: number) => void
-  weight: number
-  setWeight: (n: number) => void
+  heightIn: number | null
+  setHeightIn: (n: number | null) => void
+  weight: number | null
+  setWeight: (n: number | null) => void
   onNext: () => void
 }) {
-  // Height has a default, so "they have seen it" is what opens the
-  // weight row — either by moving it or by tapping on past it. Somebody
-  // who is exactly 5'8" must not get stuck behind a stepper they had no
-  // reason to touch.
-  const [pastHeight, setPastHeight] = useState(false)
-
-  // Choosing a sex moves the untouched stepper to that sex's average, so
-  // leaving it alone means "no information" rather than a number the app
-  // picked and then acted on.
-  const pickSex = (s: 'male' | 'female') => {
-    setSex(s)
-    if (!pastHeight) setHeightIn(DEFAULT_HEIGHT_IN[s])
-  }
-
   const named = displayName.trim().length > 0
   const showHeight = named && sex !== null
-  const showWeight = showHeight && pastHeight
-
-  const ft = Math.floor(heightIn / 12)
-  const inch = heightIn % 12
+  const showWeight = showHeight && heightIn !== null
+  const ready = named && sex !== null && heightIn !== null && weight !== null
 
   return (
-    <div
-      className="flex flex-1 flex-col"
-      onClick={() => {
-        if (showHeight) setPastHeight(true)
-      }}
-    >
-      <h2 className="headline text-center text-[26px]">What should we call you?</h2>
+    <div className="flex flex-1 flex-col items-center text-center">
+      <h2 className="headline text-[30px]">What should we call you?</h2>
       <input
         value={displayName}
         onChange={(e) => setDisplayName(e.target.value)}
         placeholder="Display name"
-        className="mt-5 w-full rounded-xl bg-white/[0.05] px-4 py-3.5 text-[15px] font-semibold text-ink outline-none ring-1 ring-white/[0.05] focus:ring-accent/45"
+        className="mt-6 w-full max-w-[19rem] rounded-2xl bg-white/[0.05] px-4 py-3.5 text-center text-[16px] font-semibold text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] placeholder:text-ink-faint/60 focus:bg-white/[0.08] focus:ring-accent/55"
       />
 
-      <Reveal when={named} className="mt-7">
+      <Reveal when={named} className="mt-8 w-full">
         <p className={label}>Sex</p>
-        <div className="mt-2 flex gap-2">
-          <ChoiceChip selected={sex === 'male'} onClick={() => pickSex('male')}>
+        <div className="mt-2.5 flex justify-center gap-2">
+          <ChoiceChip
+            selected={sex === 'male'}
+            onClick={() => setSex('male')}
+            className="min-w-[6.5rem]"
+          >
             Male
           </ChoiceChip>
-          <ChoiceChip selected={sex === 'female'} onClick={() => pickSex('female')}>
+          <ChoiceChip selected={sex === 'female'} onClick={() => setSex('female')} className="min-w-[6.5rem]">
             Female
           </ChoiceChip>
         </div>
       </Reveal>
 
-      <Reveal when={showHeight} className="mt-7">
+      <Reveal when={showHeight} className="mt-8 w-full">
         <p className={label}>Height</p>
-        <div className="mt-2 flex items-center gap-4">
-          <Stepper
-            value={ft}
-            onChange={(v) => {
-              setPastHeight(true)
-              setHeightIn(Math.min(7, Math.max(4, v)) * 12 + inch)
-            }}
-            step={1}
-            min={4}
-            suffix="ft"
-            width="w-12"
-          />
-          <Stepper
-            value={inch}
-            onChange={(v) => {
-              setPastHeight(true)
-              // Rolling past either end moves the feet, so 5'11" + 1 is
-              // 6'0" rather than a stepper that refuses to go further.
-              setHeightIn(Math.min(95, Math.max(48, ft * 12 + v)))
-            }}
-            step={1}
-            min={-1}
-            suffix="in"
-            width="w-12"
-          />
+        <div className="mt-2.5">
+          <HeightField value={heightIn} onChange={setHeightIn} />
         </div>
       </Reveal>
 
-      <Reveal when={showWeight} className="mt-7">
+      <Reveal when={showWeight} className="mt-8 w-full">
         <p className={label}>Weight</p>
-        <div className="mt-2">
-          <Stepper value={weight} onChange={setWeight} step={1} min={70} suffix="lb" width="w-20" />
+        <div className="mt-2.5">
+          <WeightField value={weight} onChange={setWeight} />
         </div>
       </Reveal>
 
-      <Btn className="mt-8 w-full py-4" onClick={onNext} disabled={!named || sex === null}>
+      <Btn className="mt-10 w-full max-w-[21rem] py-4" onClick={onNext} disabled={!ready}>
         Next: the goal
       </Btn>
+      {named && !ready && (
+        <p className="mt-2.5 text-[11.5px] text-ink-faint">
+          {sex === null
+            ? ' '
+            : heightIn === null
+              ? `Type it like 5 1 0 for 5' 10"`
+              : 'And your weight.'}
+        </p>
+      )}
+      {/* The reference height for their sex, one tap, for anybody who
+          would rather not say. Skipping is a real answer: it lands on
+          the average, which is exactly the plan they got before height
+          was ever asked for. */}
+      {showHeight && heightIn === null && sex && (
+        <button
+          onClick={() => setHeightIn(DEFAULT_HEIGHT_IN[sex])}
+          className="press mt-3 py-1 text-[12px] font-semibold text-ink-faint underline decoration-white/20 underline-offset-4"
+        >
+          I would rather not say
+        </button>
+      )}
     </div>
   )
 }

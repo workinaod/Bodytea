@@ -22,7 +22,7 @@ export function GoalStep(p: {
   mode: 'gen' | 'byor'
   displayName: string
   /** What the app already knows, which decides which goals it offers. */
-  heightIn: number
+  heightIn: number | null
   weightLb: number
   goalChip: number | null
   setGoalChip: (n: number | null) => void
@@ -64,7 +64,7 @@ export function GoalStep(p: {
         if (picked) setMovedOn(true)
       }}
     >
-      <h2 className="headline text-center text-[26px]">
+      <h2 className="headline text-center text-[30px]">
         {mode === 'byor'
           ? 'What is this routine chasing?'
           : `What are your goals${displayName.trim() ? `, ${displayName.trim().split(/\s+/)[0]}` : ''}?`}
@@ -73,14 +73,14 @@ export function GoalStep(p: {
         {mode === 'byor' ? 'Pick every one that applies.' : 'Pick one, or type your own.'}
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
         {mode === 'byor'
           ? (Object.keys(ROUTINE_GOAL_LABELS) as RoutineGoal[]).map((g) => (
               <ChoiceChip key={g} selected={routineGoals.has(g)} onClick={() => toggleRoutineGoal(g)}>
                 {ROUTINE_GOAL_LABELS[g]}
               </ChoiceChip>
             ))
-          : visibleGoalChips({ heightIn, weightLb }).map((i) => (
+          : visibleGoalChips({ heightIn: heightIn ?? undefined, weightLb }).map((i) => (
               <ChoiceChip key={GOAL_CHIPS[i].label} selected={goalChip === i} onClick={() => setGoalChip(i)}>
                 {GOAL_CHIPS[i].label}
               </ChoiceChip>
@@ -93,19 +93,19 @@ export function GoalStep(p: {
           goal and then type the same goal out longhand. */}
       {mode !== 'byor' && goalChip !== null ? (
         <Reveal when className="mt-5">
-          <p className="text-[12px] font-black uppercase tracking-wider text-ink-faint">Let's get specific</p>
+          <p className="text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint">Let's get specific</p>
           <textarea
             value={goalDetail}
             onChange={(e) => setGoalDetail(e.target.value)}
             onFocus={() => setMovedOn(true)}
             placeholder={'"before my wedding in June"  ·  "30 lb"  ·  "my knees are bad"'}
             rows={2}
-            className="mt-2 w-full resize-none rounded-xl bg-white/[0.05] px-4 py-3 text-[14px] font-semibold text-ink outline-none ring-1 ring-white/[0.05] focus:ring-accent/45"
+            className="mt-2.5 w-full resize-none rounded-2xl bg-white/[0.05] px-4 py-3 text-center text-[14px] font-semibold text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] focus:bg-white/[0.08] focus:ring-accent/55"
           />
         </Reveal>
       ) : (
         <>
-          <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Or say it yourself</p>
+          <p className="mt-6 text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint">Or say it yourself</p>
           <textarea
             value={goalStatement}
             onChange={(e) => {
@@ -117,16 +117,16 @@ export function GoalStep(p: {
             }}
             placeholder={'"lose 30 lb before the summer"  ·  "keep up with my kids"  ·  "run a 10K"'}
             rows={2}
-            className="mt-2 w-full resize-none rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-4 py-3 text-[14px] font-semibold text-ink outline-none focus:ring-accent/45"
+            className="mt-2.5 w-full resize-none rounded-2xl bg-white/[0.05] px-4 py-3 text-center text-[14px] font-semibold text-ink outline-none ring-1 ring-white/[0.07] transition-[background,box-shadow] focus:bg-white/[0.08] focus:ring-accent/55"
           />
         </>
       )}
 
       <Reveal when={showFocus} className="mt-5">
-        <p className="text-[12px] font-black uppercase tracking-wider text-ink-faint">
+        <p className="text-center text-[12px] font-black uppercase tracking-[0.16em] text-ink-faint">
           Anywhere you want to focus on <span className="font-semibold normal-case tracking-normal">(up to 4)</span>
         </p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
           {(Object.entries(FOCUS_LABELS) as [FocusArea, string][]).map(([id, label]) => (
             <ChoiceChip
               key={id}
