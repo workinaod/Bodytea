@@ -1,10 +1,12 @@
-import type { CardioEntry, ISODate, RunLog } from '../types'
+import type { AppData, CardioEntry, ISODate, RunLog } from '../types'
 import { defaultWeekState } from '../types'
+import { perceivedIntensity } from '../engine/calibration'
 import { cardioActivity, isIntenseSport } from '../plan/cardio'
 import { uid, useAppStore } from '../store/appStore'
 import { stampReachedStages } from './journeyActions'
 import { mondayOf } from '../engine/calendar'
 import { estKcal } from '../engine/runs'
+import { ftToM } from '../engine/elevation'
 import type { Intensity } from '../engine/intensity'
 
 // ============================================================
@@ -38,24 +40,33 @@ const store = () => useAppStore.getState()
  * With no mode AND no tier there is nothing new to go on, and the old
  * answer stands rather than quietly dropping days people did play.
  */
-export function playedFrom(entry: {
-  activityId: string
-  mode?: string
-  intensity?: Intensity
-  feltIntensity?: Intensity
-}): boolean {
+export function playedFrom(
+  entry: {
+    activityId: string
+    mode?: string
+    intensity?: Intensity
+    feltIntensity?: Intensity
+  },
+  /**
+   * The tier the SCREENS will show for this session. Passed in rather
+   * than read off the entry, because `entry.intensity` is frozen at the
+   * population band on the day it was saved while every display
+   * re-derives against the athlete's calibrated one. Left unresolved,
+   * one Week row could read "played" and "easy" at the same time.
+   */
+  shown?: Intensity | null,
+): boolean {
   if (!cardioActivity(entry.activityId).sport) return false
   if (entry.mode) return isIntenseSport(entry.activityId, entry.mode)
-  const tier = entry.feltIntensity ?? entry.intensity
+  const tier = entry.feltIntensity ?? shown ?? entry.intensity
   if (tier) return tier !== 'low'
   return isIntenseSport(entry.activityId, entry.mode)
 }
 
-function setPlayed(
-  d: { cardio: Record<string, CardioEntry[]>; weeks: Record<string, ReturnType<typeof defaultWeekState>> },
-  date: ISODate,
-): void {
-  const played = (d.cardio[date] ?? []).some(playedFrom)
+function setPlayed(d: AppData, date: ISODate): void {
+  const played = (d.cardio[date] ?? []).some((e) =>
+    playedFrom(e, perceivedIntensity(d, e.activityId, e.steps, e.minutes ?? 0, e.feltIntensity)),
+  )
   const monday = mondayOf(date)
   if (played) {
     const w = (d.weeks[monday] ??= defaultWeekState(monday))
@@ -143,7 +154,16 @@ export function saveRun(run: RunLog): void {
         break
       }
     }
-    run.kcalEst = estKcal(run.activity, run.distanceMi, run.durationSec, bw ?? 175)
+    // The climb is part of the bill. buildRunLog already measured it
+    // from the track, so a hill logged here costs what it cost to walk
+    // up, not what the same pace on the flat would have.
+    run.kcalEst = estKcal(
+      run.activity,
+      run.distanceMi,
+      run.durationSec,
+      bw ?? 175,
+      ftToM(run.elevGainFt ?? 0),
+    )
     d.runs.push(run)
   })
   logCardio(run.date, {

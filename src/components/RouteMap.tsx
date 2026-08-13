@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { RunPoint } from '../types'
 import { fitBounds, latToWorldY, lngToWorldX } from '../engine/runs'
+import { segmentSpeedsMph, speedColor, speedRange } from '../engine/trackStyle'
 
 /**
  * Slippy-map route view with zero dependencies: raster tiles laid as an
@@ -8,12 +9,17 @@ import { fitBounds, latToWorldY, lngToWorldX } from '../engine/runs'
  * with tiles blocked) the imgs simply don't paint and the route still
  * draws on the dark field. Stats never depend on the map.
  *
- * The tiles are CARTO's `dark_nolabels`, not OSM standard. Standard OSM
- * is a reference map: it prints every house number, every bus stop, a
- * one-way arrow on every street. All of that is noise while you are
- * running, and it fought the app's black. This layer keeps the shapes
- * (roads, parks, water, coastline) and drops the text entirely, which
- * is what a tracker map is actually for.
+ * The tiles are Esri World Imagery: actual satellite and aerial
+ * photography, global, and served without an API key or a billing
+ * account — which is why it and not Mapbox or Google. A route over
+ * real terrain reads as a place you went rather than an abstraction,
+ * and the ground itself shows the trail, the park, the coastline.
+ *
+ * Coverage is worldwide but resolution is not uniform: cities go to
+ * z19 and beyond, while remote ground runs out earlier and Esri
+ * returns a flat placeholder tile. MAX_ZOOM is set where imagery
+ * still exists nearly everywhere rather than where the best cities
+ * allow, so zooming in never lands the athlete on a grey square.
  *
  * Three modes:
  *   FOLLOW (live) locks the view on the runner, so the dot stays under
@@ -23,10 +29,15 @@ import { fitBounds, latToWorldY, lngToWorldX } from '../engine/runs'
  */
 
 const TILE = (z: number, x: number, y: number) =>
-  `https://basemaps.cartocdn.com/dark_nolabels/${z}/${x}/${y}@2x.png`
+  `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`
 
-/** Deeper than OSM standard allowed, so you can get right down to the kerb. */
-export const MAX_ZOOM = 20
+/**
+ * Imagery thins out past this in rural and remote terrain, where a
+ * deeper request comes back as a blank placeholder rather than a
+ * sharper photo. Cities would allow more; the athlete on a trail is
+ * who this ceiling protects.
+ */
+export const MAX_ZOOM = 19
 export const MIN_ZOOM = 11
 
 export function RouteMap({
@@ -37,6 +48,8 @@ export function RouteMap({
   follow = false,
   zoom: zoomProp,
   pannable = false,
+  upTo,
+  graded = false,
 }: {
   points: RunPoint[]
   height?: number
@@ -48,6 +61,14 @@ export function RouteMap({
   zoom?: number
   /** Let a finger drag the map away from the runner. */
   pannable?: boolean
+  /**
+   * Draw only the first N points, for replay. The view is still framed
+   * on the WHOLE track, so the route reveals itself inside a steady
+   * frame instead of the map lurching after the leading dot.
+   */
+  upTo?: number
+  /** Colour the line by pace instead of drawing it one flat accent. */
+  graded?: boolean
 }) {
   // Drag offset in screen pixels. Non-zero means the user took over.
   const [pan, setPan] = useState<{ x: number; y: number } | null>(null)
@@ -153,15 +174,37 @@ export function RouteMap({
       x: (lngToWorldX(p[1]) - originX) * scale,
       y: (latToWorldY(p[0]) - originY) * scale,
     })
-    const path = points.map((p) => {
-      const { x, y } = px(p)
-      return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`
-    })
-    return { zoom, tiles, path, start: px(points[0]), end: px(points[points.length - 1]), single: points.length < 2 }
+    // Replay draws a prefix; the frame above was still fitted to the
+    // whole route, so the camera holds still while the line grows.
+    const drawn = upTo === undefined ? points : points.slice(0, Math.max(1, upTo))
+    const xy = drawn.map(px)
+    const path = xy.map((p) => `${Math.round(p.x * 10) / 10},${Math.round(p.y * 10) / 10}`)
+
+    // Per-segment colours, only when asked: for a live follow view the
+    // line is short and the grading would just flicker.
+    let segments: { d: string; color: string }[] = []
+    if (graded && drawn.length > 2) {
+      const speeds = segmentSpeedsMph(drawn)
+      const { slow, fast } = speedRange(speeds)
+      segments = speeds.map((mph, i) => ({
+        d: `M${path[i]} L${path[i + 1]}`,
+        color: speedColor(mph, slow, fast),
+      }))
+    }
+
+    return {
+      zoom,
+      tiles,
+      path,
+      segments,
+      start: xy[0],
+      end: xy[xy.length - 1],
+      single: drawn.length < 2,
+    }
     // points is mutated in place during live tracking, length is the
     // signal that a new fix landed, so it must be a dependency too.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, points.length, width, height, follow, zoomProp, pan])
+  }, [points, points.length, width, height, follow, zoomProp, pan, upTo, graded])
 
   if (!view) {
     return (
@@ -180,9 +223,11 @@ export function RouteMap({
       className="relative h-full overflow-hidden rounded-2xl bg-[#0b0d10] ring-1 ring-white/[0.07]"
       style={{ height, touchAction: pannable ? 'none' : undefined }}
     >
-      {/* A touch of lift on an already-dark layer, so parks and water
-          still read as green and blue instead of going to mud. */}
-      <div className="absolute inset-0 saturate-[1.25] brightness-[1.06] contrast-[1.02]">
+      {/* Satellite photography is bright and busy. Knocking it back
+          and cooling it slightly puts the route in front of the ground
+          instead of competing with it, and keeps the panel dark enough
+          to belong to the rest of the app. */}
+      <div className="absolute inset-0 brightness-[0.72] saturate-[0.85] contrast-[1.08]">
         {view.tiles.map((t) => (
           <img
             key={`${view.zoom}/${t.x}/${t.y}`}
@@ -200,24 +245,42 @@ export function RouteMap({
         {/* The route so far, always drawn */}
         {!view.single && (
           <>
+            {/* One dark casing under everything. Against aerial imagery
+                a bare line disappears over pale ground — sand, concrete,
+                a car park — and this is what keeps it legible on all of
+                them without darkening the photo further. */}
             <polyline
               points={view.path.join(' ')}
               fill="none"
-              stroke="var(--color-accent)"
-              strokeWidth="11"
+              stroke="#000"
+              strokeWidth="9"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity="0.22"
+              opacity="0.5"
             />
-            <polyline
-              points={view.path.join(' ')}
-              fill="none"
-              stroke="var(--color-accent)"
-              strokeWidth="5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.98"
-            />
+            {view.segments.length > 0 ? (
+              view.segments.map((s, i) => (
+                <path
+                  key={i}
+                  d={s.d}
+                  fill="none"
+                  stroke={s.color}
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ))
+            ) : (
+              <polyline
+                points={view.path.join(' ')}
+                fill="none"
+                stroke="var(--color-accent)"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.98"
+              />
+            )}
             <circle cx={view.start.x} cy={view.start.y} r="5.5" fill="var(--color-lime)" stroke="#000" strokeWidth="1.5" />
           </>
         )}
@@ -235,7 +298,11 @@ export function RouteMap({
           Recenter
         </button>
       )}
-      <div className="absolute bottom-1 right-2 text-[8.5px] text-white/40">© OpenStreetMap © CARTO</div>
+      {/* Esri's terms require the source to be credited wherever the
+          imagery is shown. It is small, but it is not optional. */}
+      <div className="absolute bottom-1 right-2 text-[8.5px] text-white/45">
+        Imagery © Esri, Maxar, Earthstar Geographics
+      </div>
     </div>
   )
 }

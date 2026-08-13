@@ -7,7 +7,7 @@ import { intensityTrend, sportSummary, sportTotals, type ActivityRollup } from '
 import { Card, SectionTitle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { SimpleLine } from '../../components/charts'
-import { RouteMap } from '../../components/RouteMap'
+import { RunReplay } from '../../components/RunReplay'
 
 // ============================================================
 // Everything logged as sport, in one place.
@@ -139,7 +139,7 @@ export function ActivityLog({ data, today }: { data: AppData; today: ISODate }) 
               )}
               <div className="mt-1.5 text-[12.5px] font-semibold text-ink-dim">{runSummary(openRun)}</div>
             </div>
-            {openRun.points.length > 1 && <RouteMap points={openRun.points} height={230} />}
+            {openRun.points.length > 1 && <RunReplay log={openRun} height={240} />}
             {openRun.splits.length > 0 && (
               <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
                 {openRun.splits.map((s, i) => (

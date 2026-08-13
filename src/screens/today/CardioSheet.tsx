@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { CardioEntry, CardioWhen, ISODate } from '../../types'
 import { useAppStore } from '../../store/appStore'
-import { CARDIO_ACTIVITIES, cardioActivity } from '../../plan/cardio'
+import { CARDIO_ACTIVITIES, FLOOR_HEIGHT_M, GPS_ACTIVITIES, cardioActivity } from '../../plan/cardio'
+import { mToFt } from '../../engine/elevation'
+import type { GpsActivity } from '../../activityTypes'
 import { logCardio, removeCardio } from '../../logic/actions'
 import { Btn, Chip, Stepper } from '../../components/ui'
 import type { Intensity } from '../../engine/intensity'
@@ -40,7 +42,11 @@ export function CardioSheet({
   const entries = useAppStore((s) => s.data.cardio[date]) ?? NO_ENTRIES
   const [picked, setPicked] = useState<string | null>(null)
   const [intent, setIntent] = useState<'log' | 'track' | null>(null)
-  const [tracking, setTracking] = useState<'run' | 'bike' | null>(null)
+  // All four GPS activities, same as the Track sheet. This listed only
+  // run and bike, so a walk started from here got the plain timer and a
+  // walk started from the Track button got the map, the route and a
+  // speed-based calorie figure. Same walk, two different receipts.
+  const [tracking, setTracking] = useState<GpsActivity | null>(null)
   const [timing, setTiming] = useState<string | null>(null)
   const [timingLabel, setTimingLabel] = useState<string | undefined>(undefined)
   const [naming, setNaming] = useState(false)
@@ -48,6 +54,7 @@ export function CardioSheet({
   const [where, setWhere] = useState<'indoor' | 'outdoor'>('outdoor')
   const [miles, setMiles] = useState(2)
   const [minutes, setMinutes] = useState(30)
+  const [floors, setFloors] = useState(0)
   const [mode, setMode] = useState<string | null>(null)
   const [customLabel, setCustomLabel] = useState('')
   const [felt, setFelt] = useState<Intensity | undefined>(undefined)
@@ -63,7 +70,11 @@ export function CardioSheet({
     setMode(null)
     setCustomLabel('')
     setFelt(undefined)
+    setFloors(0)
   }
+
+  /** The floors turned into the climb they represent, for the caption. */
+  const climbFt = mToFt(floors * FLOOR_HEIGHT_M)
 
   /** All the way back to the start, for closing the sheet. */
   const reset = () => {
@@ -75,7 +86,7 @@ export function CardioSheet({
   /** Picking an activity means different things depending on the direction. */
   const choose = (id: string) => {
     if (intent === 'track') {
-      if (id === 'run' || id === 'bike') setTracking(id)
+      if (GPS_ACTIVITIES.some((g) => g.id === id)) setTracking(id as GpsActivity)
       // A custom activity has to be named before it is timed, or the
       // session banks as "Custom" and the Record fills with anonymous
       // blanks. The Track sheet always asked; this path never did.
@@ -98,6 +109,7 @@ export function CardioSheet({
       minutes: mins,
       bodyweightLb,
       mode: def.modes && mode ? mode : null,
+      ...(def.asks.floors ? { floors } : {}),
     })
     const entry: Omit<CardioEntry, 'id' | 'at'> = {
       activityId: def.id,
@@ -106,6 +118,7 @@ export function CardioSheet({
       ...(def.asks.where ? { where } : {}),
       ...(def.asks.miles ? { miles } : {}),
       ...(def.asks.minutes ? { minutes } : {}),
+      ...(def.asks.floors && floors > 0 ? { floors } : {}),
       ...(def.modes && mode ? { mode } : {}),
       ...(felt ? { feltIntensity: felt } : {}),
       ...(kcal > 0 ? { kcalEst: kcal } : {}),
@@ -239,9 +252,9 @@ export function CardioSheet({
               </button>
             </div>
 
-            {(def.id === 'run' || def.id === 'bike') && (
+            {GPS_ACTIVITIES.some((g) => g.id === def.id) && (
               <button
-                onClick={() => setTracking(def.id as 'run' | 'bike')}
+                onClick={() => setTracking(def.id as GpsActivity)}
                 className="flex w-full items-center justify-between rounded-2xl border border-accent/35 bg-accent/8 px-4 py-3 text-left active:bg-accent/15"
               >
                 <span>
@@ -305,7 +318,19 @@ export function CardioSheet({
                   <Stepper value={minutes} onChange={(v) => setMinutes(Math.max(0, v))} step={5} width="w-14" />
                 </div>
               )}
+              {def.asks.floors && (
+                <div className="flex items-center gap-3">
+                  <span className="text-[13px] font-bold">Floors</span>
+                  <Stepper value={floors} onChange={(v) => setFloors(Math.max(0, v))} step={5} width="w-14" />
+                </div>
+              )}
             </div>
+            {def.asks.floors && (
+              <p className="text-[11.5px] leading-snug text-ink-dim">
+                Off the machine's display. {floors > 0 ? `${climbFt.toLocaleString()} ft climbed, ` : ''}
+                and it's the floors, not the minutes, that separate level 4 from level 14.
+              </p>
+            )}
 
             {hasSession && (
               <div>

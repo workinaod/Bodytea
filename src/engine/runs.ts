@@ -1,6 +1,8 @@
 import type { AppData, ISODate, RunLog, RunPoint } from '../types'
 import type { GpsActivity } from '../activityTypes'
 import { addDaysISO, mondayOf } from './calendar'
+import { haversineMi } from './geoMath'
+import { elevationStats } from './elevation'
 
 // ============================================================
 // GPS run/ride math, all pure. Points are [lat, lng, elapsedSec].
@@ -9,17 +11,9 @@ import { addDaysISO, mondayOf } from './calendar'
 // Mercator projection the route map draws with.
 // ============================================================
 
-const R_MI = 3958.7613
-
-export function haversineMi(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const toRad = (x: number) => (x * Math.PI) / 180
-  const dLat = toRad(lat2 - lat1)
-  const dLng = toRad(lng2 - lng1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
-  return 2 * R_MI * Math.asin(Math.sqrt(a))
-}
+// Moved to geoMath.ts so elevation.ts can share it, re-exported here
+// because half the app already imports it from this module.
+export { haversineMi } from './geoMath'
 
 /**
  * Should this GPS fix be kept? Rejects low-accuracy fixes, teleports
@@ -112,12 +106,18 @@ export function estKcal(
   distanceMi: number,
   durationSec: number,
   bodyweightLb: number,
+  climbGainM = 0,
 ): number {
   if (durationSec < 60) return 0
   const kg = toKg(bodyweightLb)
+  // The climb is charged on top of whatever the flat-ground term
+  // works out to. Speed alone cannot see it: a 10-minute mile up a
+  // canyon and a 10-minute mile on a track are the same MET to the
+  // table below and nowhere near the same work.
+  const climb = climbKcal(climbGainM, bodyweightLb)
   if (distanceMi <= 0) {
     const flat = activity === 'run' ? 9.8 : activity === 'bike' ? 8.0 : activity === 'hike' ? 6.0 : 4.3
-    return Math.round(flat * kg * (durationSec / 3600))
+    return Math.round(flat * kg * (durationSec / 3600)) + climb
   }
   const mph = (distanceMi / durationSec) * 3600
   const met =
@@ -144,7 +144,41 @@ export function estKcal(
               : mph < 16
                 ? 10
                 : 12
-  return Math.round(met * kg * (durationSec / 3600))
+  return Math.round(met * kg * (durationSec / 3600)) + climb
+}
+
+/**
+ * Gross mechanical efficiency of human locomotion going uphill.
+ *
+ * Walking, running and riding all land near this once the whole body
+ * is counted, which is why one constant serves all four GPS sports
+ * rather than four tuned ones pretending to a precision that GPS
+ * altitude cannot support anyway.
+ */
+export const CLIMB_EFFICIENCY = 0.23
+
+/**
+ * Extra calories bought by lifting bodyweight up the climb.
+ *
+ * Physics, not a lookup table: raising m kilograms h metres costs
+ * m·g·h joules of mechanical work, and the body buys that work at
+ * CLIMB_EFFICIENCY. The rest leaves as heat and still has to be paid
+ * for.
+ *
+ *   kcal = m·g·h / efficiency / 4184
+ *
+ * Which lands on the field rule of about 1 kcal per kg of body mass
+ * per 100 m climbed — a 175 lb runner up 1,000 ft pays ~240 kcal.
+ *
+ * Only ascent is charged. Descending has a real eccentric cost, but
+ * it is small, poorly characterised, and the flat-ground MET term
+ * already covers moving the legs. Charging for it would be inventing
+ * precision the input does not have.
+ */
+export function climbKcal(gainM: number, bodyweightLb: number): number {
+  if (!Number.isFinite(gainM) || gainM <= 0) return 0
+  const joules = (toKg(bodyweightLb) * 9.80665 * gainM) / CLIMB_EFFICIENCY
+  return Math.round(joules / 4184)
 }
 
 /**
@@ -227,6 +261,11 @@ export function buildRunLog(
   points: RunPoint[],
 ): RunLog {
   const distanceMi = totalDistanceMi(points)
+  // Computed from the FULL track, before compressTrack throws five in
+  // six points away. Subsampling a profile flattens it: the summit is
+  // exactly the kind of point that gets dropped, and the climb would
+  // shrink the longer the session ran.
+  const elev = elevationStats(points)
   return {
     id,
     activity,
@@ -237,6 +276,7 @@ export function buildRunLog(
     avgPaceSec: paceSecPerMi(distanceMi, durationSec),
     splits: mileSplits(points),
     points: compressTrack(points),
+    ...(elev.samples > 1 ? { elevGainFt: elev.gainFt, elevLossFt: elev.lossFt } : {}),
   }
 }
 

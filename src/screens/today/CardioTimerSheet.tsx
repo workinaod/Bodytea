@@ -230,7 +230,11 @@ export function CardioTimerSheet({
             <div className="text-[64px]">{def.emoji}</div>
             <p className="mt-3 max-w-[30ch] text-center text-[13.5px] leading-relaxed text-ink-dim">
               {countsSteps
-                ? `Keep the phone on you and it counts your steps${usesGps ? ' and distance' : ''} too.`
+                ? // Distance is promised wherever it is reported, whether
+                  // the satellites measured it or the step count did. It
+                  // used to be promised only for GPS, so an hour of ball
+                  // came back with a mileage figure nothing had offered.
+                  `Keep the phone on you and it counts your steps${showsDistance ? ' and distance' : ''} too.`
                 : 'Timer starts when you do.'}
             </p>
             <Btn kind="lime" className="mt-8 w-full max-w-xs py-4 text-[15px]" onClick={start}>
