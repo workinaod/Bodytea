@@ -117,6 +117,27 @@ describe('a limitation they typed in', () => {
     expect(adjustmentsFor(d, addDaysISO(START, 120)).length).toBeGreaterThan(0)
   })
 
+  it('acts on a stated limitation rather than suggesting it', () => {
+    // A knee replacement is not a pattern the app inferred. Nothing can
+    // route a squat around a knee, so the movement stays and the weight
+    // comes off, without needing to be agreed to first.
+    const d = data()
+    d.prefs.limitations = [{ label: 'replacement, right knee', joints: ['knee'], since: START }]
+    const lightened = [0, 1, 2, 3, 4, 5, 6]
+      .map((i) => resolveDay(addDaysISO(START, i), d))
+      .flatMap((r) => r.exercises)
+      .filter((x) => x.lightMode)
+    expect(lightened.length).toBeGreaterThan(0)
+  })
+
+  it('still only offers when the joint was inferred rather than declared', () => {
+    // No stated limitation. Whatever the pain signals say, the response to
+    // an unroutable joint stays a proposal, because the app is guessing.
+    const d = data()
+    const adj = adjustmentsFor(d, START)
+    expect(adj.filter((a) => a.kind === 'reduce-load' && a.automatic)).toEqual([])
+  })
+
   it('says something about a joint even when no substitute can spare it', () => {
     // There is no way to squat without loading a knee: the pattern IS the
     // stress, so substitutesFor correctly returns nothing. Going quiet

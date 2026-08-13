@@ -235,6 +235,8 @@ export function readSignals(data: AppData, today: ISODate): Signal[] {
 export type AdjustmentKind = 'substitute' | 'reduce-volume' | 'hold-load' | 'reduce-load'
 
 export interface Adjustment {
+  /** Every movement this applies to, when it is more than the named one. */
+  allIds?: string[]
   kind: AdjustmentKind
   /** Automatic changes are already applied; proposals wait for a tap. */
   automatic: boolean
@@ -360,8 +362,28 @@ export function planAdjustments(
   //     "train through it" and "stop training" are both wrong, and the
   //     honest part is admitting an app cannot tell which one this is
   //     after two weeks.
+  const stated = new Set(ctx.limited ?? [])
   for (const [joint, ids] of unroutable) {
     const j = joint.replace('-', ' ')
+    // Told, or inferred? The app should act on the first and offer on the
+    // second, and it should not use the same sentence for both.
+    //
+    // A limitation the athlete typed in is not a pattern that "keeps
+    // getting flagged": nothing was flagged, they said it once and expect
+    // it remembered. Routing stated limitations through the inferred-pain
+    // path meant somebody eighteen months past a knee replacement was
+    // handed full-weight split squats and a suggestion to consider taking
+    // some off.
+    if (stated.has(joint)) {
+      out.push({
+        kind: 'reduce-load',
+        automatic: true,
+        exerciseId: ids[0],
+        allIds: ids,
+        because: `You told me about your ${j}, and every version of ${ids.length > 1 ? 'these movements' : 'this movement'} loads it. There is no swap that trains the pattern and spares the joint, so ${ids.length > 1 ? 'they are' : 'it is'} in at a lighter weight rather than out. Stop the set at the first sharp one rather than at the rep count.`,
+      })
+      continue
+    }
     out.push({
       kind: 'reduce-load',
       automatic: false,
@@ -467,8 +489,17 @@ export function applyAutomatic(
       .filter((a) => a.automatic && a.kind === 'substitute' && a.exerciseId && a.toExerciseId)
       .map((a) => [a.exerciseId!, a.toExerciseId!]),
   )
-  if (swaps.size === 0) return exercises
+  // A movement that cannot be routed around a stated limitation stays in
+  // the day and comes down in weight. lightMode is the existing way to say
+  // that, and prefillFor already honours it end to end.
+  const lighten = new Set(
+    adjustments
+      .filter((a) => a.automatic && a.kind === 'reduce-load')
+      .flatMap((a) => a.allIds ?? (a.exerciseId ? [a.exerciseId] : [])),
+  )
+  if (swaps.size === 0 && lighten.size === 0) return exercises
   return exercises.map((e) => {
+    if (lighten.has(e.exerciseId)) return { ...e, lightMode: true }
     const to = swaps.get(e.exerciseId)
     if (!to) return e
     const def = nameOf(to)
