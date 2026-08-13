@@ -1,21 +1,23 @@
 import { useMemo, useState } from 'react'
 import type { CustomTarget, DietStyle, EquipTag, Goal, LifeEventKind, PlanConfig, RoutineGoal } from '../../types'
 
-import { mondayOf, todayISO, formatShort, addDaysISO } from '../../engine/calendar'
+import { mondayOf, todayISO } from '../../engine/calendar'
 import { useAppStore, uid } from '../../store/appStore'
 import { saveMeasurement } from '../../logic/actions'
 import { generatePlan, type FocusArea, type OnboardingAnswers } from '../../plan/generator'
-import { makeEmptyByorPlan, normalizeBooklet } from '../../plan/bookletOps'
+import { byorNutrition, makeEmptyByorPlan, normalizeBooklet } from '../../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../../plan/analyze'
-import { Btn, Card, ChoiceChip, Stepper } from '../../components/ui'
+import { Btn, Card, ChoiceChip, Reveal } from '../../components/ui'
 import { Welcome } from './Welcome'
 import { chipIndexForGoal, ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS, QUICK_GOALS } from './onboardingData'
 import { requestDurableStorage } from '../../platform/persistence'
-import { PermissionsBlock } from './RoutineNotes'
+import { PermissionsStep } from './PermissionsStep'
 import { GoalStep } from './GoalStep'
+import { MeStep } from './MeStep'
 import { RoutineSteps } from './RoutineSteps'
 import { PlanPreview } from './PlanPreview'
 import { targetsFromAnswers } from '../../plan/followups'
+import { suggestedDays, suggestedMeals, vertFromRimAnswer } from '../../plan/reach'
 import { FollowupStep } from './FollowupStep'
 import { MealStep } from './MealStep'
 import { GearStep } from './GearStep'
@@ -27,6 +29,7 @@ import { GearStep } from './GearStep'
  */
 const FOLLOWUPS = 12
 const MEALS = 13
+const PERMISSIONS = 14
 
 // ============================================================
 // Onboarding v2: a goal-driven wizard that generates the user's
@@ -63,11 +66,16 @@ export function Onboarding() {
   // The "number to beat" moved into the follow-ups, where it is only
   // asked of goals a number actually fits. It is read back out of the
   // answers rather than kept as its own field.
-  const [days, setDays] = useState<3 | 4 | 5 | 6>(4)
+  // Days and meals a week are not fixed defaults: until they say
+  // otherwise, both follow the goal. Five days is what a running plan
+  // needs and three is what somebody rebuilding a habit needs, and
+  // landing everybody on four meant the app had an opinion it never
+  // acted on.
+  const [daysPick, setDaysPick] = useState<3 | 4 | 5 | 6 | null>(null)
   const [profile, setProfile] = useState<'gym' | 'home-db' | 'minimal'>('gym')
   const [extras, setExtras] = useState<Set<EquipTag>>(new Set())
   const [experience, setExperience] = useState<'new' | 'returning' | 'trained'>('returning')
-  const [mealsPerDay, setMealsPerDay] = useState<2 | 3 | 4 | 5>(4)
+  const [mealsPick, setMealsPick] = useState<2 | 3 | 4 | 5 | null>(null)
   const [lifePicks, setLifePicks] = useState<Set<string>>(new Set())
   const [customLife, setCustomLife] = useState('')
   const [customLifeKind, setCustomLifeKind] = useState<LifeEventKind>('late-night')
@@ -78,10 +86,11 @@ export function Onboarding() {
   const [allergies, setAllergies] = useState('')
   const [focusAreas, setFocusAreas] = useState<Set<FocusArea>>(new Set())
   const [weight, setWeight] = useState(180)
-  const [vert, setVert] = useState(0)
-  const [pickedStart, setPickedStart] = useState(mondayOf(todayISO()))
+  const [heightIn, setHeightIn] = useState(69)
 
   const goal: Goal = goalChip !== null ? GOAL_CHIPS[goalChip].goal : 'general'
+  const days = daysPick ?? suggestedDays(goal, goalAnswers)
+  const mealsPerDay = mealsPick ?? suggestedMeals(goal)
 
   /**
    * Their goal as one sentence, however they gave it.
@@ -111,6 +120,7 @@ export function Onboarding() {
       extraEquip: [...extras],
       experience,
       bodyweightLb: weight,
+      heightIn,
       mealsPerDay,
       lifeSeeds: [
         ...LIFE_CHIPS.filter((c) => lifePicks.has(c.id)).map((c) => ({ label: c.label, kind: c.kind })),
@@ -122,7 +132,7 @@ export function Onboarding() {
       focusAreas: [...focusAreas],
       sex: sex ?? undefined,
     }
-  }, [goal, statement, goalAnswers, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, dairyFree, allergies, skipMeals, focusAreas, sex])
+  }, [goal, statement, goalAnswers, days, profile, extras, experience, weight, heightIn, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, dairyFree, allergies, skipMeals, focusAreas, sex])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
@@ -149,7 +159,7 @@ export function Onboarding() {
   }
 
   function commitPlan(plan: PlanConfig, proteinTargetG: number, notes: RoutineNote[] = [], strategy: string[] = []) {
-    const start = mondayOf(pickedStart)
+    const start = mondayOf(todayISO())
     requestDurableStorage()
     update((d) => {
       d.settings.phaseStartDate = start
@@ -159,6 +169,7 @@ export function Onboarding() {
       d.settings.proteinTargetG = proteinTargetG
       d.profile.displayName = displayName.trim() || undefined
       if (sex) d.profile.bfFormula = sex
+      d.profile.heightIn = heightIn
       const at = new Date().toISOString()
       for (const n of notes.slice(0, 4)) {
         d.coach.feed.unshift({ id: uid(), at, kind: 'insight', text: `📓 Routine notes: ${n.text}` })
@@ -176,11 +187,16 @@ export function Onboarding() {
         })
       }
     })
-    if (weight > 0 || vert > 0) {
+    // The jump baseline comes out of the rim question and their height,
+    // rather than a stepper that asked for a number almost nobody knows.
+    // Without it the climb's explosive track opens on "log a vertical to
+    // start this one" for every athlete chasing one.
+    const vertIn = vertFromRimAnswer(goalAnswers['vert-now'], heightIn)
+    if (weight > 0 || vertIn !== null) {
       saveMeasurement({
         date: todayISO(),
         weightLb: weight > 0 ? weight : undefined,
-        vertIn: vert > 0 ? vert : undefined,
+        vertIn: vertIn ?? undefined,
         photoIds: {},
       })
     }
@@ -205,6 +221,7 @@ export function Onboarding() {
       goalStatement,
       customTargets: answers.customTargets,
       bodyweightLb: weight,
+      heightIn,
       sex: sex ?? undefined,
       mealsPerDay,
       lifeSeeds: answers.lifeSeeds,
@@ -228,7 +245,7 @@ export function Onboarding() {
   }
 
   const byorNotes = useMemo(
-    () => (step === 11 && byorDraft ? analyzeRoutine(normalizeBooklet(byorDraft)) : []),
+    () => ((step === 11 || step === PERMISSIONS) && byorDraft ? analyzeRoutine(normalizeBooklet(byorDraft)) : []),
     [step, byorDraft],
   )
 
@@ -239,7 +256,7 @@ export function Onboarding() {
   // stable ids in the order somebody walks them, so the follow-ups sit
   // where a coach would ask them and food sits last where it can be
   // skipped.
-  const GEN_FLOW = [0, 1, 2, FOLLOWUPS, 3, 4, 5, 6, MEALS, 7]
+  const GEN_FLOW = [0, 1, 2, FOLLOWUPS, 3, 4, 5, MEALS, PERMISSIONS, 7]
   const flowAt = (s: number) => GEN_FLOW.indexOf(s)
 
   const next = () =>
@@ -250,13 +267,13 @@ export function Onboarding() {
   const back = () => {
     if (step === 11) return setStep(9) // notes → the why question
     if (step === 10) return setStep(7) // fine-tune → generated preview
+    if (step === PERMISSIONS && mode === 'byor') return setStep(11) // byor: back to the notes
     if (step === 9) return setStep(8) // why → builder
-    if (step === 8) return setStep(6) // builder → numbers
+    if (step === 8) return setStep(2) // builder → the goal it was built from
     if (step === 7) {
       setTuneDraft(null) // answers may change → stale tune draft
-      return setStep(6)
+      return setStep(PERMISSIONS)
     }
-    if (step === 6 && mode === 'byor') return setStep(2) // byor skips days/gear/experience
     const i = flowAt(step)
     if (i > 0) return setStep(GEN_FLOW[i - 1])
     setStep((s) => Math.max(0, s - 1))
@@ -309,24 +326,25 @@ export function Onboarding() {
       )}
 
       {step === 1 && (
-        <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[26px]">What should we call you?</h2>
-          <input
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Display name"
-            className="mt-5 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-4 py-3.5 text-[15px] font-semibold text-ink outline-none focus:ring-accent/45"
-          />
-          <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next: the goal
-          </Btn>
-        </div>
+        <MeStep
+          displayName={displayName}
+          setDisplayName={setDisplayName}
+          sex={sex}
+          setSex={setSex}
+          heightIn={heightIn}
+          setHeightIn={setHeightIn}
+          weight={weight}
+          setWeight={setWeight}
+          onNext={next}
+        />
       )}
 
       {step === 2 && (
         <GoalStep
           mode={mode}
           displayName={displayName}
+          heightIn={heightIn}
+          weightLb={weight}
           goalChip={goalChip}
           setGoalChip={setGoalChip}
           routineGoals={routineGoals}
@@ -337,7 +355,7 @@ export function Onboarding() {
           setGoalDetail={setGoalDetail}
           focusAreas={focusAreas}
           setFocusAreas={setFocusAreas}
-          onNext={() => (mode === 'byor' ? setStep(6) : next())}
+          onNext={() => (mode === 'byor' ? enterBuilder() : next())}
         />
       )}
       {step === FOLLOWUPS && (
@@ -360,7 +378,7 @@ export function Onboarding() {
           allergies={allergies}
           setAllergies={setAllergies}
           mealsPerDay={mealsPerDay}
-          setMealsPerDay={setMealsPerDay}
+          setMealsPerDay={setMealsPick}
           onBuild={() => {
             setSkipMeals(false)
             next()
@@ -380,7 +398,7 @@ export function Onboarding() {
             {([3, 4, 5, 6] as const).map((d) => (
               <button
                 key={d}
-                onClick={() => setDays(d)}
+                onClick={() => setDaysPick(d)}
                 className={`rounded-2xl border py-5 text-center ${days === d ? 'border-accent bg-accent/15 text-accent' : 'border-edge bg-white/[0.05] text-ink-dim'}`}
               >
                 <div className="text-[24px] font-black">{d}</div>
@@ -390,7 +408,7 @@ export function Onboarding() {
           </div>
 
           {/* Their real week, seeds life events so every coach note speaks their schedule */}
-          <div className="mt-6">
+          <Reveal when={daysPick !== null} className="mt-6">
             <div className="text-[14px] font-bold">What else is going on in your week?</div>
             <p className="mt-0.5 text-[11.5px] leading-snug text-ink-faint">
               Your plan works around whatever you pick.
@@ -433,7 +451,7 @@ export function Onboarding() {
                 ))}
               </div>
             )}
-          </div>
+          </Reveal>
 
           <Btn className="mt-6 w-full py-4" onClick={next}>
             Next: my gear
@@ -444,6 +462,7 @@ export function Onboarding() {
       {step === 4 && (
         <GearStep
           goal={goal}
+          answers={goalAnswers}
           profile={profile}
           pickProfile={pickProfile}
           extras={extras}
@@ -454,7 +473,7 @@ export function Onboarding() {
 
       {step === 5 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[26px]">Training age?</h2>
+          <h2 className="headline text-center text-[26px]">How long have you trained?</h2>
           <div className="mt-4 space-y-2">
             {(
               [
@@ -475,66 +494,25 @@ export function Onboarding() {
             ))}
           </div>
           <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next: numbers
+            Next: food
           </Btn>
         </div>
       )}
 
-      {step === 6 && (
-        <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[26px]">Baseline numbers</h2>
-          <p className="mt-1 text-center text-[13px] text-ink-dim">Weight sets your protein + calorie targets. The rest is your before picture.</p>
-          <div className="mt-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] font-bold">Bodyweight</span>
-              <Stepper value={weight} onChange={setWeight} step={1} suffix="lb" width="w-20" />
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <span className="text-[14px] font-bold">Sex</span>
-                <p className="text-[10.5px] leading-snug text-ink-faint">Tunes calories + the body-fat tape formula. Optional.</p>
-              </div>
-              <div className="flex gap-1.5">
-                {(
-                  [
-                    ['male', 'Male'],
-                    ['female', 'Female'],
-                  ] as const
-                ).map(([v, label]) => (
-                  <button
-                    key={v}
-                    onClick={() => setSex((prev) => (prev === v ? null : v))}
-                    className={`rounded-lg px-3.5 py-2 text-[12px] font-bold ${
-                      sex === v ? 'bg-accent text-black' : 'bg-white/[0.07] text-ink-faint'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] font-bold">Standing reach / vert touch <span className="text-[11px] text-ink-faint">(optional)</span></span>
-              <Stepper value={vert} onChange={setVert} step={0.5} suffix='"' width="w-20" />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] font-bold">Week 1 starts</span>
-              <input
-                type="date"
-                value={pickedStart}
-                onChange={(e) => e.target.value && setPickedStart(mondayOf(e.target.value))}
-                className="rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2 text-[13px] font-semibold outline-none"
-              />
-            </div>
-            <p className="text-[11px] text-ink-faint">Weeks start Mondays. Your pick snaps to {formatShort(mondayOf(pickedStart))} → first week runs through {formatShort(addDaysISO(mondayOf(pickedStart), 6))}.</p>
-          </div>
-
-          <PermissionsBlock />
-
-          <Btn className="mt-6 w-full py-4" onClick={() => (mode === 'byor' ? enterBuilder() : next())}>
-            {mode === 'byor' ? 'Next: build my week' : 'Next: food'}
-          </Btn>
-        </div>
+      {step === PERMISSIONS && (
+        <PermissionsStep
+          onDone={() => {
+            // Both paths finish here. The generated one goes on to see its
+            // week; the built one has already seen it and starts.
+            if (mode === 'byor' && byorDraft) {
+              commitPlan(
+                normalizeBooklet(byorDraft),
+                byorNutrition(byorDraft.routineGoals ?? [], weight, sex ?? undefined, heightIn).proteinTargetG,
+                byorNotes.filter((n) => n.tone !== 'info'),
+              )
+            } else next()
+          }}
+        />
       )}
 
       {step === 7 && preview && (
@@ -566,6 +544,7 @@ export function Onboarding() {
         weight={weight}
         goal={goal}
         commitPlan={commitPlan}
+        onReady={() => setStep(PERMISSIONS)}
       />
     </div>
   )

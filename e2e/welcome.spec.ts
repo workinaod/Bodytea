@@ -18,11 +18,13 @@ test('a welcome goal chip seeds the wizard with that goal', async ({ page }) => 
   await page.goto('./')
 
   await page.getByRole('button', { name: /Run a 5K/ }).click()
+  await page.locator('input').first().fill('Sam')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
 
   // The goal came with it, so the chip is already chosen and the
   // detail box — not the from-scratch box — is what is offered.
-  await expect(page.getByText('Anything else?')).toBeVisible()
+  await expect(page.getByText("Let's get specific")).toBeVisible()
   await page.getByRole('button', { name: /Next/ }).click()
 
   // Running questions, because that is the goal that was tapped. Note
@@ -40,6 +42,8 @@ test('a different chip seeds a completely different plan', async ({ page }) => {
   await page.goto('./')
 
   await page.getByRole('button', { name: /Build muscle/ }).click()
+  await page.locator('input').first().fill('Sam')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByRole('button', { name: /Next/ }).click()
 
@@ -54,6 +58,7 @@ test('the coach asks which sport, which it never used to', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Something else' }).click()
   await page.locator('input').first().fill('Sam')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByRole('button', { name: /Next/ }).click()
   await page.getByText('Get better at my sport').click()
   await page.getByRole('button', { name: /Next/ }).click()

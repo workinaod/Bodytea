@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import type { EquipTag, Goal } from '../../types'
-import { Btn, Card, ChoiceChip } from '../../components/ui'
+import { Btn, Card, ChoiceChip, Reveal } from '../../components/ui'
 import { accessFor, HOME_CHECKLIST } from './onboardingData'
 
 // ============================================================
@@ -14,13 +15,18 @@ import { accessFor, HOME_CHECKLIST } from './onboardingData'
 
 export function GearStep(p: {
   goal: Goal
+  /** Their follow-up answers, so a named sport beats a guessed goal. */
+  answers: Record<string, string>
   profile: 'gym' | 'home-db' | 'minimal'
   pickProfile: (v: 'gym' | 'home-db' | 'minimal') => void
   extras: Set<EquipTag>
   toggleItem: (tags: EquipTag[]) => void
   next: () => void
 }) {
-  const { goal, profile, pickProfile, extras, toggleItem, next } = p
+  const { goal, answers, profile, pickProfile, extras, toggleItem, next } = p
+  // A profile is pre-selected, so what opens the rest of the screen is
+  // them choosing one — including choosing the one that was already lit.
+  const [chose, setChose] = useState(false)
   return (
           <div className="flex flex-1 flex-col">
             <h2 className="headline text-center text-[26px]">Where do you train?</h2>
@@ -32,7 +38,12 @@ export function GearStep(p: {
                   ['minimal', 'No weights', 'Bodyweight + somewhere to move.'],
                 ] as const
               ).map(([id, title, sub]) => (
-                <Card key={id} onClick={() => pickProfile(id)} className={profile === id ? '!border-accent/60' : ''}>
+                <Card
+                  key={id}
+                  onClick={() => {
+                    setChose(true)
+                    pickProfile(id)
+                  }} className={profile === id ? '!border-accent/60' : ''}>
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-[15px] font-black">{title}</div>
@@ -43,14 +54,10 @@ export function GearStep(p: {
                 </Card>
               ))}
             </div>
-            {profile === 'home-db' && (
-              <>
-                <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">
+            {chose && profile === 'home-db' && (
+              <Reveal when className="mt-5">
+                <p className="text-[12px] font-black uppercase tracking-wider text-ink-faint">
                   Check everything you have
-                </p>
-                <p className="mt-1 text-[11.5px] leading-snug text-ink-faint">
-                  Nothing is assumed. The plan only prescribes gear you check. Check nothing and you get
-                  a bodyweight plan.
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {HOME_CHECKLIST.map((e) => (
@@ -63,20 +70,22 @@ export function GearStep(p: {
                     </ChoiceChip>
                   ))}
                 </div>
-              </>
+              </Reveal>
             )}
-            <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Can you get to any of these?</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {accessFor(goal, profile).map((e) => (
-                <ChoiceChip
-                  key={e.label}
-                  selected={e.tags.every((t) => extras.has(t))}
-                  onClick={() => toggleItem(e.tags)}
-                >
-                  {e.label}
-                </ChoiceChip>
-              ))}
-            </div>
+            <Reveal when={chose} className="mt-5">
+              <p className="text-[12px] font-black uppercase tracking-wider text-ink-faint">Can you get to any of these?</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {accessFor(goal, profile, answers).map((e) => (
+                  <ChoiceChip
+                    key={e.label}
+                    selected={e.tags.every((t) => extras.has(t))}
+                    onClick={() => toggleItem(e.tags)}
+                  >
+                    {e.label}
+                  </ChoiceChip>
+                ))}
+              </div>
+            </Reveal>
             <Btn className="mt-6 w-full py-4" onClick={next}>
               Next: experience
             </Btn>

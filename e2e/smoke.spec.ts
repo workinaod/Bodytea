@@ -6,6 +6,8 @@ test.describe.configure({ mode: 'serial' })
 /** Walk the generator onboarding: vertical goal, 6 days, a home gym with DBs + bench + bar. */
 async function onboardGenerated(page: Page) {
   await page.getByRole('button', { name: 'Something else' }).click()
+  await page.locator('input').first().fill('Sam')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText('⬆️ Jump higher').click()
   await page.getByPlaceholder(/before my wedding/).fill('by June')
@@ -20,9 +22,9 @@ async function onboardGenerated(page: Page) {
   await page.getByText('Flat bench').click()
   await page.getByText('Pull-up bar', { exact: true }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
-  await page.getByRole('button', { name: 'Next: numbers' }).click()
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Skip' }).click()
   await expect(page.getByText('Vertical Project · 6-Day')).toBeVisible()
   await expect(page.getByText(/jump higher, by June/)).toBeVisible()
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
@@ -122,13 +124,14 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   // ---- Guided body-fat estimate: tape numbers → Navy formula → check-in ----
   await page.getByText('+ log measurements').click()
   await page.getByText(/Estimate with a tape/).click()
-  await page.getByText('Male formula (neck + waist)').click() // height stays at the 70" default
-  await page.getByRole('button', { name: 'Next: first measurement' }).click()
+  // No setup step: onboarding already took the height and the sex, and
+  // asking for them a second time is the app not remembering.
+  await expect(page.getByText('Male formula (neck + waist)')).toHaveCount(0)
   await expect(page.getByText(/below the Adam’s apple/i)).toBeVisible() // step-by-step guidance
   await page.getByRole('button', { name: 'Next site' }).click() // neck 15" default
   await page.getByRole('button', { name: 'Calculate' }).click() // waist 34" default
-  await expect(page.getByText('17.5%', { exact: true })).toBeVisible() // published-formula result
-  await page.getByRole('button', { name: /Use 17.5% in this check-in/ }).click()
+  await expect(page.getByText('18%', { exact: true })).toBeVisible() // published formula, at the height given at signup
+  await page.getByRole('button', { name: /Use 18% in this check-in/ }).click()
   await page.getByRole('button', { name: 'Save check-in' }).click()
 
   // Saving rolls the Wrapped-style weekly recap, tap out of the story

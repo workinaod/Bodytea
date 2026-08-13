@@ -99,6 +99,48 @@ export function proteinTargetG(bodyweightLb: number, context: ProteinContext): n
   return Math.round(Math.min(g, kg * PROTEIN_CEILING_G_PER_KG) / 5) * 5
 }
 
+// ---------------- Height ----------------
+
+/**
+ * The height a bodyweight multiplier silently assumes.
+ *
+ * The calorie baseline everywhere in the app is bodyweight × 15 (× 14
+ * for women). That is a decent estimator and it is blind to the one
+ * other thing that moves resting metabolism: two people at 180 lb, one
+ * 5'2" and one 6'5", do not burn the same amount sitting still, and the
+ * difference between them is a real meal.
+ *
+ * These are US adult mean heights, and they are what the multiplier is
+ * implicitly calibrated on — so somebody of average height comes out
+ * exactly where they came out before height was ever collected.
+ */
+export const REFERENCE_HEIGHT_IN: Record<'male' | 'female', number> = { male: 69, female: 63.5 }
+
+/**
+ * Mifflin-St Jeor's height term: 6.25 kcal of BMR per centimetre, which
+ * is 15.875 per inch. Multiplied through a moderate activity factor of
+ * 1.55 that is about 24.6 kcal of daily maintenance per inch.
+ */
+const KCAL_PER_INCH = 6.25 * 2.54 * 1.55
+
+/**
+ * How far off the bodyweight baseline this athlete's height puts them.
+ *
+ * Deliberately a CORRECTION rather than a replacement. Mifflin-St Jeor
+ * proper needs age, which the app does not ask for and will not start
+ * asking for to buy a second-order term; taking only its height slope
+ * gets the part height actually contributes without inventing an age.
+ *
+ * Clamped, because this is a refinement and must never be the loudest
+ * voice in the estimate. Rounded to 25 so nothing downstream reports a
+ * calorie target with false precision.
+ */
+export function heightAdjustmentKcal(heightIn: number | undefined, sex?: 'male' | 'female'): number {
+  if (!heightIn || heightIn < 48 || heightIn > 90) return 0
+  const delta = (heightIn - REFERENCE_HEIGHT_IN[sex ?? 'male']) * KCAL_PER_INCH
+  return Math.round(Math.max(-250, Math.min(250, delta)) / 25) * 25
+}
+
 /**
  * Protein lands better spread across the day than in one sitting: about
  * 0.4 g/kg per meal is where the muscle-protein-synthesis response

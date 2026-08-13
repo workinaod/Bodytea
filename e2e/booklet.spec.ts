@@ -6,6 +6,8 @@ test.describe.configure({ mode: 'serial' })
 /** Shared wizard head: welcome → name → goal. */
 async function throughGoal(page: Page, entry: string, chip: string, statement: string) {
   await page.getByRole('button', { name: entry }).click()
+  await page.locator('input').first().fill('Sam')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText(chip).click()
   await page.getByPlaceholder(/dunk on a 10-ft rim/).fill(statement)
@@ -19,7 +21,7 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   // Multi-select routine goals: muscle + athleticism together
   await throughGoal(page, 'I already have a routine', '💪 Gaining muscle', 'add 10 lb of lean muscle')
   await page.getByText('⚡ Gaining athleticism').click()
-  await page.getByRole('button', { name: 'Next: my numbers' }).click()
+  await page.getByRole('button', { name: 'Next: build my week' }).click()
   await page.getByRole('button', { name: 'Next: build my week' }).click()
 
   // Empty week fails validation with a clear message
@@ -94,9 +96,9 @@ test('generated booklet: fine-tune before starting', async ({ page }) => {
   await page.getByRole('button', { name: '6 days' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
-  await page.getByRole('button', { name: 'Next: numbers' }).click()
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Skip' }).click()
   await expect(page.getByText('Vertical Project · 6-Day')).toBeVisible()
 
   await page.getByRole('button', { name: /Fine-tune it first/ }).click()
