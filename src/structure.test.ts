@@ -59,8 +59,12 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // re-export of journeyTypes.ts — which is where the shapes actually
   // live, same arrangement as the three above.
   'types.ts': 674,
-  // Real splits owed, in plan order.
-  'screens/onboarding/Onboarding.tsx': 1095,
+  // screens/onboarding/Onboarding.tsx came off this list too, which
+  // empties the "real splits owed" section entirely. The chip tables and
+  // the one goal heuristic went to onboardingData.ts, the goal step, the
+  // generated preview and the bring-your-own-routine screens to siblings.
+  // What is left is the wizard: state, the step router, and the short
+  // steps that are mostly one question each.
   // screens/meals/MealsScreen.tsx came off this list. It was the second
   // entry here and it is gone: the two alternate views and the five
   // sheets moved to siblings, leaving a 244-line shell that keeps only
@@ -182,7 +186,9 @@ const PLATFORM_APIS =
 const PLATFORM_ALLOWED = new Set([
   // → platform/notifications.ts, with the push backend
   'logic/reminders.ts',
-  'screens/onboarding/Onboarding.tsx',
+  // PermissionsBlock moved here with the split; it is the same two
+  // prompts, asked in the same place in the flow, in a smaller file.
+  'screens/onboarding/RoutineNotes.tsx',
   // → platform/storage.ts, with the native build
   'store/storage.ts',
   'store/appStore.ts',
