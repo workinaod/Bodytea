@@ -253,8 +253,8 @@ describe('goal follow-ups deepen the plan', () => {
   it('a bigger cut and a desk job lower the lean calorie target', () => {
     const base = buildNutrition('lean', 200)
     const deep = buildNutrition('lean', 200, undefined, {
-      'lose-amount': '30+ lb',
-      'day-movement': 'Mostly sitting',
+      'lose-amount': '30 to 60 lb',
+      'day-movement': 'Sitting',
     })
     expect(deep.kcalTraining).toBe(base.kcalTraining - 200)
     expect(deep.kcalRest).toBeGreaterThanOrEqual(1400)
@@ -262,7 +262,7 @@ describe('goal follow-ups deepen the plan', () => {
 
   it('lean strategy covers insulin, inflammation and gut, plus the tap answers', () => {
     const n = buildNutrition('lean', 200)
-    const s = deepGoalStrategy('lean', { 'food-struggle': 'Late-night eating' }, n).join(' ')
+    const s = deepGoalStrategy('lean', { 'food-struggle': 'Late at night' }, n).join(' ')
     expect(s).toContain('insulin')
     expect(s).toContain('inflammation')
     expect(s).toContain('gut')
@@ -280,10 +280,10 @@ describe('goal follow-ups deepen the plan', () => {
       extraEquip: [],
       experience: 'returning',
       bodyweightLb: 220,
-      goalAnswers: { 'lose-amount': '30+ lb' },
+      goalAnswers: { 'lose-amount': '30 to 60 lb' },
     }
     const { plan, strategy } = generatePlan(a)
-    expect(plan.goalAnswers?.['lose-amount']).toBe('30+ lb')
+    expect(plan.goalAnswers?.['lose-amount']).toBe('30 to 60 lb')
     expect(strategy.length).toBeGreaterThanOrEqual(3)
   })
 })
@@ -294,27 +294,30 @@ describe('the deep-goal framework covers every goal family', () => {
   it('every goal asks 3 follow-ups and answers deepen the strategy', () => {
     const n = buildNutrition('general', 180)
     for (const g of GOALS) {
-      expect(GOAL_FOLLOWUPS[g].length).toBe(3)
+      // No fixed count any more: a marathon with a date needs more
+      // established than "get a bit fitter" does, and three was only
+      // ever the number that fitted under the goal box.
+      expect(GOAL_FOLLOWUPS[g].length).toBeGreaterThanOrEqual(3)
       const base = deepGoalStrategy(g, {}, n)
       expect(base.length).toBeGreaterThanOrEqual(3)
       // answering every question adds personal lines (up to the cap)
       const all: Record<string, string> = {}
-      for (const fq of GOAL_FOLLOWUPS[g]) all[fq.id] = fq.options[0]
+      for (const fq of GOAL_FOLLOWUPS[g]) if (fq.options) all[fq.id] = fq.options[0]
       const deep = deepGoalStrategy(g, all, n)
       expect(deep.length).toBeGreaterThanOrEqual(base.length)
       // never drown the preview
       expect(deep.length).toBeLessThanOrEqual(6)
       // zero em dashes in any combination
       for (const fq of GOAL_FOLLOWUPS[g])
-        for (const o of fq.options)
+        for (const o of fq.options ?? [])
           expect(deepGoalStrategy(g, { [fq.id]: o }, n).join(' ')).not.toContain('—')
     }
   })
 
   it('strength strategy adapts to training age', () => {
     const n = buildNutrition('strength', 190)
-    expect(deepGoalStrategy('strength', { 'training-age': '3+ years' }, n).join(' ')).toContain('waves')
-    expect(deepGoalStrategy('strength', { 'training-age': 'Under a year' }, n).join(' ')).toContain('golden window')
+    expect(deepGoalStrategy('strength', { 'bar-years': 'Longer' }, n).join(' ')).toContain('waves')
+    expect(deepGoalStrategy('strength', { 'bar-years': 'Under a year' }, n).join(' ')).toContain('golden window')
   })
 
   it('a never-jumped athlete gets a genuinely lighter explosive start', () => {

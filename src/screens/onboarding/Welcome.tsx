@@ -1,35 +1,44 @@
+import type { Goal } from '../../types'
 import { Btn } from '../../components/ui'
-import { Glyph, type GlyphName } from '../../components/glyphs'
 
 // ============================================================
 // The first screen anyone sees.
 //
-// It used to be a headline, a four-line paragraph, four more
-// paragraphs in a rule, two buttons and a footnote: about ninety
-// words claiming the app handles any goal. Nobody reads that, and
-// claiming range is not the same as showing it.
+// It has been through three versions and the first two both had
+// the same problem in different clothes. Version one was ninety
+// words claiming the app handled any goal. Version two replaced
+// the words with five goal buttons — better, except the five
+// were one person's life (dunk a basketball, bench 225, first
+// marathon), so a 45-year-old who wants to stop being out of
+// breath opened the app and saw nothing for her. It also read as
+// a component library demo: a headline, a row of pills, four
+// grey icons, two buttons, all left-aligned, no weight anywhere.
 //
-// Now the range IS the interface. Five deliberately unlike goals
-// sit there as buttons, so "name any goal" is something you see
-// rather than something you are told, and the first tap seeds the
-// wizard instead of just advancing it. The four glyphs below are
-// the app's real navigation icons, so this doubles as a map.
+// This version does one thing: it makes the choice the screen.
+// The goals are the interface, they are the goals people
+// actually arrive with, and each is a full-width row you can hit
+// with a thumb rather than a pill in a wrapped heap. Tapping one
+// IS starting — no "next" to find.
 // ============================================================
 
-/** A goal you can start from. `chip` indexes GOAL_CHIPS in the wizard. */
 export interface QuickGoal {
   label: string
-  /** Pre-fills the "in your own words" box, editable at the next step. */
+  /** Pre-fills the goal, editable at the next step. */
   statement: string
-  chip: number
+  /** The goal itself, not a position in a list that can be reordered. */
+  goal: Goal
 }
 
-const FEATURES: { name: GlyphName; label: string }[] = [
-  { name: 'week', label: 'Plan' },
-  { name: 'meals', label: 'Meals' },
-  { name: 'track', label: 'Track' },
-  { name: 'coach', label: 'Coach' },
-]
+/** A glyph per goal, so the rows are scannable before they are read. */
+const MARK: Record<Goal, string> = {
+  lean: '🔥',
+  general: '🫀',
+  muscle: '💪',
+  endurance: '🏃',
+  strength: '🏋️',
+  vertical: '⬆️',
+  speed: '⚡',
+}
 
 export function Welcome({
   rebuilding,
@@ -45,52 +54,52 @@ export function Welcome({
   onOwnRoutine: () => void
 }) {
   return (
-    <div className="flex flex-1 flex-col justify-center">
-      <div className="eyebrow text-accent">BodyT</div>
-      <h1 className="mt-2 text-display font-black">
-        Name any goal
-        <br />
-        Get the exact plan
-      </h1>
+    <div className="flex flex-1 flex-col justify-center py-6">
+      <div className="text-center">
+        <div className="eyebrow text-accent">BodyT</div>
+        <h1 className="mt-2 text-display font-black">What do you want?</h1>
+        <p className="mx-auto mt-2 max-w-[19rem] text-[13.5px] leading-snug text-ink-dim">
+          Pick one and you have a plan in about a minute.
+        </p>
+      </div>
 
-      {/* The proof, not the pitch: five goals with nothing in common. */}
-      <div className="enter-stagger mt-7 flex flex-wrap gap-2">
+      {/* The goals ARE the screen. Full-width rows, biggest thing here,
+          each one a real starting point rather than an example of one. */}
+      <div className="enter-stagger mt-7 space-y-2">
         {quickGoals.map((g) => (
           <button
             key={g.label}
             type="button"
             onClick={() => onPickGoal(g)}
-            className="press rounded-full bg-gradient-to-b from-white/[0.12] to-white/[0.05] px-4 py-2.5 text-[13.5px] font-semibold text-ink shadow-[0_1px_0_rgba(255,255,255,0.13)_inset,0_6px_16px_-10px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.1]"
+            className="press flex w-full items-center gap-3.5 rounded-2xl bg-gradient-to-b from-white/[0.09] to-white/[0.04] px-4 py-4 text-left shadow-[0_1px_0_rgba(255,255,255,0.1)_inset,0_10px_24px_-16px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.08] active:from-accent/20 active:to-accent/10 active:ring-accent/40"
           >
-            {g.label}
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-[19px] ring-1 ring-white/[0.06]">
+              {MARK[g.goal]}
+            </span>
+            <span className="min-w-0 flex-1 text-[15px] font-bold tracking-tight text-ink">
+              {g.label.replace(/^\S+\s/, '')}
+            </span>
+            <span className="shrink-0 text-[17px] font-black text-ink-faint">›</span>
           </button>
         ))}
       </div>
 
-      {/* What the app is, at a glance, in its own icons. */}
-      <div className="mt-8 flex justify-between px-1">
-        {FEATURES.map((f) => (
-          <div key={f.label} className="flex flex-1 flex-col items-center gap-2">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/[0.05] text-ink-dim ring-1 ring-white/[0.06]">
-              <Glyph name={f.name} size={22} />
-            </span>
-            <span className="text-micro font-bold tracking-normal text-ink-faint">{f.label}</span>
-          </div>
-        ))}
-      </div>
-
       {rebuilding && (
-        <p className="mt-7 border-l-2 border-accent/60 py-1 pl-3 text-label leading-snug text-ink-dim">
-          <span className="font-bold text-accent-soft">Your plan is being rebuilt.</span> The engine got a lot
-          smarter. Answer again and you get the better version. Every session, meal, run and measurement you
-          logged is untouched.
+        <p className="mt-6 border-l-2 border-accent/60 py-1 pl-3 text-label leading-snug text-ink-dim">
+          <span className="font-bold text-accent-soft">Your plan is being rebuilt.</span> Everything you logged
+          is safe. Answer again and you get the better version.
         </p>
       )}
 
-      <Btn size="lg" shimmer className="mt-8 w-full" onClick={onBuild}>
-        {rebuilding ? 'Rebuild my plan' : 'Build my plan'}
-      </Btn>
-      <Btn kind="subtle" size="lg" className="mt-3 w-full" onClick={onOwnRoutine}>
+      {/* Anything not on the list, and the door for people who already
+          train. Quiet, because the five above are the main road. */}
+      <button
+        onClick={onBuild}
+        className="press mt-5 w-full py-2 text-center text-[13px] font-bold text-ink-dim underline decoration-white/25 underline-offset-4"
+      >
+        {rebuilding ? 'Rebuild my plan' : 'Something else'}
+      </button>
+      <Btn kind="subtle" size="lg" className="mt-2 w-full" onClick={onOwnRoutine}>
         I already have a routine
       </Btn>
     </div>

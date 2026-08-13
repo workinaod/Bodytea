@@ -16,15 +16,17 @@ import { test, expect, type Page } from '@playwright/test'
 // ============================================================
 
 async function onboard(page: Page) {
-  await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Something else' }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText('🎯 All-around athlete').click()
   await page.getByPlaceholder(/dunk on a 10-ft rim/).fill('stay dangerous year-round')
+  await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
   await page.getByRole('button', { name: 'Next: numbers' }).click()
-  await page.getByRole('button', { name: 'Generate my booklet' }).click()
+  await page.getByRole('button', { name: 'Next: food' }).click()
+  await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
 }
 

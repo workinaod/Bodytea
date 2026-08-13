@@ -59,7 +59,7 @@ describe('protein sits inside the published ranges', () => {
 
 describe('the guided path routes goals to the right protein band', () => {
   it('a big cut gets the aggressive-deficit number', () => {
-    expect(proteinContextFor('lean', { 'lose-amount': '30+ lb' })).toBe('aggressiveDeficit')
+    expect(proteinContextFor('lean', { 'lose-amount': '30 to 60 lb' })).toBe('aggressiveDeficit')
     expect(proteinContextFor('lean', {})).toBe('deficit')
   })
 

@@ -9,12 +9,24 @@ import { makeEmptyByorPlan, normalizeBooklet } from '../../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../../plan/analyze'
 import { Btn, Card, Chip, Stepper } from '../../components/ui'
 import { Welcome } from './Welcome'
-import { ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS, QUICK_GOALS } from './onboardingData'
+import { chipIndexForGoal, ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS, QUICK_GOALS } from './onboardingData'
 import { requestDurableStorage } from '../../platform/persistence'
 import { PermissionsBlock } from './RoutineNotes'
 import { GoalStep } from './GoalStep'
 import { RoutineSteps } from './RoutineSteps'
 import { PlanPreview } from './PlanPreview'
+import { targetsFromAnswers } from '../../plan/followups'
+import { FollowupStep } from './FollowupStep'
+import { MealStep } from './MealStep'
+import { GearStep } from './GearStep'
+
+/**
+ * The two screens added after the first eight. New ids rather than a
+ * renumber, so every existing branch and back-step keeps meaning what
+ * it meant; GEN_FLOW below is what actually decides the order.
+ */
+const FOLLOWUPS = 12
+const MEALS = 13
 
 // ============================================================
 // Onboarding v2: a goal-driven wizard that generates the user's
@@ -45,8 +57,12 @@ export function Onboarding() {
   const [routineGoals, setRoutineGoals] = useState<Set<RoutineGoal>>(new Set())
   const [whyWorks, setWhyWorks] = useState('')
   const [goalStatement, setGoalStatement] = useState('')
+  /** Extra detail typed AFTER picking a preset, rather than instead of it. */
+  const [goalDetail, setGoalDetail] = useState('')
   const [goalAnswers, setGoalAnswers] = useState<Record<string, string>>({})
-  const [target1, setTarget1] = useState<{ label: string; target: string; unit: string }>({ label: '', target: '', unit: '' })
+  // The "number to beat" moved into the follow-ups, where it is only
+  // asked of goals a number actually fits. It is read back out of the
+  // answers rather than kept as its own field.
   const [days, setDays] = useState<3 | 4 | 5 | 6>(4)
   const [profile, setProfile] = useState<'gym' | 'home-db' | 'minimal'>('gym')
   const [extras, setExtras] = useState<Set<EquipTag>>(new Set())
@@ -58,6 +74,8 @@ export function Onboarding() {
   const [dietStyle, setDietStyle] = useState<DietStyle>('omnivore')
   const [sex, setSex] = useState<'male' | 'female' | null>(null)
   const [skipMeals, setSkipMeals] = useState(false)
+  const [dairyFree, setDairyFree] = useState(false)
+  const [allergies, setAllergies] = useState('')
   const [focusAreas, setFocusAreas] = useState<Set<FocusArea>>(new Set())
   const [weight, setWeight] = useState(180)
   const [vert, setVert] = useState(0)
@@ -65,14 +83,27 @@ export function Onboarding() {
 
   const goal: Goal = goalChip !== null ? GOAL_CHIPS[goalChip].goal : 'general'
 
+  /**
+   * Their goal as one sentence, however they gave it.
+   *
+   * A preset carries its own plain sentence; anything they add is
+   * appended rather than replacing it, so "lose weight and keep it off,
+   * before my wedding in June" reaches the plan — and the follow-up
+   * generator reads the June out of it and stops asking about dates.
+   */
+  const statement = useMemo(() => {
+    const typed = goalStatement.trim()
+    if (goalChip === null) return typed
+    const base = typed || GOAL_CHIPS[goalChip].statement
+    const extra = goalDetail.trim()
+    return extra ? `${base}, ${extra}` : base
+  }, [goalChip, goalStatement, goalDetail])
+
   const answers: OnboardingAnswers = useMemo(() => {
-    const customTargets: CustomTarget[] = []
-    if (target1.label.trim() && Number(target1.target) > 0) {
-      customTargets.push({ label: target1.label.trim(), target: Number(target1.target), unit: target1.unit.trim() || '' })
-    }
+    const customTargets: CustomTarget[] = targetsFromAnswers(goal, goalAnswers)
     return {
       goal,
-      goalStatement: goalStatement.trim(),
+      goalStatement: statement,
       goalAnswers,
       customTargets,
       daysPerWeek: days,
@@ -86,11 +117,12 @@ export function Onboarding() {
         ...(customLife.trim() ? [{ label: customLife.trim(), kind: customLifeKind }] : []),
       ],
       dietStyle,
+      foodLimits: { dairyFree, allergies: allergies.trim() || undefined },
       skipMeals,
       focusAreas: [...focusAreas],
       sex: sex ?? undefined,
     }
-  }, [goal, goalStatement, goalAnswers, target1, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, skipMeals, focusAreas, sex])
+  }, [goal, statement, goalAnswers, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, dairyFree, allergies, skipMeals, focusAreas, sex])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
@@ -200,7 +232,21 @@ export function Onboarding() {
     [step, byorDraft],
   )
 
-  const next = () => setStep((s) => s + 1)
+  // The order of the generated-plan path, written down.
+  //
+  // It used to be `step + 1`, which meant the sequence lived in the
+  // numbering and a new screen could only go on the end. These are
+  // stable ids in the order somebody walks them, so the follow-ups sit
+  // where a coach would ask them and food sits last where it can be
+  // skipped.
+  const GEN_FLOW = [0, 1, 2, FOLLOWUPS, 3, 4, 5, 6, MEALS, 7]
+  const flowAt = (s: number) => GEN_FLOW.indexOf(s)
+
+  const next = () =>
+    setStep((s) => {
+      const i = flowAt(s)
+      return i >= 0 && i < GEN_FLOW.length - 1 ? GEN_FLOW[i + 1] : s + 1
+    })
   const back = () => {
     if (step === 11) return setStep(9) // notes → the why question
     if (step === 10) return setStep(7) // fine-tune → generated preview
@@ -211,6 +257,8 @@ export function Onboarding() {
       return setStep(6)
     }
     if (step === 6 && mode === 'byor') return setStep(2) // byor skips days/gear/experience
+    const i = flowAt(step)
+    if (i > 0) return setStep(GEN_FLOW[i - 1])
     setStep((s) => Math.max(0, s - 1))
   }
 
@@ -222,9 +270,16 @@ export function Onboarding() {
             ‹ back
           </button>
           <div className="flex gap-1">
-            {Array.from({ length: 8 }, (_, i) => (
-              <span key={i} className={`h-1 rounded-full transition-all ${i === Math.min(step, 7) ? 'w-5 bg-accent' : i < Math.min(step, 7) ? 'w-2 bg-accent/50' : 'w-2 bg-white/[0.07]'}`} />
-            ))}
+            {Array.from({ length: GEN_FLOW.length - 1 }, (_, i) => {
+              const at = flowAt(step)
+              const here = at <= 0 ? GEN_FLOW.length - 2 : at - 1
+              return (
+                <span
+                  key={i}
+                  className={`h-1 rounded-full transition-all ${i === here ? 'w-5 bg-accent' : i < here ? 'w-2 bg-accent/50' : 'w-2 bg-white/[0.07]'}`}
+                />
+              )
+            })}
           </div>
           <span className="w-14" />
         </div>
@@ -238,7 +293,7 @@ export function Onboarding() {
             // Seed the goal so the tap is a head start, not just a page turn.
             // Both stay editable at the goal step.
             setMode('gen')
-            setGoalChip(g.chip)
+            setGoalChip(chipIndexForGoal(g.goal))
             setGoalStatement(g.statement)
             next()
           }}
@@ -255,12 +310,11 @@ export function Onboarding() {
 
       {step === 1 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-[26px]">What do we call you?</h2>
-          <p className="mt-1 text-[13px] text-ink-dim">Shows on your booklet and (later) the leaderboard.</p>
+          <h2 className="headline text-center text-[26px]">What should we call you?</h2>
           <input
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name"
+            placeholder="Display name"
             className="mt-5 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-4 py-3.5 text-[15px] font-semibold text-ink outline-none focus:ring-accent/45"
           />
           <Btn className="mt-6 w-full py-4" onClick={next}>
@@ -273,26 +327,55 @@ export function Onboarding() {
         <GoalStep
           mode={mode}
           displayName={displayName}
-          goal={goal}
           goalChip={goalChip}
           setGoalChip={setGoalChip}
           routineGoals={routineGoals}
           toggleRoutineGoal={toggleRoutineGoal}
           goalStatement={goalStatement}
           setGoalStatement={setGoalStatement}
-          goalAnswers={goalAnswers}
-          setGoalAnswers={setGoalAnswers}
-          target1={target1}
-          setTarget1={setTarget1}
+          goalDetail={goalDetail}
+          setGoalDetail={setGoalDetail}
           focusAreas={focusAreas}
           setFocusAreas={setFocusAreas}
           onNext={() => (mode === 'byor' ? setStep(6) : next())}
         />
       )}
+      {step === FOLLOWUPS && (
+        <FollowupStep
+          goal={goal}
+          statement={statement}
+          firstName={displayName.trim().split(/\s+/)[0] ?? ''}
+          answers={goalAnswers}
+          setAnswers={setGoalAnswers}
+          onNext={next}
+        />
+      )}
+
+      {step === MEALS && (
+        <MealStep
+          dietStyle={dietStyle}
+          setDietStyle={setDietStyle}
+          dairyFree={dairyFree}
+          setDairyFree={setDairyFree}
+          allergies={allergies}
+          setAllergies={setAllergies}
+          mealsPerDay={mealsPerDay}
+          setMealsPerDay={setMealsPerDay}
+          onBuild={() => {
+            setSkipMeals(false)
+            next()
+          }}
+          onSkip={() => {
+            setSkipMeals(true)
+            next()
+          }}
+        />
+      )}
+
       {step === 3 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-[26px]">How many days can you actually train?</h2>
-          <p className="mt-1 text-[13px] text-ink-dim">Be honest. A 4-day plan you keep beats a 6-day plan you dodge.</p>
+          <h2 className="headline text-center text-[26px]">How many days a week?</h2>
+          <p className="mt-1 text-center text-[13px] text-ink-dim">A plan you stick to beats a bigger one you skip.</p>
           <div className="mt-5 grid grid-cols-4 gap-2">
             {([3, 4, 5, 6] as const).map((d) => (
               <button
@@ -308,10 +391,9 @@ export function Onboarding() {
 
           {/* Their real week, seeds life events so every coach note speaks their schedule */}
           <div className="mt-6">
-            <div className="text-[14px] font-bold">What else does your week hold?</div>
+            <div className="text-[14px] font-bold">What else is going on in your week?</div>
             <p className="mt-0.5 text-[11.5px] leading-snug text-ink-faint">
-              The plan bends around real life. Pick what's true and the coach's notes will talk about
-              YOUR shifts and nights.
+              Your plan works around whatever you pick.
             </p>
             <div className="mt-2.5 flex flex-wrap gap-1.5">
               {LIFE_CHIPS.map((c) => (
@@ -360,70 +442,19 @@ export function Onboarding() {
       )}
 
       {step === 4 && (
-        <div className="flex flex-1 flex-col">
-          <h2 className="headline text-[26px]">Where do you train?</h2>
-          <div className="mt-4 space-y-2">
-            {(
-              [
-                ['gym', 'Full gym', 'Racks, machines, cables, the works.'],
-                ['home-db', 'Home gym', "You'll check off exactly what you've got."],
-                ['minimal', 'No weights', 'Bodyweight + somewhere to move.'],
-              ] as const
-            ).map(([id, title, sub]) => (
-              <Card key={id} onClick={() => pickProfile(id)} className={profile === id ? '!border-accent/60' : ''}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[15px] font-black">{title}</div>
-                    <div className="text-[12px] text-ink-dim">{sub}</div>
-                  </div>
-                  <span className={`h-4 w-4 rounded-full border-2 ${profile === id ? 'border-accent bg-accent' : 'border-edge'}`} />
-                </div>
-              </Card>
-            ))}
-          </div>
-          {profile === 'home-db' && (
-            <>
-              <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">
-                Check everything you have
-              </p>
-              <p className="mt-1 text-[11.5px] leading-snug text-ink-faint">
-                Nothing is assumed. The plan only prescribes gear you check. Check nothing and you get
-                a bodyweight plan.
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {HOME_CHECKLIST.map((e) => (
-                  <Chip
-                    key={e.label}
-                    tone={e.tags.every((t) => extras.has(t)) ? 'accent' : 'default'}
-                    onClick={() => toggleItem(e.tags)}
-                  >
-                    {e.label}
-                  </Chip>
-                ))}
-              </div>
-            </>
-          )}
-          <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Also have access to…</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {ENV_EXTRAS[profile].map((e) => (
-              <Chip
-                key={e.label}
-                tone={e.tags.every((t) => extras.has(t)) ? 'accent' : 'default'}
-                onClick={() => toggleItem(e.tags)}
-              >
-                {e.label}
-              </Chip>
-            ))}
-          </div>
-          <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next: experience
-          </Btn>
-        </div>
+        <GearStep
+          goal={goal}
+          profile={profile}
+          pickProfile={pickProfile}
+          extras={extras}
+          toggleItem={toggleItem}
+          next={next}
+        />
       )}
 
       {step === 5 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-[26px]">Training age?</h2>
+          <h2 className="headline text-center text-[26px]">Training age?</h2>
           <div className="mt-4 space-y-2">
             {(
               [
@@ -451,8 +482,8 @@ export function Onboarding() {
 
       {step === 6 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-[26px]">Baseline numbers</h2>
-          <p className="mt-1 text-[13px] text-ink-dim">Weight sets your protein + calorie targets. The rest is your before picture.</p>
+          <h2 className="headline text-center text-[26px]">Baseline numbers</h2>
+          <p className="mt-1 text-center text-[13px] text-ink-dim">Weight sets your protein + calorie targets. The rest is your before picture.</p>
           <div className="mt-5 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-[14px] font-bold">Bodyweight</span>
@@ -482,63 +513,6 @@ export function Onboarding() {
                 ))}
               </div>
             </div>
-            <div>
-              <span className="text-[14px] font-bold">How do you actually eat?</span>
-              <p className="mt-0.5 text-[11px] leading-snug text-ink-faint">
-                Your meal plan is built around this. Fewer meals just means bigger ones, protein stays the same.
-              </p>
-              <div className={skipMeals ? 'opacity-40' : ''}>
-                <div className="mt-2 grid grid-cols-2 gap-1.5">
-                  {(
-                    [
-                      [2, '2 big meals'],
-                      [3, '3 square meals'],
-                      [4, '3 meals + a snack'],
-                      [5, 'Grazer (5 small)'],
-                    ] as const
-                  ).map(([n, label]) => (
-                    <button
-                      key={n}
-                      onClick={() => {
-                        setMealsPerDay(n)
-                        setSkipMeals(false)
-                      }}
-                      className={`rounded-xl border px-3 py-2.5 text-[12.5px] font-bold ${
-                        mealsPerDay === n && !skipMeals ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-white/[0.07] text-ink-dim'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {(
-                    [
-                      ['omnivore', 'No restrictions'],
-                      ['vegetarian', 'Vegetarian'],
-                      ['vegan', 'Vegan'],
-                    ] as const
-                  ).map(([d, label]) => (
-                    <Chip
-                      key={d}
-                      tone={dietStyle === d && !skipMeals ? 'accent' : 'default'}
-                      onClick={() => {
-                        setDietStyle(d)
-                        setSkipMeals(false)
-                      }}
-                    >
-                      {label}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
-              <button
-                className="mt-2 text-[11.5px] font-semibold text-ink-faint underline"
-                onClick={() => setSkipMeals((v) => !v)}
-              >
-                {skipMeals ? '↩ Actually, set my meals up now' : 'Skip meals for now, set them up anytime in the Meals tab'}
-              </button>
-            </div>
             <div className="flex items-center justify-between">
               <span className="text-[14px] font-bold">Standing reach / vert touch <span className="text-[11px] text-ink-faint">(optional)</span></span>
               <Stepper value={vert} onChange={setVert} step={0.5} suffix='"' width="w-20" />
@@ -558,7 +532,7 @@ export function Onboarding() {
           <PermissionsBlock />
 
           <Btn className="mt-6 w-full py-4" onClick={() => (mode === 'byor' ? enterBuilder() : next())}>
-            {mode === 'byor' ? 'Next: build my week' : 'Generate my booklet'}
+            {mode === 'byor' ? 'Next: build my week' : 'Next: food'}
           </Btn>
         </div>
       )}

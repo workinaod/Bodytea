@@ -69,14 +69,16 @@ test('the coach speaks English, not shorthand', async ({ page }) => {
   await page.goto('./')
 
   // A strength goal, so the session is full of loaded lifts with ranges
-  await page.getByRole('button', { name: /Bench 225/ }).click()
+  await page.getByRole('button', { name: /Get strong again/ }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
+  await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '4 days' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
   await page.getByRole('button', { name: 'Next: numbers' }).click()
-  await page.getByRole('button', { name: 'Generate my booklet' }).click()
+  await page.getByRole('button', { name: 'Next: food' }).click()
+  await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
 
   await startSession(page)
@@ -101,14 +103,16 @@ test('the set intro is several utterances, not one flat sentence', async ({ page
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
 
-  await page.getByRole('button', { name: /Bench 225/ }).click()
+  await page.getByRole('button', { name: /Get strong again/ }).click()
   await page.getByRole('button', { name: 'Next: the goal' }).click()
+  await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '4 days' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
   await page.getByRole('button', { name: 'Next: numbers' }).click()
-  await page.getByRole('button', { name: 'Generate my booklet' }).click()
+  await page.getByRole('button', { name: 'Next: food' }).click()
+  await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
   await startSession(page)
 

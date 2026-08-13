@@ -55,10 +55,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // Activity shapes moved to activityTypes.ts, the logged-session shapes
   // to sessionTypes.ts, the engine's day output to resolvedTypes.ts; the
   // allowance follows each time.
-  // +11: the journey key on AppData, its emptyAppData entry, and the
-  // re-export of journeyTypes.ts — which is where the shapes actually
-  // live, same arrangement as the three above.
-  'types.ts': 674,
+  // +11 for the journey key and the re-export of journeyTypes.ts, then
+  // +23 for the places somebody can train (track, trail, pool, bike)
+  // and FoodLimits, which is what dairy-free and allergies are.
+  'types.ts': 697,
   // screens/onboarding/Onboarding.tsx came off this list too, which
   // empties the "real splits owed" section entirely. The chip tables and
   // the one goal heuristic went to onboardingData.ts, the goal step, the
