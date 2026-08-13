@@ -2,6 +2,7 @@ import type { CardioEntry, ISODate, RunLog } from '../types'
 import { defaultWeekState } from '../types'
 import { cardioActivity, isIntenseSport } from '../plan/cardio'
 import { uid, useAppStore } from '../store/appStore'
+import { stampReachedRungs } from './journeyActions'
 import { mondayOf } from '../engine/calendar'
 import { estKcal } from '../engine/runs'
 import type { Intensity } from '../engine/intensity'
@@ -160,4 +161,8 @@ export function saveRun(run: RunLog): void {
     ...(run.distanceSource !== 'none' && run.distanceMi > 0 ? { miles: run.distanceMi } : {}),
     minutes: Math.round(run.durationSec / 60),
   })
+  // A first 5K is a stop on the path, and this is the only place a
+  // distance ever grows. Without it the engine track was the one strand
+  // whose rungs could be reached and never recorded.
+  stampReachedRungs(run.date)
 }

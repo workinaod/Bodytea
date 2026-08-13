@@ -401,10 +401,21 @@ export function buildJourney(data: AppData, today: ISODate): Journey {
     byTrack.set(b.spec.track, list)
   }
 
-  // The first unreached rung on each track is the one being climbed.
+  // The rung being climbed on each track is the one that ARRIVES first,
+  // not the one that happens to be built first.
+  //
+  // Those differ: the consistency track builds every session rung before
+  // any streak rung, so "50 sessions" was being called the next stop
+  // while a 7-day streak two weeks nearer sat behind it looking like
+  // something for later. On a path that is not a cosmetic mislabel — it
+  // points the walker at the wrong stop.
   for (const list of byTrack.values()) {
-    const first = list.find((r) => r.state === 'ahead')
-    if (first) first.state = 'next'
+    const ahead = list.filter((r) => r.state === 'ahead')
+    if (ahead.length === 0) continue
+    const soonest = ahead.reduce((best, r) =>
+      (r.etaWeeks ?? Number.MAX_SAFE_INTEGER) < (best.etaWeeks ?? Number.MAX_SAFE_INTEGER) ? r : best,
+    )
+    soonest.state = 'next'
   }
 
   const tracks: Track[] = TRACKS_FOR_GOAL[data.plan.goal]
@@ -475,6 +486,14 @@ export function orderRail(rungs: Rung[]): Rung[] {
     const rb = rank(b)
     if (ra !== rb) return ra - rb
     if (ra === 0) return (a.hitOn ?? '') < (b.hitOn ?? '') ? -1 : 1
+    // Everything still ahead goes in the order it is expected to
+    // ARRIVE, across all tracks, because the path is a timeline and a
+    // timeline that groups by track is not one. A rung with no honest
+    // estimate sorts to the far end rather than to the front — no date
+    // means "further than we can see", not "any minute now".
+    const ea = a.etaWeeks ?? Number.MAX_SAFE_INTEGER
+    const eb = b.etaWeeks ?? Number.MAX_SAFE_INTEGER
+    if (ea !== eb) return ea - eb
     if (a.track !== b.track) return a.track < b.track ? -1 : 1
     // CLIMB order, not numeric order. On a cut the next rung is the
     // HIGHEST number left, and sorting ascending put the furthest one
