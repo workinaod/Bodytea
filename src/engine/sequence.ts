@@ -1,5 +1,6 @@
 import type { ResolvedExercise } from '../types'
 import { EXERCISE_MUSCLES } from '../plan/muscles'
+import { MOVEMENT, type ProgrammingRole } from '../plan/movement'
 
 // ============================================================
 // Exercise ORDER, which is programming, not presentation.
@@ -49,12 +50,50 @@ export function lowRep(repText: string | undefined): number | null {
  * rear-delt work). The prescription knows what the mapping does not.
  */
 export function isAccessory(e: ResolvedExercise): boolean {
+  if (e.kind !== 'lift') return false
+  // The catalog already says what each movement is FOR. plan/movement.ts
+  // carries a programming role on every entry and a test proves there are
+  // no orphans, so guessing from region counts was always second best:
+  // it cannot tell a close-grip press from a prone Y raise without the
+  // rep range casting a vote, and the rep range is not what makes a
+  // movement accessory work.
+  const role = MOVEMENT[e.exerciseId]?.role
+  if (role) return role === 'accessory' || role === 'isolation' || role === 'prehab'
+  // Movements outside the graph (athletic drills) keep the old reading.
   const m = EXERCISE_MUSCLES[e.exerciseId]
-  if (!m || e.kind !== 'lift') return false
+  if (!m) return false
   const regions = m.primary.length + m.secondary.length
   if (m.primary.length === 1 && regions <= 2) return true // single-joint
   const low = lowRep(e.repText)
   return regions <= 3 && low !== null && low >= 12 // small and high-rep
+}
+
+/**
+ * Lower sorts earlier WITHIN a band.
+ *
+ * The bands got the day roughly right and then stopped, because the only
+ * tiebreak left was the order the recipe author happened to type. That
+ * is how a secondary press could sit ahead of the primary one it is
+ * meant to follow: nothing in the sort had an opinion, so the array
+ * index won by default.
+ *
+ * A movement the graph does not know sorts as secondary, which keeps it
+ * behind the day's main work and ahead of the accessories, and is the
+ * least surprising place to put something we cannot classify.
+ */
+const ROLE_RANK: Record<ProgrammingRole, number> = {
+  primary: 0,
+  secondary: 1,
+  accessory: 2,
+  isolation: 3,
+  prehab: 4,
+  conditioning: 5,
+  mobility: 6,
+}
+
+export function roleRank(e: ResolvedExercise): number {
+  const role = MOVEMENT[e.exerciseId]?.role
+  return role ? ROLE_RANK[role] : ROLE_RANK.secondary
 }
 
 /** Lower sorts earlier. The bands are the sequence, in order. */
@@ -88,7 +127,7 @@ export function band(e: ResolvedExercise): number {
 export function orderSession(exercises: ResolvedExercise[]): ResolvedExercise[] {
   return exercises
     .map((ex, i) => ({ ex, i }))
-    .sort((a, b) => band(a.ex) - band(b.ex) || a.i - b.i)
+    .sort((a, b) => band(a.ex) - band(b.ex) || roleRank(a.ex) - roleRank(b.ex) || a.i - b.i)
     .map((x) => x.ex)
 }
 

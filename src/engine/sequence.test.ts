@@ -158,3 +158,68 @@ describe('every day the resolver hands out', () => {
     ])
   })
 })
+
+// ============================================================
+// The bands got the day roughly right and then ran out of
+// opinions: inside a band the tiebreak was the order the recipe
+// author happened to type. So a secondary press could open a
+// push day with both primaries queued behind it, and nothing in
+// the sort disagreed.
+//
+// The catalog knew all along. Every movement in plan/movement.ts
+// carries a programming role, and a test there proves there are
+// no orphans. sequence.ts simply never imported it.
+// ============================================================
+
+describe('the role the catalog already knows', () => {
+  it('leads with the primary lift even when the author typed it second', () => {
+    // floor-press is a secondary push, incline and OHP are primaries.
+    const day = [ex('floor-press', 4, '8'), ex('incline-db-press', 3, '8'), ex('standing-ohp', 4, '6')]
+    expect(orderSession(day).map((e) => e.exerciseId)).toEqual([
+      'incline-db-press',
+      'standing-ohp',
+      'floor-press',
+    ])
+  })
+
+  it('keeps the author order between two movements of the same role', () => {
+    const day = [ex('flat-db-press', 3, '8'), ex('incline-db-press', 4, '8')]
+    expect(orderSession(day).map((e) => e.exerciseId)).toEqual(['flat-db-press', 'incline-db-press'])
+  })
+
+  it('reads accessory work off the role rather than off the rep range', () => {
+    // A curl prescribed heavy for six is still a curl. The old rule needed
+    // twelve-plus reps to call anything accessory, so this passed as a
+    // compound and sorted ahead of the presses it should follow.
+    expect(isAccessory(ex('ez-bar-curl', 3, '6'))).toBe(true)
+    // And a genuine compound stays a compound however light it is written.
+    expect(isAccessory(ex('incline-db-press', 3, '15'))).toBe(false)
+  })
+
+  it('puts a heavy curl behind the press it used to outrank', () => {
+    const day = [ex('ez-bar-curl', 3, '6'), ex('incline-db-press', 4, '8')]
+    expect(orderSession(day).map((e) => e.exerciseId)).toEqual(['incline-db-press', 'ez-bar-curl'])
+  })
+
+  it('sorts prehab last of the accessories, where it belongs', () => {
+    const day = [ex('prone-y-raise', 2, '12'), ex('lateral-raise', 3, '15')]
+    expect(orderSession(day).map((e) => e.exerciseId)).toEqual(['lateral-raise', 'prone-y-raise'])
+  })
+
+  it('does not gamble on a movement it cannot classify', () => {
+    // Nothing in the graph, so it sorts as secondary: behind the day's
+    // main work, ahead of the accessories. The least surprising guess.
+    const day = [ex('made-up-movement', 3, '8'), ex('incline-db-press', 4, '8'), ex('lateral-raise', 3, '15')]
+    expect(orderSession(day).map((e) => e.exerciseId)).toEqual([
+      'incline-db-press',
+      'made-up-movement',
+      'lateral-raise',
+    ])
+  })
+
+  it('never lets role ordering jump a movement out of its band', () => {
+    // A primary carry is still a carry, and carries come after lifts.
+    const day = [ex('farmer-carry', 3, '40 sec', 'carry'), ex('lateral-raise', 3, '15')]
+    expect(orderSession(day).map((e) => e.exerciseId)).toEqual(['lateral-raise', 'farmer-carry'])
+  })
+})
