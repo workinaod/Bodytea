@@ -6,7 +6,8 @@ import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../..
 import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../platform/speech'
 import { useAppStore } from '../../store/appStore'
 import { abandonSession, patchSet, restartSession, setWeightForward} from '../../logic/actions'
-import { setAchievedReps, setExerciseRir, setSessionFeel } from '../../logic/prescription'
+import { setSessionFeel } from '../../logic/prescription'
+import { recordRir, recordShortfall } from '../../logic/fatigueActions'
 import { Stepper } from '../../components/ui'
 import { HowToSlides } from './HowToSlides'
 import { ExerciseBrief } from './ExerciseBrief'
@@ -602,8 +603,8 @@ export function FocusView({
           onSessionFeel={
             breakState.askSessionFeel ? (f) => setSessionFeel(session.date, f) : undefined
           }
-          onShort={(n) => justRef.current && setAchievedReps(session.date, justRef.current.exIdx, justRef.current.setIdx, n)}
-          onRir={(r) => justRef.current && setExerciseRir(session.date, justRef.current.exIdx, r)}
+          onShort={(n) => (justRef.current ? recordShortfall(session.date, justRef.current.exIdx, justRef.current.setIdx, n) : null)}
+          onRir={(r) => (justRef.current ? recordRir(session.date, justRef.current.exIdx, justRef.current.setIdx, r) : null)}
           onEase={() => {
             const cuts = easeRemaining(session.date)
             if (cuts.length === 0) return 'Nothing left worth cutting. Finish it.'

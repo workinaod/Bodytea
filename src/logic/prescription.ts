@@ -4,7 +4,7 @@ import { getExercise } from '../plan/exercises'
 import { suggestedStartWeight } from '../engine/startWeight'
 import { useAppStore } from '../store/appStore'
 import { loadStepLb, repStepFor, type RepRange } from '../engine/reps'
-import { lightLoad } from '../engine/fatigue'
+import { dropTo, lightLoad, nextSessionSuggestions } from '../engine/fatigue'
 import { e1RM } from '../engine/stats'
 
 interface Baseline {
@@ -92,6 +92,16 @@ export function prefillFor(
   // athlete in its first week back.
   const staleGiveBack = step?.staleSteps ? -step.staleSteps * loadStepLb(exerciseId) : 0
 
+  // "This movement has died on you twice in three weeks" is a fact the app
+  // already worked out and then did nothing with: nextSessionSuggestions
+  // was computed by nothing except its own test. A lift that keeps failing
+  // does not want the same opening weight handed back to it.
+  const failing = nextSessionSuggestions(data, date).some(
+    (s) => s.kind === 'start-lighter' && s.exerciseId === exerciseId,
+  )
+  /** Light day first, then a movement with a pattern of dying. Never both. */
+  const soften = (w: number) => (opts.lightMode ? lightLoad(w) : failing ? dropTo(w) : w)
+
   const sessions = Object.values(data.sessions)
     .filter((s) => s.date < date && s.status !== 'skipped')
     .sort((a, b) => (a.date > b.date ? -1 : 1))
@@ -131,10 +141,7 @@ export function prefillFor(
       best.weightLb !== undefined
         ? Math.max(floor, best.weightLb + bump + wrapStep + backOff + staleGiveBack)
         : undefined
-    return {
-      weightLb: w !== undefined && opts.lightMode ? lightLoad(w) : w,
-      reps: best.achieved ?? best.reps,
-    }
+    return { weightLb: w !== undefined ? soften(w) : undefined, reps: best.achieved ?? best.reps }
   }
   // No history yet: seed from bodyweight + training background so day one
   // never opens on an empty stepper. From here the feel check-in takes over.
@@ -147,7 +154,7 @@ export function prefillFor(
   }
   const seeded = suggestedStartWeight(getExercise(exerciseId), bw ?? 175, data.plan.experience ?? 'returning')
   if (seeded === null) return {}
-  return { weightLb: opts.lightMode ? lightLoad(seeded) : seeded }
+  return { weightLb: soften(seeded) }
 }
 
 /**

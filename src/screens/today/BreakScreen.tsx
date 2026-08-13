@@ -66,10 +66,10 @@ export function BreakScreen({
   onSessionFeel?: (f: SessionFeel) => void
   /** Shorten what is left. Returns a line describing what changed. */
   onEase?: () => string
-  /** The set just finished got fewer reps than it asked for. */
-  onShort?: (achieved: number) => void
-  /** Reps left in the tank on the movement just worked. */
-  onRir?: (rir: number) => void
+  /** The set just finished got fewer reps than it asked for. Returns what changed. */
+  onShort?: (achieved: number) => string | null
+  /** Reps left in the tank on the movement just worked. Returns what changed. */
+  onRir?: (rir: number) => string | null
 }) {
   const endsAt = useRef(Date.now() + brk.seconds * 1000)
   const [remaining, setRemaining] = useState(brk.seconds)

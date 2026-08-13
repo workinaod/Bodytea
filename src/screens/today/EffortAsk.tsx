@@ -33,15 +33,15 @@ export function EffortAsk({
 }: {
   /** What the set just finished asked for. Absent when it was not a countable set. */
   target?: number
-  /** Record that the athlete got fewer than the ask. */
-  onShort?: (achieved: number) => void
+  /** Record the shortfall. Returns what the plan did about it, if anything. */
+  onShort?: (achieved: number) => string | null
   /** Roughly the midpoint of this movement: a good moment to ask what is left. */
   askRir?: boolean
-  onRir?: (rir: number) => void
+  onRir?: (rir: number) => string | null
 }) {
   const [open, setOpen] = useState(false)
   const [said, setSaid] = useState<string | null>(null)
-  const [rirDone, setRirDone] = useState(false)
+  const [rirDone, setRirDone] = useState<string | null>(null)
 
   const canAskShort = target !== undefined && target > 1 && !!onShort
 
@@ -63,10 +63,9 @@ export function EffortAsk({
             {shortfallChoices(target).map((n) => (
               <button
                 key={n}
-                onClick={() => {
-                  onShort?.(n)
-                  setSaid(`Logged ${n}. The plan holds this weight instead of adding to it.`)
-                }}
+                onClick={() =>
+                  setSaid(onShort?.(n) ?? `Logged ${n}. The plan holds this weight instead of adding to it.`)
+                }
                 className={CHIP}
               >
                 {n}
@@ -95,10 +94,7 @@ export function EffortAsk({
             ).map(([value, label]) => (
               <button
                 key={value}
-                onClick={() => {
-                  onRir(value)
-                  setRirDone(true)
-                }}
+                onClick={() => setRirDone(onRir(value) ?? 'Noted, for this lift only.')}
                 className={CHIP}
               >
                 {label}
@@ -109,7 +105,7 @@ export function EffortAsk({
         </div>
       )}
 
-      {rirDone && <div className="mt-7 text-[11.5px] font-bold text-lime">Noted, for this lift only.</div>}
+      {rirDone && <div className="mt-7 max-w-[280px] text-center text-[11.5px] font-bold text-lime">{rirDone}</div>}
     </>
   )
 }

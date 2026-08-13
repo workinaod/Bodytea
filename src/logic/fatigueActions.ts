@@ -1,5 +1,8 @@
 import type { AdaptChoice, FatigueReason, ISODate } from '../types'
 import { regionsFor, sameGroupAhead } from '../engine/fatigue'
+import { isAutomatic, respondToSet, type FatigueResponse } from '../engine/sessionFatigue'
+import { setWeightForward } from './actions'
+import { setAchievedReps, setExerciseRir } from './prescription'
 import { useAppStore } from '../store/appStore'
 
 // ============================================================
@@ -105,4 +108,52 @@ export function undoAdaptation(date: ISODate, choice: AdaptChoice): void {
     if (taken.length) d.adapt[date] = taken
     else delete d.adapt[date]
   })
+}
+
+/**
+ * The one thing in this file that is not a tap.
+ *
+ * Called as each set is finished. If the set says the weight is wrong,
+ * the sets still ahead of it come down on their own and the caller gets
+ * the sentence explaining it. Everything else is still an offer.
+ *
+ * The exception is argued in engine/sessionFatigue.ts and it is narrow:
+ * the load, and only the load, and only forward. Work is never removed
+ * without being asked.
+ */
+export function applySetFeedback(
+  date: ISODate,
+  exIdx: number,
+  setIdx: number,
+): (FatigueResponse & { from?: number }) | null {
+  const log = store().data.sessions[date]?.exercises[exIdx]
+  if (!log) return null
+  const res = respondToSet(log, setIdx)
+  if (!res) return null
+  if (!isAutomatic(res.kind) || res.weightLb === undefined) return res
+  const from = log.sets[setIdx].weightLb
+  setWeightForward(date, exIdx, setIdx + 1, res.weightLb)
+  return { ...res, from }
+}
+
+/** Put an automatic load drop back where it was. One tap, no argument. */
+export function undoSetFeedback(date: ISODate, exIdx: number, setIdx: number, weightLb: number): void {
+  setWeightForward(date, exIdx, setIdx + 1, weightLb)
+}
+
+/**
+ * "I got five of the eight", and everything that follows from it.
+ *
+ * One call so the screen does not have to know that recording a
+ * shortfall and acting on it are two different things.
+ */
+export function recordShortfall(date: ISODate, exIdx: number, setIdx: number, achieved: number): string | null {
+  setAchievedReps(date, exIdx, setIdx, achieved)
+  return applySetFeedback(date, exIdx, setIdx)?.because ?? null
+}
+
+/** Same, for the reps-in-reserve answer. */
+export function recordRir(date: ISODate, exIdx: number, setIdx: number, rir: number): string | null {
+  setExerciseRir(date, exIdx, rir)
+  return applySetFeedback(date, exIdx, setIdx)?.because ?? null
 }
