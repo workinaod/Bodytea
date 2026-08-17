@@ -88,6 +88,11 @@ The destination, by capability:
   `light` and never becomes the next baseline. This killed the load-spiral bug family.
 - **Layering is law** (enforced by structure tests): plan -> engine/store -> cloud/logic/
   platform -> components/screens. Never import upward. File-size allowances shrink only.
+- **Owner rule (2026-08-17): knowledge that is collected but not consumed gets wired in
+  or redone, never preserved for its own sake.** The current knowledge system works but
+  is too small; the v12 knowledge expansion is the locked direction. Grow it aggressively
+  through the R-jobs, with provenance fields and room for scale, and delete or rebuild
+  anything that no engine reads.
 - **Post-core fence** (do not build before J12 passes): visual overhaul, Sergeant/Trainee
   character art integration, My Room/game world, camera/form CV. The gamification that
   ALREADY exists (Board, trophies, streaks, Wrapped, Sergeant text coach) stays live and
