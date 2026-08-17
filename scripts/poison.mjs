@@ -56,8 +56,11 @@ const MUTATIONS = [
     id: 'vert-sold-like-a-sales-page',
     bug: 'plus ten inches on the vertical in twelve weeks',
     file: 'src/plan/milestones.ts',
-    find: "const VERT_IN_PER_WEEK: Record<TrainingAge, number> = { new: 0.2, returning: 0.12, trained: 0.05 }",
-    to: "const VERT_IN_PER_WEEK: Record<TrainingAge, number> = { new: 0.9, returning: 0.6, trained: 0.4 }",
+    // Anchor updated at the reunification merge: the onboarding rebuild
+    // added the casual tier to TrainingAge, and the old three-tier quote
+    // stopped matching, which left this tripwire dead until re-aimed.
+    find: "const VERT_IN_PER_WEEK: Record<TrainingAge, number> = { new: 0.2, returning: 0.12, casual: 0.09, trained: 0.05 }",
+    to: "const VERT_IN_PER_WEEK: Record<TrainingAge, number> = { new: 0.9, returning: 0.6, casual: 0.5, trained: 0.4 }",
     spec: 'src/plan/milestones.test.ts',
   },
   {
