@@ -153,6 +153,16 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending | C2 | cloud session |
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
 | RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions | ride-along | pending | touch-adjacent | any |
+| R6 | Safety boundaries + functional constraints pack (red-flag table, GREEN/YELLOW/RED tiers, capability fields; tier-A sources; adversarial evals) | research | pending | J1 | product lane, with J3/J6 |
+| R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | pending (inside J2) | J1 | engines lane |
+| R1 | Nutrition evidence pack (BMR eqns, activity-from-logs, carb cycling, fibre floor; cited) | research | pending | J1 | engines lane, start of J7 |
+| R3 | Autoregulation thresholds (weight-trend bands, volume windows, plateau evidence) | research | pending | J7 | engines lane, start of J8 |
+| R4 | Meal + recipe corpus expansion (axes, goal x diet x cost coverage; guards-first) | research | pending | J1 | product lane, inside J9 |
+| R5 | Program-family corpus: 4-6 typed archetype families + tradeoffs (the standalone research job) | research | pending | J7 schemas stable | planner owner, before J11 |
+| B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
+| B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | pending | starts with R1 | any lane, rolling |
+| B3 | Knowledge store + retrieval layer: versioned knowledge packs outside the bundle (IndexedDB-loaded, indexed), provenance/confidence/contradiction fields, deterministic filter-rank-packet retrieval API, high-cardinality scale tests. THE scale path to millions of records; built during core on a small high-quality corpus, then fed by post-gate ingestion waves | infra | pending | J7 contracts stable | engines lane, alongside R5, before J11 |
+| IW | Ingestion waves: mass corpus expansion (exercises, programs, evidence, food) through B3's pipeline toward millions of records | research | pending, post-gate | J12 + B3 | dedicated sessions per wave |
 
 **Deferred (do not start):** mass research ingestion, population learning, trainer/CRM,
 wearable integrations, new modality breadth, finder wiring + strict pass (re-queue at J12),
@@ -176,21 +186,25 @@ retrieval/vector infra, all post-core experience work.
 
 ---
 
-## 5. OPEN DECISIONS (owner answers; record the answer + date, then act)
+## 5. DECISIONS
 
-- **Q1. Runtime LLM vs deterministic core.** Recommendation: deterministic core; Claude
-  at authoring time; revisit runtime LLM at the explain layer only. GATES J10.
-- **Q2. The name.** BodyT (in-app) vs Bodytea (repo/cloud). Settles copy, README, stores.
-- **Q3. Canonical branch after J1.** Recommendation: merge into algo branch, verify,
-  fast-forward `claude/app-audit-refinement-sjw2va`, keep it as the single deploy branch.
-- **Q4. Workout-form session.** One salvage turn (plan to text, push nothing) or archive
-  as-is. Either way it stops being a workstream: pain belongs to engines lane; camera
-  form is post-core.
-- **Q5. Approve the core-complete definition** (J12 = the engine-ready checklist in the
-  dashboard, incl. freezing existing gamification until post-core).
-- **Q6. Joint plan walkthrough.** Recommendation: fold into J3's paired-profile eval.
+**THE PLAN IS LOCKED (owner, 2026-08-17): roadmap J1-J12 + cloud lane C1-C3 + research
+program R1-R6 + infrastructure B1-B3 + redo-what-is-not-read rule + core-complete gate.
+Begin-now approved. Sessions execute their lane jobs without re-asking.**
 
 **Resolved:**
+- Q1 brain type: **deterministic core** (owner, 2026-08-17), WITH a mandate: the
+  knowledge base must scale to MILLIONS of data points to pull from. Engines stay local,
+  offline, testable; Claude builds knowledge at authoring time; retrieval is
+  deterministic (filters, indexes, ranked bounded packets), never giant-context dumping.
+  This makes B3 (knowledge store and retrieval layer) a core build job, and makes
+  post-gate ingestion waves the path to millions of records. Runtime LLM revisit: only
+  ever at the talk layer, only by a future explicit owner decision.
+- Q3 canonical branch: merge into algo branch, verify, fast-forward
+  `claude/app-audit-refinement-sjw2va`, keep it as the single deploy branch (in J1).
+- Q4 workout-form session: **archived** without salvage (owner, 2026-08-17).
+- Q5 core-complete definition: approved as part of the plan lock.
+- Q6 joint walkthrough: **skipped for now**; revisit after the merge and onboarding land.
 - Q2 name: **BodyT** (owner, 2026-08-17). Use in all user-facing copy; do not rename the
   repo or the Supabase project now. Apply during J3's copy touches.
 - Supabase approval: APPROVED (owner, 2026-08-17). Cloud lane scheduled; USDA proxy allowed
