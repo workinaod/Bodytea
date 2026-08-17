@@ -131,7 +131,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | id | job | lane | status | depends on | owner session |
 |----|-----|------|--------|-----------|---------------|
 | J0 | Reconciliation audit + this file | - | done 2026-08-17 | - | BodyT project state reconciliation audit |
-| J1 | Reunify branches, carry this file to canonical branch, wire sims into npm, settle deploy branch | gate | pending | J0 | Algorithm personalization and progression trust |
+| J1 | Reunify branches, carry this file to canonical branch, wire sims into npm, settle deploy branch | gate | in-progress 2026-08-17 (instruction delivered; J2 pre-approved as its "round three Part A"; UI scan follows on merged tree) | J0 | Algorithm personalization and progression trust |
 | J2 | Bodyweight progression (phase verdicts + in-session response for unloaded work, pct load floor) | engines | pending | J1 | Algorithm session |
 | J3 | Onboarding closure: confirm review fixes, name decision, injuries->Prefs.limitations, foodLimits->meal plan, dead fields, first paired-profile eval | product | pending | J1 | App audit and refinement |
 | J4 | Freeform-first entry (composer primary, chips demote to examples; reuse inferGoal/readStatement) | product | pending | J3 | App audit session |
@@ -186,6 +186,8 @@ retrieval/vector infra, all post-core experience work.
 - **Q6. Joint plan walkthrough.** Recommendation: fold into J3's paired-profile eval.
 
 **Resolved:**
+- Q2 name: **BodyT** (owner, 2026-08-17). Use in all user-facing copy; do not rename the
+  repo or the Supabase project now. Apply during J3's copy touches.
 - Supabase approval: APPROVED (owner, 2026-08-17). Cloud lane scheduled; USDA proxy allowed
   (key server-side only). Still standing from the owner: 58 badge artworks (placeholders
   render meanwhile); Sergeant quotes ship only with owner approval.
