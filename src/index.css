@@ -150,6 +150,14 @@ h3 {
   border-radius: 6px;
 }
 
+/* A field whose WRAPPER already shows focus — the underline goes solid —
+   would otherwise draw a second, rounded ring inside the first. Tailwind's
+   utilities are layered, so only an unlayered rule can opt out of an
+   unlayered one. */
+.ring-owned:focus-visible {
+  outline: none;
+}
+
 /* Glossy top-light on colored buttons: depth without a border. The
    overlay inherits the radius, so it works on pills and blocks alike. */
 .sheen {

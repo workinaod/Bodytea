@@ -5,6 +5,16 @@ import { useState } from 'react'
  * never loaded eagerly); every exercise always gets a search deep-link
  * that can't go stale.
  */
+/**
+ * Height-capped, same as the set screen's clip.
+ *
+ * 16:9 across a full phone width is ~200px, which pushes the written
+ * steps under the fold on the screen that exists to show them. The
+ * width is limited to whatever keeps 16:9 inside the height budget
+ * instead of capping height and cropping the picture.
+ */
+const VIDEO_BOX = { width: 'min(100%, calc(22vh * 16 / 9))' } as const
+
 export function YouTubeEmbed({ videoId, query }: { videoId?: string; query: string }) {
   const [loaded, setLoaded] = useState(false)
   const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
@@ -13,7 +23,7 @@ export function YouTubeEmbed({ videoId, query }: { videoId?: string; query: stri
     <div className="space-y-2">
       {videoId &&
         (loaded ? (
-          <div className="overflow-hidden rounded-xl border border-edge">
+          <div className="mx-auto overflow-hidden rounded-xl border border-edge" style={VIDEO_BOX}>
             <iframe
               className="aspect-video w-full"
               src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`}
@@ -25,7 +35,8 @@ export function YouTubeEmbed({ videoId, query }: { videoId?: string; query: stri
         ) : (
           <button
             onClick={() => setLoaded(true)}
-            className="relative block w-full overflow-hidden rounded-xl border border-edge"
+            className="relative mx-auto block overflow-hidden rounded-xl border border-edge"
+            style={VIDEO_BOX}
           >
             <img
               src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}

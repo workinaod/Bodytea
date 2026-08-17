@@ -6,9 +6,13 @@ test.describe.configure({ mode: 'serial' })
 /** Shared wizard head: welcome → name → goal. */
 async function throughGoal(page: Page, entry: string, chip: string, statement: string) {
   await page.getByRole('button', { name: entry }).click()
+  await page.locator('input').first().fill('Sam')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText(chip).click()
-  await page.getByPlaceholder(/dunk on a 10-ft rim/).fill(statement)
+  await page.locator('textarea').first().fill(statement)
 }
 
 test('bring your own routine: build week → notes → track it', async ({ page }) => {
@@ -19,7 +23,6 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   // Multi-select routine goals: muscle + athleticism together
   await throughGoal(page, 'I already have a routine', '💪 Gaining muscle', 'add 10 lb of lean muscle')
   await page.getByText('⚡ Gaining athleticism').click()
-  await page.getByRole('button', { name: 'Next: my numbers' }).click()
   await page.getByRole('button', { name: 'Next: build my week' }).click()
 
   // Empty week fails validation with a clear message
@@ -61,6 +64,12 @@ test('bring your own routine: build week → notes → track it', async ({ page 
 
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
 
+  // Bring-your-own-routine reaches the permissions screen too. It used
+  // to commit straight from the notes, which made it the one path never
+  // asked for notifications, motion or location at all.
+  await expect(page.getByRole('heading', { name: 'Last thing' })).toBeVisible()
+  await page.getByRole('button', { name: 'Skip' }).click()
+
   // Today runs THEIR routine
   await expect(page.getByText(/Week 1/).first()).toBeVisible()
   await expect(page.getByText('Full Body A').first()).toBeVisible()
@@ -88,23 +97,23 @@ test('generated booklet: fine-tune before starting', async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
 
-  await throughGoal(page, 'Something else', '⬆️ Jump higher', 'dunk on a 10-ft rim by June')
+  await throughGoal(page, "Let's get started", 'Jump higher', 'dunk on a 10-ft rim by June')
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '6 days' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
-  await page.getByRole('button', { name: 'Next: numbers' }).click()
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
-  await expect(page.getByText('Vertical Project · 6-Day')).toBeVisible()
+  await page.getByRole('button', { name: 'Skip' }).click()
+  await expect(page.getByText('Jump Higher · 6-Day')).toBeVisible()
 
   await page.getByRole('button', { name: /Fine-tune it first/ }).click()
   await expect(page.getByRole('heading', { name: 'Fine-tune your booklet' })).toBeVisible()
 
   // Rename the booklet, then lock it in
   const nameInput = page.getByRole('textbox').first()
-  await expect(nameInput).toHaveValue('Vertical Project · 6-Day')
+  await expect(nameInput).toHaveValue('Jump Higher · 6-Day')
   await nameInput.fill('My Dunk Plan')
   await page.getByRole('button', { name: 'Lock it in, start Week 1' }).click()
 

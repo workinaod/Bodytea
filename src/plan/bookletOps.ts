@@ -4,7 +4,7 @@ import { equipFor } from './equip'
 import { pickCardio, rationaleFor } from './generator'
 import { buildMealPlan, type MealsPerDay } from './foods'
 import { flooredTargets } from './kcalFloor'
-import { proteinTargetG } from './sportsNutrition'
+import { heightAdjustmentKcal, proteinTargetG } from './sportsNutrition'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -44,12 +44,13 @@ export function byorNutrition(
   goals: RoutineGoal[],
   bodyweightLb: number,
   sex?: 'male' | 'female',
+  heightIn?: number,
 ) {
   const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
   // Same baseline as the guided path: a notch lower for women. This used
   // to be a flat ×15, which handed every woman building her own routine
   // a man's maintenance estimate.
-  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50
+  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50 + heightAdjustmentKcal(heightIn, sex)
   let adj = 0
   if (goals.includes('muscle')) adj += 300
   if (goals.includes('lose-weight')) adj -= 400
@@ -80,6 +81,7 @@ export function makeEmptyByorPlan(args: {
   goalStatement: string
   customTargets: CustomTarget[]
   bodyweightLb: number
+  heightIn?: number
   sex?: 'male' | 'female'
   mealsPerDay?: MealsPerDay
   lifeSeeds?: { label: string; kind: LifeEventKind }[]
@@ -89,7 +91,7 @@ export function makeEmptyByorPlan(args: {
 }): { plan: PlanConfig; proteinTargetG: number } {
   const owned = new Set<EquipTag>(['none', ...ALL_TAGS])
   const goal = primaryGoalOf(args.routineGoals)
-  const n = byorNutrition(args.routineGoals, args.bodyweightLb, args.sex)
+  const n = byorNutrition(args.routineGoals, args.bodyweightLb, args.sex, args.heightIn)
   return {
     proteinTargetG: n.proteinTargetG,
     plan: {

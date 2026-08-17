@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import type { EquipTag, Goal } from '../../types'
-import { Btn, Card, Chip } from '../../components/ui'
+import { Reveal } from '../../components/ui'
+import { Bar, Kicker, Label, Lane, Tag, Title } from './kit'
 import { accessFor, HOME_CHECKLIST } from './onboardingData'
 
 // ============================================================
@@ -14,72 +16,68 @@ import { accessFor, HOME_CHECKLIST } from './onboardingData'
 
 export function GearStep(p: {
   goal: Goal
+  /** Their follow-up answers, so a named sport beats a guessed goal. */
+  answers: Record<string, string>
   profile: 'gym' | 'home-db' | 'minimal'
   pickProfile: (v: 'gym' | 'home-db' | 'minimal') => void
   extras: Set<EquipTag>
   toggleItem: (tags: EquipTag[]) => void
   next: () => void
 }) {
-  const { goal, profile, pickProfile, extras, toggleItem, next } = p
+  const { goal, answers, profile, pickProfile, extras, toggleItem, next } = p
+  // A profile is pre-selected, so what opens the rest of the screen is
+  // them choosing one — including choosing the one that was already lit.
+  const [chose, setChose] = useState(false)
   return (
           <div className="flex flex-1 flex-col">
-            <h2 className="headline text-center text-[26px]">Where do you train?</h2>
-            <div className="mt-4 space-y-2">
+            <Kicker>Where you train</Kicker>
+            <Title>What have you got?</Title>
+            <div className="enter-stagger mt-6">
               {(
                 [
-                  ['gym', 'Full gym', 'Racks, machines, cables, the works.'],
-                  ['home-db', 'Home gym', "You'll check off exactly what you've got."],
-                  ['minimal', 'No weights', 'Bodyweight + somewhere to move.'],
+                  ['gym', 'Full gym'],
+                  ['home-db', 'Home gym'],
+                  ['minimal', 'No weights'],
                 ] as const
-              ).map(([id, title, sub]) => (
-                <Card key={id} onClick={() => pickProfile(id)} className={profile === id ? '!border-accent/60' : ''}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-[15px] font-black">{title}</div>
-                      <div className="text-[12px] text-ink-dim">{sub}</div>
-                    </div>
-                    <span className={`h-4 w-4 rounded-full border-2 ${profile === id ? 'border-accent bg-accent' : 'border-edge'}`} />
-                  </div>
-                </Card>
+              ).map(([id, title], i) => (
+                <Lane
+                  key={id}
+                  n={i + 1}
+                  selected={chose && profile === id}
+                  onClick={() => {
+                    setChose(true)
+                    pickProfile(id)
+                  }}
+                >
+                  {title}
+                </Lane>
               ))}
             </div>
-            {profile === 'home-db' && (
-              <>
-                <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">
-                  Check everything you have
-                </p>
-                <p className="mt-1 text-[11.5px] leading-snug text-ink-faint">
-                  Nothing is assumed. The plan only prescribes gear you check. Check nothing and you get
-                  a bodyweight plan.
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
+            {chose && profile === 'home-db' && (
+              <Reveal when className="mt-8">
+                <Label>Tick what you own</Label>
+                <div className="flex flex-wrap gap-1.5">
                   {HOME_CHECKLIST.map((e) => (
-                    <Chip
-                      key={e.label}
-                      tone={e.tags.every((t) => extras.has(t)) ? 'accent' : 'default'}
-                      onClick={() => toggleItem(e.tags)}
-                    >
+                    <Tag key={e.label} selected={e.tags.every((t) => extras.has(t))} onClick={() => toggleItem(e.tags)}>
                       {e.label}
-                    </Chip>
+                    </Tag>
                   ))}
                 </div>
-              </>
+              </Reveal>
             )}
-            <p className="mt-5 text-[12px] font-black uppercase tracking-wider text-ink-faint">Can you get to any of these?</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {accessFor(goal, profile).map((e) => (
-                <Chip
-                  key={e.label}
-                  tone={e.tags.every((t) => extras.has(t)) ? 'accent' : 'default'}
-                  onClick={() => toggleItem(e.tags)}
-                >
-                  {e.label}
-                </Chip>
-              ))}
+            <Reveal when={chose} className="mt-8">
+              <Label>Can you get to any of these?</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {accessFor(goal, profile, answers).map((e) => (
+                  <Tag key={e.label} selected={e.tags.every((t) => extras.has(t))} onClick={() => toggleItem(e.tags)}>
+                    {e.label}
+                  </Tag>
+                ))}
+              </div>
+            </Reveal>
+            <div className="mt-auto pt-10">
+              <Bar onClick={next}>Next: experience</Bar>
             </div>
-            <Btn className="mt-6 w-full py-4" onClick={next}>
-              Next: experience
-            </Btn>
           </div>
   )
 }

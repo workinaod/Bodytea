@@ -3,7 +3,6 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { buildFollowups, GOAL_FOLLOWUPS, qualitiesForSport, readStatement, SPORTS, SPORT_QUALITIES, targetsFromAnswers } from './followups'
 import type { Goal } from '../types'
-import { chipIndexForGoal, GOAL_CHIPS, inferGoal, QUICK_GOALS } from '../screens/onboarding/onboardingData'
 
 const GOALS: Goal[] = ['vertical', 'speed', 'muscle', 'strength', 'lean', 'general', 'endurance']
 
@@ -173,32 +172,5 @@ describe('the number they name', () => {
   it('ignores an empty or junk box rather than inventing a target', () => {
     expect(targetsFromAnswers('strength', { 'lift-target': '' })).toEqual([])
     expect(targetsFromAnswers('strength', { 'lift-target': 'soon' })).toEqual([])
-  })
-})
-
-describe('the landing screen actually seeds what it says', () => {
-  it('sends every quick goal to its own goal, not to a position in a list', () => {
-    // This shipped broken: QUICK_GOALS carried an INDEX into the chip
-    // grid, the grid got reordered, and four of the five landing
-    // buttons quietly started building the wrong plan. Nothing failed,
-    // because an index is always a valid index.
-    for (const q of QUICK_GOALS) {
-      const i = chipIndexForGoal(q.goal)
-      expect(i, `${q.label} has no chip`).not.toBeNull()
-      expect(GOAL_CHIPS[i!].goal).toBe(q.goal)
-    }
-  })
-
-  it('covers five different goals, so the screen shows range', () => {
-    expect(new Set(QUICK_GOALS.map((q) => q.goal)).size).toBe(QUICK_GOALS.length)
-  })
-
-  it('seeds a sentence the goal inference agrees with', () => {
-    // The sentence a chip writes must route to the same goal the chip
-    // claims, or typing it by hand gets a different plan from tapping it.
-    for (const q of QUICK_GOALS) {
-      const inferred = inferGoal(q.statement)
-      if (inferred !== null) expect(GOAL_CHIPS[inferred].goal).toBe(q.goal)
-    }
   })
 })

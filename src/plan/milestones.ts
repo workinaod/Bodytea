@@ -20,7 +20,13 @@ import { WEEKLY_CHANGE_PCT } from './sportsNutrition'
 // app says so.
 // ============================================================
 
-export type TrainingAge = 'new' | 'returning' | 'trained'
+/**
+ * Four tiers, because "coming back" and "casual" are not the same
+ * athlete. Somebody returning after a lay-off regains fast — the tissue
+ * has been there before. Somebody who trains casually has never pushed
+ * hard enough to stall, so they move steadily but without the rebound.
+ */
+export type TrainingAge = 'new' | 'returning' | 'casual' | 'trained'
 
 // ---------------- Body mass ----------------
 
@@ -57,7 +63,7 @@ export function fatLossPctPerWeek(bodyFatPct: number | null): number {
  * is left on the table.
  */
 export function gainPctPerWeek(age: TrainingAge): number {
-  const scale = { new: 1, returning: 0.7, trained: 0.45 }[age]
+  const scale = { new: 1, returning: 0.7, casual: 0.55, trained: 0.45 }[age]
   return WEEKLY_CHANGE_PCT.gainMin + (WEEKLY_CHANGE_PCT.gainMax - WEEKLY_CHANGE_PCT.gainMin) * scale
 }
 
@@ -87,7 +93,7 @@ export function gainPctPerWeek(age: TrainingAge): number {
  *   squat for somebody who has been stuck at 315 for a year.
  */
 const DELOAD_TAX = 4 / 3
-const STALL: Record<TrainingAge, number> = { new: 1.15, returning: 1.6, trained: 2.6 }
+const STALL: Record<TrainingAge, number> = { new: 1.15, returning: 1.6, casual: 2, trained: 2.6 }
 
 export function weeksPerLoadStep(args: {
   repLow: number
@@ -110,7 +116,7 @@ export function weeksPerLoadStep(args: {
  * annual ceilings on a main lift, and the projection takes whichever of
  * the two is slower.
  */
-const LB_PER_WEEK_CEILING: Record<TrainingAge, number> = { new: 4, returning: 2, trained: 0.75 }
+const LB_PER_WEEK_CEILING: Record<TrainingAge, number> = { new: 4, returning: 2, casual: 1.3, trained: 0.75 }
 
 export function strengthLbPerWeek(args: {
   loadStepLb: number
@@ -153,7 +159,7 @@ export function weeksToLongRun(fromMi: number, toMi: number): number {
  * gaining an inch in a season is doing well. Anybody quoting "+10 inches
  * in 12 weeks" is selling something.
  */
-const VERT_IN_PER_WEEK: Record<TrainingAge, number> = { new: 0.2, returning: 0.12, trained: 0.05 }
+const VERT_IN_PER_WEEK: Record<TrainingAge, number> = { new: 0.2, returning: 0.12, casual: 0.09, trained: 0.05 }
 export const vertInPerWeek = (age: TrainingAge): number => VERT_IN_PER_WEEK[age]
 
 // ---------------- Honesty guards ----------------

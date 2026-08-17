@@ -6,17 +6,21 @@ import { expect, test, type Page } from '@playwright/test'
 
 async function buildPlan(page: Page, startLabel: string, goalChip: string, statement: string) {
   await page.getByRole('button', { name: startLabel }).click()
+  await page.locator('input').first().fill('Sam')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
   await page.getByText(goalChip).click()
-  await page.getByPlaceholder(/dunk on a 10-ft rim/).fill(statement)
+  await page.getByPlaceholder(/before my wedding/).fill(statement)
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '4 days' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
-  await page.getByRole('button', { name: 'Next: numbers' }).click()
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Skip' }).click()
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
   await expect(page.getByText(/Week \d+/).first()).toBeVisible()
 }
@@ -68,7 +72,7 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) }) // Monday
   await page.goto('./')
 
-  await buildPlan(page, 'Something else', '⬆️ Jump higher', 'dunk on a 10-ft rim by June')
+  await buildPlan(page, "Let's get started", 'Jump higher', 'dunk on a 10-ft rim by June')
 
   // Log a meal so there is real history to protect
   await page.getByRole('button', { name: 'Meals', exact: true }).click()
@@ -81,11 +85,11 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
 
   // Back in onboarding, told why, and told nothing was lost
   await expect(page.getByText('Your plan is being rebuilt.')).toBeVisible()
-  await expect(page.getByText(/Every session, meal, run and measurement you logged is untouched/)).toBeVisible()
+  await expect(page.getByText(/Everything you logged is safe/)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Rebuild my plan' })).toBeVisible()
 
   // Rebuild on a completely different goal
-  await buildPlan(page, 'Rebuild my plan', '🔥 Lose weight', 'lose 30 lb by summer')
+  await buildPlan(page, 'Rebuild my plan', 'Lose weight', 'lose 30 lb by summer')
 
   // The logged meal survived the rebuild.
   //
@@ -103,7 +107,7 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
 test('v19 reset leaves the owner alone', async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
   await page.goto('./')
-  await buildPlan(page, 'Something else', '⬆️ Jump higher', 'dunk on a 10-ft rim by June')
+  await buildPlan(page, "Let's get started", 'Jump higher', 'dunk on a 10-ft rim by June')
 
   // Make this look like the owner's hand-built booklet, then reset
   await rewindAndReload(page, true)

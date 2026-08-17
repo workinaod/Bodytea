@@ -100,6 +100,84 @@
   animation-delay: 280ms;
 }
 
+/* ---------- ambient: the field behind onboarding ----------
+
+   A tunnel, not a lava lamp.
+
+   The first version was three soft radial masses drifting behind
+   the content — the single most recognisable AI-generated
+   background there is, and adding motion to it did not make it
+   less so. This is a hard shaft of light across a dark room:
+   linear, edged, coming from somewhere. It slides very slowly,
+   so the room reads as lit rather than as animated.
+
+   Transform and opacity only, so it composites and never
+   touches layout while somebody is typing. */
+
+.ambient {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes bt-shaft {
+  0%,
+  100% {
+    transform: translate3d(-6%, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(6%, 0, 0) rotate(1.5deg);
+  }
+}
+.ambient-shaft {
+  position: absolute;
+  inset: -35%;
+  background: linear-gradient(
+    112deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.075) 45%,
+    rgba(255, 79, 48, 0.17) 50%,
+    rgba(255, 255, 255, 0.05) 55%,
+    transparent 66%
+  );
+  animation: bt-shaft 26s ease-in-out infinite;
+}
+
+/* A second, colder shaft further back, so the room has depth
+   rather than one stripe painted on flat black. */
+.ambient-shaft-far {
+  position: absolute;
+  inset: -35%;
+  background: linear-gradient(96deg, transparent 55%, rgba(111, 178, 232, 0.075) 68%, transparent 80%);
+  animation: bt-shaft 41s ease-in-out infinite reverse;
+}
+
+/* The name, oversized and bleeding off the edge: architecture, not
+   decoration. Outlined so it never competes with the copy over it. */
+.ambient-ghost {
+  position: absolute;
+  left: -8%;
+  top: 12%;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 42vw;
+  line-height: 0.72;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.075);
+}
+
+.ambient-grain {
+  position: absolute;
+  inset: -50%;
+  opacity: 0.1;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.65'/></svg>");
+}
+
 /* ---------- confirm: something the user just did worked ---------- */
 
 @keyframes bt-confirm {
@@ -271,6 +349,13 @@
   .breathe-in,
   .enter-stagger > * {
     animation: bt-fade 120ms ease-out both !important;
+  }
+  /* The shafts stop where they are. They are the lighting of the
+     room, so holding still costs nothing; removing them would
+     flatten the screen back to a void. */
+  .ambient-shaft,
+  .ambient-shaft-far {
+    animation: none !important;
   }
   .press:active,
   .press-soft:active {

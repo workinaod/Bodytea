@@ -195,7 +195,9 @@ type RecognitionCtor = new () => {
     | ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>>; resultIndex: number }) => void)
     | null
   onend: (() => void) | null
-  onerror: (() => void) | null
+  // The error CODE was being thrown away, and it is the whole difference
+  // between "try again in a moment" and "this will never work, stop".
+  onerror: ((e: { error?: string }) => void) | null
   start: () => void
   stop: () => void
 }
@@ -221,12 +223,35 @@ export const SKIP_RE = /\b(skip( the)?( rest| break)?|pass)\b/
 export const ASK_RE =
   /\b(instructions?|how do i|how to|what is this|what'?s this|explain|show me how)\b/
 
+/**
+ * What the microphone is actually doing.
+ *
+ *   listening   - hearing you, commands work
+ *   unavailable - something else holds the audio route. Music or a
+ *                 video playing is the common one: iOS gives the route
+ *                 to that app and a web page cannot ask to share it.
+ *                 A native app declares .playAndRecord with
+ *                 .mixWithOthers and keeps listening; Safari has no
+ *                 equivalent, so this is reported, not fixed.
+ *   denied      - no permission. Never coming back this session.
+ */
+export type EarStatus = 'listening' | 'unavailable' | 'denied'
+
 export interface EarHandlers {
   onGo?: () => void
   onDone?: () => void
   onSkip?: () => void
   /** "how do I do this / instructions", coach explains on request only. */
   onAsk?: () => void
+  /**
+   * Told whenever the microphone changes state.
+   *
+   * Exists because the failure used to be silent: recognition died, the
+   * restart loop span, and the screen went on looking like it was
+   * listening while somebody repeated "done" at a phone that could not
+   * hear them.
+   */
+  onStatus?: (status: EarStatus) => void
 }
 
 /**
@@ -271,8 +296,24 @@ export function startEars(handlers: EarHandlers): () => void {
       if (hit) lastFired = i
     }
   }
-  rec.onend = () => {
-    if (!alive) return
+  // Consecutive failed restarts. A recognizer that cannot get the mic
+  // ends immediately, so restarting on every onend was a tight loop:
+  // hundreds of start/end cycles a minute, burning battery mid-session
+  // to achieve nothing. Backing off keeps trying — music stops, calls
+  // end, routes come back — without spinning while it cannot work.
+  let strikes = 0
+  let retry: ReturnType<typeof setTimeout> | null = null
+  let dead = false
+  let reported: EarStatus | null = null
+
+  const report = (s: EarStatus) => {
+    if (reported === s) return
+    reported = s
+    handlers.onStatus?.(s)
+  }
+
+  const restart = () => {
+    if (!alive || dead) return
     // A restart begins a fresh result list from index 0, so the guard
     // has to go with it or the first command after every restart is
     // swallowed.
@@ -280,19 +321,56 @@ export function startEars(handlers: EarHandlers): () => void {
     try {
       rec.start()
     } catch {
-      /* restart can race, next onend retries */
+      /* start can race with a stop still settling; the backoff retries */
     }
   }
-  rec.onerror = () => {
-    /* onend fires after; restart handles it */
+
+  rec.onend = () => {
+    if (!alive || dead) return
+    // 0.3s, 0.6s, 1.2s … capped at 8s. Long enough to stop thrashing,
+    // short enough that the ears come back on their own the moment the
+    // audio route frees up.
+    const wait = Math.min(8000, 300 * 2 ** Math.min(strikes, 5))
+    retry = setTimeout(restart, strikes === 0 ? 0 : wait)
   }
+
+  rec.onerror = (e) => {
+    const code = e?.error ?? ''
+    if (code === 'not-allowed' || code === 'service-not-allowed') {
+      // Permission, not luck. Retrying forever cannot change this and
+      // the user needs to be told rather than left talking to nothing.
+      dead = true
+      report('denied')
+      return
+    }
+    // no-speech is the normal end of a quiet stretch, not a fault, and
+    // counting it would slowly back the ears off during a long set.
+    if (code !== 'no-speech') {
+      strikes++
+      // One failure is a blip. A run of them means something else has
+      // the microphone, which on a phone is nearly always media
+      // playing in another app.
+      if (strikes >= 3) report('unavailable')
+    }
+  }
+
+  rec.onresult = ((original) => (e: Parameters<NonNullable<typeof rec.onresult>>[0]) => {
+    // Anything heard at all proves the route is back.
+    strikes = 0
+    report('listening')
+    original?.(e)
+  })(rec.onresult)
+
   try {
     rec.start()
+    report('listening')
   } catch {
+    report('unavailable')
     return () => {}
   }
   return () => {
     alive = false
+    if (retry) clearTimeout(retry)
     try {
       rec.stop()
     } catch {

@@ -63,6 +63,8 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // athlete has told the app about themselves (movements they will not
   // do, lifts to leave alone, injuries that do not expire on their own)
   // is persisted state, and the shapes live in their own file.
+  // +1: voiceSetVersion, kept on one line beside the voiceURI it dates.
+  // (Merged count re-derived from the actual file: 704.)
   'types.ts': 704,
   // screens/onboarding/Onboarding.tsx came off this list too, which
   // empties the "real splits owed" section entirely. The chip tables and
@@ -105,6 +107,9 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // parses with an empty ladder and needs no migration.
   // +1: the prefs key. Its shapes went to store/prefsSchema.ts, beside
   // the types they mirror, so what lands here is the field and its import.
+  // +1: voiceSetVersion, optional, so an envelope written before the
+  // coach shortlist changed parses unchanged and retires its own pick.
+  // (Merged count re-derived from the actual file: 648.)
   'store/schema.ts': 648,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
@@ -193,9 +198,6 @@ const PLATFORM_APIS =
 const PLATFORM_ALLOWED = new Set([
   // → platform/notifications.ts, with the push backend
   'logic/reminders.ts',
-  // PermissionsBlock moved here with the split; it is the same two
-  // prompts, asked in the same place in the flow, in a smaller file.
-  'screens/onboarding/RoutineNotes.tsx',
   // → platform/storage.ts, with the native build
   'store/storage.ts',
   'store/appStore.ts',

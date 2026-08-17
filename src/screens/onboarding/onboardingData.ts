@@ -1,5 +1,5 @@
 import type { EquipTag, Goal, LifeEventKind } from '../../types'
-import type { QuickGoal } from './Welcome'
+import { canRealisticallyDunk, leadingGoal } from '../../plan/reach'
 
 // ============================================================
 // What the wizard asks with: the chip sets, the checklists, and
@@ -65,7 +65,19 @@ export function inferGoal(text: string): number | null {
  * with a plain sentence you can edit or replace, which is what "pick
  * one to start from" should have meant all along.
  */
-export const GOAL_CHIPS: { label: string; goal: Goal; statement: string }[] = [
+export interface GoalChip {
+  label: string
+  goal: Goal
+  statement: string
+  /**
+   * A goal that is only worth OFFERING to some people. Not a lock —
+   * anything here can still be typed by hand and gets the same plan.
+   * This decides what goes on the screen, not what is allowed.
+   */
+  requires?: 'dunk'
+}
+
+export const GOAL_CHIPS: GoalChip[] = [
   { label: '🔥 Lose weight', goal: 'lean', statement: 'lose weight and keep it off' },
   { label: '💪 Build muscle', goal: 'muscle', statement: 'put on muscle' },
   { label: '🫀 More energy', goal: 'general', statement: 'have more energy day to day' },
@@ -78,37 +90,36 @@ export const GOAL_CHIPS: { label: string; goal: Goal; statement: string }[] = [
   { label: '🎯 All-round fitness', goal: 'general', statement: 'be fit and capable at everything' },
   { label: '⬆️ Jump higher', goal: 'vertical', statement: 'jump higher' },
   { label: '👵 Keep up with my kids', goal: 'general', statement: 'keep up with my kids without getting winded' },
+  // Off the screen for most people, and on it for the ones it is real
+  // for. It was removed outright once, correctly, because it was being
+  // shown to everybody — including people who would need a 36-inch
+  // vertical, which is a promise the app cannot keep. Height is what
+  // makes it a question worth asking.
+  { label: '🏀 Dunk a basketball', goal: 'vertical', statement: 'dunk a basketball', requires: 'dunk' },
 ]
 
-// Five goals with nothing in common, so the welcome screen demonstrates
-// the app's range instead of asserting it. `chip` indexes GOAL_CHIPS.
 /**
- * The five on the very first screen.
+ * Which goals to put on the screen, in what order, for this body.
  *
- * The old five were one person's life — dunk a basketball, bench 225,
- * first marathon. Three of those are the tail end of two goals, so a
- * 45-year-old who wants to stop being out of breath opened the app and
- * saw nothing for her. These are the goals people actually arrive with,
- * and they still point five different directions — lose, build, feel
- * better, go further, get strong — so the screen proves the range
- * instead of asserting it.
+ * Returns INDEXES into GOAL_CHIPS, never a rebuilt list. The chip the
+ * user picks is stored as an index, so a list that reordered itself per
+ * person would mean the same stored answer meant different goals for
+ * different people — a worse version of the bug where the landing
+ * buttons carried a position into a grid that got reordered.
  *
- * They name their goal rather than an INDEX into the chip list. The
- * index version silently broke the moment that list was reordered:
- * four of five landing chips seeded the wrong plan and nothing said so.
+ * Nothing is ever hidden on the basis of weight. The one gate is
+ * physical: a rim is 120 inches off the floor whoever is looking at it.
  */
-export const QUICK_GOALS: QuickGoal[] = [
-  { label: '🔥 Lose weight', statement: 'lose weight and keep it off', goal: 'lean' },
-  { label: '🫀 Get my energy back', statement: 'get my energy back', goal: 'general' },
-  { label: '💪 Build muscle', statement: 'put on muscle', goal: 'muscle' },
-  { label: '🏃 Run a 5K', statement: 'run a 5K without stopping', goal: 'endurance' },
-  { label: '🏋️ Get strong again', statement: 'get strong again', goal: 'strength' },
-]
-
-/** Where a landing goal lands in the chip grid. Never an index in data. */
-export const chipIndexForGoal = (goal: Goal): number | null => {
-  const i = GOAL_CHIPS.findIndex((c) => c.goal === goal)
-  return i === -1 ? null : i
+export function visibleGoalChips(body: { heightIn?: number; weightLb?: number }): number[] {
+  const idx = GOAL_CHIPS.map((_, i) => i).filter(
+    (i) => GOAL_CHIPS[i].requires !== 'dunk' || canRealisticallyDunk(body.heightIn),
+  )
+  const lead = leadingGoal(body.weightLb, body.heightIn)
+  if (!lead) return idx
+  // Promoted, not isolated: the whole list is still there in the same
+  // order behind it, and nothing on screen says why.
+  const first = idx.filter((i) => GOAL_CHIPS[i].goal === lead)
+  return [...first, ...idx.filter((i) => !first.includes(i))]
 }
 
 /** Home-gym checklist: nothing is assumed, each item grants its tags. */
@@ -192,9 +203,58 @@ const MINIMAL_EXTRAS: Access[] = [
   { tags: ['kettlebell'], label: 'A kettlebell' },
 ]
 
-/** What to offer THIS person: their goal's places, plus kit if the room is bare. */
-export function accessFor(goal: Goal, profile: 'gym' | 'home-db' | 'minimal'): Access[] {
-  const places = GOAL_ACCESS[goal] ?? []
+/**
+ * Where a named sport is actually played.
+ *
+ * The goal alone gets somebody "get better at my sport" and a list of
+ * running tracks. By the time this screen appears they have already
+ * SAID the sport, two screens earlier, and being asked about a track
+ * when you told the app you climb is the app not listening.
+ */
+const SPORT_ACCESS: Record<string, Access[]> = {
+  Climbing: [{ tags: ['pullup-bar'], label: 'A wall or board' }],
+  Swimming: [{ tags: ['pool'], label: 'Pool' }],
+  Rowing: [{ tags: ['machine'], label: 'A rowing machine' }],
+  Cycling: [{ tags: ['bike'], label: 'A bike' }],
+  Basketball: [{ tags: ['court'], label: 'Hoop or court' }],
+  Netball: [{ tags: ['court'], label: 'A court' }],
+  Volleyball: [{ tags: ['court'], label: 'A court' }],
+  Tennis: [{ tags: ['court'], label: 'A court' }],
+  Soccer: [{ tags: ['open-space'], label: 'A pitch or open grass' }],
+  Football: [{ tags: ['open-space'], label: 'A field' }],
+  Rugby: [{ tags: ['open-space'], label: 'A pitch' }],
+  Lacrosse: [{ tags: ['open-space'], label: 'A field' }],
+  Cricket: [{ tags: ['open-space'], label: 'A pitch or nets' }],
+  'Baseball / softball': [{ tags: ['open-space'], label: 'A field or cage' }],
+  'Track & field': [{ tags: ['track'], label: 'Running track' }],
+  Running: [{ tags: ['trail'], label: 'Trails or paths' }],
+  Hockey: [{ tags: ['open-space'], label: 'A rink or pitch' }],
+  Skating: [{ tags: ['open-space'], label: 'A rink or park' }],
+  'Snowboard / ski': [{ tags: ['hill-stairs'], label: 'A hill or stairs' }],
+  Gymnastics: [{ tags: ['pullup-bar'], label: 'Bars or rings' }],
+  Dance: [{ tags: ['open-space'], label: 'Room to move' }],
+  'Martial arts / boxing': [{ tags: ['open-space'], label: 'Mat or bag space' }],
+  Wrestling: [{ tags: ['open-space'], label: 'A mat' }],
+  Surfing: [{ tags: ['pool'], label: 'Water, or a pool' }],
+  Golf: [{ tags: ['open-space'], label: 'A range or open grass' }],
+}
+
+/**
+ * What to offer THIS person: the places their sport or goal needs, plus
+ * kit if the room is bare.
+ *
+ * The sport goes first when they named one, because it is the more
+ * specific thing they told us.
+ */
+export function accessFor(
+  goal: Goal,
+  profile: 'gym' | 'home-db' | 'minimal',
+  answers: Record<string, string> = {},
+): Access[] {
+  const sport = SPORT_ACCESS[answers['sport'] ?? ''] ?? []
+  const byGoal = GOAL_ACCESS[goal] ?? []
+  const seen = new Set(sport.map((a) => a.label))
+  const places = [...sport, ...byGoal.filter((a) => !seen.has(a.label))]
   // A full gym already has the treadmill and the space; asking again
   // reads as the app not remembering what it just asked.
   const dropIfGym = new Set(['treadmill', 'open-space', 'box', 'pullup-bar'])
@@ -203,10 +263,11 @@ export function accessFor(goal: Goal, profile: 'gym' | 'home-db' | 'minimal'): A
 }
 
 /** Kept for the profile switcher, which needs every tag any profile can show. */
+const ALL_PLACES = [...Object.values(GOAL_ACCESS).flat(), ...Object.values(SPORT_ACCESS).flat()]
 export const ENV_EXTRAS: Record<'gym' | 'home-db' | 'minimal', Access[]> = {
-  gym: Object.values(GOAL_ACCESS).flat(),
-  'home-db': Object.values(GOAL_ACCESS).flat(),
-  minimal: [...MINIMAL_EXTRAS, ...Object.values(GOAL_ACCESS).flat()],
+  gym: ALL_PLACES,
+  'home-db': ALL_PLACES,
+  minimal: [...MINIMAL_EXTRAS, ...ALL_PLACES],
 }
 
 export const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

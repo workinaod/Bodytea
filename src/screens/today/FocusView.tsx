@@ -3,7 +3,8 @@ import type { ExerciseDef, ResolvedDay, SessionLog } from '../../types'
 import { getExercise } from '../../plan/exercises'
 import { videoFor } from '../../plan/videos'
 import { currentFocusItem, focusProgress, nextFocusItem, restAfter } from '../../engine/focus'
-import { beep, cancelSpeech, say, speechInSupported, startEars } from '../../platform/speech'
+import { beep, cancelSpeech, say, speechInSupported, startEars, type EarStatus } from '../../platform/speech'
+import { EarStatusNote } from './EarStatusNote'
 import { useAppStore } from '../../store/appStore'
 import { abandonSession, patchSet, restartSession, setWeightForward} from '../../logic/actions'
 import { setSessionFeel } from '../../logic/prescription'
@@ -61,6 +62,7 @@ export function FocusView({
   const [breakState, setBreakState] = useState<BreakState | null>(null)
   const [videoOpen, setVideoOpen] = useState(false)
   const [voiceOn, setVoiceOn] = useState(false)
+  const [earStatus, setEarStatus] = useState<EarStatus>('listening') // see EarStatusNote
   // 'go' = the ready gate (weight confirm), 'live' = they're working
   const [phase, setPhase] = useState<'go' | 'live'>('go')
   const [caption, setCaption] = useState('')
@@ -344,6 +346,8 @@ export function FocusView({
   phaseRef.current = phase
 
   const voiceSupported = useMemo(() => speechInSupported(), [])
+  const deaf = voiceOn && earStatus !== 'listening'
+  const micTone = !voiceOn ? 'bg-white/[0.07] text-ink-dim' : deaf ? 'bg-gold/25 text-gold' : 'bg-lime text-black'
 
   useEffect(() => {
     if (!voiceOn || !voiceSupported) return
@@ -360,8 +364,12 @@ export function FocusView({
         if (breakRef.current) setBreakState(null)
       },
       onAsk: () => askRef.current(),
+      onStatus: setEarStatus,
     })
-    return stop
+    return () => {
+      stop()
+      setEarStatus('listening')
+    }
   }, [voiceOn, voiceSupported])
 
   // ---- All done → finish screen ----
@@ -473,8 +481,11 @@ export function FocusView({
                 setVoiceOn(!voiceOn)
                 dismissVoiceTip(true)
               }}
-              aria-label={voiceOn ? 'Voice control on' : 'Voice control'}
-              className={`press grid h-8 w-8 place-items-center rounded-full ${voiceOn ? 'bg-lime text-black' : 'bg-white/[0.07] text-ink-dim'}`}
+              aria-label={`Voice control${voiceOn ? ' on' : ''}${deaf ? ', microphone unavailable' : ''}`}
+              // Amber, not lime, the moment the mic stops working: this
+              // button is the only thing on screen claiming the app is
+              // listening, so it is what has to stop claiming it.
+              className={`press grid h-8 w-8 place-items-center rounded-full ${micTone}`}
             >
               <svg viewBox="0 0 24 24" className="h-[15px] w-[15px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="9" y="2.5" width="6" height="11" rx="3" />
@@ -492,7 +503,9 @@ export function FocusView({
           the mic button itself retires it. Sits in normal flow under the
           mic so it points at the button it is about without ever covering
           the lift being described. */}
-      {voiceSupported && voiceTip && (
+      {voiceOn && voiceSupported && <EarStatusNote status={earStatus} />}
+
+      {voiceSupported && voiceTip && earStatus === 'listening' && (
         <div className="mt-2 flex justify-end px-4">
           <button
             onClick={() => dismissVoiceTip()}

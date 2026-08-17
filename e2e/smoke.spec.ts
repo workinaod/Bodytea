@@ -5,9 +5,13 @@ test.describe.configure({ mode: 'serial' })
 
 /** Walk the generator onboarding: vertical goal, 6 days, a home gym with DBs + bench + bar. */
 async function onboardGenerated(page: Page) {
-  await page.getByRole('button', { name: 'Something else' }).click()
+  await page.getByRole('button', { name: "Let's get started" }).click()
+  await page.locator('input').first().fill('Sam')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
-  await page.getByText('⬆️ Jump higher').click()
+  await page.getByText('Jump higher').click()
   await page.getByPlaceholder(/before my wedding/).fill('by June')
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
@@ -15,15 +19,15 @@ async function onboardGenerated(page: Page) {
   await page.getByRole('button', { name: 'Next: my gear' }).click()
   // Home gym assumes nothing, the checklist is the source of truth
   await page.getByText('Home gym').click()
-  await expect(page.getByText('Check everything you have')).toBeVisible()
+  await expect(page.getByText('Tick what you own')).toBeVisible()
   await page.getByText('Dumbbells', { exact: true }).click()
   await page.getByText('Flat bench').click()
   await page.getByText('Pull-up bar', { exact: true }).click()
   await page.getByRole('button', { name: 'Next: experience' }).click()
-  await page.getByRole('button', { name: 'Next: numbers' }).click()
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
-  await expect(page.getByText('Vertical Project · 6-Day')).toBeVisible()
+  await page.getByRole('button', { name: 'Skip' }).click()
+  await expect(page.getByText('Jump Higher · 6-Day')).toBeVisible()
   await expect(page.getByText(/jump higher, by June/)).toBeVisible()
   await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
 }
@@ -32,7 +36,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await page.goto('./')
 
   // ---- Onboarding v2 generates a personal booklet ----
-  await expect(page.getByText('What do you want?')).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Tell us\s+your goals/ })).toBeVisible()
   await onboardGenerated(page)
 
   // ---- Today renders a resolved day ----
@@ -122,12 +126,13 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   // ---- Guided body-fat estimate: tape numbers → Navy formula → check-in ----
   await page.getByText('+ log measurements').click()
   await page.getByText(/Estimate with a tape/).click()
-  await page.getByText('Male formula (neck + waist)').click() // height stays at the 70" default
-  await page.getByRole('button', { name: 'Next: first measurement' }).click()
+  // No setup step: onboarding already took the height and the sex, and
+  // asking for them a second time is the app not remembering.
+  await expect(page.getByText('Male formula (neck + waist)')).toHaveCount(0)
   await expect(page.getByText(/below the Adam’s apple/i)).toBeVisible() // step-by-step guidance
   await page.getByRole('button', { name: 'Next site' }).click() // neck 15" default
   await page.getByRole('button', { name: 'Calculate' }).click() // waist 34" default
-  await expect(page.getByText('17.5%', { exact: true })).toBeVisible() // published-formula result
+  await expect(page.getByText('17.5%', { exact: true })).toBeVisible() // published formula, at the height given at signup
   await page.getByRole('button', { name: /Use 17.5% in this check-in/ }).click()
   await page.getByRole('button', { name: 'Save check-in' }).click()
 
@@ -180,8 +185,9 @@ test('midnight rollover advances the app without a reload', async ({ page }) => 
   await page.getByRole('button', { name: 'Skipped, no proof' }).click()
   await expect(page.getByText(/unaccounted for/)).not.toBeVisible()
 
-  // Meals follow too: Thursday is a rest day → the GENERATED rest target
-  // (180 lb vertical plan: 2700 base + 200 goal − 300 rest = 2600)
+  // Meals follow too: Thursday is a rest day → the GENERATED rest target.
+  // 180 lb vertical plan at 5'10": 2700 bodyweight base, +25 because an
+  // inch over the reference height is a real inch, +200 goal, −300 rest.
   await page.getByRole('button', { name: 'Meals', exact: true }).click()
-  await expect(page.getByText(/Rest day · 2600 kcal/)).toBeVisible()
+  await expect(page.getByText(/Rest day · 2625 kcal/)).toBeVisible()
 })

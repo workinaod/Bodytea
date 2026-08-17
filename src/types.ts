@@ -243,7 +243,7 @@ export interface PlanConfig {
   /** How this user eats, filters generated meals + swap suggestions. */
   dietStyle?: DietStyle
   /** Training history from onboarding, seeds first-session weights. */
-  experience?: 'new' | 'returning' | 'trained'
+  experience?: 'new' | 'returning' | 'casual' | 'trained'
   /** One-tap goal follow-up answers, the coach's extra context. */
   goalAnswers?: Record<string, string>
 }
@@ -547,6 +547,7 @@ export interface Settings {
   /** Spoken counting + briefings in focus mode (default on). */
   voiceCoach?: boolean
   /** Chosen voiceURI; absent lets the app pick. */ voiceURI?: string
+  /** Shortlist voiceURI came from, so a retired pick clears once. */ voiceSetVersion?: number
   /** Session audio: full voice / beeps + next-exercise name / beeps only / silent. */
   soundMode?: 'voice' | 'beeps-names' | 'beeps' | 'silent'
   /** Cadence speed multiplier for spoken counting (0.6–1.6, default 1). */

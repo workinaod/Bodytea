@@ -19,6 +19,21 @@ import { musclesFor } from '../../plan/muscles'
 // block is a different height for every exercise.
 // ============================================================
 
+/**
+ * The video, capped by HEIGHT rather than width.
+ *
+ * A 16:9 clip at full width eats ~200px of a phone screen, which
+ * pushed the numbered steps down far enough that step 3 was below the
+ * fold — on the one screen whose whole job is telling you how to do
+ * the movement.
+ *
+ * Capping height directly would letterbox or crop it, so the WIDTH is
+ * limited to whatever keeps 16:9 inside the height budget, and the box
+ * is centred. The clip stays whole, just smaller, and on a wide screen
+ * `min()` hands it back the full width it can afford.
+ */
+const VIDEO_BOX = { width: 'min(100%, calc(22vh * 16 / 9))' } as const
+
 export function ExerciseBrief({
   def,
   vid,
@@ -75,7 +90,7 @@ export function ExerciseBrief({
         <div className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
           {vid ? (
             videoOpen ? (
-              <div className="overflow-hidden rounded-xl">
+              <div className="mx-auto overflow-hidden rounded-xl" style={VIDEO_BOX}>
                 <iframe
                   className="aspect-video w-full"
                   src={`https://www.youtube-nocookie.com/embed/${vid}?autoplay=1`}
@@ -85,7 +100,11 @@ export function ExerciseBrief({
                 />
               </div>
             ) : (
-              <button onClick={() => onOpenVideo()} className="relative block w-full overflow-hidden rounded-xl">
+              <button
+                onClick={() => onOpenVideo()}
+                className="relative mx-auto block overflow-hidden rounded-xl"
+                style={VIDEO_BOX}
+              >
                 <img
                   src={`https://i.ytimg.com/vi/${vid}/hqdefault.jpg`}
                   alt="How to do it"

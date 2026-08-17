@@ -22,7 +22,8 @@ const NOVELTY =
   /\b(albert|fred|zarvox|junior|whisper|bells|organ|cellos|bad news|good news|bahh|boing|bubbles|deranged|hysterical|pipe organ|trinoids|wobble|jester|superstar)\b/i
 
 /** Voices that actually sound like a person reading. */
-const WARM = /\b(samantha|ava|allison|zoe|susan|karen|serena|moira|nicky|tom|aaron|evan|nathan)\b/i
+const WARM =
+  /\b(samantha|ava|allison|zoe|susan|karen|serena|moira|nicky|tom|aaron|evan|nathan|jamie|jaime|tessa)\b/i
 
 /**
  * The coach's shortlist.
@@ -33,12 +34,72 @@ const WARM = /\b(samantha|ava|allison|zoe|susan|karen|serena|moira|nicky|tom|aar
  * a comedy voice, a funeral dirge, a sheep and a carillon — while
  * Samantha sat below the fold. The veto existed and nothing consulted it.
  *
- * These four are the ones worth offering: natural-sounding, distinct
- * from each other, and each a different English accent (US, AU, IE, ZA)
- * so the choice is a real choice rather than four shades of the same
- * voice.
+ * These are the ones worth offering: natural-sounding, distinct from
+ * each other, and spread across accents and registers so the choice is
+ * a real choice rather than shades of the same voice. Samantha, Allison,
+ * Nathan and Zoe are US, Jamie is British, Tessa South African, and
+ * Nathan is the one male voice on the list.
+ *
+ * Spelled both ways on purpose. Apple's English voice is JAMIE; JAIME
+ * is its Spanish one, so a device that ships either spelling in English
+ * is matched, and the Spanish Jaime cannot reach the picker anyway
+ * because everything upstream filters to en-*.
  */
-export const COACH_VOICES = /\b(samantha|karen|moira|tessa)\b/i
+export const COACH_VOICES = /\b(samantha|tessa|jamie|jaime|allison|nathan|zoe)\b/i
+
+/**
+ * The shortlist as names, in the order worth reading.
+ *
+ * Exists so the picker can name what is MISSING. A web app can only
+ * speak with voices the device already has, and iOS ships exactly one
+ * compact voice per English locale — Samantha for US, Tessa for ZA and
+ * so on. Allison, Nathan, Zoe and Jamie are not shipped at all: they
+ * exist only as Enhanced or Premium downloads.
+ *
+ * So on a stock iPhone most of this list is simply absent, the picker
+ * shows two rows, and there is nothing on screen to explain why. That
+ * reads as a broken app rather than an uninstalled voice.
+ */
+export const COACH_VOICE_NAMES = ['Samantha', 'Allison', 'Nathan', 'Zoe', 'Jamie', 'Tessa'] as const
+
+/**
+ * Bumped whenever COACH_VOICES changes.
+ *
+ * This is what actually retires a removed voice. A saved choice is a
+ * device URI: the voice stays installed, so it keeps resolving, and it
+ * kept speaking long after the picker stopped offering it. Refusing to
+ * honour any un-shortlisted URI fixed that but broke the other half —
+ * a voice deliberately chosen from the full device list is also not on
+ * the shortlist, and it was being ignored too.
+ *
+ * So the stored choice is cleared ONCE, when the list it was made from
+ * is no longer the list on offer. After that an explicit choice is
+ * honoured whatever it is, which is what "explicit" should mean.
+ */
+export const COACH_VOICE_SET_VERSION = 2
+
+/** Was this choice made against an older shortlist? */
+export function voiceChoiceIsStale(storedVersion: number | undefined): boolean {
+  return storedVersion !== COACH_VOICE_SET_VERSION
+}
+
+/**
+ * Shortlisted voices this device does not have.
+ *
+ * Empty when NONE of them are present, which means this is not an Apple
+ * device at all — Android and desktop have their own voices and the
+ * fallback list already offers them. Listing six Apple voices as
+ * "missing" there would be advice nobody can act on.
+ */
+export function missingCoachVoices(all: SpeechSynthesisVoice[]): string[] {
+  const present = (name: string) => all.some((v) => new RegExp(`\\b${name}\\b`, 'i').test(v.name ?? ''))
+  const here = COACH_VOICE_NAMES.filter(present)
+  if (here.length === 0) return []
+  // Jamie and Jaime are the same voice spelled two ways; either counts.
+  return COACH_VOICE_NAMES.filter(
+    (n) => !present(n) && !(n === 'Jamie' && present('Jaime')),
+  )
+}
 
 /**
  * The shortlist, or an honest fallback.
@@ -120,11 +181,6 @@ export function pickVoice(
   preferredURI?: string,
 ): SpeechSynthesisVoice | null {
   if (!all.length) return null
-  // An explicit choice always wins. Scoring is only a guess at taste.
-  if (preferredURI) {
-    const chosen = all.find((v) => v.voiceURI === preferredURI)
-    if (chosen) return chosen
-  }
   const en = all.filter((v) => (v.lang ?? '').toLowerCase().startsWith('en'))
   // Automatic picks from the SAME set the picker offers, by construction.
   //
@@ -136,6 +192,18 @@ export function pickVoice(
   // try to. Quality still decides WITHIN the set, which is what scoring
   // is actually for.
   const pool = coachVoices(en.length ? en : all)
+
+  // An explicit choice wins, whatever it is, as long as the voice is
+  // still installed. Retiring a removed voice is COACH_VOICE_SET_VERSION's
+  // job: it clears the stale setting once, at the source, rather than
+  // second-guessing every choice here forever. Doing it here instead
+  // also silently overrode voices picked from the full device list,
+  // which are legitimate and equally un-shortlisted.
+  if (preferredURI) {
+    const chosen = all.find((v) => v.voiceURI === preferredURI)
+    if (chosen) return chosen
+  }
+
   const best = [...pool].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0]
   // Everything scored as a joke voice: better to take the engine default.
   return best && scoreVoice(best) > -100 ? best : null
@@ -159,4 +227,72 @@ export function onVoicesChanged(cb: () => void): () => void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return () => {}
   window.speechSynthesis.addEventListener('voiceschanged', cb)
   return () => window.speechSynthesis.removeEventListener('voiceschanged', cb)
+}
+
+/**
+ * Kick the speech engine so it publishes its full voice list.
+ *
+ * iOS hands back a short list — often just the default per locale —
+ * until the synthesiser has actually been used once. Downloaded
+ * Enhanced and Premium voices are missing from that first read, which
+ * is why a phone with them installed still showed two rows and a
+ * message insisting they were not there.
+ *
+ * Silent on purpose: volume 0, one space. This has to be able to run
+ * while the user is looking at Settings without the coach barking.
+ * Skipped when speech is already in flight, so it can never clip a
+ * live session's audio.
+ */
+export function primeVoiceList(): void {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+  try {
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return
+    const u = new SpeechSynthesisUtterance(' ')
+    u.volume = 0
+    window.speechSynthesis.speak(u)
+  } catch {
+    /* a failed prime just means the list stays as short as it was */
+  }
+}
+
+/**
+ * The English voices, and every later revision of that list.
+ *
+ * A single read at mount is not enough on any platform and is badly
+ * wrong on iOS: `voiceschanged` is the documented signal, but a
+ * standalone PWA frequently never fires it, so subscribing alone can
+ * leave the picker showing whatever the first synchronous read
+ * happened to catch — sometimes nothing at all.
+ *
+ * So this does all three: read now, subscribe, and re-read on a short
+ * decaying schedule while the engine warms up. The callback only fires
+ * when the list actually GREW, so a late empty read cannot wipe a
+ * populated picker.
+ */
+export function watchVoices(cb: (voices: SpeechSynthesisVoice[]) => void): () => void {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return () => {}
+  let alive = true
+  let seen = -1
+
+  const read = () => {
+    if (!alive) return
+    const v = listEnglishVoices()
+    if (v.length > seen) {
+      seen = v.length
+      cb(v)
+    }
+  }
+
+  read()
+  const off = onVoicesChanged(read)
+  // Front-loaded, then spaced out: most devices are ready within a few
+  // hundred milliseconds, and the late checks are for the slow ones
+  // rather than a poll that runs forever.
+  const timers = [80, 250, 600, 1200, 2000, 3500].map((ms) => setTimeout(read, ms))
+
+  return () => {
+    alive = false
+    off()
+    timers.forEach(clearTimeout)
+  }
 }

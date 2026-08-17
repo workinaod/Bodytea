@@ -31,6 +31,7 @@ const settingsSchema = z.object({
   reviewsSeen: z.array(z.string()).optional(),
   voiceCoach: z.boolean().optional(),
   voiceURI: z.string().optional(),
+  voiceSetVersion: z.number().optional(),
   soundMode: z.enum(['voice', 'beeps-names', 'beeps', 'silent']).optional(),
   cadenceSpeed: z.number().min(0.5).max(2).optional(),
   voiceUsed: z.boolean().optional(),
@@ -104,7 +105,7 @@ export const planConfigSchema = z.object({
   nutrition: z.object({ kcalTraining: z.number().positive(), kcalRest: z.number().positive() }),
   sportMode: z.enum(['ball', 'generic']).optional(),
   dietStyle: z.enum(['omnivore', 'vegetarian', 'vegan']).optional(),
-  experience: z.enum(['new', 'returning', 'trained']).optional(),
+  experience: z.enum(['new', 'returning', 'casual', 'trained']).optional(),
   goalAnswers: z.record(z.string(), z.string()).optional(),
   mealPlan: z.object({
     templates: z.array(

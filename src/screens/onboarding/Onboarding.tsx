@@ -1,21 +1,25 @@
 import { useMemo, useState } from 'react'
 import type { CustomTarget, DietStyle, EquipTag, Goal, LifeEventKind, PlanConfig, RoutineGoal } from '../../types'
 
-import { mondayOf, todayISO, formatShort, addDaysISO } from '../../engine/calendar'
+import { mondayOf, todayISO } from '../../engine/calendar'
 import { useAppStore, uid } from '../../store/appStore'
 import { saveMeasurement } from '../../logic/actions'
 import { generatePlan, type FocusArea, type OnboardingAnswers } from '../../plan/generator'
-import { makeEmptyByorPlan, normalizeBooklet } from '../../plan/bookletOps'
+import { byorNutrition, makeEmptyByorPlan, normalizeBooklet } from '../../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../../plan/analyze'
-import { Btn, Card, Chip, Stepper } from '../../components/ui'
+import { Reveal } from '../../components/ui'
+import { Bar, Kicker, Label, Lane, OnPaper, Tag, Title, fieldCls, fieldStyle } from './kit'
+import { AmbientBackdrop } from '../../components/AmbientBackdrop'
 import { Welcome } from './Welcome'
-import { chipIndexForGoal, ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS, QUICK_GOALS } from './onboardingData'
+import { ENV_EXTRAS, GOAL_CHIPS, HOME_CHECKLIST, LIFE_CHIPS } from './onboardingData'
 import { requestDurableStorage } from '../../platform/persistence'
-import { PermissionsBlock } from './RoutineNotes'
+import { PermissionsStep } from './PermissionsStep'
 import { GoalStep } from './GoalStep'
+import { MeStep } from './MeStep'
 import { RoutineSteps } from './RoutineSteps'
 import { PlanPreview } from './PlanPreview'
 import { targetsFromAnswers } from '../../plan/followups'
+import { suggestedDays, suggestedMeals, vertFromRimAnswer } from '../../plan/reach'
 import { FollowupStep } from './FollowupStep'
 import { MealStep } from './MealStep'
 import { GearStep } from './GearStep'
@@ -27,6 +31,14 @@ import { GearStep } from './GearStep'
  */
 const FOLLOWUPS = 12
 const MEALS = 13
+const PERMISSIONS = 14
+
+/**
+ * Every question arrives on paper. The landing screen IS the room, and
+ * the routine builder (8-11) is a tool rather than a question, so both
+ * keep the app's own dark chrome.
+ */
+const ON_PAPER = new Set([1, 2, 3, 4, 5, 7, FOLLOWUPS, MEALS, PERMISSIONS])
 
 // ============================================================
 // Onboarding v2: a goal-driven wizard that generates the user's
@@ -63,11 +75,16 @@ export function Onboarding() {
   // The "number to beat" moved into the follow-ups, where it is only
   // asked of goals a number actually fits. It is read back out of the
   // answers rather than kept as its own field.
-  const [days, setDays] = useState<3 | 4 | 5 | 6>(4)
+  // Days and meals a week are not fixed defaults: until they say
+  // otherwise, both follow the goal. Five days is what a running plan
+  // needs and three is what somebody rebuilding a habit needs, and
+  // landing everybody on four meant the app had an opinion it never
+  // acted on.
+  const [daysPick, setDaysPick] = useState<3 | 4 | 5 | 6 | null>(null)
   const [profile, setProfile] = useState<'gym' | 'home-db' | 'minimal'>('gym')
   const [extras, setExtras] = useState<Set<EquipTag>>(new Set())
-  const [experience, setExperience] = useState<'new' | 'returning' | 'trained'>('returning')
-  const [mealsPerDay, setMealsPerDay] = useState<2 | 3 | 4 | 5>(4)
+  const [experience, setExperience] = useState<'new' | 'returning' | 'casual' | 'trained'>('returning')
+  const [mealsPick, setMealsPick] = useState<2 | 3 | 4 | 5 | null>(null)
   const [lifePicks, setLifePicks] = useState<Set<string>>(new Set())
   const [customLife, setCustomLife] = useState('')
   const [customLifeKind, setCustomLifeKind] = useState<LifeEventKind>('late-night')
@@ -77,11 +94,15 @@ export function Onboarding() {
   const [dairyFree, setDairyFree] = useState(false)
   const [allergies, setAllergies] = useState('')
   const [focusAreas, setFocusAreas] = useState<Set<FocusArea>>(new Set())
-  const [weight, setWeight] = useState(180)
-  const [vert, setVert] = useState(0)
-  const [pickedStart, setPickedStart] = useState(mondayOf(todayISO()))
+  // Null until they say. A default of 180 lb is the app inventing a
+  // person and then building that person a plan.
+  const [weight, setWeight] = useState<number | null>(null)
+  const [heightIn, setHeightIn] = useState<number | null>(null)
+  const bodyweightLb = weight ?? 175
 
   const goal: Goal = goalChip !== null ? GOAL_CHIPS[goalChip].goal : 'general'
+  const days = daysPick ?? suggestedDays(goal, goalAnswers)
+  const mealsPerDay = mealsPick ?? suggestedMeals(goal)
 
   /**
    * Their goal as one sentence, however they gave it.
@@ -110,7 +131,8 @@ export function Onboarding() {
       equipProfile: profile,
       extraEquip: [...extras],
       experience,
-      bodyweightLb: weight,
+      bodyweightLb,
+      heightIn: heightIn ?? undefined,
       mealsPerDay,
       lifeSeeds: [
         ...LIFE_CHIPS.filter((c) => lifePicks.has(c.id)).map((c) => ({ label: c.label, kind: c.kind })),
@@ -122,7 +144,7 @@ export function Onboarding() {
       focusAreas: [...focusAreas],
       sex: sex ?? undefined,
     }
-  }, [goal, statement, goalAnswers, days, profile, extras, experience, weight, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, dairyFree, allergies, skipMeals, focusAreas, sex])
+  }, [goal, statement, goalAnswers, days, profile, extras, experience, bodyweightLb, heightIn, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, dairyFree, allergies, skipMeals, focusAreas, sex])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 
@@ -149,7 +171,7 @@ export function Onboarding() {
   }
 
   function commitPlan(plan: PlanConfig, proteinTargetG: number, notes: RoutineNote[] = [], strategy: string[] = []) {
-    const start = mondayOf(pickedStart)
+    const start = mondayOf(todayISO())
     requestDurableStorage()
     update((d) => {
       d.settings.phaseStartDate = start
@@ -159,6 +181,7 @@ export function Onboarding() {
       d.settings.proteinTargetG = proteinTargetG
       d.profile.displayName = displayName.trim() || undefined
       if (sex) d.profile.bfFormula = sex
+      if (heightIn !== null) d.profile.heightIn = heightIn
       const at = new Date().toISOString()
       for (const n of notes.slice(0, 4)) {
         d.coach.feed.unshift({ id: uid(), at, kind: 'insight', text: `📓 Routine notes: ${n.text}` })
@@ -176,11 +199,16 @@ export function Onboarding() {
         })
       }
     })
-    if (weight > 0 || vert > 0) {
+    // The jump baseline comes out of the rim question and their height,
+    // rather than a stepper that asked for a number almost nobody knows.
+    // Without it the climb's explosive track opens on "log a vertical to
+    // start this one" for every athlete chasing one.
+    const vertIn = vertFromRimAnswer(goalAnswers['vert-now'], heightIn ?? undefined)
+    if (weight !== null || vertIn !== null) {
       saveMeasurement({
         date: todayISO(),
-        weightLb: weight > 0 ? weight : undefined,
-        vertIn: vert > 0 ? vert : undefined,
+        weightLb: weight ?? undefined,
+        vertIn: vertIn ?? undefined,
         photoIds: {},
       })
     }
@@ -204,7 +232,8 @@ export function Onboarding() {
       routineGoals: [...routineGoals],
       goalStatement,
       customTargets: answers.customTargets,
-      bodyweightLb: weight,
+      bodyweightLb,
+      heightIn: heightIn ?? undefined,
       sex: sex ?? undefined,
       mealsPerDay,
       lifeSeeds: answers.lifeSeeds,
@@ -228,7 +257,7 @@ export function Onboarding() {
   }
 
   const byorNotes = useMemo(
-    () => (step === 11 && byorDraft ? analyzeRoutine(normalizeBooklet(byorDraft)) : []),
+    () => ((step === 11 || step === PERMISSIONS) && byorDraft ? analyzeRoutine(normalizeBooklet(byorDraft)) : []),
     [step, byorDraft],
   )
 
@@ -239,7 +268,7 @@ export function Onboarding() {
   // stable ids in the order somebody walks them, so the follow-ups sit
   // where a coach would ask them and food sits last where it can be
   // skipped.
-  const GEN_FLOW = [0, 1, 2, FOLLOWUPS, 3, 4, 5, 6, MEALS, 7]
+  const GEN_FLOW = [0, 1, 2, FOLLOWUPS, 3, 4, 5, MEALS, PERMISSIONS, 7]
   const flowAt = (s: number) => GEN_FLOW.indexOf(s)
 
   const next = () =>
@@ -250,24 +279,33 @@ export function Onboarding() {
   const back = () => {
     if (step === 11) return setStep(9) // notes → the why question
     if (step === 10) return setStep(7) // fine-tune → generated preview
+    if (step === PERMISSIONS && mode === 'byor') return setStep(11) // byor: back to the notes
     if (step === 9) return setStep(8) // why → builder
-    if (step === 8) return setStep(6) // builder → numbers
+    if (step === 8) return setStep(2) // builder → the goal it was built from
     if (step === 7) {
       setTuneDraft(null) // answers may change → stale tune draft
-      return setStep(6)
+      return setStep(PERMISSIONS)
     }
-    if (step === 6 && mode === 'byor') return setStep(2) // byor skips days/gear/experience
     const i = flowAt(step)
     if (i > 0) return setStep(GEN_FLOW[i - 1])
     setStep((s) => Math.max(0, s - 1))
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-[max(env(safe-area-inset-top),24px)]">
+    <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-8 pt-[max(env(safe-area-inset-top),22px)]">
+      {/* The room. Sharp on the first screen, because there it IS the
+          screen; out of focus from the second on, so the paper pinned
+          over it is the only thing in focus. */}
+      <AmbientBackdrop blurred={step > 0} />
+      {/* Everything the user touches sits above the room. */}
+      <div className="relative z-10 flex flex-1 flex-col">
       {step > 0 && (
-        <div className="mb-4 flex items-center justify-between">
-          <button onClick={back} className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-bold text-ink-dim">
-            ‹ back
+        <div className="-mx-5 mb-7 flex items-center justify-between border-b border-white/[0.14] px-5 pb-3.5">
+          <button
+            onClick={back}
+            className="press text-[10px] font-black uppercase tracking-[0.22em] text-ink-faint"
+          >
+            ← Back
           </button>
           <div className="flex gap-1">
             {Array.from({ length: GEN_FLOW.length - 1 }, (_, i) => {
@@ -276,7 +314,7 @@ export function Onboarding() {
               return (
                 <span
                   key={i}
-                  className={`h-1 rounded-full transition-all ${i === here ? 'w-5 bg-accent' : i < here ? 'w-2 bg-accent/50' : 'w-2 bg-white/[0.07]'}`}
+                  className={`h-[3px] transition-all ${i === here ? 'w-6 bg-accent' : i < here ? 'w-3 bg-accent/45' : 'w-3 bg-white/[0.12]'}`}
                 />
               )
             })}
@@ -288,15 +326,6 @@ export function Onboarding() {
       {step === 0 && (
         <Welcome
           rebuilding={rebuilding}
-          quickGoals={QUICK_GOALS}
-          onPickGoal={(g) => {
-            // Seed the goal so the tap is a head start, not just a page turn.
-            // Both stay editable at the goal step.
-            setMode('gen')
-            setGoalChip(chipIndexForGoal(g.goal))
-            setGoalStatement(g.statement)
-            next()
-          }}
           onBuild={() => {
             setMode('gen')
             next()
@@ -308,25 +337,27 @@ export function Onboarding() {
         />
       )}
 
+      <OnPaper on={ON_PAPER.has(step)} step={step}>
       {step === 1 && (
-        <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[26px]">What should we call you?</h2>
-          <input
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Display name"
-            className="mt-5 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-4 py-3.5 text-[15px] font-semibold text-ink outline-none focus:ring-accent/45"
-          />
-          <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next: the goal
-          </Btn>
-        </div>
+        <MeStep
+          displayName={displayName}
+          setDisplayName={setDisplayName}
+          sex={sex}
+          setSex={setSex}
+          heightIn={heightIn}
+          setHeightIn={setHeightIn}
+          weight={weight}
+          setWeight={setWeight}
+          onNext={next}
+        />
       )}
 
       {step === 2 && (
         <GoalStep
           mode={mode}
           displayName={displayName}
+          heightIn={heightIn}
+          weightLb={bodyweightLb}
           goalChip={goalChip}
           setGoalChip={setGoalChip}
           routineGoals={routineGoals}
@@ -337,7 +368,7 @@ export function Onboarding() {
           setGoalDetail={setGoalDetail}
           focusAreas={focusAreas}
           setFocusAreas={setFocusAreas}
-          onNext={() => (mode === 'byor' ? setStep(6) : next())}
+          onNext={() => (mode === 'byor' ? enterBuilder() : next())}
         />
       )}
       {step === FOLLOWUPS && (
@@ -360,7 +391,7 @@ export function Onboarding() {
           allergies={allergies}
           setAllergies={setAllergies}
           mealsPerDay={mealsPerDay}
-          setMealsPerDay={setMealsPerDay}
+          setMealsPerDay={setMealsPick}
           onBuild={() => {
             setSkipMeals(false)
             next()
@@ -374,32 +405,32 @@ export function Onboarding() {
 
       {step === 3 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[26px]">How many days a week?</h2>
-          <p className="mt-1 text-center text-[13px] text-ink-dim">A plan you stick to beats a bigger one you skip.</p>
-          <div className="mt-5 grid grid-cols-4 gap-2">
+          <Kicker>Your week</Kicker>
+          <Title sub="Be honest. A plan you keep beats a bigger one you skip.">How many days can you train?</Title>
+          <div className="mt-6 grid grid-cols-4 gap-1.5">
             {([3, 4, 5, 6] as const).map((d) => (
               <button
                 key={d}
-                onClick={() => setDays(d)}
-                className={`rounded-2xl border py-5 text-center ${days === d ? 'border-accent bg-accent/15 text-accent' : 'border-edge bg-white/[0.05] text-ink-dim'}`}
+                onClick={() => setDaysPick(d)}
+                aria-pressed={days === d}
+                className={`press rounded-[2px] py-5 text-center transition-colors ${
+                  days === d ? 'bg-accent text-black' : 'text-ink ring-1 ring-inset ring-white/[0.16]'
+                }`}
               >
-                <div className="text-[24px] font-black">{d}</div>
-                <div className="text-[10px] font-bold uppercase">days</div>
+                <div className="num text-[26px] font-black leading-none tracking-[-0.03em]">{d}</div>
+                <div className="mt-1 text-[9px] font-black uppercase tracking-[0.2em] opacity-70">days</div>
               </button>
             ))}
           </div>
 
           {/* Their real week, seeds life events so every coach note speaks their schedule */}
-          <div className="mt-6">
-            <div className="text-[14px] font-bold">What else is going on in your week?</div>
-            <p className="mt-0.5 text-[11.5px] leading-snug text-ink-faint">
-              Your plan works around whatever you pick.
-            </p>
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
+          <Reveal when={daysPick !== null} className="mt-8">
+            <Label>What else is going on?</Label>
+            <div className="flex flex-wrap gap-1.5">
               {LIFE_CHIPS.map((c) => (
-                <Chip
+                <Tag
                   key={c.id}
-                  tone={lifePicks.has(c.id) ? 'accent' : 'default'}
+                  selected={lifePicks.has(c.id)}
                   onClick={() =>
                     setLifePicks((prev) => {
                       const n = new Set(prev)
@@ -409,41 +440,43 @@ export function Onboarding() {
                     })
                   }
                 >
-                  {c.chip}
-                </Chip>
+                  {c.chip.replace(/^\S+\s/, '')}
+                </Tag>
               ))}
             </div>
             <input
               value={customLife}
               onChange={(e) => setCustomLife(e.target.value)}
               placeholder="Your own: a DJ set, league night, choir…"
-              className="mt-2 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint focus:ring-accent/45"
+              className={`mt-4 ${fieldCls} text-[14px]`}
+              style={fieldStyle}
             />
             {customLife.trim() && (
-              <div className="mt-1.5 flex gap-1.5">
+              <div className="mt-3 flex gap-1.5">
                 {(
                   [
-                    ['late-night', '🌙 keeps me up late'],
-                    ['on-feet', '🦵 hours on my feet'],
+                    ['late-night', 'Keeps me up late'],
+                    ['on-feet', 'Hours on my feet'],
                   ] as const
                 ).map(([k, l]) => (
-                  <Chip key={k} tone={customLifeKind === k ? 'accent' : 'default'} onClick={() => setCustomLifeKind(k)}>
+                  <Tag key={k} selected={customLifeKind === k} onClick={() => setCustomLifeKind(k)}>
                     {l}
-                  </Chip>
+                  </Tag>
                 ))}
               </div>
             )}
-          </div>
+          </Reveal>
 
-          <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next: my gear
-          </Btn>
+          <div className="mt-auto pt-10">
+            <Bar onClick={next}>Next: my gear</Bar>
+          </div>
         </div>
       )}
 
       {step === 4 && (
         <GearStep
           goal={goal}
+          answers={goalAnswers}
           profile={profile}
           pickProfile={pickProfile}
           extras={extras}
@@ -454,94 +487,48 @@ export function Onboarding() {
 
       {step === 5 && (
         <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[26px]">Training age?</h2>
-          <div className="mt-4 space-y-2">
+          <Kicker>Where you're at</Kicker>
+          <Title>How much have you trained?</Title>
+          <div className="enter-stagger mt-7">
             {(
               [
-                ['new', 'New to this', 'First year of real training.'],
-                ['returning', 'Coming back', 'Trained before, been away a while.'],
-                ['trained', 'Consistent', 'Training regularly right now.'],
+                ['new', 'New to this'],
+                ['returning', 'Coming back'],
+                ['casual', 'Casual'],
+                ['trained', 'Experienced'],
               ] as const
-            ).map(([id, title, sub]) => (
-              <Card key={id} onClick={() => setExperience(id)} className={experience === id ? '!border-accent/60' : ''}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[15px] font-black">{title}</div>
-                    <div className="text-[12px] text-ink-dim">{sub}</div>
-                  </div>
-                  <span className={`h-4 w-4 rounded-full border-2 ${experience === id ? 'border-accent bg-accent' : 'border-edge'}`} />
-                </div>
-              </Card>
+            ).map(([id, title], i) => (
+              <Lane key={id} n={i + 1} selected={experience === id} onClick={() => setExperience(id)}>
+                {title}
+              </Lane>
             ))}
           </div>
-          <Btn className="mt-6 w-full py-4" onClick={next}>
-            Next: numbers
-          </Btn>
+          <div className="mt-auto pt-10">
+            <Bar onClick={next}>Next: food</Bar>
+          </div>
         </div>
       )}
 
-      {step === 6 && (
-        <div className="flex flex-1 flex-col">
-          <h2 className="headline text-center text-[26px]">Baseline numbers</h2>
-          <p className="mt-1 text-center text-[13px] text-ink-dim">Weight sets your protein + calorie targets. The rest is your before picture.</p>
-          <div className="mt-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] font-bold">Bodyweight</span>
-              <Stepper value={weight} onChange={setWeight} step={1} suffix="lb" width="w-20" />
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <span className="text-[14px] font-bold">Sex</span>
-                <p className="text-[10.5px] leading-snug text-ink-faint">Tunes calories + the body-fat tape formula. Optional.</p>
-              </div>
-              <div className="flex gap-1.5">
-                {(
-                  [
-                    ['male', 'Male'],
-                    ['female', 'Female'],
-                  ] as const
-                ).map(([v, label]) => (
-                  <button
-                    key={v}
-                    onClick={() => setSex((prev) => (prev === v ? null : v))}
-                    className={`rounded-lg px-3.5 py-2 text-[12px] font-bold ${
-                      sex === v ? 'bg-accent text-black' : 'bg-white/[0.07] text-ink-faint'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] font-bold">Standing reach / vert touch <span className="text-[11px] text-ink-faint">(optional)</span></span>
-              <Stepper value={vert} onChange={setVert} step={0.5} suffix='"' width="w-20" />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] font-bold">Week 1 starts</span>
-              <input
-                type="date"
-                value={pickedStart}
-                onChange={(e) => e.target.value && setPickedStart(mondayOf(e.target.value))}
-                className="rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2 text-[13px] font-semibold outline-none"
-              />
-            </div>
-            <p className="text-[11px] text-ink-faint">Weeks start Mondays. Your pick snaps to {formatShort(mondayOf(pickedStart))} → first week runs through {formatShort(addDaysISO(mondayOf(pickedStart), 6))}.</p>
-          </div>
-
-          <PermissionsBlock />
-
-          <Btn className="mt-6 w-full py-4" onClick={() => (mode === 'byor' ? enterBuilder() : next())}>
-            {mode === 'byor' ? 'Next: build my week' : 'Next: food'}
-          </Btn>
-        </div>
+      {step === PERMISSIONS && (
+        <PermissionsStep
+          onDone={() => {
+            // Both paths finish here. The generated one goes on to see its
+            // week; the built one has already seen it and starts.
+            if (mode === 'byor' && byorDraft) {
+              commitPlan(
+                normalizeBooklet(byorDraft),
+                byorNutrition(byorDraft.routineGoals ?? [], bodyweightLb, sex ?? undefined, heightIn ?? undefined).proteinTargetG,
+                byorNotes.filter((n) => n.tone !== 'info'),
+              )
+            } else next()
+          }}
+        />
       )}
 
       {step === 7 && preview && (
         <PlanPreview
           preview={preview}
           displayName={displayName}
-          weight={weight}
           setStep={setStep}
           back={back}
           tuneDraft={tuneDraft}
@@ -564,10 +551,13 @@ export function Onboarding() {
         setTuneProblems={setTuneProblems}
         whyWorks={whyWorks}
         setWhyWorks={setWhyWorks}
-        weight={weight}
+        weight={bodyweightLb}
         goal={goal}
         commitPlan={commitPlan}
+        onReady={() => setStep(PERMISSIONS)}
       />
+      </OnPaper>
+      </div>
     </div>
   )
 }
