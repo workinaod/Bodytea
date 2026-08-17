@@ -64,8 +64,8 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // do, lifts to leave alone, injuries that do not expire on their own)
   // is persisted state, and the shapes live in their own file.
   // +1: voiceSetVersion, kept on one line beside the voiceURI it dates.
-  // (Merged count re-derived from the actual file: 704.)
-  'types.ts': 704,
+  // (Merged count re-derived by this test's own counter: 705.)
+  'types.ts': 705,
   // screens/onboarding/Onboarding.tsx came off this list too, which
   // empties the "real splits owed" section entirely. The chip tables and
   // the one goal heuristic went to onboardingData.ts, the goal step, the
@@ -80,7 +80,9 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // +20 for proteinContextFor: the protein target now depends on whether
   // the athlete is cutting, building or running, which is a decision the
   // generator is the right place to make and a table it is not.
-  'plan/generator.ts': 940,
+  // +1: the reunification merge, where the height-aware nutrition call
+  // and the relocated coreMovers landed in one file.
+  'plan/generator.ts': 941,
   // Was 835, which it blew through and broke three deploys on. Meal
   // logging moved to logic/mealActions.ts, then the prescription (what
   // load and how many reps to ask for) to logic/prescription.ts, then
@@ -95,7 +97,11 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // Was 836. The how-to reader and the rest screen both moved out, and
   // the allowance follows it down: an oversized file that shrinks does
   // not get to keep the headroom it earned.
-  'screens/today/FocusView.tsx': 660,
+  // +10: the reunification merge unioned the shortfall/RIR wiring with
+  // the voice-shortlist work; both features are real. This file now OWES
+  // a split (tracked in BODYT_STATE.md); the allowance must come back
+  // down when it happens.
+  'screens/today/FocusView.tsx': 670,
   // Session shapes moved to store/sessionSchema.ts, beside the types they
   // mirror, the shared zod primitives to store/primitives.ts, and the
   // GPS and cardio shapes to store/activitySchema.ts. The allowance
@@ -109,8 +115,8 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // the types they mirror, so what lands here is the field and its import.
   // +1: voiceSetVersion, optional, so an envelope written before the
   // coach shortlist changed parses unchanged and retires its own pick.
-  // (Merged count re-derived from the actual file: 648.)
-  'store/schema.ts': 648,
+  // (Merged count re-derived by this test's own counter: 649.)
+  'store/schema.ts': 649,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,

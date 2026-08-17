@@ -10,7 +10,10 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "sim": "vite-node scripts/simulate.ts",
+    "sim:sessions": "vite-node scripts/simulateSessions.ts",
+    "poison": "node scripts/poison.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.2",

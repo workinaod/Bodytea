@@ -152,7 +152,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | C2 | Profile & social surface: social = 4th Progress view; profile via header avatar; pinned badges; zero new tabs | cloud | pending | C1 | cloud session |
 | C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending | C2 | cloud session |
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
-| RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions | ride-along | pending | touch-adjacent | any |
+| RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
 | R6 | Safety boundaries + functional constraints pack (red-flag table, GREEN/YELLOW/RED tiers, capability fields; tier-A sources; adversarial evals) | research | pending | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | pending (inside J2) | J1 | engines lane |
 | R1 | Nutrition evidence pack (BMR eqns, activity-from-logs, carb cycling, fibre floor; cited) | research | pending | J1 | engines lane, start of J7 |
