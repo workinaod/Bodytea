@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-17 (J0, reconciliation audit session)
+Last updated: 2026-08-18 (J1 done, reconciliation audit session)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -108,17 +108,16 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 - Repo: workinaod/Bodytea (app name pending decision Q2: "BodyT" in-app, "Bodytea"/"NAOD V3"
   in repo docs). Live at https://workinaod.github.io/Bodytea/
 - `main` is a 1-commit scaffold. All real history is on Claude branches.
-- **Deployed / canonical:** `claude/app-audit-refinement-sjw2va` @ f4105e7 (2026-08-13).
-  954 unit tests, 72 e2e, golden lock, poison harness (scripts/poison.mjs, 89 mutations).
-- **UNMERGED:** `claude/algorithm-personalization-progression-nm4lzf` @ 873b4c7 holds
-  +9 commits (+3,413/-130, 79 new tests): fixed double progression (SetLog.achieved, RIR),
-  16-week phase engine with anchor promotion, within-session fatigue engine, durable
-  athlete memory (Prefs), told-vs-inferred limitations, and both simulation harnesses
-  (scripts/simulate.ts 20x20, scripts/simulateSessions.ts 20x8, scripts/simPersonas.mjs).
-  Verified merge preview: 2 mechanical conflicts (plan/generator.ts one hunk: keep algo's
-  relocated coreMovers + sibling's heightIn arg; structure.test.ts budgets: re-derive from
-  merged file lengths). golden.test.ts is the first post-merge check. FocusView.tsx
-  auto-merges but wants a manual read.
+- **REUNIFIED (J1, 2026-08-18): both working branches point at merge `eaf3519`.**
+  Deploy branch remains `claude/app-audit-refinement-sjw2va` (deploy.yml unchanged, one
+  working branch). Live at gh-pages `deploy: eaf3519`, bundle `index-Dzs5Zf7J.js`
+  verified against the local build of the same commit. The merged tree carries BOTH
+  lines: onboarding rebuild + voice work AND progression/phase/prefs/simulation work.
+- Validation on the merged tree: golden lock unchanged; typecheck clean; **1,175/1,175
+  unit tests**; build green; **e2e 38 passed / 0 failed** (3 voice specs skip headless);
+  **sim 20x20: all 20 personas, zero invariant failures**; sim 20x8 clean; **poison
+  81/81 mutations caught** (one anchor re-aimed after the merge orphaned it).
+  `npm run sim` / `sim:sessions` / `poison` now exist.
 - Superseded branches: `claude/fitness-tracking-app-ugo5xt` (content ported; glance at the
   two adapted commits 0374307/d5e71a4 before deleting), `claude/bodytea-link-display-r1sue6`
   (stale ancestor pointer). `claude/workout-form-feedback-pain-0xnonz` never existed.
@@ -136,7 +135,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | id | job | lane | status | depends on | owner session |
 |----|-----|------|--------|-----------|---------------|
 | J0 | Reconciliation audit + this file | - | done 2026-08-17 | - | BodyT project state reconciliation audit |
-| J1 | Reunify branches, carry this file to canonical branch, wire sims into npm, settle deploy branch | gate | in-progress 2026-08-17 (instruction delivered; J2 pre-approved as its "round three Part A"; UI scan follows on merged tree) | J0 | Algorithm personalization and progression trust |
+| J1 | Reunify branches, carry this file to canonical branch, wire sims into npm, settle deploy branch | gate | **done 2026-08-18** (executed by the audit session after the algorithm session wedged; merge eaf3519 live) | J0 | reconciliation audit session |
 | J2 | Bodyweight progression (phase verdicts + in-session response for unloaded work, pct load floor) | engines | pending | J1 | Algorithm session |
 | J3 | Onboarding closure: confirm review fixes, name decision, injuries->Prefs.limitations, foodLimits->meal plan, dead fields, first paired-profile eval | product | pending | J1 | App audit and refinement |
 | J4 | Freeform-first entry (composer primary, chips demote to examples; reuse inferGoal/readStatement) | product | pending | J3 | App audit session |
@@ -152,7 +151,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | C2 | Profile & social surface: social = 4th Progress view; profile via header avatar; pinned badges; zero new tabs | cloud | pending | C1 | cloud session |
 | C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending | C2 | cloud session |
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
-| RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions | ride-along | pending | touch-adjacent | any |
+| RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
 | R6 | Safety boundaries + functional constraints pack (red-flag table, GREEN/YELLOW/RED tiers, capability fields; tier-A sources; adversarial evals) | research | pending | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | pending (inside J2) | J1 | engines lane |
 | R1 | Nutrition evidence pack (BMR eqns, activity-from-logs, carb cycling, fibre floor; cited) | research | pending | J1 | engines lane, start of J7 |
@@ -266,6 +265,19 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 
 ## 9. CHECKPOINT LOG (append-only; newest last)
 
+- **2026-08-18 · J1 · Reconciliation audit session (stand-in executor).** The algorithm
+  session wedged (two wake attempts died before any turn ran; archived). J1 executed
+  here per owner approval: merged the sibling into the algo line (conflicts resolved
+  exactly per the map; structure budgets re-derived by the test's own counter, types 705 /
+  schema 649 / generator 941 / FocusView 670 with an owed-split debt note), state files
+  carried over, harnesses wired as npm scripts, full ritual + both sims + poison green
+  (81/81 after re-aiming the vert anchor to the four-tier TrainingAge table), both
+  branches pushed to `eaf3519`, deploy confirmed live by bundle hash, 390px screenshots
+  reviewed. Branch deletions still deferred (fitness branch wants its diff-glance).
+  NEXT: J2 in a FRESH engines-lane session (bodyweight promotion via rep-max series,
+  prescription-echo sweep, offer-ease for unloaded work, proportional load floor
+  max(step, 0.6x), start-lighter hysteresis, debrief vs session.date, dead-export guard,
+  goldenLife test; then the UI scan). J3 (product lane) and C1 (cloud lane) are unblocked.
 - **2026-08-17 · J0 · Reconciliation audit session.** Reconstructed all four workstreams
   from git topology, session records, five published artifacts and two full code
   inventories; read v12 in full; produced the dashboard artifact and this file.
