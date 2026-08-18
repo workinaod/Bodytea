@@ -44,13 +44,13 @@ system. Where R6 says STOP, R16 never speaks at all.
 
 ## Contents
 
-1. Sources (provenance, 32 entries)
+1. Sources (provenance, 43 entries across three tiers)
 2. Evidence tier table (every supplement the app might ever mention)
 3. The audit of what ships today
 4. The claims fence (forbidden phrasings, safe rewrites, doctor-line triggers)
 5. Contraindication routing (the actual rule table)
 6. Typed schema proposal (`SupplementRecord`, files, migration)
-7. Eval fixtures (18 cases)
+7. Eval fixtures (22 cases, 7 of which expect an empty list)
 8. Coverage gaps and open decisions
 
 ---
@@ -748,4 +748,460 @@ routing (section 5), the doctor line is copy the user reads.
    "I am a coach, not a doctor. This is general info, not a prescription."
 8. The app never tells a user to stop a medication, change a prescribed dose, or take a
    supplement instead of one.
+
+---
+
+## 5. CONTRAINDICATION ROUTING
+
+### 5.1 What the app actually knows about a user today
+
+This is the finding that governs the whole section, so it comes first.
+
+**Signals that exist and are persisted:**
+
+| Signal | Where | Shape | Useful for |
+|--------|-------|-------|-----------|
+| `PlanConfig.dietStyle` | `src/types.ts:236` | `'omnivore' \| 'vegetarian' \| 'vegan' \| 'pescatarian'` | Animal-derived items |
+| `PlanConfig.foodLimits.dairyFree` | `src/foodTypes.ts:17` | boolean | Dairy-derived items |
+| `PlanConfig.foodLimits.allergies` | `src/foodTypes.ts:23` | free text, user's own words | Everything, via `forbiddenTerms` |
+| The allergy family expander | `src/plan/foodLimits.ts:53-76` | fish, shellfish, seafood, soy, nut, egg, sesame families already mapped | Fish oil, marine collagen, soy lecithin |
+| `Prefs.limitations[].label` | `src/prefsTypes.ts:51` | free text injury or restriction, no expiry | Weak proxy only. It is a movement restriction field, not a medical history field |
+| `PlanConfig.experience` | `src/types.ts:238` | `'new' \| 'returning' \| 'casual' \| 'trained'` | **Training** age. Not chronological age. Cannot gate minors |
+| `Profile.bfFormula` | `src/types.ts:249` | `'male' \| 'female'`, optional, only asked inside the body fat estimator | Weak. Not consented as a health field and often absent |
+| `CardioEntry.minutes`, `.where`, `.intensity` | `src/activityTypes.ts:77`, `:75`, `:103` | logged session facts | The electrolyte trigger, properly conditioned |
+| `Prefs.sessionMinutes` | `src/prefsTypes.ts:71` | planned session length | Same |
+
+**Signals that do not exist anywhere in the codebase:**
+
+- chronological age or date of birth (`grep` for age across `src/` returns only training
+  age and elapsed-days arithmetic)
+- medications of any kind
+- medical conditions of any kind
+- pregnancy or breastfeeding status
+- kidney or liver status
+- blood pressure
+- tested-athlete status
+- any blood result
+
+**The conclusion is unavoidable: BodyT cannot currently suppress a single one of the
+contraindications in section 2, because it does not collect a single one of the signals
+that would trigger a suppression.** The default stack at `src/plan/foods.ts:318-322` is
+therefore not "mostly safe with gaps". It is unconditional. Fix 10 in section 3.13
+(default to an empty stack and invite instead) is not a nicety; it is the only correct
+behaviour available until the signals exist.
+
+### 5.2 The rule table
+
+`status` values: **LIVE** = every input exists today and the rule can be written now.
+**NEEDS-SIGNAL** = the rule is correct but requires a field the app does not have.
+Rules are evaluated in order; the first `SUPPRESS-ALL` wins and nothing further is shown.
+
+| id | Trigger (signal and predicate) | Action | Source | Status |
+|----|--------------------------------|--------|--------|--------|
+| SR-1 | Any R6 RED flag currently active | SUPPRESS-ALL. No supplement copy is rendered on any screen | `research/R6-safety.md` section 2 | NEEDS-SIGNAL (R6 not wired yet) |
+| SR-2 | `age < 18` | SUPPRESS-ALL, with the under-18 copy in 4.4 | [S19] | NEEDS-SIGNAL |
+| SR-3 | pregnant or breastfeeding | SUPPRESS-ALL except a clinician-chosen prenatal, which the app does not select | [S18], [S17] retinol | NEEDS-SIGNAL |
+| SR-4 | kidney condition reported | SUPPRESS-ALL. Creatine, magnesium, electrolytes, vitamin D all route through the kidney | [S2], [S13], [S15] | NEEDS-SIGNAL |
+| SR-5 | liver condition reported | SUPPRESS-ALL | [S41], [S42], [S43] | NEEDS-SIGNAL |
+| SR-6 | any medication reported | Show the pharmacist line once, then apply SR-7 to SR-11 | [S13] | NEEDS-SIGNAL |
+| SR-7 | anticoagulant or antiplatelet | SUPPRESS `fishOil`, `curcumin` | [S24], [S13] | NEEDS-SIGNAL |
+| SR-8 | thiazide diuretic or digoxin | SUPPRESS `vitD3`, `multivitamin` (calcium content) | [S13] | NEEDS-SIGNAL |
+| SR-9 | quinolone or tetracycline antibiotic, or bisphosphonate | SUPPRESS `zinc`, `magnesium`, iron-containing `multivitamin`, or attach a separation note | [S13], [S16] | NEEDS-SIGNAL |
+| SR-10 | fluvoxamine or other strong CYP1A2 inhibitor | SUPPRESS `caffeine` | [S3] | NEEDS-SIGNAL |
+| SR-11 | warfarin | SUPPRESS `multivitamin` (vitamin K), `fishOil` | [S13] | NEEDS-SIGNAL |
+| SR-12 | hypertension, heart failure, or a stated sodium restriction | SUPPRESS `electrolytes`, `bicarb`, and `caffeine` | [S11], [S3] | NEEDS-SIGNAL |
+| SR-13 | arrhythmia or palpitations, self-reported or via R6 RF-PALP | SUPPRESS `caffeine`, `fishOil`, `bicarb` | [S24], [S3], R6 RF-PALP | NEEDS-SIGNAL |
+| SR-14 | smoker | SUPPRESS `multivitamin` where beta-carotene is present | [S17] | NEEDS-SIGNAL |
+| SR-15 | haemochromatosis or any iron-loading condition | SUPPRESS `multivitamin`, `iron` | [S16] | NEEDS-SIGNAL |
+| SR-16 | `dietStyle === 'vegan'` | SUPPRESS `fishOil`, `collagen`, and any gelatin-capsule form | [S8] | **LIVE** (partly implemented at `src/plan/foods.ts:319`) |
+| SR-17 | `dietStyle === 'vegetarian'` | SUPPRESS `fishOil`, `collagen` | [S8] | **LIVE, and currently BROKEN**: `src/plan/foods.ts:319` checks vegan only |
+| SR-18 | `forbiddenTerms(foodLimits)` contains any of fish, salmon, tuna, cod, sardine, mackerel, anchovy, haddock, tilapia, seafood | SUPPRESS `fishOil`, and `collagen` unless the source is known non-marine | `src/plan/foodLimits.ts:71-72` | **LIVE, and currently NOT WIRED**: supplements never call `blockedBy` |
+| SR-19 | `forbiddenTerms(foodLimits)` contains any shellfish term | SUPPRESS `fishOil` (shared processing), glucosamine if ever added | `src/plan/foodLimits.ts:70` | **LIVE, not wired** |
+| SR-20 | `foodLimits.dairyFree === true`, or an allergy term in the DAIRY list | SUPPRESS whey and casein forms in `FOODS`, already handled for groceries; SUPPRESS any dairy-derived supplement | `src/plan/foodLimits.ts:30-46`, `:93` | **LIVE for food, not wired for supplements** |
+| SR-21 | allergy term matches `soy` family | SUPPRESS soy-derived lecithin capsules and soy protein | `src/plan/foodLimits.ts:68-69` | **LIVE, not wired** |
+| SR-22 | Logged sessions over the last 14 days are all under 60 minutes and `where === 'indoor'` | SUPPRESS `electrolytes` from suggestion. User may still add it | [S11] | **LIVE** (inputs at `src/activityTypes.ts:75-77`) |
+| SR-23 | User's training contains no efforts in the 60 to 240 second maximal range | SUPPRESS `betaAlanine` | [S22] | **LIVE** (derivable from the plan's own prescriptions) |
+| SR-24 | User does no jumping, sprinting or plyometric work | SUPPRESS `collagen` | [S29] | **LIVE** (derivable from the plan) |
+| SR-25 | Session scheduled to end within 6 hours of the user's stated bedtime, or after 17:00 with no bedtime known | SUPPRESS `caffeine` for that session, with the sleep note | [S32] | PARTIAL: `Settings.reminderTimes` (`src/types.ts` defaults `['05:00','17:00']`) is a weak proxy; a bedtime field would be better |
+| SR-26 | User states they are drug tested in their sport | Do not suppress, but attach the third party testing line to every item, and SUPPRESS anything in AIS Group D or any multi-ingredient product | [S12], [S21] | NEEDS-SIGNAL |
+| SR-27 | `Prefs.limitations[].label` matches a kidney, liver, heart, thyroid, pregnancy or cancer word | SUPPRESS-ALL and show the doctor line. HOUSE HEURISTIC, deliberately over-inclusive | HOUSE, patterned on `src/plan/foodLimits.ts` exclusion-only philosophy | **LIVE** and cheap. This is the one real safety net available before new fields exist |
+
+### 5.3 The minimum question set to make the rest of the table real
+
+The app should not ship the supplement feature at full strength until it can answer these.
+Four questions, asked once, all skippable, all stored as exclusions only in the spirit of
+`src/plan/foodLimits.ts:11-17`. A skipped answer is not permission; it keeps the default
+stack empty.
+
+| Question (in the app's voice) | Stores | Enables |
+|-------------------------------|--------|---------|
+| "How old are you?" (or "Are you 18 or over?" if the owner prefers not to store a number) | `Profile.ageYears?: number` or `Profile.adult?: boolean` | SR-2 |
+| "On any medication? Just so I do not suggest something that clashes." Free text, exclusion only | `Health.medications?: string` | SR-6 to SR-11 |
+| "Anything a doctor is treating you for? Heart, kidneys, liver, blood pressure, pregnancy, anything." Free text, exclusion only | `Health.conditions?: string` | SR-3, SR-4, SR-5, SR-12 to SR-15 |
+| "Do you get drug tested for your sport?" | `Health.tested?: boolean` | SR-26 |
+
+The free-text fields are read the same way `plan/foodLimits.ts` reads allergies: a word we
+do not recognise still suppresses, a word we do recognise suppresses its family, and the
+result is never widened. Being over-cautious costs a user a supplement suggestion. Being
+under-cautious costs them an interaction.
+
+### 5.4 The suppression contract
+
+1. Suppression is **silent by default**. The app does not say "I hid fish oil because you
+   said you are on warfarin"; it simply does not suggest it. Explaining a suppression
+   re-introduces the health claim through the back door.
+2. Suppression **never blocks a user from adding an item themselves**. The stack sheet at
+   `src/screens/meals/SupplementStackSheet.tsx:56-72` stays open. The app is not a
+   gatekeeper for a person's own choices; it is responsible only for what it suggests.
+3. When a user adds a suppressed item by hand, the app shows the relevant line from 4.4
+   once and then stops. No repetition, no nagging, no badge.
+4. A suppression that fires must be **recomputed on every plan build**, not cached into
+   `plan.mealPlan.supplements`. The current design writes suggestions into stored plan
+   data at generation time, which means a user who later reports a medication keeps the
+   old suggestions forever. This is an argument for keeping the suggested set derived
+   rather than stored, and is the strongest reason to change the shape in section 6.
+
+---
+
+## 6. TYPED SCHEMA PROPOSAL
+
+### 6.1 Why the flat shape has to go
+
+`src/types.ts:389-394` holds four strings. Every finding in section 3 is a fact that has
+nowhere to live: there is no field for a contraindication, an interaction, an upper limit,
+an evidence tier, a source, or a reason. A four-string type cannot be made safe by being
+careful with the strings, because nothing downstream can check them.
+
+Worse, the four strings are **copied into user data**. `src/plan/foods.ts:322` does
+`.map((s) => ({ ...s }))` and `src/screens/meals/SupplementStackSheet.tsx:20` pushes the
+whole object into `d.plan.mealPlan.supplements`. Every dose the app has ever suggested is
+frozen in every user's stored booklet. The v19 to v20 migration comment at
+`src/store/schema.ts:571-577` already names this exact failure mode for calorie targets:
+
+> a target is written into the booklet ONCE at onboarding and read forever after ...
+> Fixing the generator does nothing for a plan already on disk.
+
+The same is true of "2000-4000 IU" and "200-400 mg" and "Caffeine / pre-workout". Fixing
+`SUPPLEMENT_CATALOG` today fixes nothing for anyone who has already onboarded. **The single
+most valuable property of the new shape is that user data stores an id, not a dose**, so a
+correction to the catalog reaches every existing user with no migration at all.
+
+### 6.2 The proposed shapes
+
+New file `src/supplementTypes.ts`, sitting beside `src/foodTypes.ts` and
+`src/prefsTypes.ts` for the reason those two give in their own headers: a shape with a
+subsystem reading it is no longer a field on `types.ts`. Layer rank is root, so nothing in
+`src/structure.test.ts` layering (`RANK` at `src/structure.test.ts:155-165`) is affected.
+
+```ts
+// src/supplementTypes.ts
+
+export type EvidenceTier = 'A' | 'B' | 'C' | 'D'      // playbook tiers
+export type AisGroup = 'A' | 'B' | 'C' | 'D'          // [S7] to [S10]
+
+/** BodyT's own decision, deliberately stricter than the AIS group. */
+export type AppClass = 'suggest' | 'offer' | 'ask-only' | 'never'
+
+export interface DoseRange {
+  low: number
+  high: number
+  unit: 'g' | 'mg' | 'IU' | 'mcg'
+  /** Dose is per kilogram of body mass (caffeine, bicarbonate). */
+  perKg?: boolean
+  /** Published Tolerable Upper Intake Level for the SUPPLEMENTAL form, same unit. */
+  upperLimit?: number
+  /** What the user sees when there is no reason to personalise. Never a range
+   *  whose top is the upper limit. */
+  display: string
+}
+
+/** A thing about the user that suppresses a suggestion. See R16 section 5.2. */
+export type SuppressionSignal =
+  | 'minor' | 'pregnancy' | 'kidney' | 'liver'
+  | 'heart-rhythm' | 'hypertension' | 'sodium-restricted'
+  | 'anticoagulant' | 'diuretic-or-digoxin' | 'antibiotic-separation'
+  | 'cyp1a2-inhibitor' | 'smoker' | 'iron-loading' | 'tested-athlete'
+  | 'evening-session'
+
+/** A training demand that must exist before the app suggests something. */
+export type Demand = 'long-or-hot-sessions' | 'anaerobic-1-to-4-min' | 'jump-or-sprint'
+
+export interface SupplementRecord {
+  id: SupplementId
+  /** An ingredient, never a product category. 'pre-workout' is not a name. */
+  name: string
+  aisGroup: AisGroup
+  evidenceTier: EvidenceTier
+  appClass: AppClass
+  /** The narrowest true sentence, or null when the honest answer is no sentence.
+   *  Two sentences maximum, no jargon, no em dashes. */
+  claim: string | null
+  /** Required whenever appClass is 'offer'. Shown in the same breath as the claim. */
+  hedge?: string
+  dose: DoseRange
+  /** The studied timing in the app's words, or null when no timing claim holds. */
+  when: string | null
+  excludesDiet: DietStyle[]
+  /** Words that, if forbiddenTerms(foodLimits) contains them, suppress this. */
+  allergyTerms: string[]
+  suppressOn: SuppressionSignal[]
+  interactions: { with: string; note: string }[]
+  /** Source ids from research/R16-supplements.md section 1. Required, non-empty. */
+  sourceRefs: string[]
+  /** Taking it distorts the weight trend the nutrition engine reads (creatine). */
+  confoundsWeightTrend?: boolean
+  /** Never suggested unless the user's actual training shows this demand. */
+  requiresDemand?: Demand
+}
+
+/** What a user's stack stores. An id for anything the app suggested, verbatim
+ *  text only for what the user typed themselves. */
+export interface StackItem {
+  id: SupplementId
+  source: 'app' | 'user'
+  /** Present only when source is 'user'. The app never writes these three. */
+  name?: string
+  dose?: string
+  when?: string
+  addedAt: ISODate
+}
+```
+
+Two rules make this shape do the work:
+
+1. **`source: 'app'` items carry no text.** They are resolved against the catalog at read
+   time. A dose correction ships to every user on the next deploy.
+2. **`source: 'user'` items are never rewritten and never deleted by the app.** They are
+   the user's own record of what they take. The app may retract its own advice; it may not
+   edit somebody's health record.
+
+### 6.3 The catalog moves out of foods.ts
+
+New file `src/plan/supplements.ts` (layer `plan`, rank 0, imports nothing above it). It
+holds `SUPPLEMENT_CATALOG: SupplementRecord[]` and one function:
+
+```ts
+export function suggestStack(ctx: {
+  dietStyle: DietStyle
+  limits?: FoodLimits
+  signals: SuppressionSignal[]
+  demands: Demand[]
+  bodyWeightKg?: number
+}): SupplementRecord[]
+```
+
+It returns `[]` when it should, which is most of the time, and it is a pure table lookup
+with no LLM call anywhere near it. `src/plan/foods.ts:144-149` and `:194-204` are deleted;
+`src/plan/foods.ts:318-322` and `:211` call `suggestStack`. Net effect on `foods.ts` is
+about minus 21 lines, and it stays well under the 600 line cap with no allowance entry.
+
+### 6.4 The exact files that change
+
+| File | Change | Line budget note |
+|------|--------|------------------|
+| `src/supplementTypes.ts` | NEW. The shapes above | New file, no allowance needed |
+| `src/types.ts:389-394` | DELETE `SupplementDef`, replace with `export * from './supplementTypes'` | Net **minus 5** lines. `types.ts` is at 695 against a 696 allowance (`src/structure.test.ts:87`), so this is the change that buys the headroom everything else needs |
+| `src/types.ts:409` | `supplements: SupplementDef[]` becomes `supplements: StackItem[]` | Same line |
+| `src/types.ts:610` | `SCHEMA_VERSION = 20` becomes `21` | Same line |
+| `src/types.ts:623-628` | `DEFAULT_SUPPLEMENTS` becomes `{}` or is deleted with its readers | Minus up to 6 lines |
+| `src/plan/supplements.ts` | NEW. Catalog plus `suggestStack` | New file |
+| `src/plan/foods.ts:144-149`, `:194-204` | DELETE both arrays | Minus 17 |
+| `src/plan/foods.ts:211`, `:318-322` | Call `suggestStack` | Roughly neutral |
+| `src/store/mealPlanSchema.ts:23-25` | New zod shape for `StackItem`, plus the migration helper | File is 43 lines against a 600 cap. This is where the work goes |
+| `src/store/schema.ts:17` | Add `migrateSupplementStack` to the **existing** import from `'./mealPlanSchema'` | **Zero new lines.** This matters: `schema.ts` is 633 against a 634 allowance (`src/structure.test.ts:124`) and the repo rule is that allowances only shrink |
+| `src/store/schema.ts` migrations record | Add exactly one line: `20: migrateSupplementStack,` | **Plus 1, landing on 634 exactly.** Any migration written inline instead of delegated breaks `structure.test.ts` |
+| `src/screens/meals/SupplementStackSheet.tsx:15,18-22,32,67` | Resolve `'app'` items from the catalog, render user items verbatim, fix the `', '` fallback | Screens layer, no budget issue |
+| `src/screens/meals/PlanView.tsx:154-158` | Render resolved records, show the hedge when present | |
+| `src/screens/meals/MealsScreen.tsx:213-230` | Same, plus the one-time not-a-doctor line | |
+| `src/logic/mealActions.ts:60-64` | Unchanged. `toggleSupplement` is keyed by id and stays correct | |
+| `src/plan/foods.test.ts:67` | Extend the vegan assertion to vegetarian, add a fish-allergy case | |
+| `src/plan/generator.test.ts:170` | `toBeGreaterThanOrEqual(1)` must become `toEqual([])` for a default profile | This assertion currently encodes the bug |
+| `src/store/store.test.ts:239` | The owner-plan `creatine` expectation moves to the new stored shape | |
+
+### 6.5 The migration, v20 to v21
+
+Written in `src/store/mealPlanSchema.ts` and delegated to from `schema.ts` for the line
+budget reason above. It follows the precedent set by the v19 to v20 calorie repair: stored
+plan data is read forever, so a correction that only touches the generator corrects nobody.
+
+```ts
+// store/mealPlanSchema.ts
+const RETRACTED = new Set(['zinc'])            // R16 section 3.9
+const CATALOG_IDS = new Set([...])             // ids owned by plan/supplements.ts
+
+export function migrateSupplementStack(env: unknown): unknown {
+  const e = env as { data?: { plan?: { mealPlan?: { supplements?: unknown[] } } } }
+  const list = e.data?.plan?.mealPlan?.supplements
+  if (!Array.isArray(list)) return env
+  e.data!.plan!.mealPlan!.supplements = list.flatMap((raw) => {
+    const s = raw as { id?: string; name?: string; dose?: string; when?: string }
+    if (typeof s?.id !== 'string') return []
+    // Advice the app no longer stands behind is withdrawn, exactly as the
+    // v19 calorie floor was repaired rather than left on disk.
+    if (RETRACTED.has(s.id)) return []
+    // App suggestions become an id. Dose and timing now come from the
+    // catalog at read time, so future corrections reach existing users.
+    if (CATALOG_IDS.has(s.id)) return [{ id: s.id, source: 'app', addedAt: UNKNOWN_DATE }]
+    // Anything the user typed themselves is kept verbatim. The app does not
+    // edit a person's own record of what they take.
+    return [{
+      id: s.id,
+      source: 'user',
+      name: s.name ?? s.id,
+      dose: s.dose === ', ' ? '' : s.dose,   // repairs SupplementStackSheet.tsx:67
+      when: s.when,
+      addedAt: UNKNOWN_DATE,
+    }]
+  })
+  return env
+}
+```
+
+Three decisions worth arguing about before anyone writes this:
+
+1. **`zinc` is withdrawn from stored plans, not just from the catalog.** It was app-authored
+   advice with no supportable claim (section 3.9). Leaving it on disk means the app keeps
+   telling people to take it forever. A user who genuinely wants zinc can re-add it, at
+   which point it becomes theirs rather than the app's.
+2. **`magnesium` and `caffeine` are kept but re-resolved**, so the 400 mg ceiling and the
+   "/ pre-workout" string disappear from every existing user's screen the moment the
+   catalog is corrected, without the migration touching them.
+3. **`addedAt` has no true value for existing rows.** Per the playbook's UNKNOWN rule, it
+   is written as the plan's `phaseStartDate` with a comment saying it is a backfill, or
+   the field is made optional. It must not be invented as "today".
+
+### 6.6 What this shape makes possible that the current one does not
+
+- `structure.test.ts` style guards can assert that **every** record has a non-empty
+  `sourceRefs`, that no `dose.high` exceeds `dose.upperLimit`, and that every `claim` is
+  under a character budget and contains no em dash. Those are three cheap tests that would
+  have caught the magnesium and vitamin D defects before deploy.
+- The nutrition engine can read `confoundsWeightTrend` and pause the calorie-step rule
+  (R1 section 4.2) for the weeks after a user ticks creatine on.
+- The suggestion set becomes derived rather than stored, so a user who later reports a
+  medication stops being shown a suggestion that was written into their plan months ago.
+
+---
+
+## 7. EVAL FIXTURES
+
+Twenty two table cases for `suggestStack`. They are written against the proposed shape in
+section 6 but every one of them is checkable against today's code as a regression test,
+which is why the "ships today" column is there. Seven of the twenty two have an empty list
+as the correct answer, and today the app returns a non-empty list for all seven.
+
+`suggested` is what the app puts in the default stack. `offered` is what appears in the
+browsable catalog. `suppressed` lists the ids that must NOT appear in either, with the
+rule id from section 5.2.
+
+| id | Profile in | suggested (expected) | suppressed (rule) | Ships today | Note |
+|----|-----------|----------------------|-------------------|-------------|------|
+| EV-1 | 28, omnivore, no allergies, no health questions answered yet, lifts 4x/week 45 min indoor | **[]** | everything, SR-2 to SR-5 cannot be evaluated without answers | `[creatine, fishOil, vitD3]` | The headline case. With no age, no medication and no condition data the only safe default stack is empty plus an invitation |
+| EV-2 | Same, but answered: 34, no medication, no conditions, not tested | `[creatine]` | `electrolytes` SR-22 (short indoor sessions), `collagen` SR-24, `betaAlanine` SR-23 | `[creatine, fishOil, vitD3]` | `fishOil`, `vitD3`, `multivitamin` are `offer`, browsable with their hedges, not written into the plan |
+| EV-3 | 30, **vegetarian**, otherwise as EV-2 | `[creatine]` | `fishOil` SR-17, `collagen` SR-17 | `[creatine, fishOil, vitD3]` and **fish oil is wrongly included** | `src/plan/foods.ts:319` checks `'vegan'` only |
+| EV-4 | 30, **vegan**, otherwise as EV-2 | `[creatine]` | `fishOil` SR-16, `collagen` SR-16 | `[creatine, vitD3, electrolytes]` | The one dietary case that is currently correct |
+| EV-5 | 26, omnivore, `allergies: "shellfish, peanuts"` | `[creatine]` | `fishOil` SR-19 | `[creatine, fishOil, vitD3]`, **fish oil wrongly included** | `src/plan/foodLimits.ts:70` already knows the shellfish family. Nothing calls it |
+| EV-6 | 26, omnivore, `allergies: "fish"` | `[creatine]` | `fishOil` SR-18, `collagen` SR-18 unless the source is known non-marine | `[creatine, fishOil, vitD3]`, **fish oil wrongly included** | The regression test that must exist before anything else ships. A stored, honoured, meal-filtering allergy is ignored for the concentrate |
+| EV-7 | 31, **pregnant**, omnivore, healthy | **[]** plus the pregnancy doctor line | all, SR-3 | `[creatine, fishOil, vitD3]` | Vitamin A in a generic multivitamin, caffeine over the 200 mg ceiling [S18], and no safety data for creatine |
+| EV-8 | **16 years old**, plays basketball, healthy | **[]** plus the under-18 line | all, SR-2 | `[creatine, fishOil, vitD3]` | [S19]. The app cannot detect this today; it has no age field |
+| EV-9 | 52, **stage 3 kidney disease**, omnivore | **[]** plus the kidney doctor line | all, SR-4 | `[creatine, fishOil, vitD3]` | Creatine, magnesium, electrolytes and vitamin D all route through the kidney |
+| EV-10 | 63, **on warfarin**, omnivore, healthy otherwise | `[creatine]` plus the pharmacist line | `fishOil` SR-7 and SR-11, `multivitamin` SR-11 (vitamin K) | `[creatine, fishOil, vitD3]` | Bleeding risk and INR interference |
+| EV-11 | 58, **hypertension**, on a **thiazide**, lifts and walks | `[creatine]` plus the pharmacist line | `electrolytes` SR-12, `vitD3` SR-8, `caffeine` SR-12, `bicarb` SR-12 | `[creatine, fishOil, vitD3]` | Sodium load against blood pressure treatment; thiazide plus high-dose vitamin D raises hypercalcaemia risk |
+| EV-12 | 34, **known atrial fibrillation**, endurance runner | `[]` for supplements the app suggests; `electrolytes` only if a clinician has cleared it | `fishOil` SR-13, `caffeine` SR-13, `bicarb` SR-13 | `[creatine, fishOil, vitD3]` | [S24] is a harm signal in exactly this user |
+| EV-13 | 29, marathon build, **2 hour outdoor sessions in summer**, healthy, answered all four questions | `[creatine, electrolytes]` | `collagen` SR-24, `betaAlanine` SR-23 | `[creatine, fishOil, vitD3]` | The one profile where electrolytes are genuinely indicated [S11] |
+| EV-14 | 41, **45 minute indoor lifting only**, healthy | `[creatine]` | `electrolytes` SR-22 | `[creatine, fishOil, vitD3]`; owner path also ships electrolytes | Sodium replacement does nothing for a 45 minute indoor session |
+| EV-15 | 22, **800 m runner**, efforts in the 60 to 240 second window, healthy | `[creatine]`, `betaAlanine` offered | `collagen` SR-24, `electrolytes` SR-22 if sessions are short | `[creatine, fishOil, vitD3]` | The only profile in the app where beta-alanine has a demand to serve [S22] |
+| EV-16 | 27, **jump and sprint block**, healthy | `[creatine]`, `collagen` offered with its hedge, 15 g one hour before | `betaAlanine` SR-23 | `[creatine, fishOil, vitD3]` | Collagen becomes offerable only here, and only hedged [S29] |
+| EV-17 | 33, healthy, **trains at 19:00, bedtime 22:30** | `[creatine]`; caffeine suppressed for that session | `caffeine` SR-25 | catalog offers caffeine with no time rule at all | 400 mg six hours before bed cost over an hour of measured sleep [S32] |
+| EV-18 | 24, **drug tested** in their sport, healthy | `[creatine]` with the third party testing line attached to everything | any multi-ingredient product, SR-26; everything in AIS Group D | catalog offers "Caffeine / **pre-workout**" | Strict liability [S12]; 14.8% and 38% contamination figures [S37][S39] |
+| EV-19 | User types **"ashwagandha, 600 mg, evening"** into the custom field | suggested list **unchanged**; the item is stored as `source: 'user'` and rendered verbatim | app never suggests it, `NEVER` class | stored and rendered identically to app advice | The app shows its standing line once and then stops. It does not delete the user's own entry [S42] |
+| EV-20 | User types **"ostarine"** into the custom field, and is drug tested | suggested list **unchanged**; stored as `source: 'user'` | app never suggests it | stored and rendered identically to app advice | The tested-athlete line fires once. No lecture, no repetition |
+| EV-21 | `Prefs.limitations[0].label = "kidney transplant 2019"` | **[]** plus the doctor line | all, SR-27 | `[creatine, fishOil, vitD3]` | The one safety net that is buildable today from existing fields, deliberately over-inclusive |
+| EV-22 | Owner booklet, `sportMode: 'ball'`, plan name starts with `NAOD` | Owner stack preserved exactly as hand-built | nothing, except `zinc` if present (not in the owner list) | preserved | The v18 migration at `src/store/schema.ts:582-586` establishes that the owner's booklet is golden-locked. R16 must not break that |
+
+### 7.1 Property assertions to sit alongside the cases
+
+These are cheap and would have caught two of the three shipped dose defects.
+
+| id | Assertion | Catches |
+|----|-----------|---------|
+| PA-1 | For every record, `dose.upperLimit === undefined \|\| dose.high <= dose.upperLimit` | magnesium 400 mg over the 350 mg supplemental UL [S15] |
+| PA-2 | For every record, `sourceRefs.length > 0` | the entire current catalog, which cites nothing |
+| PA-3 | For every record with `appClass !== 'never'`, `claim === null \|\| claim.length <= 90` and contains no em dash | copy drift, repo non-negotiable |
+| PA-4 | For every record with `appClass === 'offer'`, `hedge` is a non-empty string | collagen and fish oil shipping unhedged |
+| PA-5 | No record `name` contains "pre-workout", "blend", "complex", "matrix", "proprietary" | `src/plan/foods.ts:201` [S38] |
+| PA-6 | The sum of `vitD3.dose.high` and any vitamin D content implied by `multivitamin` stays under the UL | the stacking defect in section 3.5 |
+| PA-7 | `suggestStack` with an empty `signals` array and no answered health questions returns `[]` | EV-1, the unconditional default |
+| PA-8 | Every `SuppressionSignal` value appears in at least one record's `suppressOn` | a signal collected from the user and then never read, which `src/prefsTypes.ts:22-25` names as a specific failure the repo cares about |
+
+---
+
+## 8. COVERAGE GAPS AND OPEN DECISIONS
+
+### 8.1 Owner decisions this pack cannot make
+
+1. **Does the supplement feature stay at all?** The honest reading of sections 3 and 5 is
+   that a general-population coaching app with no age, no medication and no condition data
+   is not equipped to suggest supplements. A defensible product answer is to keep the
+   stack sheet as a **tracker** (the user logs what they already take) and delete the
+   suggestion path entirely. That would resolve every finding in section 3 in one commit
+   and cost the app nothing it can defend.
+2. **If it stays, do the four questions in section 5.3 get asked?** Onboarding length is
+   the owner's call. Without them, the only correct default stack is empty.
+3. **Do supplements keep their daily tick boxes?** Section 3.12 argues adherence pressure
+   on a supplement is a different thing from adherence pressure on a workout.
+4. **The owner's own NAOD booklet.** `SUPPLEMENTS` at `src/plan/foods.ts:144-149` is the
+   owner's personal stack and is golden-locked by the v18 migration precedent. It contains
+   the same "2000-4000 IU" vitamin D and the same undefined "1-2 g" fish oil. Whether the
+   owner's own booklet gets corrected is his call, not the app's.
+
+### 8.2 What this pack does not cover
+
+- **Micronutrient adequacy from the food log.** The app could in principle notice that a
+  user's logged diet is thin on a nutrient. That is R1 and R4 territory and needs a
+  nutrient database the app does not have (playbook section 26).
+- **Iron and female athletes.** Iron deficiency is genuinely common in menstruating
+  endurance athletes and genuinely dangerous to self-supplement. R7 (populations) is the
+  right home for the question of whether the app should ever raise it. R16's answer is
+  `ASK-ONLY` and the doctor line, nothing more.
+- **RED-S and low energy availability.** Named in the playbook's pregnancy and female life
+  stages job (line 381) and owned by R7. It intersects here only in that a supplement is
+  never the answer to underfuelling.
+- **Caffeine habituation and withdrawal.** The position stand [S3] discusses it; the app
+  has no model of habitual intake because it does not log coffee.
+- **Third party certification as a data field.** [S21] programmes publish lists. Carrying
+  them would mean shipping a brand list, which is a commercial entanglement the owner has
+  not approved. The pack's position is that the app names the concept ("look for a third
+  party tested logo") and never a brand.
+- **Interaction checking as a real service.** A proper drug-supplement interaction check
+  needs a licensed database. The rules in section 5.2 are a coarse safety net, not a
+  substitute, and the copy in 4.4 says so by sending the user to a pharmacist.
+
+### 8.3 Contradictions preserved rather than averaged
+
+Per the playbook's contradiction rule, these are recorded rather than resolved.
+
+| Group | The disagreement | How R16 handles it |
+|-------|------------------|--------------------|
+| CG-CREATINE-MINORS | ISSN states creatine has no demonstrated harm in healthy people including younger athletes under supervision [S2]; AAP says clinicians should discourage performance-enhancing substances including creatine in adolescents [S19] | The app follows the more conservative source. An unsupervised phone app is not the supervised setting ISSN describes |
+| CG-OMEGA3 | Fish oil is AIS Group B for training outcomes [S8], while the best-powered supplement trials show a dose-dependent atrial fibrillation harm signal in cardiovascular populations [S24] | Both are true of different populations. The app offers it, states the dose in EPA plus DHA, and suppresses it on any heart rhythm signal |
+| CG-MAGNESIUM | AIS moved magnesium to Group C [S9]; a low-certainty meta-analysis found a 17 minute sleep onset benefit in older adults [S28] | Neither supports suggesting it to a general training population. `ASK-ONLY` |
+| CG-VITD | Vitamin D is AIS Group A as a **medical** supplement for deficiency [S7], and null for outcomes in replete people [S25][S26][S27] | The app carries it as a gap filler at 2000 IU, never as a performance or health claim |
+| CG-COLLAGEN | Strong mechanistic and marker-level data [S29][S30], inconsistent functional outcomes [S31] | `OFFER` with a mandatory hedge, only for users with a jump or sprint demand |
+
+### 8.4 Checkpoint
+
+- Sources processed: 43, in three tiers. Blocked in this environment and recorded so a
+  future session does not re-burn usage: `ahajournals.org` (403), PubMed article pages
+  (cookie wall, abstracts obtained through search), `acog.org` (402, already recorded by
+  R6), `ausport.gov.au/ais/nutrition/supplements/group_c_and_d` (404; the correct paths are
+  `/group_c` and `/group_d` separately).
+- Records produced: 1 evidence tier table covering 28 named substances and categories,
+  1 audit of 9 shipped entries plus 5 structural findings plus 5 UI findings, 22 forbidden
+  phrasings with rewrites, 27 routing rules, 1 typed shape with a migration, 22 eval
+  fixtures and 8 property assertions.
+- Unresolved and needing an owner decision: the four items in 8.1.
+- Next action for whoever picks this up: fixes 1 to 5 in section 3.13 are small, isolated
+  and do not need the schema work. Fix 1 (deleting two words at
+  `src/plan/foods.ts:201`) is the highest safety return per character in the repo.
 

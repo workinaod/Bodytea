@@ -751,7 +751,7 @@ cites live lines where the pattern already ships; blank means the pattern is pro
 | 1 | Naming a condition: tendinitis, impingement, sciatica, plantar fasciitis, runner's knee, shin splints | Diagnosis [S26]; disease claim [S25] | "The front of your knee has come up twice in two weeks" | |
 | 2 | "X is how hamstrings tear" / "this is how you get injured" | Tissue-level causal claim about this athlete. F-2 | "Short sleep makes repeated efforts harder before it makes you weaker, so the sets are what should give" | `engine/insights.ts:417` |
 | 3 | "Injury prevention" / "prevents injury" as a claim about the athlete | Prevention claim, the specific word that leaves the wellness policy [S25] | "Trains the ranges sprinting asks for" / "builds the strength the plant leg uses" | `plan/exercises.ts:1125`, `plan/generator.ts:680`, `plan/exercises.ts:150` |
-| 4 | "Bulletproofs" / "injury insurance" / "protects your knee" | Same claim in metaphor. A metaphor is still a claim | "Strengthens the muscle that does this job" | `plan/exercises.ts:537`, `plan/exercises.ts:1240` in `athleticExercises.ts`, `plan/generator.ts:680` |
+| 4 | "Bulletproofs" / "injury insurance" / "protects your knee" | Same claim in metaphor. A metaphor is still a claim | "Strengthens the muscle that does this job" | `plan/exercises.ts:537`, `plan/athleticExercises.ts:1240`, `plan/generator.ts:680` |
 | 5 | "Safe for you" / "you are cleared" / "nothing to worry about" | Clearance. F-3, and directly against [S24] | "I will not program this while that joint is flagged" | |
 | 6 | "You are not injured" / "that is just soreness" | Ruling out. Same fence as naming | "Normal effort soreness and joint pain feel different. If it is the second one, that is a physio question" | |
 | 7 | "You are overtrained" / "this is overtraining syndrome" | A clinical diagnosis of exclusion no app can make (R3 S24) | "Three of the last week's sessions were graded heavy" | |
@@ -780,7 +780,7 @@ A copy test in the shape of the existing em-dash guard, running over `plan/messa
 - A `FORBIDDEN` array of regexes, one per row above, each with the row number in a comment.
 - An `ALLOWED` allowlist that may only ever shrink, seeded with the rows that ship today, so
   the gate is live now rather than after a copy rewrite. Same arrangement and same rule as
-  `src/structure.test.ts:38-41`: "Adding a name to an allowlist is a decision to make things
+  `src/structure.test.ts:14-15`: "Adding a name to an allowlist is a decision to make things
   worse. Deleting one is the goal."
 - One additional assertion with no allowlist: no string anywhere may match the diagnosis
   vocabulary in row 1 or row 22. Those ship nowhere today, and the test's job is to keep it
@@ -794,3 +794,651 @@ talking about the **person**, which is a different act, and the one [S3] and [S2
 identify as counterproductive. "The couch is undefeated against you" (`plan/messages.ts:281`)
 is a joke about a situation. "It's a skip with extra cowardice" (`plan/messages.ts:126`) is a
 verdict on a character. The first survives every rule in this pack. The second survives none.
+
+---
+
+## 7. AUDIT OF THE LIVE CODE
+
+Read at the `wt-fix2` working tree, schema v20 (`src/types.ts:610`). Every line number below
+was opened and read; quotes are verbatim from the file named. Severity is against the ladder in
+section 3, not against a general sense of quality.
+
+Ordered by severity. Twelve findings.
+
+### 7.1 SEVERITY 1. The anchor lift is promoted to a harder movement with no consent and no opt-out that exists
+
+`src/engine/phase.ts:172-178`:
+
+```ts
+      const up = nextUp(current, plan)
+      if (!up) {
+        outcome = 'topped-out'
+        continue
+      }
+      current = up
+      outcome = 'promoted'
+```
+
+At a 16-week phase boundary, an anchor lift that gained 5% estimated 1RM
+(`GAIN_TO_PROMOTE = 0.05`, `phase.ts:47`) over at least 8 sessions
+(`MIN_SESSIONS_TO_JUDGE = 8`, `phase.ts:44`) is **replaced** by the next movement up its
+progression chain. `phaseSlotOverrides` (`phase.ts:190-194`) turns that into a slot override
+that `resolveDay` builds the day from. The athlete's main lift changes. Nobody was asked.
+
+The engine does announce it: `phaseNote` (`phase.ts:214-219`) returns "You earned harder lifts:
+{names}. Same job, more of you required." and `resolveDay.ts:549-551` pushes it as a banner.
+But the banner fires on `phaseComplete = weekIndex > 16` (`resolveDay.ts:139`), which is true
+for **every day from week 17 onward, forever**. So the notice is simultaneously a one-time
+event announced permanently and a change that was never offered.
+
+This is a tier-3 decision (`anchor-promotion` in the section 5 union) executing as if it were
+tier 1. It fails four of the five tests:
+
+- Not proposed. There is no accept path and no decline path.
+- Not undoable. Nothing writes an override and nothing reverses a promotion.
+- The only opt-out is `data.prefs.pinned` (`phase.ts:163`), and **`data.prefs` has no writer
+  anywhere in the tree**. See 7.3. The comment at `phase.ts:160-162` is exactly right about the
+  athlete who is "attached to the one movement they trust", and the escape hatch it describes
+  cannot be reached from the app.
+- The banner is not proportionate: it repeats indefinitely rather than once.
+
+[S13] is the argument for the fix and it is stronger than a fairness argument: an athlete who
+opens the app in week 17 and finds their squat replaced by a movement they did not choose is
+the algorithm-aversion scenario in its purest form. One visible unrequested change is enough to
+end use of a system that is otherwise better than the alternative.
+
+**Fix.** Promotion becomes a tier-3 proposal raised once at the boundary, with both answers
+stated ("Move up to {name}, or run another phase on {current}?"). A decline writes an
+`Override` with scope `exercise` and TTL 90, which the ladder honours; three declines retire
+promotion for that slot, which is functionally what `pinned` was supposed to give them. Fix the
+banner condition to fire on the transition rather than on `weekIndex > 16` regardless.
+
+### 7.2 SEVERITY 1. A movement flagged as failing opens at a lighter weight with no sentence anywhere, and the explanation is computed and thrown away
+
+`src/logic/prescription.ts:99-101`:
+
+```ts
+  const failing = nextSessionSuggestions(data, date).some(
+    (s) => s.kind === 'start-lighter' && s.exerciseId === exerciseId,
+  )
+```
+
+and `prescription.ts:121-126`:
+
+```ts
+  const softened = opts.lightMode === true || failing
+  const soften = (w: number, baseline = w) => {
+    const out = opts.lightMode ? lightLoad(w) : failing ? dropTo(w) : w
+```
+
+`dropTo` is `DROP_FRACTION = 0.875` in `engine/fatigue.ts`, so the opening weight comes down
+roughly 12.5%. `prefillFor` returns `{ weightLb, reps, softened }` and the only consumer,
+`logic/sessionStart.ts:87`, uses `softened` to write `light: true` onto each `SetLog`:
+
+```ts
+          ...(r.lightMode || pre.softened ? { light: true } : {}),
+```
+
+`SetLog.light` is rendered **nowhere**. Grepping every `.tsx` under `src/screens` and
+`src/components` for the flag returns only `resolved?.lightMode`, which is the *resolved
+exercise* flag set by `applyAutomatic` (`adapt.ts:502`) and shown at
+`screens/today/SessionView.tsx:102`, `SessionView.tsx:131`, `screens/today/FocusView.tsx:529`
+and `screens/today/TodayScreen.tsx:486`. The set-level `light` from a failing-movement
+softening reaches no pixel.
+
+Worse: the sentence exists. `engine/fatigue.ts:246` builds
+`` because: `You ran out on this ${gaveOut.length} times in the last ${RECENT_DAYS} days.` ``
+and `prescription.ts:99` reads only `s.kind` and `s.exerciseId` off the same object, discarding
+`because`. `nextSessionSuggestions` is called from exactly one non-test site, so this string is
+computed on every prefill and never shown.
+
+Three files in this tree state the rule this breaks:
+
+- `engine/sessionFatigue.ts:43`: "Always said out loud. An adjustment nobody can see is a bug report."
+- `engine/calibration.ts:283-284`: "An adjustment nobody can see is indistinguishable from a bug."
+- `engine/adapt.ts:247`: "The reason, in the athlete's terms. An unexplained change reads as a bug."
+
+**Fix.** `prefillFor` returns `because` alongside `softened`; `SessionView` and `FocusView`
+render it beside the existing `light` chip. No behaviour change, one string plumbed through.
+This is the cheapest severity-1 fix in the pack.
+
+### 7.3 SEVERITY 1. Tier 4 has no input surface: `data.prefs` is read four times and written zero times
+
+Every reference to `prefs` in non-test source:
+
+| Site | What it reads |
+|---|---|
+| `src/engine/resolveDay.ts:459` | `data.prefs.sessionMinutes` for `trimToFit` |
+| `src/engine/phase.ts:163` | `data.prefs.pinned` to skip promotion |
+| `src/engine/adapt.ts:562` | `blockedIds(data.prefs)` for the automatic exclusion |
+| `src/engine/adapt.ts:563` | `limitedJoints(data.prefs)` for the stated-limitation routing |
+
+There is no fifth site. `emptyPrefs()` (`prefsTypes.ts:74-76`) is called once, at
+`types.ts:680`, inside `emptyAppData()`. `store/prefsSchema.ts` parses the shape correctly and
+defaults it to empty. Nothing ever adds a blocked movement, a pin, a limitation or a session
+length.
+
+The consequence is that the four richest behaviours in the adaptation engine are dead code for
+every real user:
+
+- `engine/adapt.ts:293-309`, the automatic substitution for a movement the athlete blocked,
+  can never fire.
+- `engine/adapt.ts:365-386`, the stated-limitation branch with its own copy ("You told me about
+  your {joint}...") and its `automatic: true` `reduce-load`, can never fire. Every unroutable
+  joint therefore falls through to the *inferred* branch at `adapt.ts:387-392`, which is the
+  exact failure the comment at `adapt.ts:368-376` was written to fix: "somebody eighteen months
+  past a knee replacement was handed full-weight split squats and a suggestion to consider
+  taking some off." The fix landed in the engine and the input never landed in the app.
+- `engine/phase.ts:163`, the only escape from 7.1.
+- `resolveDay.ts:459`, the time budget, which is the one lever an athlete with 30 minutes has.
+
+`prefsTypes.ts:22-25` says it plainly: "a preference nobody consults is worse than no
+preference, because the athlete believes they have been heard." The tree is one step worse
+again: the preference cannot be expressed at all.
+
+**Fix.** `screens/coach/PrefsSheet.tsx`, per section 5.3. It is the highest-value screen not
+yet built, because four shipped engine branches are waiting on it.
+
+### 7.4 SEVERITY 1. A declined proposal leaves no trace, so the same card can be offered every day for fourteen days
+
+`src/logic/fatigueActions.ts:93-96`:
+
+```
+ * Stored per date and only when ACCEPTED. A proposal nobody took leaves
+ * no trace at all, which is what stops a declined suggestion quietly
+ * shaping next week: engine/adapt.ts re-derives its offers from the
+ * signals every time, so a decline is simply the absence of a yes.
+```
+
+and `src/screens/today/AdaptProposals.tsx:25-27`:
+
+```
+ * A declined proposal leaves no trace. The offer is re-derived from the
+ * signals each time the day resolves, so ignoring one costs nothing and
+ * changes nothing about next week.
+```
+
+Both are right about the plan and wrong about the asking, per section 4. The mechanism: signals
+are read over `SIGNAL_WINDOW_DAYS = 14` (`adapt.ts:73`), `AdaptProposals` recomputes
+`planAdjustments` on every `data` change (`AdaptProposals.tsx:34-41`), and there is no decline
+control on the card at all. The only buttons are "Do that" and, once accepted, "Never mind, run
+it as planned" (`AdaptProposals.tsx:88`). Ignoring the card is the only way to say no, and it
+is indistinguishable from never having seen it.
+
+A `joint-pain` signal needs `PAIN_PATTERN_COUNT = 2` flags inside 14 days (`adapt.ts:76`) and
+an `accumulated-fatigue` signal needs 3 heavy sessions inside 7 (`adapt.ts:209`). Either can
+persist for the length of its window, and the card persists with it. [S27] gives the cost:
+each repetition after a refusal is a further freedom threat, and the option becomes less
+attractive rather than more. [S16] gives the same cost from the receptivity side.
+
+**Fix.** Section 4 in full. The minimal version is two changes: a "Not today" control on the
+card, and `mayAsk` gating the tier-3 filter in `planAdjustments`.
+
+### 7.5 SEVERITY 2. The proposal UI computes its offers from a different context than the engine, so it offers a second volume cut on top of an automatic one
+
+`src/screens/today/AdaptProposals.tsx:37-41`:
+
+```ts
+    return planAdjustments(resolved.exercises, {
+      owned: new Set<EquipTag>(['none', ...data.plan.equipment]),
+      signals: readSignals(data, date),
+    }).filter((a) => !a.automatic)
+```
+
+`AdaptContext` has five fields (`adapt.ts:251-272`). This call site passes two. The engine's own
+call site, `adaptSession` at `adapt.ts:557-564`, passes all five:
+
+```ts
+  const automatic = planAdjustments(exercises, {
+    owned,
+    signals: readSignals(data, dateISO),
+    alreadyCutForSleep: twoConsecutiveBadNightsBefore(data, dateISO),
+    blocked: blockedIds(data.prefs),
+    limited: limitedJoints(data.prefs) as Joint[],
+  }).filter((a) => a.automatic)
+```
+
+The missing `alreadyCutForSleep` is the live bug. `adapt.ts:425` reads
+`if (cutReasons.length > 0 && !ctx.alreadyCutForSleep)`. Undefined is falsy, so the guard is
+inverted at the UI call site and the `reduce-volume` card is offered **exactly** in the case the
+guard exists to prevent. The day has already lost a third of its volume at
+`resolveDay.ts:396-404` (`applyBadSleepCut`, which is `Math.round(sets * 2 / 3)`,
+`transforms.ts:215-221`), and the card then offers another set off each lift, which
+`adaptSession` applies at `adapt.ts:578-583`.
+
+`adapt.ts:254-259` states the intent verbatim: "Offering another set off on top would be two
+reductions for one night's sleep, which is how 'take it easy' turns into half a session nobody
+agreed to." That is what ships.
+
+The same call site also omits `blocked` and `limited`, which is why the athlete-stated
+`reduce-load` copy at `adapt.ts:378-384` can never render in the proposals list even once
+`Prefs` has a writer: the UI would show the inferred wording (`adapt.ts:387-392`) for a stated
+limitation.
+
+**Fix.** One shared builder, `adaptContextFor(data, date)`, exported from `engine/adapt.ts` and
+used by both call sites. This is a five-line change and it removes an entire class of drift.
+
+### 7.6 SEVERITY 2. Tier 4 is gated three ways: a photo demand, a typed confirmation, and an escalating ladder
+
+The decision to skip today is tier 4 (section 3.5). Three separate gates sit on it.
+
+**Photo demand.** `src/screens/today/SkipFlow.tsx:203-260` is a whole step devoted to proof.
+At level 2 or higher, `SkipFlow.tsx:206-208` reads: "You have skipped a few times this month,
+so this one needs a photo." `validateProofFile` (`SkipFlow.tsx:69-78`) rejects an image more
+than a few days old with "A conflict THIS week has proof FROM this week. Fresh screenshot or no
+proof." The proof preview then says, at `SkipFlow.tsx:229-230`: "This goes in the ledger
+permanently, next to your name."
+
+**Typed confirmation.** `SkipFlow.tsx:59`: `const needsTypedConfirm = level >= 2 && !proofId &&
+mode === 'skip'`, rendered at `SkipFlow.tsx:288-301`, requiring the athlete to type `SKIP` in
+capitals to enable the button (`SkipFlow.tsx:311`).
+
+**No exit.** `SkipFlow.tsx:116` opens the sheet with `onClose={() => {}} locked`, and the
+comment at `SkipFlow.tsx:26-27` states the design: "No dismiss, no tap-outside, the only exits
+are decisions."
+
+[S3] is the relevant meta-analysis and it is 128 experiments deep: deadlines, surveillance,
+imposed goals and directive language undermine intrinsic motivation through perceived locus of
+causality. [S2] adds the direction: across 73 SDT interventions, need support moved health
+behaviour and controlled motivation did not. [S27] adds that the restricted option becomes more
+attractive. This is not a tone preference; it is the mechanism by which the accountability layer
+works against the outcome it exists to produce.
+
+**Fix.** Delete the gate, keep the record. The skip is logged either way, the reason box stays,
+the proof attachment stays as an **optional** control with no consequence attached to omitting
+it, `needsTypedConfirm` goes, and `locked` becomes a normal dismissible sheet. Nothing in the
+ledger's usefulness depends on the athlete being unable to leave.
+
+### 7.7 SEVERITY 2. Reporting illness is treated as an unproven excuse and then contradicted
+
+`src/engine/coach.ts:215-235`, `excuseAccepted`, in full behaviour: `proofPhotoId` accepts;
+`reason === 'sore'` accepts (with a good comment at `coach.ts:224-227` explaining exactly why);
+`reason === 'gig'` accepts when corroborated; **everything else returns false at
+`coach.ts:234`**. `'sick'` is a member of `ExcuseReason` (`types.ts:268`) and is not handled, so
+a reported illness without a photograph is an unproven excuse.
+
+`unprovenExcusesInWindow` (`coach.ts:59-71`) then counts it, and `escalationLevel`
+(`coach.ts:74-77`) is `Math.min(3, n)` over a 30-day window. So reporting illness raises the
+drill-sergeant level for the next 30 days, which at level 2 triggers the photo demand and the
+typed `SKIP` confirmation in 7.6.
+
+Then `contradictionsOnSessionFinish` (`coach.ts:141-155`) checks for "sick yesterday, PR today"
+and emits `contradiction-sick-pr`, whose variants are at `plan/messages.ts:314-320`:
+
+- "Miraculous recovery. 'Sick' yesterday, PR today. Happy for your immune system, suspicious of your yesterday."
+- "Yesterday: too sick to train. Today: personal record. One of those days is lying and it isn't today."
+- "Deathbed to PR in 24 hours. Medical journals would love you. The ledger just raises an eyebrow."
+
+The app is calling the athlete a liar about their own health, from a medical register
+(`Medical journals`) it has no standing in, on evidence that does not support the inference: a
+24-hour viral illness followed by a good session is ordinary. [S18] is the finding that makes
+this self-defeating rather than merely unkind: subjective self-report is the **best** signal the
+app has, better than the objective measures it could substitute. [S17] closes the loop: whether
+self-report stays honest depends on buy-in and on what the system does with it.
+
+The `sore` comment at `coach.ts:224-227` already contains the correct reasoning and applies it
+to one reason out of seven: "Making them prove it, or counting it toward an escalation ladder
+built for flakiness, would teach them to train through it and lie about it instead."
+
+**Fix.** Add `sick` to the auto-accept list on the same reasoning as `sore`, and delete the
+`contradiction-sick-pr` pool (`plan/messages.ts:313-321`) along with the `hadPR` branch at
+`coach.ts:147-155`. There is no safe rewording; the message's entire content is the accusation.
+
+### 7.8 SEVERITY 2. Automatic substitutions are not undoable, and they silently reverse the athlete's own manual swap
+
+`applyAutomatic` (`adapt.ts:482-508`) rewrites the exercise in place. Nothing writes a record,
+and no screen offers a reversal: the substitution arrives as a banner
+(`adapt.ts:565-572` into `resolveDay.ts:488`) with text and no control.
+
+The ordering makes it worse. Per-date swaps are applied at `resolveDay.ts:309-328`, and
+`adaptSession` runs at `resolveDay.ts:481-489`, that is, **after**. So `planAdjustments` sees
+the post-swap exercise id. If the athlete uses the row's swap control
+(`logic/actions.ts:86-111`) to move to a movement that loads a flagged joint, `adapt.ts:327-344`
+substitutes it straight back out on the same render. The athlete's explicit, deliberate choice
+is reversed by an inference drawn from a 14-day window, with no way to say "I know, I want this
+one".
+
+Tier 2 obligation 2-B in section 3.3 is the missing piece: an automatic action must be one tap
+to undo, and the undo must be remembered. Member 4 of tier 2 already does this correctly
+(`logic/fatigueActions.ts:156-158`, `undoSetFeedback`, "One tap, no argument"), which shows the
+shape is known and simply was not applied to the other three.
+
+**Fix.** Add "Keep the original" to the substitution banner. It writes an `Override` with
+`verb: 'undid'`, scope `exercise`, TTL 90, and `planAdjustments` skips that substitution while
+the override is live.
+
+### 7.9 SEVERITY 3. The insight layer re-asserts forever, with a cooldown and no dismissal
+
+`generateInsights` (`engine/insights.ts:513-542`) gates each rule on
+`data.coach.surfacedInsights[rule.id]` against `rule.cooldownDays` (`insights.ts:516-517`).
+Cooldowns run 7 to 21 days across the 17 rules. There is no dismissal, no cap on lifetime
+repeats, and no path by which an athlete says "I know". `logic/actions.ts:256` writes the
+timestamp; nothing else touches the record.
+
+`attendance-slipping` (`insights.ts:324-333`, `cooldownDays: 14`) fires whenever the trailing
+28-day ratio is under 65%. An athlete in a genuinely hard year sees a variant of it every
+fortnight, indefinitely. The rule's own comment (`insights.ts:335-348`) makes a good case that
+somebody drifting away needs to hear *something*, and it is right. It is the sixth and tenth
+repetition that [S19] and [S27] make the case against.
+
+One insight also breaches the section 6 fence. `insights.ts:417`: "Under-slept speed work is
+how hamstrings tear." That is a tissue-level causal claim about this athlete (row 2 of the
+forbidden table), and it is not what the sleep literature supports.
+
+**Fix.** Insights join the same ledger: a dismiss control writes an `Override` with kind
+`insight:{ruleId}`, scope `global`; two dismissals suppress for 21 days, three retire the rule.
+Rewrite `insights.ts:417`.
+
+### 7.10 SEVERITY 3. The milestone review judges the person and claims priority over the athlete's goals
+
+`src/engine/review.ts:188`:
+
+```ts
+      text: `You made ${adherencePct}% of scheduled sessions. The plan didn't fail, attendance did. Everything else here is downstream of that number.`,
+```
+
+and `review.ts:172`:
+
+```ts
+      text: `Protein hit on only ${proteinPct}% of logged days. Every adaptation you're chasing is built from what you didn't eat. Fix this before touching the training.`,
+```
+
+v12 51.9 states the rule the first line breaks: "Separate a performance observation from a
+judgment of the athlete." [S22] gives the evidence: athletes evaluating S&C coaches do not
+separate technical competence from being treated as an adult, and trust and respect rank
+alongside programme quality. The second line is worse in a different way. It is an instruction
+that claims priority over the athlete's own goal ordering, in nutrition, which is the domain
+where the app has the least standing [S26].
+
+The same function gets one case exactly right and it is worth keeping as the model,
+`review.ts:180-183`: "Attendance was excellent but the needles barely moved. Not a character
+problem, a levers problem." That is an observation with a hypothesis and no verdict.
+
+**Fix.** Rewrite both to the register of `review.ts:182`. Section 6 rows 16 and 17 give
+replacements.
+
+### 7.11 SEVERITY 3. The readiness sheet states an invented threshold as physiology, and downgrades on a rule the athlete cannot see the arithmetic of
+
+`src/screens/today/ReadinessSheet.tsx:7`: `{ label: 'Slept under 6 hours', sub: 'The red line
+for CNS work.' }`. There is no red line, and no source in this pack or in R3 supports one.
+[R3 S17] (Craven et al., 69 studies) finds strength and power among the **least** affected
+categories under acute sleep loss, which is the opposite of a red line for exactly this work.
+
+`ReadinessSheet.tsx:31-32` computes `downgrade = count >= 2` and `ReadinessSheet.tsx:62`
+announces "the day downgrades" before the athlete has agreed to anything. `sessionStart.ts:31`
+then applies it: `const downgraded = (readinessFlags?.filter(Boolean).length ?? 0) >= 2 ||
+intensity === 'lighter'`.
+
+This is not as bad as it looks, and it should be recorded as partially correct: the athlete does
+tap "Start downgraded session" (`ReadinessSheet.tsx:96-100`), and the intensity picker at
+`ReadinessSheet.tsx:69-92` is explicitly framed as "the athlete's own call, on top of what the
+flags say" (`ReadinessSheet.tsx:68`). Consent is present. What is absent is the *option*: there
+is no control that says "two flags, run it as written anyway". Under [S4], an option is only
+offered when both answers are visible, and only one is.
+
+**Fix.** Rewrite `ReadinessSheet.tsx:7` per section 6 row 18. Add a third button to the
+intensity row so "Full send" remains reachable at two flags, and record choosing it as an
+`Override` with scope `session`.
+
+### 7.12 SEVERITY 3. The excuse ledger is permanent, undeletable, and is the app's only memory of the athlete's own words
+
+`d.excuses.push(...)` appears at `logic/actions.ts:356`, `448`, `551` and `576`. The only
+removal anywhere is `pruneTierDropExcuses` (`engine/coach.ts:249-258`), which fires only on an
+untrained tier revert. `ExcuseLedger.tsx:18` renders `[...excuses]` sorted newest first, with no
+delete control anywhere in the file (verified through `ExcuseLedger.tsx:99`), and the empty
+state reads "Clean sheet. No skips, no claims, no receipts. Keep it that way."
+(`ExcuseLedger.tsx:63`).
+
+Set against section 4.6: an override record must always be deletable by the athlete, and must
+never become a score. This is the inverse. It is a permanent compliance record with two counters
+at the top (`ExcuseLedger.tsx:22-31`, "unproven / 30d" in danger red and "with proof / 30d" in
+green), it cannot be edited, and it is the only place the athlete's own typed explanation
+(`claimText`, rendered at `ExcuseLedger.tsx:54`) is kept.
+
+**Fix.** Add a delete control per row. Drop the two counters, or reframe them as a neutral
+count. Keep the entries: the ledger is genuinely useful as a record the athlete can read, and
+it becomes useful to the *engine* only once it stops being a scoreboard [S17].
+
+### 7.13 What the audit found working, and which must not regress
+
+Recorded so a future session does not "fix" them.
+
+| Behaviour | Where | Why it is right |
+|---|---|---|
+| The automatic/proposal line, and its argument | `engine/adapt.ts:34-54` | The four tier-2 members are exactly the ones where inaction is unusable. The list is closed and reasoned |
+| `isAutomatic` as a single function | `engine/sessionFatigue.ts:47-54` | "That boundary lives in exactly one function so it can be moved without touching a call site." Section 5's `AUTHORITY` table is this idea generalised |
+| The athlete's own answer as ground truth | `engine/calibration.ts:263-279` | Matches [S18] exactly. "It is not a guess to be improved on, it is the ground truth everything else is trying to predict" |
+| Bounded learning | `engine/calibration.ts:66` `MAX_DRIFT = 0.5`, `:69` `PRIOR_STRENGTH = 6` | A learned band cannot run away from the researched one |
+| The learning explains itself | `engine/calibration.ts:286-296` | The template every other engine should copy |
+| Load-drop undo | `logic/fatigueActions.ts:156-158` | The only correct tier-2 undo in the tree |
+| Quit copy derived from the same numbers as the status | `engine/quit.ts:52-78` | States what is saved either way, which is [S4]'s both-answers rule, correctly applied |
+| `sore` auto-accepts, with its reasoning | `engine/coach.ts:224-228` | The right rule. 7.7 asks only that it be extended to `sick` |
+| The physio referral line | `engine/adapt.ts:391` | Refers without staging. House standard for section 6 F-4 |
+| Stated limitations do not expire | `prefsTypes.ts:43-54` | Correct, and section 4.3 adopts it verbatim |
+| Tier-aware attendance counting | `engine/insights.ts:483-489` | Refuses to count a sanctioned tier drop as a miss, so the app does not tell somebody off for taking the option it gave them |
+| Softening floors against the spiral | `logic/prescription.ts:102-126`, `:157-162` | The 60%-of-baseline floor is a genuine tier-1 floor and is documented with the failure it prevents |
+
+---
+
+## 8. EVAL FIXTURES
+
+Nineteen cases. Each is state in, authority decision out. Written to become
+`src/engine/authority.test.ts` plus additions to `src/engine/adapt.test.ts`. Every one fails or
+is unrepresentable against the tree as it stands today; the "today" column says which.
+
+Naming: **AUTH-n** for ladder placement, **OVR-n** for the override model, **FENCE-n** for
+scope, **INV-n** for invariants that must hold across the whole system.
+
+### 8.1 Ladder placement
+
+**AUTH-1. Missing equipment is tier 2, not tier 3.**
+State: plan calls barbell row, `plan.equipment` has no `barbell`, a viable dumbbell substitute
+exists. Expect: `substitute-equipment` applied automatically, banner text naming the missing
+item, an "undo" control present. Today: applies and explains (`adapt.ts:311-325`); **no undo**
+(7.8).
+
+**AUTH-2. Two bad nights is tier 3, not tier 2.**
+State: `badSleepDates` contains yesterday and the day before, no other signal. Expect: nothing
+applied by `adaptSession`; one `reduce-volume` card offered; both answers stated. Today: the
+resolver has already cut a third (`resolveDay.ts:396-404`) **and** the card is still offered
+(7.5). Two reductions for one night's sleep.
+
+**AUTH-3. Anchor promotion is tier 3.**
+State: week 17, squat anchor gained 8% e1RM over 11 logged sessions, `prefs.pinned` empty.
+Expect: the day still resolves with the *current* squat; one proposal offered, once; a decline
+leaves the anchor unchanged and writes an override. Today: the lift is replaced with no ask
+(7.1).
+
+**AUTH-4. A pinned lift is never promoted, and the pin is reachable.**
+State: same as AUTH-3, plus `prefs.pinned = ['barbell-back-squat']`. Expect: `outcome:
+'pinned'`, no proposal, no banner. Today: the engine branch is correct (`phase.ts:163-166`) and
+**no code path can put the id in that array** (7.3).
+
+**AUTH-5. Whether to train today is tier 4, ungated.**
+State: `escalationLevel` returns 3, athlete opens the skip flow, attaches no photo. Expect: the
+skip completes in one tap. No typed confirmation, no photo demand, no locked sheet, no change of
+message tone. Today: photo demanded (`SkipFlow.tsx:206-208`), `SKIP` typed
+(`SkipFlow.tsx:288-301`), sheet locked (`SkipFlow.tsx:116`) (7.6).
+
+**AUTH-6. A stated limitation outranks an inferred pain pattern, and uses different copy.**
+State: `prefs.limitations = [{ joints: ['knee'] }]`, no pain flags at all, plan contains three
+knee-loading movements with no sparing substitute. Expect: `reduce-load` with `automatic: true`
+and the "You told me about your knee" wording (`adapt.ts:378-384`). Today: unreachable, because
+`prefs.limitations` cannot be written (7.3), so the inferred wording at `adapt.ts:387-392`
+would be used if it ever were.
+
+**AUTH-7. A floor may only ever reduce.**
+State: any. Expect: for every tier-1 rule in `AUTHORITY`, applying it to a resolved day never
+increases total sets, total load, session count or the calorie target. Today: true by
+inspection, untested. This is the cheapest new guard in the pack.
+
+**AUTH-8. A preference cannot relax a floor.**
+State: athlete has expressed "push me" pacing and has a stated shoulder limitation. Expect: the
+limitation routing still fires; the pacing preference changes nothing about it. Encodes v12
+54.4. Today: no preference surface exists to test against.
+
+### 8.2 The override model
+
+**OVR-1. One decline changes nothing.**
+State: `reduce-volume` offered Monday, declined. Signal persists. Expect: it may be offered
+again on Thursday (`DECLINE_COOLDOWN_DAYS = 3`), not Tuesday. Today: offered Tuesday, Wednesday,
+Thursday and every day the window holds (7.4).
+
+**OVR-2. Two declines buy 21 days of silence.**
+State: `reduce-volume` declined Monday and again on Thursday. Expect: no `reduce-volume` card
+for that scope until Thursday + 21, even if the signal strengthens from 2 bad nights to 5.
+Today: unrepresentable.
+
+**OVR-3. Three declines retire the kind, after exactly one question.**
+State: declined Monday, Thursday, and the following Sunday. Expect: on the third decline, one
+"Want me to stop offering?" prompt with two answers. "Yes" writes `standing: true`. "No" resets
+`n` to 0. `askedToStop` for that key can never exceed `REOPEN_QUESTION_MAX = 1`.
+Today: unrepresentable.
+
+**OVR-4. A decline never generalises; a stated preference does.**
+State: athlete declines the lighter-day card for Tuesday. Expect: an `Override` with scope
+`session`, expiring that night. No `exercise`, `pattern`, `joint` or `global` record is written,
+and no other proposal kind is affected. Today: nothing is written at all.
+
+**OVR-5. Widening is offered, never taken.**
+State: athlete undoes an automatic substitution of overhead press for the second time. Expect:
+one offer, "Keep overhead pressing out generally, or just today?". Declining leaves scope at
+`exercise`. Nothing widens without the tap. Today: no undo exists (7.8).
+
+**OVR-6. A stronger version of the same signal does not reset the ladder.**
+State: `reduce-volume` retired at n=3 on a 2-bad-night signal. Two weeks later, 5 bad nights.
+Expect: still silent. `resetsOverride` returns false, because "louder" is not "new".
+Today: the card returns every day regardless.
+
+**OVR-7. A genuinely new tier-1 fact does reset it, except against a standing override.**
+State (a): `substitute-joint` declined three times for the shoulder; the athlete then states a
+*new* wrist limitation. Expect: the wrist routing fires normally; the shoulder record is
+untouched. State (b): the athlete answered "Yes, stop" at OVR-3, and a new fact arrives.
+Expect: still silent. A standing override is an answered question, and a new fact does not
+un-answer it; it may justify a tier-2 action on its own terms.
+
+**OVR-8. Reinforcement resets, it does not stack.**
+State: an `exercise`-scope override written on day 0, re-expressed on day 60, again on day 61.
+Expect: `expiresAt` is day 61 + 90. Not day 0 + 270.
+
+**OVR-9. Joint and global scopes never expire.**
+State: a `joint`-scope override written 400 days ago, and a `standing` global one written 400
+days ago. Expect: `pruneLedger` keeps both. Matches `prefsTypes.ts:43-54`.
+
+**OVR-10. An override is deletable and its deletion is complete.**
+State: any ledger. Expect: deleting an entry restores exactly the pre-override asking behaviour,
+with no residue in confidence, cooldown or `askedToStop`. Deleting a `standing` entry makes the
+kind askable again from n=0.
+
+### 8.3 Scope of practice
+
+**FENCE-1. No diagnosis vocabulary anywhere.**
+State: the full string corpus (`plan/messages.ts`, `engine/insights.ts`, `engine/review.ts`,
+`plan/exercises.ts`, `plan/athleticExercises.ts`, `plan/generator.ts`, `plan/guide.ts`,
+`plan/debrief.ts`, all `src/screens/**/*.tsx`). Expect: zero matches for row 1 and row 22 of
+section 6.2. No allowlist. Today: passes, and the test's job is to keep it passing.
+
+**FENCE-2. No prevention or tissue-causation claim, with a shrinking allowlist.**
+Expect: rows 2, 3 and 4 produce zero matches outside an allowlist seeded with the lines named in
+section 6.2 (`insights.ts:417`, `exercises.ts:150`, `exercises.ts:537`, `exercises.ts:1125`,
+`generator.ts:680`, `athleticExercises.ts:1240`). The allowlist may only shrink, same rule as
+`structure.test.ts:14-15`.
+
+**FENCE-3. Illness is never contradicted.**
+State: excuse `reason: 'sick'` yesterday, PR logged today. Expect: `excuseAccepted` returns
+true, `escalationLevel` is unchanged, and `contradictionsOnSessionFinish` returns no
+`contradiction-sick-pr`. Today: false, raised, and emitted (7.7).
+
+**FENCE-4. Every referral refers without staging.**
+State: an unroutable flagged joint. Expect: the copy names a threshold and hands the decision
+over, and contains no severity estimate, no condition name, and no reassurance. Today: passes
+at `adapt.ts:391`, which is the standard the rest should match.
+
+### 8.4 Invariants
+
+**INV-1. Overrides never touch the plan.**
+State: any 200-day history, resolved twice: once with an empty ledger, once with a ledger
+containing an override of every kind and scope. Expect: byte-identical `ResolvedDay.exercises`
+for all 200 days. Only banners and proposal cards may differ. This is the guard that keeps
+section 4.1's promise honest, and it is the single most important test in this pack.
+
+**INV-2. No engine writes a decision above its tier.**
+State: static. Expect: for every `DecisionKind` with tier `proposed` or `athlete-owned`, no code
+path outside a tap handler mutates store state for it. Enforceable in the shape of
+`structure.test.ts`: `src/engine/**` and `src/plan/**` contain no `store()` import, which is
+already true and currently unguarded.
+
+**INV-3. Every adjustment that reaches the athlete carries a sentence.**
+State: every `Adjustment` produced by `planAdjustments`, and every softened prefill. Expect: a
+non-empty `because` reaches a rendered element. Today: fails for the failing-movement softening
+(7.2), where the string exists at `fatigue.ts:246` and is discarded at `prescription.ts:99`.
+
+**INV-4. Nothing invents work.**
+State: any. Expect: no adaptation, override, insight or floor ever increases sets, load or
+session count relative to the plan as written. `engine/adapt.ts:50-54` claims this in a comment.
+It should be a test. The one permitted exception, `earned-progression`, is the plan's own rule
+arriving on time and is already excluded by construction.
+
+**INV-5. Declining costs nothing measurable.**
+State: two identical 90-day histories, one accepting every proposal and one declining every
+proposal. Expect: identical streaks, identical achievement state, identical coach message pool
+selection, identical insight eligibility. Only the override ledger differs. This is section
+3.5's 4-B and section 4.6 made checkable.
+
+---
+
+## 9. INTEGRATION NOTES
+
+### 9.1 Order of work
+
+1. **7.2 and 7.5 first.** Both are small, both are pure bug fixes against intent the tree
+   already states, and neither needs the new schema. `prefillFor` plumbs `because` through;
+   `adaptContextFor` gives both call sites one context.
+2. **7.3 next.** `PrefsSheet.tsx` unlocks four shipped engine branches and is a prerequisite
+   for 7.1's decline path being meaningful.
+3. **`authorityTypes.ts` and `authority.ts`**, with `mayAsk` and the constants, plus the ledger
+   key defaulted into the store so no `SCHEMA_VERSION` bump is needed.
+4. **7.4 and 7.8**, the decline control and the substitution undo, which are the first two
+   consumers of the ledger.
+5. **7.1**, promotion as a proposal.
+6. **7.6, 7.7, 7.10, 7.11, 7.12**, the copy and gating changes, which are independent of
+   everything above and can go in any order.
+7. **The FENCE test with its seeded allowlist**, last, so it lands green.
+
+### 9.2 What must not change without owner review
+
+- The four members of tier 2. Adding a fifth is a decision to move something out of the
+  athlete's hands, and the test for admission is in section 3.3.
+- Any number in section 4.3. They are HOUSE RULE, but they are HOUSE RULE with an argument
+  attached, and changing one without changing the argument is how a policy becomes a vibe.
+- `CONFIDENCE_FLOOR`. Removing it lets three declines silence a proposal that later becomes
+  correct for a different reason.
+- The em-dash guard and the copy fence share a home. Neither allowlist may grow.
+
+### 9.3 Open questions this pack could not close
+
+- **Does the athlete want the ladder explained?** Section 3.6's n=3 question assumes yes. No
+  source says whether telling someone "I have noticed you keep saying no" reads as attentive or
+  as surveillance. [S3] warns about surveillance; [S21] wants co-orientation. They point
+  opposite ways here and only a real user can settle it.
+- **The right `SUPPRESS_DAYS` for a seasonal athlete.** 21 days is tuned to a 4-week block. A
+  runner in a 16-week build may want a much longer memory. Left as one number until there is
+  evidence for two.
+- **Whether `analysis` mode should be inferable at all**, or whether inferring it from pin count
+  is a worse guess than asking once. v12 51.1 wants modes; this pack infers them to avoid a
+  question about the app rather than about training. That tradeoff is unresolved.
+- **What a trainer surface does to the ladder.** Section 5.4 defers `owner` and
+  `requiresApprovalFrom` deliberately. v12 51.2 to 51.7 describe a real multi-party model, and
+  none of it should be typed until there is a second party.
+- **Whether the excuse ledger should survive at all**, or be merged into the override ledger as
+  one "what you told me" screen. 7.12 assumes it survives with a delete control. The merged
+  version is probably better and is a bigger change than this pack should specify.
+
+### 9.4 Standing constraints this pack operates under
+
+Suggest only, never auto, with the four tier-2 exceptions named and closed. Deterministic core,
+zero runtime LLM calls: every rule here is a table, a constant or a typed record. Users never
+pick reps; nothing in the authority ladder touches the rep number, which stays collapsed to one
+value at `resolveDay.ts:491-500`. No em dashes in this file or in any copy it proposes. Layering
+respected: `authorityTypes.ts` at rank 0, `engine/authority.ts` at rank 1, the ledger writers at
+rank 2, the controls at rank 3, never upward.

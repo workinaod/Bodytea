@@ -156,6 +156,17 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
     is a 25 percent jump, so the top of the range now spends one exposure on a rep and
     takes the plate the second time round. Scoped to small-muscle primaries: a novice on
     the 30 lb dumbbells still takes the 35s, because that is how a rack works.
+  - **W5 (supplement safety, from R16):** the stack is where the app comes closest to
+    prescribing, and it was the one food surface W2 did not reach. A fish allergy stored
+    in onboarding kept somebody off salmon and then handed them fish oil on the same
+    screen; the diet filter said `!== 'vegan'` and so served every vegetarian fish oil and
+    collagen; magnesium asked for up to 400 mg against a 350 mg supplemental upper limit;
+    vitamin D sat exactly ON its 4,000 IU limit with a multivitamin beside it, so the plan
+    as written went over; fish oil's dose was oil rather than EPA + DHA; "pre-workout"
+    named the most adulterated category on the shelf; and an empty dose rendered a bare
+    separator. 12 tests. Owner calls left open in the ledger: whether zinc comes out of
+    the catalog at all, and whether the stack should be opt-in rather than written into
+    every plan, which is what "suggest only, never auto" would say.
   - Structure allowances came DOWN to pay for all of it, never up: types.ts 705 -> 696
     (FoodLimits moved to foodTypes.ts), store/schema.ts 649 -> 634 (meal-plan shapes moved
     to store/mealPlanSchema.ts), plan/generator.ts 941 -> 940.
@@ -236,11 +247,11 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R11 | Athletic and sport-specific S&C | research | **synthesized 2026-08-18** (research/R11-athletic-sport.md; 23 sources, SportProfile shape, 20 fixtures) | J1 | engines lane, sport-wiring job |
 | R-ONT | Exercise ontology expansion (capability fields, alias resolution, substitution at scale, corpus licensing) | research | **synthesized 2026-08-18** (research/RONT-exercise-ontology.md) | J1 | feeds J6 + B3 |
 | B3 | Knowledge store + retrieval layer | infra | **designed 2026-08-18** (research/B3-knowledge-store.md; tiered storage, 32KB/24-record DecisionPacket cap, lexicographic ranking, derived confidence, pg_trgm over vector DB; stage plan 0-4) | J7 contracts stable | engines lane, alongside R5, before J11 |
-| R12 | Trainer authority, coaching relationship, override model (v12 s51) | research | **partial 2026-08-18** (research/R12-trainer-authority.md; sources only, agent cut off by a session limit, resumed) | J1 | feeds J10 + the whole suggest-only contract |
-| R13 | Population learning, cohort inference, privacy-preserving aggregation (v12 s52) | research | **partial 2026-08-18** (research/R13-population-learning.md; sources only, resumed) | B3 | engines lane, inside J8 |
-| R14 | Wearables, passive signals, integration boundaries (v12 s32-33) | research | **outline 2026-08-18** (research/R14-wearables-signals.md; resumed) | J7 | engines lane, post-gate |
+| R12 | Trainer authority, coaching relationship, override model (v12 s51) | research | **synthesized 2026-08-18** (research/R12-trainer-authority.md; 1444 lines, 28 sources, authority ladder, override decay, 22-row forbidden-phrase table, 27 fixtures). FIVE SEV1 DEFECTS: phase.ts:172-178 silently swaps the anchor lift at week 17 with no proposal and no undo, and the only opt-out (prefs.pinned) is unwritable; prescription.ts:99-126 opens a flagged movement 12.5 percent lighter and says nothing, the sentence being built at fatigue.ts:246 and thrown away; types.ts:680 data.prefs is read in 4 places and written in 0, so four shipped engine branches are dead code; fatigueActions.ts:93-96 stores no decline and the card has no decline control, so the same proposal returns daily for 14 days; AdaptProposals.tsx:37-41 passes 2 of 5 AdaptContext fields, inverting the guard that stops a second volume cut stacking on the automatic one | J1 | feeds J10 + the whole suggest-only contract |
+| R13 | Population learning, cohort inference, privacy-preserving aggregation (v12 s52) | research | **synthesized 2026-08-18** (research/R13-population-learning.md; 1588 lines, 42 sources, 20 fixtures, CohortPrior/Blended shapes, 11 named estimands). VERDICT: `engine/calibration.ts` already IS a Buhlmann credibility estimator (`w = n/(n+PRIOR_STRENGTH)` at :235, `MAX_DRIFT` at :66) applied to 1 of ~60 hidden population constants; k should be derived as EPV/VHM, not hand-typed. Blend clamps to the HOUSE constant, never to the prior, so priors cannot compound. Cohorts cut on 5 behavioural axes (age and geo REFUSED), MIN_CELL 200 athletes / 1000 obs / 5% per-athlete cap. REJECTED with citations: federated learning, bandits, learned clustering, per-cell models, DP in v1. LIVE DEFECTS: board_stats is world-readable per-user (0001:45-46); no adaptive TDEE though weight+meals are stored (bookletOps.ts:53); stride never learned though RunLog has GPS distance AND steps (intensity.ts:124) | B3 | engines lane, inside J8 |
+| R14 | Wearables, passive signals, integration boundaries (v12 s32-33) | research | **synthesized 2026-08-18** (research/R14-wearables-signals.md; 1000 lines, 32 sources, 20 fixtures, PassiveReading/SignalConflict shapes, platform matrix). VERDICT: a PWA cannot read Apple Health at all and Safari has never shipped Web Bluetooth, so every wearable read needs Capacitor. REJECTED with citations: vendor readiness scores, daily HRV, sleep stages, SpO2, wearable active calories, wrist HR for zones, cycle-phase periodisation, absolute smart-scale body fat. ACCEPTED: daily steps into extra-load, workout duration/distance, body mass. The 4-flag readiness check STAYS (Saw 2016: self-report beats objective markers) | J7 | engines lane, post-gate |
 | R15 | Lifespan programming, youth LTAD through masters (v12 s12) | research | pending (agent died on the session limit before writing; relaunch) | J1 | J6, with R6/R7 |
-| R16 | Supplements, evidence tiers, claims fence (v12 s27) | research | **partial 2026-08-18** (research/R16-supplements.md; sources only, resumed). NOTE: the app already ships dose and timing advice in plan/foods.ts SUPPLEMENT_CATALOG, unaudited | J1 | product lane, urgent given what ships today |
+| R16 | Supplements, evidence tiers, claims fence (v12 s27) | research | **synthesized 2026-08-18** (research/R16-supplements.md; 1207 lines, 43 sources, line-by-line audit of the shipped SUPPLEMENT_CATALOG, 22 forbidden phrasings with rewrites, 27 routing rules, SupplementRecord shape + v20 to v21 migration, 22 fixtures). SHIPPED DEFECTS: foods.ts:201 "Caffeine / pre-workout" endorses the most-adulterated category; :199 magnesium 400 mg tops the 350 mg supplemental UL; :203 zinc has no supportable claim; :197 vitD ceiling sits AT the UL and stacks with :200; :319 vegetarians are served fish oil; :318-322 supplements never run through blockedBy so a stored fish allergy is ignored; :321 slice(0,3) writes a stack unconditionally (violates suggest-only). **FIXED in W5 (see section 2): the allergy check, the vegetarian filter, both over-limit doses, the fish oil unit, the pre-workout endorsement and the empty-dose render.** STILL OPEN and owner calls: removing zinc, and making the stack opt-in rather than written into every plan | J1 | product lane |
 | R17 | Routine-import intelligence + competitive landscape (v12 s39) | research | pending (agent died on the session limit; relaunch) | R-ONT | J4/J5 |
 | R18 | Pilates, yoga, barre, group-fitness modalities (v12 s19) | research | pending (agent died on the session limit; relaunch) | R9, R-ONT | catalog expansion |
 | IW | Ingestion waves: mass corpus expansion (exercises, programs, evidence, food) through B3's pipeline toward millions of records | research | pending, post-gate | J12 + B3 | dedicated sessions per wave |
@@ -602,6 +613,25 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   copy changes, which is the cost of changing copy and was paid). 390px screenshots
   reviewed on a bare-floor athlete, which is the persona the old picker served worst.
   NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+- **2026-08-18, research wave 4 resume, R14 wearables (agent).** R14 finished:
+  `research/R14-wearables-signals.md`, 1000 lines, 32 sources tiered A/B/C, 20 eval
+  fixtures of which 7 expect "change nothing". Four findings the owner needs. (1) The
+  platform wall is real and undiscussable: HealthKit has no web API of any kind and
+  Safari has never shipped Web Bluetooth at any version, so the current PWA has already
+  harvested everything it can (location, altitude, in-session steps) and every remaining
+  signal is a Capacitor item. (2) Most consumer signals are rejected on the evidence,
+  not on effort: vendor readiness scores, daily HRV, sleep stages, SpO2, wearable active
+  calories, wrist HR for zones, cycle-phase periodisation and absolute smart-scale body
+  fat, each with the number that decides it. (3) The audit of every question BodyT asks
+  a human that a sensor could answer returns 2 replacements out of 18; the four-flag
+  readiness check stays, because self-report tracks training load better than resting HR
+  across 56 studies. ReadinessSheet.tsx:8 literally asks a human to guess their resting
+  heart rate and the correct answer is still to keep asking, with the sub-label reworded.
+  (4) The conflict rule: a reading never mutates a claim, and only athlete claims reach
+  badSleepDates, so the one automatic volume cut in the app stays human-triggered even
+  after sleep sync ships. Proposed shapes fit the existing split (signalTypes.ts +
+  store/signalSchema.ts + platform/health.ts + engine/signals.ts) with a defaulted store
+  key, so no SCHEMA_VERSION bump and no migration. No production code touched.
 
 ## 10. SOURCES
 

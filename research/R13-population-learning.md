@@ -529,3 +529,1060 @@ HOUSE). `k = 64 / 144 = 0.44`.
 | G9 | The engine must produce the identical answer with zero packs installed as it did before packs existed | B3 section 2, HOT tier rule. `theta_prior := theta_house` when absent, so this is true by construction |
 
 ---
+
+## 4. COHORT DEFINITION AND MINIMUM CELL SIZE
+
+### 4.1 The axes, and the ones we refuse
+
+Playbook 52.3 is explicit: select cohorts by relevant behavioural and training context rather than
+crude demographic stereotypes. That instruction happens also to be the privacy preserving choice,
+because behavioural axes with three or four levels are far weaker quasi identifiers than
+demographics. [S26] found ZIP plus birth date plus sex uniquely identifies 87.1% of the US
+population using three attributes; nothing below has that resolving power, by construction.
+
+**The six axes. Five are always available, one is domain restricted.**
+
+| Axis | Levels | Cardinality | Where the app already holds it |
+|---|---|---|---|
+| `A1 trainingAge` | `unknown` / `lt6mo` / `6to24mo` / `gt24mo` | 4 | NOT stored today. Playbook 55 requires this to be per domain rather than global; R13 uses the domain relevant to the estimand, and `unknown` is a first class level, never inferred |
+| `A2 goalFamily` | `sizeStrength` / `lean` / `athletic` / `endurance` | 4 | collapse of `PlanConfig.goal` (`store/schema.ts:76`: vertical, speed, muscle, strength, lean, general, endurance) |
+| `A3 equipmentClass` | `bodyweight` / `home` / `gym` | 3 | collapse of `plan.equipment: EquipTag[]` (`types.ts:141` to `:161`, 20 tags). `gym` requires `rack` or `machine`, `home` requires `dumbbell` or `band` or `kettlebell`, else `bodyweight` |
+| `A4 daysPerWeek` | `2to3` / `4to5` / `6plus` | 3 | already the second dimension of the shipped `LAYOUTS` table in `plan/generator.ts` |
+| `A5 limitation` | `none` / `limited` | 2 | `limitedJoints(prefs).length > 0` (`prefsTypes.ts:79` to `:81`). BOOLEAN ONLY. Which joint is never a cohort axis |
+| `A6 sex` | `male` / `female` | 2 | `Profile.bfFormula` (`types.ts:249`). **Nutrition domain estimands only (E2), at 2x the minimum cell size, and never combined with more than two other axes** |
+
+`A5` is deliberately a boolean rather than the joint list. A cell keyed on "knee and shoulder and
+lower back" would be small, and would also be a health disclosure at cell granularity, which is
+the [S27] homogeneity attack waiting to happen. The joint list stays on device and drives
+substitution locally, exactly as `engine/adapt.ts` already does through
+`substitutesFor` and `limitedJoints`.
+
+`A6` is the only axis that carries real re-identification weight, so it is fenced: it is
+physiologically load bearing for E2 only (the shipped baseline at `plan/bookletOps.ts:53` already
+splits 14 versus 15 kcal per lb on it), the app already stores it locally, and admitting it costs
+nothing new at collection time. Everywhere else it is refused.
+
+**Refused axes, and why:**
+
+| Refused | Why |
+|---|---|
+| Age or age band | **The app does not collect age and has decided not to.** `plan/sportsNutrition.ts:129` to `:132` says so verbatim: "Mifflin-St Jeor proper needs age, which the app does not ask for and will not start asking for to buy a second-order term." Age is also one third of Sweeney's 87% triple [S26]. Refusing it costs nothing and removes the single strongest quasi identifier available |
+| Geography at any resolution | [S29] two spatio temporal points identify over 50% of people and uniqueness decays only as the 1/10 power of resolution, so coarsening does not rescue it. [S30] and [S31] are the fitness specific proof: an aggregated, opt out, anonymised heatmap still yielded home addresses, and the determining factor was low local density. A cohort cell IS a low density region by definition |
+| Ethnicity, income, occupation, device model | playbook 52.8: do not infer protected or sensitive traits merely to improve recommendations. None are collected, none should be |
+| Bodyweight or height as continuous values | released as a cohort key they are near unique in combination. Used locally for normalisation only; E2's contribution is normalised to kcal per lb ON DEVICE so that neither the weight nor the absolute TDEE crosses the fence |
+| Exact session counts, streaks, start dates | high dimensional behavioural quantities, which [S28] showed are effectively fingerprints |
+| Free text of any kind | `plan.goalStatement` is currently truncated to 80 characters and shipped to a world readable table (`cloud/board.ts:48`). It is not a cohort axis and it never becomes one |
+
+### 4.2 The lattice, and the fixed backoff ladder
+
+Without `A6` the lattice is `4 x 4 x 3 x 3 x 2 = 288` cells. At a 200 athlete floor and a uniform
+distribution that needs 57,600 contributing athletes to populate every cell; the distribution is
+nothing like uniform, so realistically the full lattice never populates and most lookups land on
+a partially specified cell. That is expected, and it is why the backoff ladder is the actual
+retrieval mechanism rather than an error path.
+
+**The ladder is fixed, published in the pack manifest, and evaluated most specific first.** Its
+determinism is a hard requirement: B3 section 5 stage 3 ends its ranking on `id` ascending
+specifically so `golden.test.ts` can lock retrieval, and a cohort lookup that could return two
+different rungs for the same athlete would break that.
+
+Default ladder, used unless the estimand declares its own:
+
+| Rung | Key | Axes |
+|---|---|---|
+| L4 | `A1.A2.A3.A4.A5` | most specific |
+| L3 | `A1.A2.A3.A4` | drop limitation |
+| L2 | `A1.A2.A3` | drop days per week |
+| L1 | `A1.A2` | drop equipment |
+| L0 | `A2` | goal family only |
+| Lg | `*` | global |
+
+Two estimands declare their own ladder, because the default ordering is wrong for them:
+
+- **E2 `tdee.maintenanceKcal`:** `A6.A2` then `A6` then `A2` then `*`. Sex first, because it is
+  the axis that actually moves resting metabolism, and equipment does not. Capped at two axes
+  including sex, per the section 4.1 fence.
+- **E5 `volume.regionCeiling`:** `A1.A2.A4` then `A1.A2` then `A1` then `*`. Training age first,
+  because tolerance tracks exposure history far more than it tracks goal.
+
+**Retrieval rule:** walk the ladder from the top; return the first rung whose cell satisfies ALL
+of the admission tests in section 4.3. The returned prior carries the rung that answered, and
+the app's copy layer may use it ("people training three or four days a week with dumbbells"),
+which is also what makes a wrong cohort visible to a user rather than silent.
+
+**Cohort membership is never stored.** There is no `cohortId` on the user record, in `AppData`, or
+in any cloud table. The key is recomputed from current state at every lookup. This satisfies
+playbook 52.3's "do not freeze users into an early cluster" as a structural property rather than
+a policy: there is no frozen thing to become stale, and there is no cohort label to leak. An
+athlete who buys a rack moves from `home` to `gym` on the next plan regeneration with no migration
+and no event.
+
+### 4.3 Minimum cell size, and the four arguments that set it
+
+**`MIN_CELL_ATHLETES = 200`. `MIN_CELL_OBSERVATIONS = 1000`. `MAX_ATHLETE_SHARE = 0.05`.**
+
+**Argument 1, statistical. The cell mean must be much more precise than the thing it summarises.**
+Writing `sigma_pop^2 = sigma_within^2 + tau^2 = tau^2 (k + 1)`, the standard error of a cell mean
+over `m` athletes is `tau * sqrt(k+1) / sqrt(m)`. Requiring that error to be at most a quarter of
+`tau`, so that the prior's own uncertainty is a minor term in the blend:
+
+```
+sqrt(k+1) / sqrt(m) <= 0.25    ->    m >= 16 (k + 1)
+```
+
+| Estimand | k | m required |
+|---|---|---|
+| E1 stride | 0.2 | 19 |
+| E3 load increment | 5 | 96 |
+| E2 TDEE | 6 | 112 |
+| E4 intensity band | 6 | 112 |
+| E5 volume ceiling | 13 | 224 |
+
+So the statistically driven floor across the eleven estimands is about 112 for the typical case
+and 224 for the worst. [S8] adds that estimating the hyperparameters from the data is itself
+uncertain and needs a correction, which pushes the same direction.
+
+**Argument 2, clustering. Athletes are not independent draws.** [S39] found 2.5 times more
+variance between families than within them across 98 families in HERITAGE, with heritability of
+the training response up to 47%. Households, gyms and training partners cluster in a fitness app
+too. With clusters of size 2 and an intra cluster correlation of 0.3 the design effect is
+`1 + (2-1)(0.3) = 1.3`, so the 112 becomes about 146 effective athletes.
+
+**Argument 3, privacy. k-anonymity with headroom.** [S25] requires every released quantity to be
+indistinguishable across at least `k-1` others on the quasi identifiers. Our cell key is five
+coarse behavioural attributes, weaker than Sweeney's three demographic ones [S26], but the release
+is a MEAN, and a mean over a small group is close to a disclosure of the group. A floor of 200
+plus the release discipline below puts the per athlete influence on any published number at under
+0.5%, which is inside the rounding.
+
+**Argument 4, the differencing attack, which a size floor alone does not stop.** If two consecutive
+releases of the same cell show counts of 200 and 201 with means `mu1` and `mu2`, the newcomer's
+value is exactly `201*mu2 - 200*mu1`. Size floors are useless against this. Three release rules
+close it:
+
+- counts published rounded DOWN to a multiple of 50, never exact, so a published count never
+  overstates the cell;
+- **a cell is republished only when its rounded count changes, or when four quarters have passed
+  since its last publication.** The consequence is the whole defence: two consecutive published
+  records of one cell differ either by at least 50 athletes, in which case differencing yields the
+  mean of at least 50 unidentified newcomers rather than one person's value, or by up to a year of
+  membership churn of unknown size. The exact-one-newcomer differencing attack is not made
+  expensive, it is made unobservable;
+- the four quarter forced refresh exists so a genuinely drifting cohort is not frozen forever by
+  the count rule. It goes through human review, per section 8 fixture EV-20;
+- one release per quarter, tied to a pack version bump (B3 section 3: version is a monotonic
+  integer, the URL is immutable, so a release is a discrete, auditable event).
+
+**Rounding 112, then 146 for clustering, then doubling for the release headroom and the
+[S8] hyperparameter correction, lands at 200.** `MIN_CELL_ATHLETES = 200` for every estimand,
+`400` for any cell whose key includes `A6 sex`.
+
+**`MIN_CELL_OBSERVATIONS = 1000` and `MAX_ATHLETE_SHARE = 0.05`** exist for a different failure:
+a cell can hold 200 athletes of whom one logs 40 times a week and the rest log twice. Each
+athlete's contribution to a cell is capped at 5% of the cell's total observation weight before the
+mean is taken. This also bounds sensitivity in the [S19] sense: with a per athlete cap, the amount
+one person can move the published mean is bounded, which is the precondition for saying anything
+at all about privacy loss.
+
+**Two admission tests beyond size, both of which suppress the cell entirely on failure:**
+
+- **Diversity, against the [S27] homogeneity attack.** A cell of 200 athletes who all report the
+  same value discloses that value for every one of them. Require the cell's standard deviation to
+  be at least `0.25 * tau_global` for the estimand. A cell that fails is suppressed, not published
+  with a warning.
+- **Contribution spread.** Require at least 200 DISTINCT athletes after the 5% weight cap is
+  applied, so a cell cannot be rescued by one prolific contributor's volume.
+
+**Suppression is silent and complete.** A cell that fails any test does not appear in the pack at
+all. The retrieval ladder then falls to the next rung, and if every rung fails the answer is
+`theta_house`, which is what the app does today. **The failure mode of this entire system is
+"BodyT behaves exactly as it does now", which is the property that makes it safe to ship.**
+
+---
+
+## 5. THE PRIVACY FENCE
+
+### 5.1 What may never leave the device
+
+Absolute list. Nothing here appears in `cohort_contrib`, in any derived aggregate, in any published
+pack, or in any query the aggregation job is permitted to write.
+
+| Never leaves | Where it lives now |
+|---|---|
+| **Phone number** | `profiles.phone` (`0001_core_tables_rls.sql:7`) and device local `SyncMeta.phone` (`cloud/logic.ts:174`). The aggregation job's SQL is forbidden from referencing `public.profiles` at all, and `cohort_contrib` has no phone column to hold one |
+| **Recovery hash** | `profiles.recovery_hash` (`0001_core_tables_rls.sql:9`). Same rule |
+| PIN, derived password, recovery code | derived in `cloud/logic.ts:98` and `:114`, never stored client side |
+| Username | `profiles.username`, `board_stats.username` (`cloud/board.ts:46`) |
+| Any free text | `plan.goalStatement`, limitation labels, coach notes, excuse reasons |
+| **Every GPS point, split, route and elevation series** | `RunLog.points`, `RunLog.splits`, `activityTypes.ts:47` and `:46`. [S29] four points identify 95% of people, [S30] an aggregated heatmap still gave up home addresses. There is no k that makes route geometry safe, so there is no release at any k |
+| Any date or timestamp of any activity | contributions carry a QUARTER string, nothing finer |
+| Body weight, height, measurements, body fat, photos | `AppData.measurements` (`types.ts:415`), `AppData.photos`. E2 normalises to kcal per lb ON DEVICE precisely so the weight itself never crosses |
+| Which joints are limited | `Prefs.limitations[].joints` (`prefsTypes.ts:79`). Only the boolean `A5` crosses, per section 4.1 |
+| Any session, set, meal or measurement level record | only sufficient statistics cross, per 5.2 |
+| Cohort membership as a stored label | there is no `cohortId` field anywhere, per section 4.2 |
+
+### 5.2 What may leave, in exactly what form
+
+**One row, per athlete, per quarter, per estimand. Seven fields. Opt in, default off.**
+
+```sql
+-- supabase/migrations/0003_cohort_contrib.sql   (project: bodytea-prod)
+create table public.cohort_contrib (
+  user_id        uuid not null references auth.users(id) on delete cascade,
+  quarter        text not null check (quarter ~ '^\d{4}Q[1-4]$'),
+  estimand       text not null check (char_length(estimand) <= 40),
+  cohort_key     text not null check (char_length(cohort_key) <= 64),
+  n              int  not null check (n between 1 and 500),
+  sum            double precision not null,
+  sumsq          double precision not null check (sumsq >= 0),
+  engine_version int  not null,
+  primary key (user_id, quarter, estimand)
+);
+alter table public.cohort_contrib enable row level security;
+create policy "contrib insert own" on public.cohort_contrib
+  for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "contrib update own" on public.cohort_contrib
+  for update to authenticated
+  using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+-- DELIBERATELY NO SELECT POLICY. Not even the owner can read this table back through
+-- the anon key, so it cannot be enumerated by anyone holding a session.
+```
+
+Notes on that shape, each of which is load bearing:
+
+- **No select policy at all.** The client upserts with `returning: 'minimal'`. The only reader is
+  the scheduled aggregation job running under the service role. This is the opposite of
+  `board_stats`, whose `using (true)` select policy is the defect in section 5.5.
+- **`user_id` is present only so RLS can scope the write.** It is never carried into an aggregate.
+  A rotating on device pseudonym was considered and rejected: any pseudonym the client can derive,
+  the server can recompute from data it already holds, so it would buy nothing and cost a key
+  rotation mechanism.
+- **`(user_id, quarter, estimand)` is the primary key**, so one account contributes at most one
+  row per estimand per quarter. This is the Sybil bound in section 5.4.
+- **`n` is capped at 500 by a CHECK**, and the client caps it again before writing. An unbounded
+  count is an unbounded sensitivity [S19], and a table constraint is the only version of that cap
+  an attacker cannot skip.
+- **`sum` and `sumsq` rather than a mean.** The second moment is what lets the offline job measure
+  `sigma_within` and `tau` and therefore derive `k` per estimand per cohort [S7][S2], instead of
+  hand typing it the way `engine/calibration.ts:69` does today. That is the whole reason there are
+  three numbers and not one.
+- **Values are winsorized on device** to the estimand's published 5th and 95th percentile bounds,
+  which ship in the previous quarter's pack. A value outside the bound contributes at the bound.
+- **`engine_version`** so an aggregate can be attributed to the engine that produced it, per
+  playbook 52.5. Contributions from different engine versions are aggregated separately, never
+  pooled.
+
+**The path from that table to the athlete's phone is one directional and never runs at runtime:**
+
+```
+device  ->  cohort_contrib          quarterly, opt in, one row per estimand
+            (service role only)
+   offline job  ->  cohort_priors   applies section 4.3 admission tests, suppresses failures
+   CI           ->  scripts/buildPacks.ts reads cohort_priors under the service role
+                ->  public/packs/population/cohort-priors@N/records.jsonl.gz
+   gh-pages     ->  a static file, content addressed, sha256 pinned in plan/packRegistry.ts
+   device       ->  installs it opportunistically, per B3 section 2 WARM rules
+```
+
+**The app never queries Supabase for a prior.** There is no runtime read path from the engine to
+the population layer, and the layering test already enforces the direction: `plan` is rank 0 and
+`engine` is rank 1, `cloud` is rank 2 (`src/structure.test.ts:158` to `:167`), so nothing in
+`plan/` or `engine/` can import `cloud/` without failing the existing test. No new rule is needed,
+which is the same argument B3 section 10 makes for `platform/foodLookup.ts`.
+
+### 5.3 Threat model: four attackers, and what each actually gets
+
+**Attacker 1: any authenticated user, against the system as it stands today. This one succeeds,
+and it is a live defect, not a hypothetical.**
+
+`board_stats` carries the policy `for select to authenticated using (true)`
+(`0001_core_tables_rls.sql:45` to `:46`). No server side limit exists; the 50 row cap and the
+`sessions_total >= 3` filter at `cloud/board.ts:74` and `:78` are client politeness. Anyone with
+an account can page the entire table. Per user they obtain:
+
+- `username`, self chosen and frequently reused across services;
+- `goal_statement`, up to 80 characters of the user's own free text (`cloud/board.ts:48`);
+- `goal`, `streak`, `consistency30`, `pr_gain90`, `protein30`, `sessions_total`;
+- `updated_at`, server stamped by trigger (`0001_core_tables_rls.sql:70` to `:71`).
+
+The concrete inference: the board row is rewritten on every successful envelope backup
+(`cloud/sync.ts:100`), gated to once per hour (`cloud/board.ts:29`), and the envelope push itself
+fires 10 seconds after any state change (`cloud/sync.ts:155`, `:166`). **Polling `board_stats`
+hourly therefore yields a per user app activity timeline at hour resolution**, and differencing
+`sessions_total` between polls gives the exact number of sessions logged in the interval.
+Add a self chosen username and 80 characters of self written text and this is precisely the
+auxiliary information attack of [S28], with the fitness specific precedent in [S30].
+
+R13's position: **this is a per user table, not an aggregate, and no population aggregate may be
+derived from it, joined to it, or published beside it while that policy stands.** Fixing it is a
+prerequisite for section 5.2, not a follow up. The minimal fix is a security definer view that
+returns only the top 50 rows for one category and drops `goal_statement`, with the base table's
+select policy removed.
+
+**Attacker 2: anyone holding the published prior pack, which is everyone, since it ships with the
+app.** What can they learn about one named user?
+
+| Attack | Status under this design |
+|---|---|
+| Read a cell mean and attribute it to a member | The mean is over at least 200 distinct athletes with each capped at 5% of the weight, so one person's maximum influence on a published number is under the 50 count rounding |
+| Differencing across two releases [S20] | Closed deterministically: counts are published rounded to 50, and **a cell is republished only when its rounded count changes**, so a mean never moves against a stable count |
+| Homogeneity attack [S27] | Closed by the diversity admission test: a cell whose SD is under `0.25 * tau_global` is suppressed entirely rather than published |
+| Membership inference [S32] | The published object is three moments over at least 200 athletes and at least 1,000 observations, a parameter to example ratio of 3 to 1,000. [S32] shows attack success rises with parameters relative to training examples; this is the far end of that curve. **This is why a prior must always be moments and never a fitted per cell model** |
+| Auxiliary knowledge, the [S25] caveat | An attacker who already knows the values of 199 of the 200 members can solve for the last. This requires knowing 199 people's training data, which is a stronger assumption than any realistic adversary and is not defended against |
+
+**Attacker 3: the server operator, or anyone holding the service role key.** Can join
+`cohort_contrib.user_id` to `profiles.phone`. **This is real and it is not cryptographically
+prevented. Saying otherwise would be a lie.** Two things make it the wrong place to spend
+engineering:
+
+1. The join yields a coarse cohort key and three moments per estimand per quarter. The same actor
+   can already read `states.envelope`, which is the athlete's entire training and health record
+   (`0001_core_tables_rls.sql:19` to `:24`). `cohort_contrib` adds close to zero marginal
+   disclosure against this adversary.
+2. The defence that does work is minimisation, which is what section 5.1 is. The rule that
+   actually binds is procedural and testable: **the aggregation job's SQL may not reference
+   `public.profiles`, and CI fails if it does.**
+
+**Attacker 4: a malicious contributor poisoning a prior [S18].** Three bounds compose:
+
+- one account writes at most one row per estimand per quarter (the primary key), so volume
+  stuffing needs many accounts, and an account needs a unique phone number
+  (`0001_core_tables_rls.sql:7`, `phone text not null unique`). The account model is accidentally a
+  Sybil cost, which is worth noting and worth not removing;
+- the aggregation applies the 5% per athlete weight cap and winsorizes to the cell's 5th to 95th
+  percentile before taking moments, so an extreme value contributes at the bound;
+- **even a fully captured prior is clamped.** `MAX_DRIFT = 0.5` at the client (section 3.2, guard
+  G2) anchors to `theta_house`, and guard G6 forbids any safety gate from being a learned
+  estimand. The worst achievable outcome of a successful poisoning campaign is that a suggested
+  rest interval or step band moves by up to half, in a suggest only surface, with the provenance
+  visible in the copy (guard G3).
+
+### 5.4 Differential privacy: not first, and the honest reason
+
+The recommendation is **do not ship differential privacy in the first version, and write down the
+condition that changes the answer.** The reasoning, not the conclusion, is the point:
+
+1. **The budget is the hard part, not the mechanism.** Under sequential composition [S20], eleven
+   estimands at epsilon 1 each is epsilon 11 per quarter and 44 per year, and the lifetime budget
+   is unbounded unless something tracks it across releases forever. [S22] is exactly this failure
+   in a shipped product: reverse engineered per submission epsilon of 6 on macOS and 14 on iOS,
+   data sent daily, and no cross day accounting, making the effective lifetime loss unbounded.
+   An unaccounted epsilon is a number in a slide, not a guarantee.
+2. **Local DP needs a population BodyT does not have.** [S21] deploys local DP at Chrome scale
+   precisely because per client noise needs enormous n to average out. With cells at the 200
+   athlete floor, local DP noise would swamp the signal, and **a noisy prior is strictly worse than
+   the house constant it would replace**, because the house constant at least has a citation.
+3. **What DP would buy here is already bought deterministically.** Its main contribution against
+   this release shape is protection from the differencing attack, and the republish rule in
+   section 4.3 closes that exactly rather than probabilistically.
+4. **[S24] says choose epsilon from the harm, not from convention**, and [S23] shows a real national
+   deployment set its budget by a utility argument that moved repeatedly through the demonstration
+   cycle. The harm from disclosing "athletes training four to five days a week with a full gym who
+   are chasing size add about 4 lb per exposure on lower body lifts" is not zero, but it is not
+   meaningfully reduced by adding Laplace noise to it either.
+
+**Condition to revisit, in B3's style:** add central DP with a persisted lifetime budget ledger the
+moment any of these becomes true. Publish a cell COUNT or a histogram rather than only moments;
+move the release cadence from quarterly to continuous; admit any axis with more than four levels;
+or drop `MIN_CELL_ATHLETES` below 200. The mechanism to add first is Laplace noise on the cell
+mean at sensitivity `0.05 * (p95 - p05)`, which the 5% weight cap and the winsorization already
+make well defined. That the sensitivity is already bounded is not an accident, it is the reason
+those two rules are in section 5.2 rather than in a later phase.
+
+### 5.5 The three live defects this fence catches
+
+| # | Defect | `file:line` | Fix |
+|---|---|---|---|
+| DEF-1 | `board_stats` is a world readable per user behavioural table with free text and an activity timestamp | `0001_core_tables_rls.sql:45` to `:46` (`using (true)`), `cloud/board.ts:48` (`goal_statement`), `0001_core_tables_rls.sql:70` to `:71` (`updated_at` trigger) | replace the select policy with a security definer view returning a bounded top 50 per category and no `goal_statement`; prerequisite for any population work |
+| DEF-2 | Leaderboard participation cannot be declined separately from cloud backup: the board push is piggybacked on every successful envelope push | `cloud/sync.ts:100` | separate the consents. **Population contribution must be a third, independent, default off opt in**, never coupled to either |
+| DEF-3 | The phone number is fetched from `profiles` after every sign in and written to device `localStorage` | `cloud/sync.ts:205` to `:208`, `cloud/logic.ts:174`, `:190` to `:196` | out of scope for R13 to fix, in scope to fence: nothing in `plan/` or `engine/` may import `cloud/`, which `src/structure.test.ts:158` to `:167` already enforces by rank. R13 adds no new path to it |
+
+---
+
+## 6. COLD START
+
+### 6.1 What a brand new athlete gets, hour by hour
+
+**Before onboarding finishes: `theta_house` for all eleven estimands, `w = 0` everywhere.** This is
+byte for byte what the app does today. There is no network call, no pack requirement, and no
+degraded path, because `theta_prior := theta_house` when a pack is absent (guard G9).
+
+**Immediately after onboarding**, the app knows `A2 goalFamily`, `A3 equipmentClass`,
+`A4 daysPerWeek`, `A5 limitation`, and `A6 sex` where the athlete gave it. It does not know
+`A1 trainingAge`, and it does not ask a question to get it.
+
+**`A1 = 'unknown'` is a first class cohort level, not a fallback.** Playbook 55.13 states it
+directly: unknown is a valid state. A cell keyed `unknown.sizeStrength.gym.4to5.none` is a real
+cell that real people are in, it clears `MIN_CELL` before most specified cells do because it is
+where every new athlete lands, and its prior is the correct answer for someone who has told the
+app nothing about their history. Treating unknown as missing rather than as a level is the single
+most common way a cold start system gets worse than the constant it replaced.
+
+**Where the first prior comes from when there are zero contributors.** This is the [S9] new
+community problem, and the answer is not to wait. **Pack version 1 is seeded from the literature,
+not from the user base.** Several of the meta analyses the other packs already cite report their
+results STRATIFIED, which is a cohort prior in every sense except that it did not come from BodyT
+users. R3's source S22 (Peterson, Rhea and Alvar) reports optimal dose by training status: roughly
+60% 1RM and 3 days per week and 4 sets per muscle for untrained, 80% and 2 days and 4 sets for
+recreationally trained, 85% and 2 days and 8 sets for athletes. That is a tier A cohort prior on
+`A1` available before a single contribution row exists. R7's population stratifications and R3's
+rest bands by training status [S3 in R3 terms, Grgic 2018: trained lifters need over 2 minutes,
+60 to 120 seconds suffices for untrained] are the same shape. Pack version 1 therefore ships with
+`source_refs` pointing at papers and `evidence_tier: 'A'` or `'B'`; user derived cells arrive in
+version 2 and later and carry `evidence_tier: 'D'` with a `derivedFrom` block, so the audit trail
+never confuses the two.
+
+### 6.2 The decay schedule, in numbers
+
+Modelled athlete: four sessions per week, two exposures per week on each primary lift, one GPS run
+per week, meals logged daily from day one, body weight logged twice a week, rest timer used.
+`w = n / (n + k)`, with the shipped admission gates applied first.
+
+| Estimand | k | wk 1 | wk 2 | wk 4 | wk 6 | wk 8 | wk 12 | wk 26 |
+|---|---|---|---|---|---|---|---|---|
+| E10 reach ratio | 0 | **1.00** on the day it is measured, else 0 forever | | | | | | |
+| E11 session minutes | 0.4 | **0.91** | 0.95 | 0.98 | 0.98 | 0.99 | 0.99 | 1.00 |
+| E1 stride, per pace bin | 0.2 | **0.83** | 0.91 | 0.95 | 0.97 | 0.98 | 0.98 | 0.99 |
+| E7 rest sufficiency | 6 | 0.40 | **0.57** | 0.73 | 0.80 | 0.84 | 0.89 | 0.95 |
+| E3 load increment | 5 | 0.29 | 0.44 | **0.62** | 0.71 | 0.76 | 0.83 | 0.91 |
+| E6 weekday miss rate | 4 | 0.20 | 0.33 | **0.50** | 0.60 | 0.67 | 0.75 | 0.87 |
+| E4 intensity band | 6 | 0 (gate) | 0 (gate) | **0.40** | 0.50 | 0.57 | 0.67 | 0.81 |
+| E2 TDEE | 6 wk | 0 (gate) | 0 (gate) | 0.40 | **0.50** | 0.57 | 0.67 | 0.81 |
+| E9 e1RM divisor | 4 pairs | 0 | 0.20 | 0.33 | 0.43 | **0.50** | 0.60 | 0.76 |
+| E5 volume ceiling | 13 | 0.13 | 0.24 | 0.38 | 0.48 | **0.55** | 0.65 | 0.80 |
+| E8 detraining | 2 layoffs | 0 | 0 | 0 | 0 | 0 | 0 | 0 in almost every case |
+
+Bold marks the first column in which that estimand crosses `w >= 0.5` and the individual becomes
+the majority of the answer. The gates in the E4 and E2 rows are the shipped ones:
+`MIN_ACTIVITY_SAMPLES = 4` and `MIN_BIAS_SAMPLES = 3` at `engine/calibration.ts:53` and `:56` for
+E4, and the section 3.4 requirement of at least 14 logged meal days plus three weight readings
+spanning at least 21 days for E2. A gate forces `w = 0` outright; it is not a soft weight.
+
+**Summary, which is the answer to "how fast should the app stop leaning on the prior":**
+
+| By the end of | Estimands where the individual is the majority of the answer |
+|---|---|
+| week 1 | 3 of 11 (E10 if measured, E11, E1) |
+| week 2 | 4 of 11 (adds E7) |
+| week 4 | 6 of 11 (adds E3, E6) |
+| week 6 | 8 of 11 (adds E4, E2) |
+| week 12 | 10 of 11 (adds E9, E5) |
+| ever | E8 stays prior driven for almost every athlete, correctly |
+
+**This spread is the point.** A single global "trust the user after N sessions" number would be
+wrong for nine of the eleven. Stride is nearly directly measured and should abandon the population
+constant after one run; per region volume tolerance is a Bernoulli outcome with a base rate near
+0.15 and needs three months. [S35] is the reason to be comfortable with the slow end: across 24
+studies the majority of variation in observed change scores was measurement error, so an app that
+concluded "this person is different" from four sessions would usually be concluding it from noise.
+[S36] makes the same point structurally: separating a participant by training interaction from
+within participant variance requires each participant to complete an intervention twice, and an
+app watching one athlete on one program is in the weakest possible design for that inference. The
+correct response is not to give up, it is to shrink hard and say so.
+
+### 6.3 What cold start must never do
+
+| # | Rule | Why |
+|---|---|---|
+| C1 | **A prior may lower or hold a starting dose. It may never raise one.** The cold start blend is clamped to `min(theta_blend, theta_house)` for every dose bearing estimand (E3 increment, E5 ceiling, E7 rest is exempt since more rest is not more dose) | The cost is asymmetric. A prior that says "people like you start at 135" applied to someone who cannot lift it is an injury; applied downward it is one easy session. Playbook 54 on ramp logic says the same thing from the other direction |
+| C2 | A prior may never open or close a gate | Guard G6. A cohort that tolerates something does not make it safe for this person |
+| C3 | A prior may never reintroduce a blocked movement or contradict an explicit preference | `Prefs.blocked` via `blockedIds` (`prefsTypes.ts:84`). Playbook 52.11 bullets 2 and 3: an explicit "I hate burpees" outranks any population preference, and one skipped exercise is not a durable dislike in either direction |
+| C4 | A prior may never be presented as a fact about this person | Playbook 52.8 final bullet. The copy pattern that already works is at `engine/calibration.ts:292`: it names the sample size and says what it is graded against |
+| C5 | Cohort membership may never be shown as a label the athlete is sorted into | It is recomputed per lookup (section 4.2) and surfaced only as the rung that answered, in plain words |
+| C6 | With zero contributors, every rung falls through and the app behaves exactly as it does today | This is an acceptance test, not an aspiration. See section 10 |
+
+---
+
+## 7. TYPED SCHEMA PROPOSAL
+
+### 7.1 The cohort prior, inside B3's envelope
+
+The prior is a `KnowledgeRecord<'population', CohortPrior>`. B3 section 4 already reserves
+`'population'` in its `Domain` union, so this is a payload, not an envelope change.
+
+```ts
+// src/plan/cohort.ts        plan layer (rank 0), pure types plus three pure functions
+// Budget <= 180 lines. NOT added to types.ts: that file sits at 695 against a 696
+// allowance in structure.test.ts, and the repo has already established the pattern of
+// giving a subsystem its own shape file (journeyTypes.ts, prefsTypes.ts, foodTypes.ts).
+
+export type CohortAxis =
+  | 'trainingAge' | 'goalFamily' | 'equipmentClass' | 'daysPerWeek' | 'limitation' | 'sex'
+
+export type TrainingAge    = 'unknown' | 'lt6mo' | '6to24mo' | 'gt24mo'
+export type GoalFamily     = 'sizeStrength' | 'lean' | 'athletic' | 'endurance'
+export type EquipmentClass = 'bodyweight' | 'home' | 'gym'
+export type DaysBand       = '2to3' | '4to5' | '6plus'
+export type LimitationFlag = 'none' | 'limited'
+export type SexAxis        = 'male' | 'female'
+
+/** Every axis optional: a partially specified key IS a rung of the ladder. */
+export interface CohortKey {
+  trainingAge?: TrainingAge
+  goalFamily?: GoalFamily
+  equipmentClass?: EquipmentClass
+  daysPerWeek?: DaysBand
+  limitation?: LimitationFlag
+  /** Nutrition estimands only, at 2x MIN_CELL_ATHLETES. See section 4.1. */
+  sex?: SexAxis
+}
+
+/** Canonical and sorted, so one cohort has exactly one string forever.
+ *  'ta=unknown|gf=sizeStrength|eq=gym|dw=4to5|lim=none'. Absent axes are omitted. */
+export function cohortKeyString(k: CohortKey): string
+
+export type EstimandId =
+  | 'stride.byPaceBin'        | 'tdee.maintenanceKcal'    | 'load.incrementLb'
+  | 'intensity.bandScale'     | 'volume.regionCeiling'    | 'schedule.weekdayMissRate'
+  | 'rest.sufficientSec'      | 'detrain.giveBackSteps'   | 'e1rm.divisor'
+  | 'anthro.reachRatio'       | 'session.preferredMinutes'
+
+export interface CohortPrior {
+  estimand: EstimandId
+  cohort: CohortKey
+  /** Which rung answered. 0 is global, 5 is fully specified. Shown in the copy. */
+  rung: 0 | 1 | 2 | 3 | 4 | 5
+  /** The cohort central value, in `units`. */
+  mean: number
+  /** tau: the between athlete SD of the TRUE value. Not the SD of observations. */
+  tau: number
+  /** sigma_within: the SD of one observation within an athlete. */
+  sigmaWithin: number
+  /** EPV/VHM. DERIVED by kOf(), never hand typed. This is the crossover sample size. */
+  k: number
+  /** Contributing athletes, ROUNDED TO 50. Never exact: section 4.3, differencing. */
+  nAthletes: number
+  /** Contributing observations, ROUNDED TO 100. */
+  nObservations: number
+  units: string
+  /** Winsorization bounds shipped for NEXT quarter's contributions (p05, p95). */
+  bounds: [number, number]
+  /** Present only on user derived priors. Literature seeded priors carry
+   *  source_refs on the envelope instead, and evidence_tier A or B. */
+  derivedFrom?: { quarter: string; engineVersion: number }
+}
+
+const K_MIN = 0.1
+const K_MAX = 50
+
+/**
+ * k is computed, not asserted. This is the exact analogue of B3's rule that
+ * `confidence` equals confidenceOf()'s output and the build refuses a hand typed one:
+ * a hand typed shrinkage constant is a preference about how much to trust users,
+ * dressed as a statistic. The clamp exists because a cohort whose measured tau is
+ * near zero would otherwise produce an infinite k and freeze every member on the prior.
+ */
+export function kOf(p: Omit<CohortPrior, 'k'>): number {
+  const raw = (p.sigmaWithin / p.tau) ** 2
+  return Math.round(Math.min(K_MAX, Math.max(K_MIN, raw)) * 10) / 10
+}
+
+/** The fixed backoff ladder for an estimand, most specific first. Section 4.2. */
+export function ladderFor(e: EstimandId): CohortAxis[][]
+```
+
+A record on the wire, for size. This is the shape `scripts/buildPacks.ts` emits into
+`records.jsonl.gz`:
+
+```json
+{ "id": "population:load.incrementLb@ta=gt24mo|gf=sizeStrength|eq=gym",
+  "domain": "population",
+  "payload": { "estimand": "load.incrementLb", "rung": 3,
+               "cohort": {"trainingAge":"gt24mo","goalFamily":"sizeStrength","equipmentClass":"gym"},
+               "mean": 4.1, "tau": 2.5, "sigmaWithin": 5.6, "k": 5.0,
+               "nAthletes": 450, "nObservations": 12800,
+               "units": "lb per exposure", "bounds": [0, 15],
+               "derivedFrom": {"quarter":"2026Q3","engineVersion":21} },
+  "source_refs": [], "evidence_tier": "D", "confidence": 0.4,
+  "valid_from": "2026-10-01", "schema_version": 1, "review_status": "published",
+  "tags": ["population","load"] }
+```
+
+**B3 packet compatibility, which is the constraint that had to be checked rather than assumed.**
+That record is roughly 520 bytes of JSON, well under B3's per record projection budget of 2 KB.
+More importantly, **at most one population record per estimand can enter a decision packet**, and
+no single decision touches more than five estimands: plan generation reads E3, E5, E6, E7 and E11;
+a nutrition build reads E2 alone; a cardio log reads E1 and E4. So population learning consumes at
+most 5 of B3's 24 record slots and roughly 2.6 KB of its 32,768 byte cap, leaving 19 slots for
+evidence, safety, movement and program records. **Population learning cannot starve the packet,
+and that is a property of the estimand list being fixed and small, not of a quota.**
+
+`evidence_tier: 'D'` on user derived priors is deliberate and follows B3's own ladder: a pattern
+observed in BodyT's own users is a house heuristic with a large n, not a position stand. It ranks
+BELOW every sourced record in B3's stage 3 lexicographic ranking, which is exactly playbook 41.1's
+rule that population similarity cannot silently override hard evidence.
+
+### 7.2 The blend
+
+```ts
+// src/engine/blend.ts       engine layer (rank 1), pure, no I/O. Budget <= 200 lines.
+
+import { MAX_DRIFT } from './calibration'   // ONE definition of 0.5, already at calibration.ts:66
+
+export type BlendSource = 'measured' | 'individual' | 'blended' | 'cohort' | 'house'
+
+export interface Individual {
+  value: number
+  /** Usable observations after the estimand's freshness and quality gates. */
+  n: number
+  /** True when this is a direct measurement, not an estimate. Guard G4. */
+  measured?: boolean
+}
+
+export interface Blended {
+  value: number
+  /** w = n / (n + k). Zero when no individual estimate survived its gate. */
+  weight: number
+  source: BlendSource
+  samples: number
+  /** Which ladder rung supplied theta_prior. Null when the house constant answered. */
+  rung: number | null
+  /** True when MAX_DRIFT bit. Surfaced, because a silent clamp is a silent bug. */
+  clamped: boolean
+  /** The sentence the app says. No em dashes. Null when nothing moved. */
+  note: string | null
+}
+
+export function blend(args: {
+  /** The HOT constant that ships in the bundle. Never absent. */
+  house: number
+  /** From the installed WARM pack, or null when absent or suppressed. */
+  prior: CohortPrior | null
+  /** From src/engine/estimates.ts, or null when under the gate. */
+  individual: Individual | null
+  /** Dose bearing estimands are clamped downward only at cold start. Rule C1. */
+  doseBearing?: boolean
+}): Blended
+```
+
+Reference implementation of the body, which is nine lines and has no branches worth hiding:
+
+```ts
+const prior = args.prior?.mean ?? args.house
+const k     = args.prior?.k ?? 6                      // calibration.ts:69's value as fallback
+const ind   = args.individual
+if (ind?.measured) return { value: ind.value, weight: 1, source: 'measured', /* ... */ }
+const w     = ind ? ind.n / (ind.n + k) : 0
+const raw   = (1 - w) * prior + w * (ind?.value ?? prior)
+const lo    = args.house * (1 - MAX_DRIFT)
+const hi    = args.doseBearing && w < 0.5 ? args.house : args.house * (1 + MAX_DRIFT)
+const value = Math.min(hi, Math.max(lo, raw))
+```
+
+The `hi` line is rule C1: while the individual is still the minority of the answer, a dose bearing
+estimand may not exceed the house constant. Once `w >= 0.5` the athlete's own record has earned the
+right to be above it.
+
+### 7.3 What leaves the device, typed
+
+```ts
+// src/cloud/contributeLogic.ts    cloud layer (rank 2), PURE, unit testable, no I/O.
+// Mirrors the existing cloud/logic.ts vs cloud/sync.ts split. Budget <= 160 lines.
+
+export const CONTRIB_MAX_N = 500          // matches the CHECK in 0003_cohort_contrib.sql
+
+export interface Contribution {
+  quarter: string          // '2026Q3'. NOT a date. Section 5.1.
+  estimand: EstimandId
+  cohortKey: string        // canonical L4 string from cohortKeyString()
+  n: number                // capped at CONTRIB_MAX_N
+  sum: number              // of WINSORIZED values, bounds from last quarter's pack
+  sumsq: number
+  engineVersion: number
+}
+
+/** Pure. Everything the fence allows out, and nothing else, in one function
+ *  that a test can read end to end and confirm carries no date, no id, no text. */
+export function buildContributions(args: {
+  estimates: Partial<Record<EstimandId, Individual>>
+  cohortKey: string
+  quarter: string
+  bounds: Partial<Record<EstimandId, [number, number]>>
+  engineVersion: number
+}): Contribution[]
+```
+
+```ts
+// src/cloud/contribute.ts     cloud layer (rank 2), I/O only, DYNAMIC IMPORT ONLY.
+// Budget <= 140 lines. Same discipline as cloud/sync.ts: a local only user never parses it.
+
+/** No-op unless settings.contributeAnonymously === true. Default false, forever. */
+export async function pushContributions(): Promise<void>
+```
+
+### 7.4 The real repo files that would change
+
+| File | Layer (rank) | New / change | Budget and headroom |
+|---|---|---|---|
+| `src/plan/cohort.ts` | plan (0) | **new** | <= 180 lines. Types, `cohortKeyString`, `kOf`, `ladderFor` |
+| `src/plan/cohortPriors.ts` | plan (0) | **new, generated** | <= 60 lines. The HOUSE fallback table plus the pack pin, same pattern as B3's `packRegistry.ts` |
+| `src/engine/blend.ts` | engine (1) | **new** | <= 200 lines |
+| `src/engine/estimates.ts` | engine (1) | **new** | <= 400 lines. The eleven individual estimators, each `(data) => Individual \| null`, memoised on `AppData` identity exactly as `calibration.ts:169` does |
+| `src/engine/calibration.ts` | engine (1) | change | 309 lines today. `PRIOR_STRENGTH = 6` at `:69` becomes the FALLBACK when no prior record supplies `k`; the file keeps working unchanged with zero packs installed. Export `MAX_DRIFT` for `blend.ts` so 0.5 has one definition |
+| `src/plan/cardio.ts` | plan (0) | change | 479 lines. The 12 bands (`:300` etc) and 11 strides (`:297` etc) each gain a `priorId` naming the estimand they are the house default for. Data only, no logic |
+| `src/engine/intensity.ts` | engine (1) | change | 236 lines. `stepDistanceMi` at `:116` takes an optional learned stride; `usableHeightIn` at `:77` keeps 69 but names it as a prior |
+| `src/plan/bookletOps.ts` | plan (0) | change | 288 lines. `byorNutrition` at `:43` accepts an optional blended maintenance instead of always computing `bw * 15` at `:53`. Defect D1 |
+| `src/engine/reps.ts` | engine (1) | change | 320 lines. `loadStepLb` at `:273` takes an optional blended increment. Defect D4 |
+| `src/engine/volume.ts` | engine (1) | change | `ceilingFor` at `:133` takes an optional blended ceiling. Defect D6 |
+| `src/cloud/contributeLogic.ts` | cloud (2) | **new** | <= 160 lines |
+| `src/cloud/contribute.ts` | cloud (2) | **new** | <= 140 lines, dynamic import only |
+| `src/store/schema.ts` | store (1) | change | 633 lines against B3's recorded 649 ceiling, so ~16 lines of headroom. `SCHEMA_VERSION` 20 to 21 (`types.ts:610`), one migration adding two optional settings fields: `contributeAnonymously?: boolean` (default false) and `lastContributedQuarter?: string` |
+| `supabase/migrations/0003_cohort_contrib.sql` | n/a | **new** | the table in section 5.2 |
+| `supabase/migrations/0004_board_stats_view.sql` | n/a | **new** | DEF-1. Prerequisite, not a follow up |
+| `scripts/deriveCohortPriors.ts` | scripts | **new** | the offline job. Not under `src/`, not size capped |
+| `scripts/buildPacks.ts` | scripts | change | B3 owns it; add the `population` domain adapter |
+| `src/structure.test.ts` | n/a | change | new file entries only. **Nothing joins `OVERSIZE_ALLOWED`**, and `types.ts` is untouched at 695 against its 696 allowance |
+
+**Layering verification against the ranks at `src/structure.test.ts:158` to `:167`:**
+
+- `engine/blend.ts` (1) imports `plan/cohort` (0) and `engine/calibration` (1). Down or level. OK.
+- `engine/estimates.ts` (1) imports `plan/*` (0) and `engine/*` (1). OK.
+- `cloud/contributeLogic.ts` (2) imports `plan/cohort` (0) and `engine/estimates` (1). Down. OK.
+- **Nothing in `plan/` or `engine/` imports `cloud/` or `platform/`.** The existing layering test
+  already fails such an import, so the "priors ship as data, never a service call" rule is enforced
+  by a test that is already in the tree. No new rule is needed, which is the same argument B3
+  section 10 makes.
+- `plan/cohortPriors.ts` is generated and committed, so a prior change is a small reviewable diff,
+  per B3 section 3.
+
+---
+
+## 8. EVAL FIXTURES
+
+Twenty cases. Each states the population state and the individual history going in, and the
+expected blended output. Every arithmetic result is worked so the fixture is checkable by hand
+before it is checkable by a test. House constants are the real ones at the `file:line` given.
+
+**EV-1. The identity case: no pack, no history.**
+In: `house = 5` (`engine/reps.ts:275`, upper body `loadStepLb`), `prior = null`,
+`individual = null`.
+Out: `{ value: 5, weight: 0, source: 'house', rung: null, clamped: false, note: null }`.
+**This fixture is the whole safety argument.** With zero population data the app is
+byte identical to today. It must be the first test written and the last one allowed to fail.
+
+**EV-2. Pure cold start: cohort present, zero history.**
+In: E3, cell `ta=gt24mo|gf=sizeStrength|eq=gym`, `mean = 4.1`, `k = 5`, rung 3.
+`house = 5`, `individual = null`, `doseBearing = true`.
+`w = 0`, `raw = 4.1`, `lo = 2.5`, `hi = 5` (dose bearing and `w < 0.5`, rule C1).
+Out: `{ value: 4.1, weight: 0, source: 'cohort', rung: 3, clamped: false }`.
+The prior lowers the starting increment and is allowed to. It could not have raised it.
+
+**EV-3. The crossover, at exactly `n = k`.**
+In: same prior. `individual = { value: 7.5, n: 5 }`.
+`w = 5 / (5 + 5) = 0.50`. `raw = 0.5(4.1) + 0.5(7.5) = 5.80`.
+`hi = 5 * 1.5 = 7.5` because `w >= 0.5` now.
+Out: `{ value: 5.8, weight: 0.5, source: 'blended', rung: 3, clamped: false }`.
+**This fixture pins the definition of the crossover: `w >= 0.5` exactly when `n >= k`.**
+
+**EV-4. `MAX_DRIFT` bites upward.**
+In: same prior. `individual = { value: 15, n: 40 }`, a novice on a lower body lift climbing fast,
+or an e1RM artefact.
+`w = 40 / 45 = 0.889`. `raw = 0.111(4.1) + 0.889(15) = 13.79`. `hi = 7.5`.
+Out: `{ value: 7.5, weight: 0.89, source: 'individual', clamped: true }`.
+`clamped: true` is surfaced, not swallowed. A silent clamp is a silent bug.
+
+**EV-5. `MAX_DRIFT` bites downward.**
+In: E7 `rest.sufficientSec`, `house = 90` s. Prior `mean = 75`, `k = 6`.
+`individual = { value: 20, n: 30 }`, an athlete who rushes every set.
+`w = 30 / 36 = 0.833`. `raw = 0.167(75) + 0.833(20) = 29.2`. `lo = 90 * 0.5 = 45`.
+Out: `{ value: 45, weight: 0.83, source: 'individual', clamped: true }`.
+The app cannot learn its way to a 20 second rest on a compound. R3 section 6.4 sets an
+independent hard floor of 45 s on a compound, and the two agree, which is the point of checking.
+
+**EV-6. A measurement beats everything (guard G4).**
+In: E10 `anthro.reachRatio`, `house = 1.33` (`plan/reach.ts:26`). Prior `mean = 1.35`, `k = 0`.
+`individual = { value: 1.28, n: 1, measured: true }`.
+Out: `{ value: 1.28, weight: 1, source: 'measured', clamped: false }`.
+No blending and no clamp. Precedent: `engine/calibration.ts:270`, `if (felt) return felt`.
+
+**EV-7. A gate is not a soft weight.**
+In: E4 `intensity.bandScale` for basketball. The athlete has TWO rated sessions.
+`MIN_ACTIVITY_SAMPLES = 4` (`engine/calibration.ts:53`), so the per activity individual estimate
+is not built at all and `individual = null`. Prior for `ta=unknown|gf=athletic` is `scale = 0.94`.
+Out: `{ value: 0.94, weight: 0, source: 'cohort' }`, applied to basketball's shipped
+`4500 / 8000` band (`plan/cardio.ts:331`) giving `4230 / 7520`.
+The two samples contribute nothing. A gate forces `w = 0`; it does not produce a small weight.
+
+**EV-8. The ladder backs off because a sex bearing cell is too thin.**
+In: E2 `tdee.maintenanceKcal`. Athlete key `sex=female|gf=lean`. That cell holds 180 athletes
+against the 400 required for a sex bearing key (section 4.3), so it is suppressed. The ladder's
+next rung `sex=female` holds 900 and clears. Prior `mean = 13.6` kcal per lb, rung 1, `k = 6`.
+`house = 14` (`plan/bookletOps.ts:53`, female multiplier).
+`individual = { value: 12.4, n: 8 }` from 8 complete weeks. `w = 8 / 14 = 0.571`.
+`raw = 0.429(13.6) + 0.571(12.4) = 12.91`. `lo = 7`, `hi = 21`.
+Out: `{ value: 12.91, weight: 0.57, source: 'blended', rung: 1, clamped: false }`.
+At 175 lb this is 2,259 kcal against the 2,450 the shipped `bw * 14` gives.
+**E2 is deliberately NOT `doseBearing`.** The dangerous direction for a calorie target is
+downward, and `plan/kcalFloor.ts:34` and `:44` already gate it. Stacking a second protection on
+the same risk would hide which one fired.
+
+**EV-9. Every rung fails: individual shrunk toward the house constant, no cohort in play.**
+In: E5 `volume.regionCeiling` for `delts-front`. Every rung is either under 200 athletes or fails
+the diversity test, so nothing is published. `house = 8` (`engine/volume.ts:105`, `SMALL_CEILING`).
+`individual = { value: 5, n: 6 }`, `k = 13` fallback. `w = 6 / 19 = 0.316`.
+`raw = 0.684(8) + 0.316(5) = 7.05`. `lo = 4`, `hi = 8` (dose bearing, `w < 0.5`).
+Out: `{ value: 7.05, weight: 0.32, source: 'blended', rung: null, clamped: false }`.
+`rung: null` with a non house value is legal and means exactly this. It is also precisely what
+`engine/calibration.ts` does today for its one estimand.
+
+**EV-10. Homogeneity suppression [S27].**
+In: E6 `schedule.weekdayMissRate`, cell `ta=lt6mo|gf=lean|eq=bodyweight`, 260 athletes, but the
+cell is dominated by recent signups who have not missed anything yet, so its SD is 0.02.
+`tau_global = 0.20`, threshold `0.25 * 0.20 = 0.05`. `0.02 < 0.05`.
+Out: **the cell does not appear in the pack at all.** The ladder backs off to
+`ta=lt6mo|gf=lean`. A 260 member cell whose members all report the same value would have
+disclosed that value for all 260.
+
+**EV-11. Differencing is unobservable, not merely expensive.**
+In: a cell holds 212 contributing athletes in 2026Q3 and 231 in 2026Q4. Rounded DOWN to a
+multiple of 50, both are 200. The mean moved from 4.1 to 4.4.
+Out: the Q4 pack carries the Q3 record unchanged, with `derivedFrom.quarter = '2026Q3'`.
+An attacker sees one mean against one count and can solve for nothing. Even when the rounded count
+does change, the two releases differ by at least 50 athletes, so the difference of the means
+identifies the mean of at least 50 unidentified newcomers, never one person's value.
+
+**EV-12. The prolific contributor is capped.**
+In: a cell holds 210 athletes and 4,000 raw observations, of which one athlete supplied 500 (the
+`CONTRIB_MAX_N` ceiling in `0003_cohort_contrib.sql`). `MAX_ATHLETE_SHARE = 0.05`.
+Out: weights are capped and re-normalised to a fixed point, at most five passes, and the job
+ASSERTS the post cap invariant that no athlete's share exceeds 0.05. CI fails the pack build if
+the assertion does not hold. Capping once against the pre cap total would leave this athlete at
+`200 / 3700 = 5.4%`, which is why the cap iterates rather than being applied once.
+
+**EV-13. Poisoning is bounded by the clamp, not by the aggregation.**
+In: 50 sock puppet accounts join a 250 athlete cell and all submit 40 lb per exposure for E3
+against a true cohort mean of 4.1. Winsorization bounds from the prior quarter are `[0, 15]`, so
+each contributes at 15. Even at 5% weight each, 50 of them reach `50 / 300 = 16.7%` of the cell.
+Poisoned mean `= 0.833(4.1) + 0.167(15) = 5.92`.
+A zero history athlete then gets `w = 0`, `raw = 5.92`, `house = 5`, dose bearing so `hi = 5`.
+Out: `{ value: 5, weight: 0, source: 'cohort', clamped: true }`. **The attack bought nothing at
+cold start.** At `n = 20`, `w = 0.8`, and the poisoned prior moves the answer by
+`0.2 * (5.92 - 4.1) = 0.36` lb. The Sybil cost is one unique phone number per account
+(`0001_core_tables_rls.sql:7`), and one row per account per quarter (the primary key).
+
+**EV-14. Stride overtakes on the first GPS run.**
+In: E1 `stride.byPaceBin`. `house = 0.55` (`plan/cardio.ts:297`). Prior for `gf=endurance`
+`mean = 0.545`, `k = 0.2`. One run: `distanceMi = 5.02`, `distanceSource = 'gps'`
+(`activityTypes.ts:40`), `steps = 9180` (`activityTypes.ts:42`), `heightIn = 71`.
+`5.02 * 63360 = 318,067` inches; `318,067 / 9,180 = 34.65` inches per step;
+`34.65 / 71 = 0.488` of standing height. `w = 1 / 1.2 = 0.833`.
+`raw = 0.167(0.545) + 0.833(0.488) = 0.498`. `lo = 0.275`, `hi = 0.825`.
+Out: `{ value: 0.498, weight: 0.83, source: 'individual', rung: 1, clamped: false }`.
+**After one run this athlete's step distance is 9.5% off the population constant, and the app
+knows it.** Today `engine/intensity.ts:124` would use 0.55 forever.
+
+**EV-15. Missingness is preserved, not imputed.**
+In: E2. The athlete logged meals on 9 days across 5 weeks and has 4 weight readings spanning 30
+days. The gate requires at least 14 logged meal days.
+Out: `individual = null`, `{ value: prior.mean, weight: 0, source: 'cohort' }`.
+Playbook 52.5: preserve missingness, do not fabricate. A partial food log produces NO individual
+TDEE rather than a confidently wrong one.
+
+**EV-16. An explicit preference is a filter, not a weight.**
+In: `Prefs.blocked` contains `burpee`. The cohort `ta=lt6mo|gf=lean|eq=bodyweight` shows burpees
+strongly associated with adherence.
+Out: burpee is not programmed, and no blend runs. `blockedIds(prefs)` (`prefsTypes.ts:84`) removes
+it in B3 stage 1, before ranking ever sees it. Playbook 52.11 bullet 2. **The fence for an explicit
+preference is set membership, never a large weight, because a large weight is a small weight
+waiting for a bigger cohort.**
+
+**EV-17. One skipped exercise changes nothing, anywhere.**
+In: the athlete skipped `goblet-squat` once.
+Out: no prior changes, no blend changes, no contribution row changes. Exercise preference is not
+one of the eleven estimands, so there is nothing across users to move; the individual side is R3's
+decline ledger with its own thresholds. Playbook 52.11 bullet 3. **This fixture pins the estimand
+list as a CLOSED set: the correct answer to most population learning questions is that the
+quantity is not learned at all.**
+
+**EV-18. A safety gate is untouchable.**
+In: cohort data shows athletes in `gf=lean|eq=gym` sustaining 22% deficits with no adverse signal.
+`MAX_DEFICIT = 0.25` at `plan/kcalFloor.ts:44`.
+Out: `MAX_DEFICIT` is unchanged. It is not an estimand, no record exists that could carry it, and
+`scripts/buildPacks.ts` FAILS THE BUILD if any emitted record carries an `estimand` outside the
+eleven. Guard G6. The same test covers `MIN_KCAL_TRAINING` (`kcalFloor.ts:34`),
+`MIN_KCAL_REST` (`:37`) and every R6 red flag rule.
+
+**EV-19. Engine versions are never pooled.**
+In: 2026Q3 contributions arrive from `engineVersion` 21 and, after a mid quarter deploy, 22. The
+cell holds 400 at v21 and 90 at v22.
+Out: the aggregation partitions by `engineVersion`. Only the v21 partition clears `MIN_CELL` and
+publishes; the v22 partition is suppressed and accumulates. v22 devices read the v21 prior, which
+B3's `engineMin` field permits (it gates readability, not authorship). The manifest records which
+engine version produced each cell. Playbook 52.5: log model and rule version identifiers so later
+analysis can distinguish behaviour before and after engine changes.
+
+**EV-20. Drift is flagged for a human, never auto published.**
+In: the Q4 mean for E6 in a 250 athlete cell moves from 0.18 to 0.31 while the rounded count stays
+at 250. `tau = 0.20`, so the between quarter noise scale is `2 * tau / sqrt(m) = 2(0.20)/15.8 =
+0.025`. The observed move of 0.13 is over five times that.
+Out: the Q3 value ships again under the EV-11 rule, AND the offline job raises a drift alarm on the
+cell. A human reviews before the four quarter forced refresh publishes it. Playbook 52.11 bullet
+14: new users shift behaviour after a product redesign, and drift monitoring should detect that old
+priors are degrading. **A five sigma move in a cohort mean is far more likely to be an instrumentation
+change than a change in people.**
+
+---
+
+## 9. WHAT NOT TO BUILD YET
+
+Same discipline as B3 section 9: a refusal with a stated condition that changes the answer.
+
+### Federated learning: no
+
+[S14] defines the cross device setting as massively distributed, with client counts far exceeding
+the number of examples per client, clients unreliable and typically participating at most once,
+and no client addressability. **BodyT is the exact inverse.** It will have thousands of clients
+holding thousands of observations each, every client is addressable through an account, and the
+same client contributes every quarter for years. Three more specifics:
+
+- [S17] reports accuracy loss up to 55% on highly skewed non IID client data, attributed to weight
+  divergence. Fitness clients are maximally non IID by construction: one athlete trains one goal on
+  one equipment set in one modality.
+- [S16] reports that production rounds require devices to be idle, charging and on unmetered
+  network, and that a round is abandoned when too few selected clients report. **A browser PWA has
+  none of those signals.** There is no charging state, no idle daemon, and no background round
+  participation on iOS Safari at all.
+- [S15]'s secure aggregation degrades as participants per round fall, and at a 200 athlete cell the
+  participant count per round is the worst it will ever be.
+
+The decisive point is simpler than any of those. **Federated learning trains a MODEL. This design
+ships MOMENTS.** There is nothing to train. Three numbers per cell computed from sums that a
+`GROUP BY` produces is not a machine learning problem wearing a disguise, and treating it as one
+would add a distributed systems dependency to arithmetic.
+
+**Condition to revisit:** an estimand genuinely needs a fitted function of more than three
+parameters, AND the contributing population exceeds 100,000. Both, not either.
+
+### Contextual bandits and online exploration: no
+
+[S12] found that the regret advantage of posterior sampling over a fixed policy largely disappears
+when feedback is delayed, and training outcomes here are delayed by weeks (strength) to months
+(hypertrophy). [S11]'s LinUCB deliberately serves a suboptimal arm to learn, which collides head
+on with suggest only: **the app does not control exposure, the athlete does**, so an assigned arm
+is a request, not an assignment, and the resulting selection bias is unrecoverable. Playbook 52.6
+independently forbids putting a safety relevant constraint in an exploration arm.
+
+**Condition to revisit:** an estimand whose outcome is observable inside a single session, such as
+rest interval sufficiency (E7) or cue wording, where feedback delay is minutes rather than months.
+Even then, the arms must be inside an already acceptable evidence band.
+
+### Learned cohort discovery by clustering or embeddings: no
+
+B3 section 9 already refuses vector search for the planner, and this is the same refusal with an
+extra reason. **A learned cluster is an unnamed cohort**, and an unnamed cohort cannot be explained
+to a user in plain copy (playbook 41.7), cannot be audited for underperformance on athletes with
+disabilities or unusual equipment access (playbook 52.8), and cannot be k-anonymity checked,
+because its boundary moves every time the model is refit and the same person can leave a cell
+without any of their own data changing. The six declared axes have four levels at most, are
+human readable, and produce a key that is stable for as long as the athlete's answers are.
+
+**Condition to revisit:** never, unless the cluster assignment is first frozen into a deterministic
+published rule, at which point it is a declared axis and this section does not apply to it.
+
+### Per cell fitted models of any kind: no
+
+[S32] shows membership inference success rising with model parameters relative to training
+examples. A published cell holds at least 1,000 observations; a per cell model with tens of
+parameters would put the ratio into the range where the attack works. Priors are moments. If a
+relationship needs a shape, it gets a shape with three parameters and a diagnostic, or it does not
+ship.
+
+### A runtime fetch of a prior: no, and this one is a hard constraint rather than a judgement
+
+It would break the offline guarantee, break the golden tests (a plan would depend on the network),
+and break the layering law, since `engine/` would need to reach `cloud/`. The existing test at
+`src/structure.test.ts:158` to `:167` already fails such an import. There is no condition that
+revisits this.
+
+### An experimentation framework: not here, and not first
+
+Playbook 52.6 owns it. It should not be built before the event layer exists at all, and today there
+is no event log, no decision log and no outcome record anywhere in `src/` (Defect C, section 2.4).
+Building an A/B framework on top of zero instrumentation would produce experiments nobody can
+attribute.
+
+### Storing a responder or non responder label: no
+
+[S42] found responder status inconsistent across outcome measures within the same person, and [S41]
+found apparent non response frequently resolves at a different dose or modality. **The correct
+action when an athlete is not progressing is to change the dose, not to record a belief about the
+person**, and a stored label is a belief with a schema migration attached.
+
+---
+
+## 10. INTEGRATION NOTES
+
+### 10.1 Sequencing, and the part worth doing first
+
+**Step 0, prerequisite, ships no population code: fix DEF-1.** Replace `board_stats`'s
+`for select to authenticated using (true)` (`0001_core_tables_rls.sql:45` to `:46`) with a security
+definer view that returns a bounded top 50 per category and drops `goal_statement`. No population
+aggregate may be built while a world readable per user behavioural table exists beside it.
+
+**Step 1, the highest value step, and it needs ZERO cloud.** Land `plan/cohort.ts`,
+`engine/estimates.ts` and `engine/blend.ts` with `prior = null` at every call site. Behaviour is
+unchanged by acceptance criterion A1, but the blend now runs against the house constants, and
+**defects D1 and D2 become fixable entirely on device**: the athlete's own TDEE from their own
+weight trend and food log, and their own stride from their own GPS runs, each shrunk toward the
+shipped population constant with `w = n / (n + k)`. No cohort, no contribution, no new table, no
+privacy surface, no opt in.
+
+That ordering is the argument for this whole pack: **the two largest defects in section 2.3 are
+individual learning problems, not population learning problems**, and the population layer is the
+smaller, later, riskier half. Anyone tempted to build the cloud pipeline first is building the
+second most valuable thing.
+
+**Step 2:** seed `cohort-priors@1` from the literature (section 6.1), from stratifications R3 and
+R7 already hold. Still zero user data, and the pack now exercises the full B3 warm path.
+
+**Step 3:** `0003_cohort_contrib.sql`, the opt in default off contribution, the offline job, and
+`cohort-priors@2` onward.
+
+### 10.2 Acceptance criteria
+
+| # | Criterion | How it is checked |
+|---|---|---|
+| A1 | With zero packs installed and zero contributions, `golden.test.ts` and `goldenLife.test.ts` produce output identical to the pre R13 baseline | the existing golden snapshots, unchanged |
+| A2 | `blend()` is pure and total, and all twenty section 8 fixtures pass | a new `blend.test.ts` |
+| A3 | Every record's `k` equals `kOf()`'s output on that record | build invariant in `scripts/buildPacks.ts`, mirroring B3's `confidenceOf` rule |
+| A4 | No emitted record carries an `estimand` outside the eleven | build invariant. Covers EV-18 |
+| A5 | No emitted record and no column of `cohort_contrib` carries a phone, a recovery hash, a username, free text, a date finer than a quarter, a coordinate, a weight, a height, or a joint name | field name allowlist asserted in CI, over both the SQL and the emitted JSONL |
+| A6 | The aggregation job's SQL does not reference `public.profiles` | grep in CI. This is the only enforcement that exists against attacker 3, and it should be honest about that |
+| A7 | Every published cell has `nAthletes >= 200` (400 with `sex`), `nObservations >= 1000`, `SD >= 0.25 * tau_global`, and max post cap athlete share `<= 0.05` | build invariant. Covers EV-10 and EV-12 |
+| A8 | Published `nAthletes` is a multiple of 50 and `nObservations` a multiple of 100, both rounded down | build invariant. Covers EV-11 |
+| A9 | `contributeAnonymously` defaults false, and is independent of both cloud backup and the leaderboard | a store test. Covers DEF-2 |
+| A10 | Nothing in `plan/` or `engine/` imports `cloud/` or `platform/` | the existing layering test at `src/structure.test.ts:158` to `:167` |
+| A11 | A population record projects to `<= 2 KB` and at most 5 enter any B3 decision packet | a retrieval test against B3's `PACKET_MAX_RECORDS` and `PACKET_MAX_BYTES` |
+| A12 | No em dash in any user visible string the pack emits | B3 section 3 build invariant 5 already covers this |
+| A13 | No file added or changed by R13 joins `OVERSIZE_ALLOWED`, and `types.ts` stays at 695 against its 696 allowance | `src/structure.test.ts` |
+
+### 10.3 What must not change without golden review
+
+`MAX_DRIFT` (`engine/calibration.ts:66`), `MIN_CELL_ATHLETES`, `MAX_ATHLETE_SHARE`, the eleven
+estimand ids, the six cohort axes, the ladder order, and the anchoring of the clamp to
+`theta_house` rather than to `theta_prior`. Each of those is load bearing for either a safety
+property or a privacy property, and each has a fixture in section 8 that fails visibly if it moves.
+
+### 10.4 Open questions for the owner
+
+1. **`A1 trainingAge` is not stored anywhere today.** R13's default is that `unknown` is a real
+   cohort level and nothing is asked, which costs one rung of ladder specificity. The alternative
+   is that onboarding infers it from imported history, which playbook 55.5 prefers ("infer first,
+   ask only what matters"). R13 does not need a decision to proceed, only to know which.
+2. **Is `A6 sex` acceptable as a nutrition only cohort axis at 2x the cell floor?** It is the one
+   axis carrying real re-identification weight. The app already splits on it locally at
+   `plan/bookletOps.ts:53`, so admitting it collects nothing new, but it does put it into a
+   published key. Refusing it costs E2 roughly one ladder rung of precision.
+3. **The contribution opt in is user visible copy and needs owner approval**, like the sergeant
+   quotes. It has to say what leaves, how often, and that it can be turned off, in three sentences,
+   with no em dashes.
+4. **DEF-1 is a live privacy defect independent of this pack** and should be triaged on its own
+   schedule rather than waiting for population learning.
+
+---
+
+*R13 ends here. The one sentence version: BodyT already contains a correct two layer shrinkage
+estimator at `src/engine/calibration.ts`, applied to exactly one of the roughly sixty population
+constants hiding in the tree, and the work is to name that pattern, derive its shrinkage constant
+instead of typing it, extend it to ten more estimands, and keep the population half of it behind a
+fence whose failure mode is that the app behaves exactly as it does today.*
