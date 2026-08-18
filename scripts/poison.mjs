@@ -720,6 +720,38 @@ const MUTATIONS = [
     to: '    if (true) return',
     spec: 'src/copy.test.ts',
   },
+  {
+    id: 'plate-too-big-handed-over-anyway',
+    bug: 'a 20 lb lateral raise is handed a 25 percent jump because the range topped out',
+    file: 'src/engine/reps.ts',
+    find: '    return plateIsTooBig(log, exerciseId) && !toppedOutBefore(history, session, exerciseId, range)',
+    to: '    return false && !toppedOutBefore(history, session, exerciseId, range)',
+    spec: 'src/engine/increment.test.ts',
+  },
+  {
+    id: 'light-lift-stalls-forever',
+    bug: 'the hold never converts, so a light lift sits at the top of its range for good',
+    file: 'src/engine/reps.ts',
+    find: '    return plateIsTooBig(log, exerciseId) && !toppedOutBefore(history, session, exerciseId, range)',
+    to: '    return plateIsTooBig(log, exerciseId)',
+    spec: 'src/engine/increment.test.ts',
+  },
+  {
+    id: 'increment-band-stalls-compounds',
+    bug: 'novices on dumbbell presses stall, because a rack that climbs in fives is treated as a defect',
+    file: 'src/engine/reps.ts',
+    find: '  if (primary.length === 0 || !primary.every((r) => SMALL_MUSCLE.has(r))) return false',
+    to: '  if (primary.length === 0) return false',
+    spec: 'src/engine/increment.test.ts',
+  },
+  {
+    id: 'hold-becomes-a-cut',
+    bug: 'the held exposure resets to the bottom of the range at the same weight, which is less work for a cleared week',
+    file: 'src/engine/reps.ts',
+    find: '      ? { reps: range.high, wrapped: false, backOff: false, staleSteps: 0 }',
+    to: '      ? { reps: range.low, wrapped: false, backOff: false, staleSteps: 0 }',
+    spec: 'src/engine/increment.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [

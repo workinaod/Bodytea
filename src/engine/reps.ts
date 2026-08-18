@@ -188,13 +188,87 @@ export function repStepFor(
     if (!clearedTarget(log.sets, last)) return { reps: last, wrapped: false, backOff: heavy, staleSteps: 0 }
     // Cleared it, but it took everything. Hold, do not ask for more.
     if (heavy) return { reps: last, wrapped: false, backOff: false, staleSteps: 0 }
-    // Top of the range means the next step is load, not reps.
-    return last >= range.high
-      ? { reps: range.low, wrapped: true, backOff: false, staleSteps: 0 }
-      : { reps: last + 1, wrapped: false, backOff: false, staleSteps: 0 }
+    if (last < range.high) return { reps: last + 1, wrapped: false, backOff: false, staleSteps: 0 }
+    // Top of the range means the next step is load, not reps, unless the
+    // smallest plate we own is too big to be a step at all.
+    return plateIsTooBig(log, exerciseId) && !toppedOutBefore(history, session, exerciseId, range)
+      ? { reps: range.high, wrapped: false, backOff: false, staleSteps: 0 }
+      : { reps: range.low, wrapped: true, backOff: false, staleSteps: 0 }
   }
   // Never trained it: start at the load end.
   return { reps: range.low, wrapped: false, backOff: false, staleSteps: 0 }
+}
+
+/**
+ * The small muscles, where the same plate is a much bigger fraction of
+ * the work. R3 names the class this rule is for: curl, lateral raise,
+ * triceps, calf, rear delt.
+ *
+ * A press is deliberately NOT here even at a light weight. Somebody
+ * pressing the 30s takes the 35s next, that is a 17 percent jump, and it
+ * is also just how everybody has ever moved up a dumbbell rack. The band
+ * is a guide for a lift with room to be precise, not an argument that
+ * beginners on compounds should stall.
+ */
+const SMALL_MUSCLE: ReadonlySet<string> = new Set([
+  'biceps',
+  'triceps',
+  'forearms',
+  'delts-side',
+  'delts-rear',
+  'traps',
+  'calves',
+  'achilles-feet',
+  'tibialis',
+])
+
+/**
+ * Whether the only plate available is more than a tenth of the working
+ * load, on a movement small enough for that to matter.
+ *
+ * Five pounds on a 20 lb lateral raise is a 25 percent jump, well past
+ * the 2 to 10 percent band ACSM gives for an increment. Handing it over
+ * because the range topped out is not progression, it is a set the
+ * athlete is now going to miss, and a missed set reads to the rest of
+ * the engine as a lift that is failing. The load steps are what they
+ * are: gyms stock 5 lb plates and 5 lb dumbbell jumps, so the fix cannot
+ * be a smaller plate. It has to be a rep.
+ */
+function plateIsTooBig(log: ExerciseLog, exerciseId: string): boolean {
+  const working = log.sets.find((s) => (s.weightLb ?? 0) > 0)?.weightLb
+  // Unloaded work has no plate to be too big. Bodyweight progression is
+  // reps and harder variations, and the promotion rule owns it.
+  if (working === undefined) return false
+  const primary = musclesFor(exerciseId).primary
+  if (primary.length === 0 || !primary.every((r) => SMALL_MUSCLE.has(r))) return false
+  return loadStepLb(exerciseId) > working * 0.1
+}
+
+/**
+ * Did the exposure before this one also sit at the top of the range?
+ *
+ * The hold above is one repeat, not a stall. Somebody who tops out a
+ * light lift twice running has earned the jump even though it is a big
+ * one, and taking it is better than a rep target that never moves again.
+ * Without this the movement would sit at the top of its range forever,
+ * which is the same "cycled 8 to 12 and back to 8 at the same weight"
+ * failure this file was written to end, wearing a different hat.
+ */
+function toppedOutBefore(
+  history: SessionLog[],
+  current: SessionLog,
+  exerciseId: string,
+  range: RepRange,
+): boolean {
+  for (const session of history) {
+    if (session.date >= current.date) continue
+    const log = session.exercises.find((e) => e.exerciseId === exerciseId)
+    if (!log || log.sets.length === 0) continue
+    const prescribed = Number((log.sets[0]?.targetReps ?? '').match(/^\d+/)?.[0])
+    if (!Number.isFinite(prescribed)) continue
+    return prescribed >= range.high && clearedTarget(log.sets, Math.min(prescribed, range.high))
+  }
+  return false
 }
 
 /** The rep number alone, for the places that only print it. */
