@@ -154,7 +154,7 @@ export function PlanView({
         {plan.supplements.map((s, i) => (
           <div key={s.id} className={`flex items-center justify-between px-4 py-2.5 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}>
             <span className="text-[13px] font-bold">{s.name}</span>
-            <span className="text-[11px] text-ink-faint">{s.dose} · {s.when}</span>
+            <span className="text-[11px] text-ink-faint">{[s.dose, s.when].filter(Boolean).join(' · ')}</span>
           </div>
         ))}
         {plan.supplements.length === 0 && (

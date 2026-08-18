@@ -190,18 +190,57 @@ export const LATE_NIGHT = {
 
 // ---------- Per-user meal plans (v10) ----------
 
-/** Wider stack users can add from; the default stack is a subset. */
+/**
+ * Wider stack users can add from; the default stack is a subset.
+ *
+ * Every dose here sits inside a published upper limit, which two of them
+ * did not. Supplemental magnesium tops out at 350 mg a day (IOM 1997) and
+ * this asked for up to 400. Vitamin D's adult limit is 4,000 IU and this
+ * asked for exactly that, then put a multivitamin next to it, so taking
+ * the plan as written went over. A ceiling is not a target.
+ *
+ * "Pre-workout" is gone from the caffeine line. Caffeine is one of the
+ * best-evidenced things in here; the pre-workout CATEGORY is the most
+ * adulterated shelf in the shop, and naming it is an endorsement we have
+ * no way to stand behind. The dose is the coaching. The product is not.
+ */
 export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'creatine', name: 'Creatine monohydrate', dose: '5 g', when: 'Daily, any time' },
-  { id: 'fishOil', name: 'Fish oil', dose: '1-2 g', when: 'With a meal' },
-  { id: 'vitD3', name: 'Vitamin D3', dose: '2000-4000 IU', when: 'Morning, with fat' },
+  { id: 'fishOil', name: 'Fish oil', dose: '1-2 g combined EPA + DHA', when: 'With a meal' },
+  { id: 'vitD3', name: 'Vitamin D3', dose: '1000-2000 IU', when: 'With a meal that has fat in it' },
   { id: 'electrolytes', name: 'Electrolytes', dose: '1 serving', when: 'Around training / hot days' },
-  { id: 'magnesium', name: 'Magnesium glycinate', dose: '200-400 mg', when: 'Evening' },
+  { id: 'magnesium', name: 'Magnesium glycinate', dose: '200-350 mg', when: 'With a meal' },
   { id: 'multivitamin', name: 'Multivitamin', dose: '1 serving', when: 'With breakfast' },
-  { id: 'caffeine', name: 'Caffeine / pre-workout', dose: '100-200 mg', when: '30-45 min pre-session' },
+  { id: 'caffeine', name: 'Caffeine', dose: '100-200 mg', when: '30-45 min pre-session' },
   { id: 'collagen', name: 'Collagen + vitamin C', dose: '10-15 g', when: '30-60 min before jumps/sprints' },
   { id: 'zinc', name: 'Zinc', dose: '15-25 mg', when: 'Evening, not with calcium' },
 ]
+
+/**
+ * What each of these is made of, which is the question the meal plan has
+ * been answering all along and the stack was not asked.
+ *
+ * A fish allergy stored in onboarding kept somebody away from salmon and
+ * then handed them fish oil on the same screen. Sources vary by brand, so
+ * collagen lists both the hide it usually comes from and the fish it
+ * sometimes comes from: over-excluding costs a supplement nobody needs,
+ * under-excluding costs a reaction.
+ */
+const SUPPLEMENT_SOURCES: Record<string, string[]> = {
+  fishOil: ['fish'],
+  collagen: ['beef', 'fish'],
+}
+
+/**
+ * Who cannot take it on principle rather than on safety. Fish oil is fish
+ * and collagen is an animal by-product, so both were already excluded for
+ * vegans; the check said `!== 'vegan'`, which handed them to every
+ * vegetarian in the app.
+ */
+const NOT_FOR: Record<string, DietStyle[]> = {
+  fishOil: ['vegetarian', 'vegan'],
+  collagen: ['vegetarian', 'vegan'],
+}
 
 /** The owner's booklet keeps his PDF meal plan verbatim. */
 export function buildNaodMealPlan(): MealPlanConfig {
@@ -316,7 +355,9 @@ export function buildMealPlan(
       { category: 'Veg', items: shop(['2-3 vegetables you will actually eat', 'Salad bag', 'Frozen veg backup']) },
     ],
     supplements: SUPPLEMENT_CATALOG.filter(
-      (s) => dietStyle !== 'vegan' || !['fishOil', 'collagen'].includes(s.id),
+      (s) =>
+        !(NOT_FOR[s.id] ?? []).includes(dietStyle) &&
+        blockedBy({ name: s.name, ingredients: SUPPLEMENT_SOURCES[s.id] ?? [] }, limits) === null,
     )
       .slice(0, 3)
       .map((s) => ({ ...s })),

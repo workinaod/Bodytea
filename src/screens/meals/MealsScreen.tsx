@@ -221,7 +221,7 @@ export function MealsScreen() {
                       <div className={`text-[12.5px] font-bold ${on ? 'text-lime' : 'text-ink'}`}>
                         {on ? '✓ ' : ''}{s.name}
                       </div>
-                      <div className="text-[10.5px] text-ink-faint">{s.dose} · {s.when}</div>
+                      <div className="text-[10.5px] text-ink-faint">{[s.dose, s.when].filter(Boolean).join(' · ')}</div>
                     </button>
                   )
                 })}

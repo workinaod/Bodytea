@@ -29,7 +29,7 @@ export function SupplementStackSheet({ onClose }: { onClose: () => void }) {
             <div key={s.id} className={`flex items-center justify-between gap-2 px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}>
               <div className="min-w-0">
                 <div className="truncate text-[13px] font-bold">{s.name}</div>
-                <div className="text-[10.5px] text-ink-faint">{s.dose} · {s.when}</div>
+                <div className="text-[10.5px] text-ink-faint">{[s.dose, s.when].filter(Boolean).join(' · ')}</div>
               </div>
               <button
                 className="shrink-0 text-[12px] font-bold text-danger"
@@ -64,7 +64,7 @@ export function SupplementStackSheet({ onClose }: { onClose: () => void }) {
           className="w-full"
           disabled={!name.trim()}
           onClick={() => {
-            add({ id: uid(), name: name.trim(), dose: dose.trim() || ', ', when: when.trim() || 'Daily' })
+            add({ id: uid(), name: name.trim(), dose: dose.trim(), when: when.trim() || 'Daily' })
             setName(''); setDose(''); setWhen('')
           }}
         >
