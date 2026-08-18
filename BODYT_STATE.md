@@ -169,7 +169,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
 | R3 | Autoregulation thresholds (weight-trend bands, volume windows, plateau evidence) | research | pending | J7 | engines lane, start of J8 |
-| R4 | Meal + recipe corpus expansion (axes, goal x diet x cost coverage; guards-first) | research | pending | J1 | product lane, inside J9 |
+| R4 | Meal + recipe corpus expansion | research | **synthesized 2026-08-18** (research/R4-meals.md; USDA CC0 vs OFF ODbL fence, 720-cell coverage predicate, 158-record gap, 20 fixtures) | J1 | product lane, inside J9 |
 | R5 | Program-family corpus | research | **synthesized 2026-08-18** (research/R5-program-families.md; 10 families, 19 sources, ProgramFamily record, selection logic, 8-axis convergence metric, 18 fixtures of which 4 fail today) | J7 schemas stable | planner owner, before J11 |
 | B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | pending | starts with R1 | any lane, rolling |
@@ -244,6 +244,17 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 ---
 
 ## 7. KNOWN GAPS AND FAILURES LEDGER (turn each into a regression when fixed)
+- **ALLERGY SAFETY BUG (found by R4, fix first in J9):** onboarding writes `foodLimits`
+  { dairyFree, allergies } into an object typed OnboardingAnswers, which has no such
+  field. Excess-property checking is lost through useMemo so tsc stays silent. Only one
+  hit in the whole repo: the write site. A user who declares dairy-free plus a nut
+  allergy can be shown a meal containing both. Health issue, not a papercut.
+- **Meal records carry protein and kcal only, no carbs or fat**, so every swap taken
+  punches a hole in the macro ring by construction (engine/stats.ts macrosFor requires
+  both). Blocks any fit-the-remaining-macros ranker until fixed.
+- **Vegan cliff:** effective meal pool by diet is omnivore 42, pescatarian 29,
+  vegetarian 26, vegan 11; vegan breakfast and late-night are 2 each, and
+  mealAlternatives silently widens rather than saying why.
 
 - ~~Bodyweight athletes cannot be promoted; in-session engine silent on bodyweight (J2).~~
   Fixed 2026-08-18: rep-max verdicts + offer-ease; regressions in block.test.ts,
