@@ -180,6 +180,17 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
     `engine/adapt.ts` went over the 600 cap making room, so the reading half moved to
     `engine/signals.ts`, the split the file's own header has been describing: adapt.ts is
     453 lines now and needs no allowance.
+  - **W7 (the injuries answer, from R12's prefs finding):** "Anything that hurts right
+    now?" has been asked since the onboarding rebuild and read by nothing. Its own informs
+    line says it "routes the plan around the joint from day one"; it routed nothing.
+    `plan/limitations.ts` translates the chip or the free text into `prefs.limitations`,
+    written at `commitPlan` so both the generated and BYOR paths get it, which makes
+    `limitedJoints` live in the adapt engine. Free text we cannot map to a joint is still
+    KEPT with an empty joint list: the plan cannot route around a word it does not know,
+    but the coach can say it back. 10 tests including one that walks chip to engine
+    context and one that fails if a chip is added to the question and not to the map, plus
+    2 mutations. Does NOT close J6: limitations still have no lifecycle, no expiry and no
+    edit, and R7's limit-range mode is still the highest-value thing left.
   - Structure allowances came DOWN to pay for all of it, never up: types.ts 705 -> 696
     (FoodLimits moved to foodTypes.ts), store/schema.ts 649 -> 634 (meal-plan shapes moved
     to store/mealPlanSchema.ts), plan/generator.ts 941 -> 940.
@@ -356,9 +367,11 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   week 17 with no proposal and no undo, and the only opt-out (`prefs.pinned`) is unwritable.
   `prescription.ts:99-126` opens a flagged movement 12.5 percent lighter and says nothing,
   the sentence being built at `fatigue.ts:246` and discarded. `types.ts:680` `data.prefs`
-  is read in 4 places and written in 0, so four shipped engine branches are dead code, and
-  that one is the root of the other two. The proposals-context defect was the fifth and is
-  fixed in W6.
+  was read in 4 places and written in 0, so four shipped engine branches were dead code,
+  and that is the root of the other two. W7 gave `limitations` a writer; `blocked`,
+  `pinned` and `sessionMinutes` still have none, so the block list, the anchor-swap
+  opt-out and the time budget are still unreachable. The proposals-context defect was the
+  fifth and is fixed in W6.
 - ~~**loadStepLb defect (R3).**~~ Fixed 2026-08-18 (5782733): at the top of the range a
   small-muscle lift whose only plate exceeds 10 percent of the working load spends the
   exposure on a rep and converts the second time round. increment.test.ts + 4 mutations.
@@ -403,7 +416,7 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 - ~~Bodyweight athletes cannot be promoted; in-session engine silent on bodyweight (J2).~~
   Fixed 2026-08-18: rep-max verdicts + offer-ease; regressions in block.test.ts,
   sessionFatigue.test.ts, goldenLife.test.ts. Untested verdicts 41/80 -> 2/80.
-- Injuries answer unread; secondaryGoal dead (J3). ~~foodLimits dropped~~ fixed 2026-08-18.
+- secondaryGoal dead (J3). ~~foodLimits dropped~~ fixed 2026-08-18 (W2). ~~Injuries answer unread~~ fixed 2026-08-18 (W7): it seeds prefs.limitations now, though the lifecycle (expiry, edit, limit-range instead of remove) is still J6.
 - Explain shelf: 181 distinct lines / 1,742 shown (J10).
 - ~~Load floor = one step (20% of a 25 lb dumbbell); failing-flag opens a band not a line (J2/J7).~~
   Fixed 2026-08-18: proportional floor + flag hysteresis; regressions in
