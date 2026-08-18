@@ -191,6 +191,14 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
     context and one that fails if a chip is added to the question and not to the map, plus
     2 mutations. Does NOT close J6: limitations still have no lifecycle, no expiry and no
     edit, and R7's limit-range mode is still the highest-value thing left.
+  - **W8 (minimum age, owner decision 2026-08-18):** there was no age field anywhere in
+    the tree, so the app had no minimum rather than a generous one. It is 11 now, asked in
+    MeStep between "you are" and "how tall", and stated ONLY to somebody who types a
+    number below it. It never blocks Next. R15 recommended 18 with a gate; the owner chose
+    11 with a notice, and the two structural tests exist because both failure directions
+    still render a correct-looking sentence: one fails if `tooYoung` ever reaches `ready`
+    (notice becomes a wall), one if the line's condition widens past the person it is
+    about. 7 tests, 2 mutations. Age is stored and consumed by nothing yet: see the ledger.
   - Structure allowances came DOWN to pay for all of it, never up: types.ts 705 -> 696
     (FoodLimits moved to foodTypes.ts), store/schema.ts 649 -> 634 (meal-plan shapes moved
     to store/mealPlanSchema.ts), plan/generator.ts 941 -> 940.
@@ -406,6 +414,17 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   than suggesting. R16 calls it a suggest-only violation. Owner call: opt-in instead.
   Related and also an owner call: R16 says zinc has no supportable claim for any user
   and should leave the catalog. Neither is in the default three, so neither is urgent.
+- **Age is collected and read by no engine yet (W8).** The minimum is 11, stated only to
+  somebody who types a number below it, and it never blocks Next: that is the owner's
+  decision (2026-08-18), overriding R15's recommendation of 18 with a gate. The field is
+  on `Profile` and in the envelope. Nothing consumes it, which is the same
+  collected-and-dropped pattern W2 and W7 undid, so it is logged here rather than left to
+  be rediscovered. R15 names four consumers: `milestones.ts:119` `LB_PER_WEEK_CEILING` is
+  keyed by TrainingAge rather than age, so a 64-year-old beginner is promised 208 lb a
+  year; `generator.ts:491` has no age term in the calorie baseline (worth ~310 kcal
+  against the height term's 250 clamp); `generator.ts:232-247` auto-selects box jumps and
+  falling-start sprints with no gate on age or fall history; and R15's own age-band table
+  wants loading ceilings, session density and deload frequency to move with it.
 - **A yoga class satisfies the mandatory conditioning rule (R18, verified):**
   `plan/cardio.ts:206` gives the `custom` activity `conditioning: true` and MET 6.0, and
   `engine/resolveDay.ts:104 cardioRequiredForWeek` treats any logged conditioning as
