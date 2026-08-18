@@ -433,7 +433,8 @@ const MUTATIONS = [
   {
     id: 'one-complaint-reroutes',
     bug: 'a single bad set reroutes the whole plan around a joint',
-    file: 'src/engine/adapt.ts',
+    // Moved with the reading half when adapt.ts was split.
+    file: 'src/engine/signals.ts',
     find: 'export const PAIN_PATTERN_COUNT = 2',
     to: 'export const PAIN_PATTERN_COUNT = 1',
     spec: 'src/engine/adapt.test.ts',
@@ -529,7 +530,7 @@ const MUTATIONS = [
   {
     id: 'unplanned-sport-invisible',
     bug: 'two hours of basketball does not register as training load',
-    file: 'src/engine/adapt.ts',
+    file: 'src/engine/signals.ts',
     find: 'export const EXTRA_LOAD_MINUTES = 60',
     to: 'export const EXTRA_LOAD_MINUTES = 600',
     spec: 'src/engine/adapt.test.ts',
@@ -594,8 +595,11 @@ const MUTATIONS = [
     id: 'adaptation-runs-on-a-good-week',
     bug: 'the plan gets rewritten when nothing has happened',
     file: 'src/engine/adapt.ts',
-    find: '  }).filter((a) => a.automatic)',
-    to: '  })',
+    // Re-aimed after the adaptContext extraction reshaped the call.
+    find: `planAdjustments(exercises, adaptContext(data, dateISO, equipment)).filter(
+    (a) => a.automatic,
+  )`,
+    to: 'planAdjustments(exercises, adaptContext(data, dateISO, equipment))',
     spec: 'src/engine/adapt.test.ts',
   },
   {
@@ -992,6 +996,23 @@ if (arg === '--restore') {
 
 const list = arg === 'e2e' ? E2E_MUTATIONS : MUTATIONS
 assertClean(list.map((m) => m.file))
+
+// A find string that no longer matches is the quietest failure this
+// harness has. The mutation never runs, so the bug is never reintroduced,
+// so the test that was supposed to catch it is unguarded and nothing says
+// so. It DID show up at the end as an ANCHOR MISSING survivor, thirty
+// minutes and eighty-odd vitest runs later, which is the right verdict
+// arriving far too late to be the thing you act on. Three anchors went
+// stale in one commit when the reading half of adapt.ts moved to
+// signals.ts; this is the check that would have said so in a second.
+const stale = list.filter((m) => !readFileSync(resolve(ROOT, m.file), 'utf8').includes(m.find))
+if (stale.length) {
+  console.log('[poison] refusing to run: these anchors no longer match their file.')
+  console.log('         The mutation cannot fire, so the test behind it is unguarded.')
+  console.log('         Re-aim the find string, or delete the mutation if the bug is gone.')
+  for (const m of stale) console.log(`           ${m.id}  (${m.file})`)
+  process.exit(1)
+}
 const results = []
 for (const m of list) {
   const r = check(m, arg === 'e2e')
