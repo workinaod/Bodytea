@@ -173,7 +173,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R5 | Program-family corpus: 4-6 typed archetype families + tradeoffs (the standalone research job) | research | pending | J7 schemas stable | planner owner, before J11 |
 | B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | pending | starts with R1 | any lane, rolling |
-| B3 | Knowledge store + retrieval layer: versioned knowledge packs outside the bundle (IndexedDB-loaded, indexed), provenance/confidence/contradiction fields, deterministic filter-rank-packet retrieval API, high-cardinality scale tests. THE scale path to millions of records; built during core on a small high-quality corpus, then fed by post-gate ingestion waves | infra | pending | J7 contracts stable | engines lane, alongside R5, before J11 |
+| B3 | Knowledge store + retrieval layer | infra | **designed 2026-08-18** (research/B3-knowledge-store.md; tiered storage, 32KB/24-record DecisionPacket cap, lexicographic ranking, derived confidence, pg_trgm over vector DB; stage plan 0-4) | J7 contracts stable | engines lane, alongside R5, before J11 |
 | IW | Ingestion waves: mass corpus expansion (exercises, programs, evidence, food) through B3's pipeline toward millions of records | research | pending, post-gate | J12 + B3 | dedicated sessions per wave |
 
 **Deferred (do not start):** mass research ingestion, population learning, trainer/CRM,
