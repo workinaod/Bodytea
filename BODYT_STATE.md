@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-18 (J1 done, reconciliation audit session)
+Last updated: 2026-08-18 (J2 done, engines lane session)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -118,6 +118,19 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
   **sim 20x20: all 20 personas, zero invariant failures**; sim 20x8 clean; **poison
   81/81 mutations caught** (one anchor re-aimed after the merge orphaned it).
   `npm run sim` / `sim:sessions` / `poison` now exist.
+- **J2 (2026-08-18) landed on the same line:** bodyweight athletes are first class.
+  Phase verdicts judge unloaded lifts on the rep-max series (floor +2 reps), the
+  prescription echo is swept out of repMaxSeries/detectPRs/achievementFacts, unloaded
+  shortfalls get offer-ease in-session, the softening floor is proportional
+  (max(step, round5(0.6 x baseline))), the failing flag has 2-clean-session hysteresis,
+  and the debrief composes against session.date. Two new tripwires: a dead-export guard
+  in structure.test.ts (48 orphans allowlisted, shrink-only) and goldenLife.test.ts
+  (8 deterministic weeks of a minimal-equipment persona, snapshot-locked). Debrief
+  eat/recovery pools are goal-aware (A6): distinct-line ratio recovery 0.120 -> 0.150,
+  eat 0.221 -> 0.294 over the 20x8 harness. Validation after J2: **1,194/1,194 unit
+  tests**, golden lock unchanged, goldenLife deterministic across runs, e2e 38 passed
+  (31.5m, 3 voice skips), poison 81/81, sim 20x20 clean with **untested verdicts down
+  from 41/80 to 2/80** and push-up athletes promoted to decline push-ups.
 - Superseded branches: `claude/fitness-tracking-app-ugo5xt` (content ported; glance at the
   two adapted commits 0374307/d5e71a4 before deleting), `claude/bodytea-link-display-r1sue6`
   (stale ancestor pointer). `claude/workout-form-feedback-pain-0xnonz` never existed.
@@ -136,7 +149,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 |----|-----|------|--------|-----------|---------------|
 | J0 | Reconciliation audit + this file | - | done 2026-08-17 | - | BodyT project state reconciliation audit |
 | J1 | Reunify branches, carry this file to canonical branch, wire sims into npm, settle deploy branch | gate | **done 2026-08-18** (executed by the audit session after the algorithm session wedged; merge eaf3519 live) | J0 | reconciliation audit session |
-| J2 | Bodyweight progression (phase verdicts + in-session response for unloaded work, pct load floor) | engines | pending | J1 | Algorithm session |
+| J2 | Bodyweight progression (phase verdicts + in-session response for unloaded work, pct load floor) | engines | **done 2026-08-18** (engines lane session; A1-A6 all landed, deploy d23e6d1) | J1 | Algorithm session |
 | J3 | Onboarding closure: confirm review fixes, name decision, injuries->Prefs.limitations, foodLimits->meal plan, dead fields, first paired-profile eval | product | pending | J1 | App audit and refinement |
 | J4 | Freeform-first entry (composer primary, chips demote to examples; reuse inferGoal/readStatement) | product | pending | J3 | App audit session |
 | J5 | Booklet regenerates: goal edits -> generatePlan -> diff for approval; history preserved | product | pending | J3 | App audit session |
@@ -152,9 +165,9 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending | C2 | cloud session |
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
 | RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
-| R6 | Safety boundaries + functional constraints pack (red-flag table, GREEN/YELLOW/RED tiers, capability fields; tier-A sources; adversarial evals) | research | pending | J1 | product lane, with J3/J6 |
-| R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | pending (inside J2) | J1 | engines lane |
-| R1 | Nutrition evidence pack (BMR eqns, activity-from-logs, carb cycling, fibre floor; cited) | research | pending | J1 | engines lane, start of J7 |
+| R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
+| R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
+| R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
 | R3 | Autoregulation thresholds (weight-trend bands, volume windows, plateau evidence) | research | pending | J7 | engines lane, start of J8 |
 | R4 | Meal + recipe corpus expansion (axes, goal x diet x cost coverage; guards-first) | research | pending | J1 | product lane, inside J9 |
 | R5 | Program-family corpus: 4-6 typed archetype families + tradeoffs (the standalone research job) | research | pending | J7 schemas stable | planner owner, before J11 |
@@ -231,10 +244,14 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 
 ## 7. KNOWN GAPS AND FAILURES LEDGER (turn each into a regression when fixed)
 
-- Bodyweight athletes cannot be promoted; in-session engine silent on bodyweight (J2).
+- ~~Bodyweight athletes cannot be promoted; in-session engine silent on bodyweight (J2).~~
+  Fixed 2026-08-18: rep-max verdicts + offer-ease; regressions in block.test.ts,
+  sessionFatigue.test.ts, goldenLife.test.ts. Untested verdicts 41/80 -> 2/80.
 - Injuries answer unread; foodLimits dropped; secondaryGoal dead (J3).
 - Explain shelf: 181 distinct lines / 1,742 shown (J10).
-- Load floor = one step (20% of a 25 lb dumbbell); failing-flag opens a band not a line (J2/J7).
+- ~~Load floor = one step (20% of a 25 lb dumbbell); failing-flag opens a band not a line (J2/J7).~~
+  Fixed 2026-08-18: proportional floor + flag hysteresis; regressions in
+  prescription.test.ts and progression.test.ts. Finer per-lift banding stays with J7.
 - Live SessionLog is a frozen snapshot across deploys; getExercise throws on removed ids (RA).
 - Onboarding is chip-first vs the freeform-first contract (J4).
 - deploy.yml names the sibling branch; algo branch has NO CI today (J1).
@@ -278,6 +295,32 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   prescription-echo sweep, offer-ease for unloaded work, proportional load floor
   max(step, 0.6x), start-lighter hysteresis, debrief vs session.date, dead-export guard,
   goldenLife test; then the UI scan). J3 (product lane) and C1 (cloud lane) are unblocked.
+- **2026-08-18 · J2 · Engines lane session.** Round three Part A, all six items:
+  (A1) prescription-echo sweep finished (repMaxSeries, detectPRs bodyweight branch,
+  achievementFacts e1RM/rep-max/tonnage read achieved ?? reps); phase verdicts judge
+  unloaded lifts on the rep-max series, same MIN_SESSIONS_TO_JUDGE, gain floor
+  REP_GAIN_TO_PROMOTE = 2; respondToSet returns offer-ease for unloaded shortfalls.
+  (A2) soften floor = max(loadStepLb, round5(0.6 x baseline)), floor never raises,
+  guard proven to bite (failing + 90-day layoff on a 25 lb press: 10 lb, was 5).
+  (A3) failing flag hysteresis: raise at 3 shorts in window, clear only on 2 clean
+  sessions in a row, clearing forgives the ledger; flag/clean/short/clean stays
+  flagged, pinned in progression.test.ts. (A4) debrief composes against session.date
+  (streak + insights window; consumers audited, only coach-feed timestamps still use
+  wall clock and nothing reads them for logic). (A5) dead-export guard live in
+  structure.test.ts with a 48-entry shrink-only allowlist and a stale check, proven
+  to bite on a planted export; goldenLife.test.ts pins 8 deterministic weeks (69-line
+  snapshot, run twice to confirm). (A6) goal-aware debrief pools appended after
+  existing variants so anti-repeat ids stay stable; distinct-ratio recovery
+  0.120 -> 0.150, eat 0.221 -> 0.294. Full ritual green (1,194 tests, e2e 38 pass,
+  build, sims, poison 81/81); commits d23e6d1 + dd4b0a5 pushed to the engines branch
+  and fast-forwarded to claude/app-audit-refinement-sjw2va (owner-granted for this
+  job); deploy confirmed live by bundle hash index-u6su8hMr.js; 390px screenshots
+  reviewed (Today, Focus, Week, Meals, Progress, Coach all clean). Learned along the
+  way, for other lanes: scripts/visual-check.mjs still walks the PRE-rebuild
+  onboarding and cannot get past the landing (product lane should update it with J3),
+  and the Progress screen ships an em dash in "Targets never move — the dates do"
+  (J3 copy sweep). NEXT: engines lane is J7 (user model + nutrition engine, R1 first)
+  in a fresh session; J3 (product) and C1 (cloud) remain unblocked and untouched.
 - **2026-08-17 · J0 · Reconciliation audit session.** Reconstructed all four workstreams
   from git topology, session records, five published artifacts and two full code
   inventories; read v12 in full; produced the dashboard artifact and this file.
@@ -287,6 +330,15 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   instructions in the dashboard (section 08/09) and section 2 above.
 
 ---
+
+- **2026-08-18 · R6 + R1 · Reconciliation audit session.** Research packs synthesized and
+  committed to research/ on the working line. R6: red-flag classifier, GYR rules,
+  targeted questions, functional mappings, 28 adversarial cases, RED-unbypassable-by-type
+  integration design (ACOG paywalled, compensated conservatively; disagreements preserved).
+  R1: BMR model selection, activity-from-logs, weight bands + step rule, sourced macro and
+  fibre rules, 14 table-tests. Both: RESEARCH SYNTHESIZED, not yet engine-integrated.
+  NEXT: J3 consumes R6 (product lane); J7 consumes R1 (engines lane); C1 spawn pending
+  session-tool availability.
 
 ## 10. SOURCES
 
