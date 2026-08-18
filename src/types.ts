@@ -122,21 +122,10 @@ export type RoutineGoal = 'muscle' | 'lose-weight' | 'maintain' | 'athletic'
  */
 export type DietStyle = 'omnivore' | 'vegetarian' | 'vegan' | 'pescatarian'
 
-/**
- * What somebody cannot eat, as opposed to what they choose not to.
- *
- * Dairy is its own flag rather than a diet style because it crosses
- * all of them — plenty of omnivores and most vegetarians-who-are-
- * really-vegans-about-milk need it. Allergies are free text because
- * every chip list is missing somebody's allergy, and being missing
- * from that list is the moment an app stops feeling like it is for
- * you.
- */
-export interface FoodLimits {
-  dairyFree?: boolean
-  /** In their words. Shown to the user, never parsed into a rule. */
-  allergies?: string
-}
+// Moved to foodTypes.ts, for the reason given there: what an athlete
+// cannot eat is read by a subsystem of its own now, not by a glance.
+import type { FoodLimits } from './foodTypes'
+export * from './foodTypes'
 
 export type LifeEventKind = 'late-night' | 'on-feet'
 export interface LifeEventDef {
@@ -242,6 +231,8 @@ export interface PlanConfig {
   sportMode?: 'ball' | 'generic'
   /** How this user eats, filters generated meals + swap suggestions. */
   dietStyle?: DietStyle
+  /** What they cannot eat. Exclusion only, never widened past: plan/foodLimits.ts */
+  foodLimits?: FoodLimits
   /** Training history from onboarding, seeds first-session weights. */
   experience?: 'new' | 'returning' | 'casual' | 'trained'
   /** One-tap goal follow-up answers, the coach's extra context. */

@@ -22,6 +22,7 @@ export function PlanView({
 }) {
   const plan = useAppStore((s) => s.data.plan.mealPlan)
   const diet = useAppStore((s) => s.data.plan.dietStyle)
+  const limits = useAppStore((s) => s.data.plan.foodLimits)
   const update = useAppStore((s) => s.update)
   // Opens on the day you are actually in, not always the training day.
   // "+ Add a meal" writes whichever tab is showing, so a hardcoded
@@ -172,6 +173,7 @@ export function PlanView({
       {openMeal && !editing && (
         <MealDetailSheet
           diet={diet}
+          limits={limits}
           meal={openMeal}
           onEdit={() => setEditing({ ...openMeal })}
           onReplace={(alt) =>

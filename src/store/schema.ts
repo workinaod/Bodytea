@@ -14,6 +14,7 @@ import { isoDate, weekday } from './primitives'
 // Session and activity shapes live beside the types they mirror.
 import { sessionSchema } from './sessionSchema'
 import { prefsSchema } from './prefsSchema'
+import { foodLimitsSchema, mealPlanSchema } from './mealPlanSchema'
 import { cardioEntrySchema, runLogSchema } from './activitySchema'
 
 const settingsSchema = z.object({
@@ -105,26 +106,10 @@ export const planConfigSchema = z.object({
   nutrition: z.object({ kcalTraining: z.number().positive(), kcalRest: z.number().positive() }),
   sportMode: z.enum(['ball', 'generic']).optional(),
   dietStyle: z.enum(['omnivore', 'vegetarian', 'vegan', 'pescatarian']).optional(), // all four, or the missing one wipes that athlete: store/dietStyle.test.ts
+  foodLimits: foodLimitsSchema.optional(), // dropped on the floor until now: a declared allergy that never reached a meal
   experience: z.enum(['new', 'returning', 'casual', 'trained']).optional(),
   goalAnswers: z.record(z.string(), z.string()).optional(),
-  mealPlan: z.object({
-    templates: z.array(
-      z.object({
-        id: z.string(),
-        dayType: z.enum(['training', 'rest']),
-        slot: z.string(),
-        name: z.string().min(1),
-        detail: z.string(),
-        proteinG: z.number().min(0),
-        kcal: z.number().min(0),
-      }),
-    ),
-    grocery: z.array(z.object({ category: z.string(), items: z.array(z.string()) })),
-    supplements: z.array(
-      z.object({ id: z.string(), name: z.string().min(1), dose: z.string(), when: z.string() }),
-    ),
-    lateNight: z.object({ yes: z.array(z.string()), no: z.array(z.string()) }),
-  }),
+  mealPlan: mealPlanSchema,
 })
 
 const weekSchema = z.object({

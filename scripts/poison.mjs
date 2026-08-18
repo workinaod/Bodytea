@@ -670,6 +670,40 @@ const MUTATIONS = [
     to: "  'hack-squat': ['leg-press'],",
     spec: 'src/plan/equipCoverage.test.ts',
   },
+  {
+    id: 'allergy-filter-dropped',
+    bug: 'a declared allergy reaches the onboarding screen and stops there, and the swap list offers it back',
+    file: 'src/plan/mealAlts.ts',
+    find: '  pool = allowedByLimits(pool, target.limits)',
+    to: '  pool = allowedByLimits(pool, undefined)',
+    spec: 'src/plan/foodLimits.test.ts',
+  },
+  {
+    id: 'allergy-filter-runs-before-widening',
+    bug: 'the thin-slot widening reaches back past the allergy filter and puts the allergen back',
+    file: 'src/plan/mealAlts.ts',
+    find: `  if (pool.length < count) pool = COMMON_MEALS.filter((m) => notSelf(m) && dietOk(m))
+  pool = allowedByLimits(pool, target.limits)`,
+    to: `  pool = allowedByLimits(pool, target.limits)
+  if (pool.length < count) pool = COMMON_MEALS.filter((m) => notSelf(m) && dietOk(m))`,
+    spec: 'src/plan/foodLimits.test.ts',
+  },
+  {
+    id: 'allergy-never-reaches-the-plan',
+    bug: 'the generator drops food limits on the floor, which is exactly how this shipped for months',
+    file: 'src/plan/generator.ts',
+    find: '    foodLimits: a.foodLimits,',
+    to: '    foodLimits: undefined,',
+    spec: 'src/plan/foodLimits.test.ts',
+  },
+  {
+    id: 'unknown-allergy-word-ignored',
+    bug: 'an allergy we have no family for is silently dropped instead of excluded on its own',
+    file: 'src/plan/foodLimits.ts',
+    find: '    out.add(term)',
+    to: '    if (FAMILIES[term.replace(/\\s|-/g, \'\')]) out.add(term)',
+    spec: 'src/plan/foodLimits.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [

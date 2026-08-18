@@ -1,4 +1,5 @@
-import type { DietStyle } from '../types'
+import type { DietStyle, FoodLimits } from '../types'
+import { allowedByLimits } from './foodLimits'
 
 // ============================================================
 // Meal alternatives from COMMON household food. When someone
@@ -103,9 +104,20 @@ export function slotKindOf(slot: string): MealSlotKind | null {
  * actually rides on. Slot-filtered when the slot maps to a kind
  * (widening to the whole list when the slot pool runs thin), and
  * diet-filtered when the user eats vegetarian or vegan.
+ *
+ * Then, last and unconditionally, limit-filtered. Order matters: the
+ * widening above exists to keep a thin slot from returning nothing, and
+ * an allergy is exactly the case where returning nothing is correct.
  */
 export function mealAlternatives(
-  target: { proteinG: number; kcal: number; slot?: string; excludeName?: string; diet?: DietStyle },
+  target: {
+    proteinG: number
+    kcal: number
+    slot?: string
+    excludeName?: string
+    diet?: DietStyle
+    limits?: FoodLimits
+  },
   count = 3,
 ): CommonMeal[] {
   const kind = target.slot ? slotKindOf(target.slot) : null
@@ -124,6 +136,7 @@ export function mealAlternatives(
     !target.excludeName || m.name.toLowerCase() !== target.excludeName.trim().toLowerCase()
   let pool = COMMON_MEALS.filter((m) => notSelf(m) && dietOk(m) && (kind === null || m.slots.includes(kind)))
   if (pool.length < count) pool = COMMON_MEALS.filter((m) => notSelf(m) && dietOk(m))
+  pool = allowedByLimits(pool, target.limits)
 
   const tp = Math.max(target.proteinG, 10)
   const tk = Math.max(target.kcal, 150)

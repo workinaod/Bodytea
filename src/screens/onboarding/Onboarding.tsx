@@ -238,6 +238,7 @@ export function Onboarding() {
       mealsPerDay,
       lifeSeeds: answers.lifeSeeds,
       dietStyle,
+      foodLimits: answers.foodLimits,
       skipMeals,
     })
     setByorDraft((prev) =>

@@ -4,6 +4,7 @@ import type {
   DayTemplate,
   DietStyle,
   EquipTag,
+  FoodLimits,
   Goal,
   LifeEventKind,
   PlanConfig,
@@ -49,6 +50,8 @@ export interface OnboardingAnswers {
   lifeSeeds?: { label: string; kind: LifeEventKind }[]
   /** How they eat, meals, swaps, and grocery lists respect it. */
   dietStyle?: DietStyle
+  /** What they cannot eat. Asked since day one, read since this line. */
+  foodLimits?: FoodLimits
   /** Skip meal-plan generation; the Meals tab offers setup later. */
   skipMeals?: boolean
   /** Up to four body areas that get guaranteed direct weekly work. */
@@ -894,13 +897,8 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
       `${getExercise(f.exerciseId).name} is here because you asked for direct ${FOCUS_LABELS[f.area].toLowerCase()} work. The plan guarantees it every week.`
   }
 
-  const mealPlanFull = buildMealPlan(
-    a.goal,
-    nutrition.proteinTargetG,
-    nutrition,
-    a.mealsPerDay ?? 4,
-    a.dietStyle ?? 'omnivore',
-  )
+  // Limits ride along: a meal they cannot eat should never be written down.
+  const mealPlanFull = buildMealPlan(a.goal, nutrition.proteinTargetG, nutrition, a.mealsPerDay ?? 4, a.dietStyle ?? 'omnivore', a.foodLimits)
 
   const plan: PlanConfig = {
     planVersion: 1,
@@ -929,6 +927,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     mealPlan: a.skipMeals ? { ...mealPlanFull, templates: [] } : mealPlanFull,
     sportMode: 'generic',
     dietStyle: a.dietStyle ?? 'omnivore',
+    foodLimits: a.foodLimits,
     experience: a.experience,
     goalAnswers: a.goalAnswers,
   }
