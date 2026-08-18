@@ -388,7 +388,7 @@ export function planAdjustments(
       kind: 'reduce-load',
       automatic: false,
       exerciseId: ids[0],
-      because: `Your ${j} keeps getting flagged, and every version of ${ids.length > 1 ? 'these movements' : 'this movement'} loads it — there is no swap that trains the pattern and spares the joint. So keep ${ids.length > 1 ? 'them' : 'it'} in and take the weight down instead: roughly a third off, stop the set at the first sharp one rather than at the rep count. If it is still there in two weeks, that is a question for a physio and not for an app.`,
+      because: `Your ${j} keeps getting flagged, and every version of ${ids.length > 1 ? 'these movements' : 'this movement'} loads it. There is no swap that trains the pattern and spares the joint. So keep ${ids.length > 1 ? 'them' : 'it'} in and take the weight down instead: roughly a third off, stop the set at the first sharp one rather than at the rep count. If it is still there in two weeks, that is a question for a physio and not for an app.`,
     })
   }
 
@@ -438,7 +438,7 @@ export function planAdjustments(
     wornDown || (shortSleep && extra)
       ? 'Also worth not chasing a new number today. Same weight as last time is a session that still counts; a failed PR on a bad week is one that does not.'
       : missed
-        ? `${missed.detail} Coming back, the volume is wanted — you are undertrained, not overtrained — but the LOAD should not pick up where the plan expected you to be. One session at the old weight, then climb.`
+        ? `${missed.detail} Coming back, the volume is wanted, you are undertrained rather than overtrained, but the LOAD should not pick up where the plan expected you to be. One session at the old weight, then climb.`
         : null
   if (holdReason) out.push({ kind: 'hold-load', automatic: false, because: holdReason })
 

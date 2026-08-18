@@ -231,7 +231,7 @@ export const COOKING: Record<string, CookingMeta> = {
     batch: 'Uses leftover chicken from any other meal here, which is the point of it.',
   }),
   'beef-potatoes': C('oven', 12, 45, [
-    'Oven to 220°C. Potatoes cut into chunks, oiled and salted, onto a tray FIRST — they take forty minutes and everything else takes ten.',
+    'Oven to 220°C. Potatoes cut into chunks, oiled and salted, onto a tray FIRST. They take forty minutes and everything else takes ten.',
     'At the thirty-minute mark, beef into a hot pan, hard sear both sides.',
     'Frozen veg in the microwave or a pot in the last five minutes.',
     'Rest the beef 5 minutes before slicing. This is not optional; slicing it straight away loses the juice onto the board.',
@@ -345,7 +345,7 @@ export const COOKING: Record<string, CookingMeta> = {
   ], {
     gear: ['pot', 'toaster'],
     skill: 1,
-    seasoning: 'Cumin, bay, salt at the end, and something acidic to finish — lemon or vinegar. That last step is what makes it taste finished.',
+    seasoning: 'Cumin, bay, salt at the end, and something acidic to finish, lemon or vinegar. That last step is what makes it taste finished.',
     batch: 'Doubles perfectly and freezes.',
     keepsDays: 5,
   }),

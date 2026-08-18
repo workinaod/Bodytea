@@ -125,7 +125,7 @@ export function VoicePicker() {
           <p className="mt-1 text-[11.5px] leading-snug text-gold/85">
             On an iPhone, a web app is only handed the basic cut of each voice. If you have already
             downloaded the Enhanced or Premium versions, they are on your phone and working
-            everywhere else — Apple just does not hand them to the browser, so there is nothing to
+            everywhere else. Apple just does not hand them to the browser, so there is nothing to
             fix on this screen.
           </p>
           <p className="mt-1.5 text-[11px] leading-snug text-gold/70">
@@ -147,7 +147,7 @@ export function VoicePicker() {
           <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">
             <span className="font-semibold text-ink">{missing.join(', ')}</span>{' '}
             {missing.length === 1 ? "isn't" : "aren't"} being offered to the app. Either the voice
-            isn't installed, or it is and Apple keeps it for its own apps — a web page only ever
+            isn't installed, or it is and Apple keeps it for its own apps. A web page only ever
             gets the basic cut, and it can't tell those two apart.
           </p>
           <button

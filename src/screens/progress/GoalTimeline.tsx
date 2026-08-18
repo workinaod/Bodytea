@@ -239,7 +239,7 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
       </div>
 
       <p className="px-1 text-[10.5px] leading-snug text-ink-faint">
-        Tap any stage for what it takes. Targets never move — the dates do, and they are estimates, not promises.
+        Tap any stage for what it takes. Targets never move. The dates do, and they are estimates, not promises.
       </p>
 
       {open && <StageSheet stage={open} onClose={() => setOpen(null)} />}

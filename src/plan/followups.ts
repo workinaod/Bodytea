@@ -217,7 +217,7 @@ const Q = {
     id: 'appetite',
     q: 'How is eating for you?',
     options: ['Struggle to eat enough', 'Fine', 'I can always eat'],
-    informs: 'Decides meal size and count — big meals fail people who are not hungry.',
+    informs: 'Decides meal size and count. Big meals fail people who are not hungry.',
   },
   sleepHours: {
     id: 'sleep-hours',
@@ -307,7 +307,7 @@ const Q = {
     id: 'sport',
     q: 'What do you play?',
     options: [...SPORTS],
-    informs: 'The biggest single lever there is — it decides which athletic quality leads the plan.',
+    informs: 'The biggest single lever there is. It decides which athletic quality leads the plan.',
   },
   sportOther: {
     id: 'sport-other',
@@ -393,7 +393,7 @@ const Q = {
     id: 'barrier',
     q: 'What usually stops you keeping it going?',
     options: ['No time', 'No energy', 'It gets boring', 'I get sore', 'Nothing yet'],
-    informs: 'The plan is built against this — short sessions for no time, variety for boredom.',
+    informs: 'The plan is built against this: short sessions for no time, variety for boredom.',
   },
 } satisfies Record<string, GoalFollowup>
 

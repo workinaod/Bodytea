@@ -26,7 +26,7 @@ export function StageSheet({ stage, onClose }: { stage: Stage; onClose: () => vo
               Done{stage.hitOn ? ` · ${formatShort(stage.hitOn)}` : ''}
             </p>
             <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">
-              This one is banked. It stays banked whatever the number does afterwards — a deload week, a bulk, a month
+              This one is banked. It stays banked whatever the number does afterwards: a deload week, a bulk, a month
               off. It happened.
             </p>
           </div>

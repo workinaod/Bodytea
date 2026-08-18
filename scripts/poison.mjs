@@ -704,6 +704,22 @@ const MUTATIONS = [
     to: '    if (FAMILIES[term.replace(/\\s|-/g, \'\')]) out.add(term)',
     spec: 'src/plan/foodLimits.test.ts',
   },
+  {
+    id: 'em-dash-reaches-shipped-copy',
+    bug: 'the tell that a machine wrote it goes back into the microphone note',
+    file: 'src/screens/today/EarStatusNote.tsx',
+    find: "\"Can't hear you. Something else is using the mic",
+    to: "\"Can't hear you \u2014 something else is using the mic",
+    spec: 'src/copy.test.ts',
+  },
+  {
+    id: 'dash-guard-blinded-by-comments',
+    bug: 'the comment stripper eats every line, so the dash guard passes by seeing nothing',
+    file: 'src/copy.test.ts',
+    find: "    if (opened || s.startsWith('*') || s.startsWith('/*') || s.startsWith('//') || s.startsWith('{/*')) return",
+    to: '    if (true) return',
+    spec: 'src/copy.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [

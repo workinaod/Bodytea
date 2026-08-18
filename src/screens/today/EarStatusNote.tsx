@@ -25,7 +25,7 @@ export function EarStatusNote({ status }: { status: EarStatus }) {
       <div className="rounded-xl border border-gold/30 bg-gold/8 px-3 py-2 text-[11.5px] font-semibold leading-snug text-gold">
         {status === 'denied'
           ? 'Microphone permission is off, so voice commands are not listening. Tap the buttons to move through the set.'
-          : "Can't hear you — something else is using the mic, usually music or a video playing. Tap the buttons instead, and voice comes back on its own when it stops."}
+          : "Can't hear you. Something else is using the mic, usually music or a video playing. Tap the buttons instead, and voice comes back on its own when it stops."}
       </div>
     </div>
   )

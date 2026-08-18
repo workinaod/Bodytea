@@ -93,7 +93,7 @@ export const ATHLETIC_COVERAGE_EXERCISES: ExerciseDef[] = [
     equipment: 'Open space (a partner or the app cues it)',
     steps: [
       'Stand in an athletic stance, feet under the hips, weight forward on the balls of the feet.',
-      'On the cue — a shout, a clap, a hand drop — accelerate five yards as fast as you can.',
+      'On the cue (a shout, a clap, a hand drop) accelerate five yards as fast as you can.',
       'Full recovery between reps. This is a reaction drill, not conditioning; a tired reaction is not a reaction.',
     ],
     targets: {
@@ -224,7 +224,7 @@ export const ATHLETIC_COVERAGE_EXERCISES: ExerciseDef[] = [
       muscles: ['Hamstrings', 'Glutes', 'Calves'],
       qualities: ['Sprint hamstring', 'Elastic strength', 'Single-leg power'],
     },
-    why: 'Hamstring work in this library topped out at intermediate, and the hamstring at top speed is doing something specific: taking a long, fast, lengthening load and then producing force from it. This trains that sequence — lengthen under control, then produce — on one leg, which is the only way sprinting ever asks for it.',
+    why: 'Hamstring work in this library topped out at intermediate, and the hamstring at top speed is doing something specific: taking a long, fast, lengthening load and then producing force from it. This trains that sequence, lengthen under control and then produce, on one leg, which is the only way sprinting ever asks for it.',
     mistakes: [
       'Rounding the back to reach further. The range comes from the hip, and a rounded back is a different exercise.',
       'Hopping before standing fully tall, which turns it into a hinge with a stumble on the end.',
@@ -249,7 +249,7 @@ export const ATHLETIC_COVERAGE_EXERCISES: ExerciseDef[] = [
       muscles: ['Glutes', 'Hamstrings', 'Quads', 'Calves'],
       qualities: ['Acceleration', 'Transition to max velocity', 'Sprint mechanics'],
     },
-    why: 'The library had ten acceleration drills and not one advanced option, so there was nothing to progress to once starts were clean. The transition — the ten yards where a low drive becomes upright sprinting — is the part nobody practises and the part every sport spends its time in. It is also the hardest to do without either popping up early or staying down too long.',
+    why: 'The library had ten acceleration drills and not one advanced option, so there was nothing to progress to once starts were clean. The transition, the ten yards where a low drive becomes upright sprinting, is the part nobody practises and the part every sport spends its time in. It is also the hardest to do without either popping up early or staying down too long.',
     mistakes: [
       'Popping upright in one step instead of rising gradually across the middle section.',
       'Staying low too long and never actually reaching top speed.',
