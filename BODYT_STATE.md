@@ -270,6 +270,23 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R3 | Autoregulation thresholds | research | **synthesized 2026-08-18** (research/R3-autoregulation.md; 35 sources, per-engine constant audit, 7-rung plateau ladder, 31 eval cases) | J7 | engines lane, start of J8 |
 | R4 | Meal + recipe corpus expansion | research | **synthesized 2026-08-18** (research/R4-meals.md; USDA CC0 vs OFF ODbL fence, 720-cell coverage predicate, 158-record gap, 20 fixtures) | J1 | product lane, inside J9 |
 | R5 | Program-family corpus | research | **synthesized 2026-08-18** (research/R5-program-families.md; 10 families, 19 sources, ProgramFamily record, selection logic, 8-axis convergence metric, 18 fixtures of which 4 fail today) | J7 schemas stable | planner owner, before J11 |
+| W-ONT | Wire R-ONT: capability fields onto the exercise catalog, alias resolution, substitution at scale (90 records specified) | wiring | pending | B2 | FIRST wiring job; every other corpus loads into the shape it defines |
+| W9 | Wire R9: ~185 calisthenics/mobility rungs + the ramp-set algorithm into the catalog and a warm-up engine | wiring | pending | W-ONT | |
+| W18 | Wire R18: 72 mind-body records + the three-channel counting model (energy, regional volume, systemic fatigue) | wiring | pending | W-ONT | also fixes the yoga-satisfies-conditioning bug |
+| W11 | Wire R11: SportProfile shape + 32 sport rows; the sport answer is currently collected and unread | wiring | pending | W-ONT | |
+| W6s | Wire R6: SafetyRule shape, red-flag classifier, PAR-Q+ gate (48 rows) | wiring | pending | B2 | pairs with J3 |
+| W7p | Wire R7: 11 functional dimensions + 10 population packs, and limit-range mode | wiring | pending | W6s | this IS most of J6 |
+| W1n | Wire R1 + R3: NutritionRule and ProgressionRule tables, replacing invented constants | wiring | pending | J7 partial | J7 owns the shapes these hang off |
+| W4m | Wire R4: meal corpus to the 720-cell coverage predicate, carbs and fat on every record | wiring | pending | B2 | unblocks J9 |
+| W16 | Wire R16: SupplementRecord + v21 migration, 27 routing rules (the W5 fixes were the urgent subset only) | wiring | pending | B2 | |
+| W5p | Wire R5: ProgramFamily records + selection logic (10 families) | wiring | pending | J7 partial | before J11 |
+| W17 | Wire R17: 140-rule notation corpus + the import/repair model | wiring | pending | W-ONT | this IS most of J4/J5 |
+| W12 | Wire R12: AuthorityRule, the override model, a decline control and its cooldown | wiring | pending | B1 | needs the event log to record a no |
+| W13 | Wire R13: CohortPrior + the credibility blend; calibration.ts already has the shape | wiring | pending | J7, B1 | |
+| W14 | Wire R14: PassiveReading + the conflict rule. Mostly post-Capacitor; the accepted list is short | wiring | pending | J7 | post-gate for the sensor half |
+| W15 | Wire R15: age bands into loading ceilings, calorie baseline, plyometric gating. Age is collected (W8) and read by nothing | wiring | pending | J7 partial | |
+| W10 | Wire R10: cue corpus coverage (65 of 194 movements carry no cue) + selection and outcome tracking | wiring | pending | W-ONT | feeds J10 |
+| W8e | Wire R8: EndurancePlan shape, session-vs-30-day-max load rule (the 10 percent rule fails) | wiring | pending | J7 partial | future endurance planner |
 | B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | pending | starts with R1 | any lane, rolling |
 | R10 | Technique, cueing and motor learning (no camera) | research | **synthesized 2026-08-18** (research/R10-technique-cueing.md; 24 sources, cue corpus measured, selection and outcome-tracking design) | J1 | feeds J10 |
@@ -339,6 +356,17 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 
 ## 6. STANDING CONSTRAINTS (permanent; from the owner)
 
+- **PHASES RUN IN ORDER (owner, 2026-08-18). Finish one before starting the next.** The
+  only legitimate reason to move on is that finishing the current phase DEPENDS on the
+  next one being done or partly done, and when that happens say which dependency it was.
+  Fixing bugs found along the way is fine and does not count as jumping. Picking up
+  whatever a research agent most recently reported IS jumping, and that is what this rule
+  exists to stop: it produced eight unplanned fix waves in one session while every job on
+  the board stayed pending. Claim a job here before starting it.
+- **"Synthesized" is not "done".** A research pack is done when what it specifies exists
+  in code and something consumes it, not when the markdown is written. The W rows below
+  track that gap and are the only place it is visible. As of 2026-08-18 the packs propose
+  roughly 141 typed shapes and 1,200 corpus rows, and ZERO of the shapes exist in src.
 - No em dashes in user-visible text. Casual, natural, SHORT.
 - Users never pick reps. One number, at the load end.
 - Suggest only, never auto. Nothing moves without a tap; every suggestion states evidence.
