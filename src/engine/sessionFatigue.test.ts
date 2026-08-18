@@ -109,7 +109,39 @@ describe('the load never becomes a fiction', () => {
     }
   })
 
-  it('says nothing on bodyweight work, where there is no weight to take off', () => {
+  it('does not pretend a mixed movement is bodyweight', () => {
+    // The finished set has no weight but a later one does: not unloaded
+    // work, just a hole in the log. Nothing confident to say.
     expect(respondToSet(log([set({ done: true, weightLb: undefined, achieved: 3 }), set()]), 0)).toBeNull()
+  })
+})
+
+describe('bodyweight work', () => {
+  const bwSet = (o: Partial<SetLog> = {}): SetLog => set({ weightLb: undefined, ...o })
+
+  it('offers to ease the day on a real shortfall, because volume is the only lever', () => {
+    const res = respondToSet(log([bwSet({ done: true, achieved: 3 }), bwSet()]), 0)
+    expect(res?.kind).toBe('offer-ease')
+    expect(isAutomatic(res!.kind)).toBe(false)
+    expect(res!.weightLb).toBeUndefined()
+    expect(res!.because).not.toMatch(/—/)
+  })
+
+  it('never tries to drop a load that does not exist', () => {
+    const res = respondToSet(log([bwSet({ done: true, achieved: 1 }), bwSet(), bwSet()]), 0)
+    expect(res?.kind).not.toBe('drop-load')
+  })
+
+  it('lets a miss by one go, same as loaded work', () => {
+    const near = 8 - (SHORTFALL_TO_ACT - 1)
+    expect(respondToSet(log([bwSet({ done: true, achieved: near }), bwSet()]), 0)).toBeNull()
+  })
+
+  it('says nothing when the set was hit', () => {
+    expect(respondToSet(log([bwSet({ done: true }), bwSet()]), 0)).toBeNull()
+  })
+
+  it('has nothing to say about the last set', () => {
+    expect(respondToSet(log([bwSet({ done: true }), bwSet({ done: true, achieved: 3 })]), 1)).toBeNull()
   })
 })

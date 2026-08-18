@@ -309,6 +309,47 @@ describe('a run of hard weeks', () => {
     expect(Math.min(...seen), `weights were ${seen.join(', ')}`).toBeGreaterThanOrEqual(25)
   })
 
+  it('never softens a single visit past sixty percent of its baseline', () => {
+    // The proportional floor: whatever the reductions add up to, one
+    // prescription is never below round5(0.6 x the weight it was read
+    // from). The old floor was one load step, which on a light dumbbell
+    // movement was a fifth of the working weight.
+    const seen = [100, ...grind(16)]
+    for (let i = 1; i < seen.length; i++) {
+      const floor = Math.round((seen[i - 1] * 0.6) / 5) * 5
+      expect(seen[i], `week ${i}: ${seen[i - 1]} fell to ${seen[i]}`).toBeGreaterThanOrEqual(
+        Math.min(seen[i - 1], floor),
+      )
+    }
+  })
+
+  it('floors a failing lift coming off a layoff at sixty percent, not one step', () => {
+    // Both reducers at once: the failing flag wants dropTo, the layoff
+    // wants three steps back. On a 25 lb press the old one-step floor
+    // let that compose to 5 lb, a fifth of the working weight. The
+    // proportional floor holds the line at 60% of the baseline.
+    const d = emptyAppData('2026-01-05', '2026-01-05')
+    d.settings.onboarded = true
+    for (let i = 0; i < 3; i++) {
+      const date = `2026-01-${String(5 + i * 3).padStart(2, '0')}`
+      d.sessions[date] = {
+        date,
+        templateId: 'monday',
+        status: 'completed',
+        exercises: [
+          {
+            exerciseId: PRESS,
+            sets: [0, 1, 2].map(() => ({ targetReps: '10', weightLb: 25, reps: 10, achieved: 6, done: true })),
+          },
+        ],
+      } as SessionLog
+    }
+    useAppStore.setState({ data: d })
+    const pre = prefillFor('2026-04-15', PRESS, { repRange: { low: 8, high: 12 } })
+    expect(pre.softened).toBe(true)
+    expect(pre.weightLb).toBe(10)
+  })
+
   it('can still recover, so the floor is not a trap', () => {
     // The series has to go up somewhere. A number that only ever falls is
     // the spiral wearing a floor.

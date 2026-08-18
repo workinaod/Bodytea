@@ -4,7 +4,15 @@ import { addDaysISO } from './calendar'
 import { resolveDay } from './resolveDay'
 import { applyWeekRamp } from './transforms'
 import { overloadedRegions } from './volume'
-import { GAIN_TO_PROMOTE, MIN_SESSIONS_TO_JUDGE, PHASE_WEEKS, phaseFor, phaseIndexFor, phaseNote } from './phase'
+import {
+  GAIN_TO_PROMOTE,
+  MIN_SESSIONS_TO_JUDGE,
+  PHASE_WEEKS,
+  phaseFor,
+  phaseIndexFor,
+  phaseNote,
+  REP_GAIN_TO_PROMOTE,
+} from './phase'
 
 // ============================================================
 // A block that goes somewhere, and a phase that knows what
@@ -204,6 +212,65 @@ describe('what a new phase does with the last one', () => {
     }
     expect(ids.has(promoted!)).toBe(true)
     expect(ids.has('goblet-squat')).toBe(false)
+  })
+
+  // ---- Unloaded work: judged on reps, because that is what it trains in ----
+
+  /** `n` weekly sessions with no weight on any set, reps read off `repsAt`. */
+  function trainedUnloaded(d: AppData, exerciseId: string, n: number, repsAt: (i: number) => number) {
+    for (let i = 0; i < n; i++) {
+      const date = addDaysISO(START, i * 7 + 2)
+      d.sessions[date] = {
+        date,
+        templateId: 'monday',
+        status: 'completed',
+        exercises: [
+          {
+            exerciseId,
+            sets: [{ targetReps: '8', reps: repsAt(i), done: true }],
+          },
+        ],
+      } as SessionLog
+    }
+  }
+
+  it('promotes bodyweight work on rep gains, not never', () => {
+    const d = data()
+    // Eight to sixteen reps over the phase. On a loaded lift this athlete
+    // would have been promoted long ago; on reps they scored "untested".
+    trainedUnloaded(d, 'goblet-squat', 12, (i) => 8 + i)
+    const squat = phaseFor(d, intoPhase2).verdicts.find((v) => v.from === 'goblet-squat')
+    expect(squat?.outcome).toBe('promoted')
+    expect(squat?.to).not.toBe('goblet-squat')
+  })
+
+  it('holds bodyweight work that stalled', () => {
+    const d = data()
+    trainedUnloaded(d, 'goblet-squat', 12, () => 8)
+    const squat = phaseFor(d, intoPhase2).verdicts.find((v) => v.from === 'goblet-squat')
+    expect(squat?.outcome).toBe('stalled')
+    expect(squat?.to).toBe('goblet-squat')
+  })
+
+  it('still wants enough bodyweight sessions before judging', () => {
+    const d = data()
+    trainedUnloaded(d, 'goblet-squat', MIN_SESSIONS_TO_JUDGE - 1, (i) => 8 + i)
+    expect(phaseFor(d, intoPhase2).verdicts.find((v) => v.from === 'goblet-squat')?.outcome).toBe('untested')
+  })
+
+  it('needs whole reps of gain, not one good day', () => {
+    const d = data()
+    // One rep over a whole phase is inside the noise of a night's sleep.
+    trainedUnloaded(d, 'goblet-squat', 12, (i) => (i === 11 ? 8 + REP_GAIN_TO_PROMOTE - 1 : 8))
+    expect(phaseFor(d, intoPhase2).verdicts.find((v) => v.from === 'goblet-squat')?.outcome).toBe('stalled')
+  })
+
+  it('judges the reps actually done, not the prescription that was copied in', () => {
+    const d = data()
+    // The ask climbed but the athlete kept falling back to eight.
+    trainedUnloaded(d, 'goblet-squat', 12, (i) => 8 + i)
+    for (const s of Object.values(d.sessions)) s.exercises[0].sets[0].achieved = 8
+    expect(phaseFor(d, intoPhase2).verdicts.find((v) => v.from === 'goblet-squat')?.outcome).toBe('stalled')
   })
 
   it('tells the athlete what changed, without an em dash in sight', () => {

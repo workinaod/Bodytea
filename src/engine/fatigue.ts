@@ -1,7 +1,7 @@
 import type { AppData, FatigueNote, FatigueReason, ISODate, SessionLog } from '../types'
 import type { MuscleRegion } from '../plan/muscleRegions'
 import { musclesFor } from '../plan/muscles'
-import { addDaysISO, daysBetween } from './calendar'
+import { daysBetween } from './calendar'
 
 // ============================================================
 // What "I can't finish this" means, and what to do about it.
@@ -140,30 +140,71 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)
  * pain outranks fatigue, and an exercise problem outranks a
  * whole-region volume problem, because it is the cheaper fix.
  */
-/** Sessions inside the window where a movement finished under its ask. */
-function shortfallsInWindow(data: AppData, today: ISODate): Map<string, number> {
-  const from = addDaysISO(today, -RECENT_DAYS)
-  const out = new Map<string, number>()
-  for (const s of Object.values(data.sessions)) {
-    if (s.date < from || s.date >= today || s.status === 'skipped') continue
+/** Sessions a movement must come up short in before the load is questioned. */
+export const SHORT_SESSIONS_TO_ACT = 3
+
+/** Clean sessions in a row that put a flagged movement back to full prescription. */
+export const CLEAN_SESSIONS_TO_UNFLAG = 2
+
+/**
+ * Which movements are currently flagged as failing, and how many short
+ * sessions stand behind each flag.
+ *
+ * Raising and clearing are deliberately asymmetric. The flag goes up on
+ * SHORT_SESSIONS_TO_ACT short sessions inside a RECENT_DAYS window, and
+ * comes down only after CLEAN_SESSIONS_TO_UNFLAG clean sessions in a
+ * row on that movement. Without the hysteresis the flag dropped the
+ * moment a shortfall aged out of the window, so a movement still dying
+ * every other week flickered between softened and full prescription
+ * with nothing about the athlete having changed. Coming off a flag is
+ * something the athlete earns by finishing the work, not something the
+ * calendar hands back.
+ */
+function failingFlags(data: AppData, today: ISODate): Map<string, number> {
+  interface Walk {
+    flagged: boolean
+    cleanRun: number
+    shorts: ISODate[]
+  }
+  const walks = new Map<string, Walk>()
+  const sessions = Object.values(data.sessions)
+    .filter((s) => s.date < today && s.status !== 'skipped')
+    .sort((a, b) => (a.date < b.date ? -1 : 1))
+  for (const s of sessions) {
     for (const log of s.exercises) {
+      // A day the movement was not actually worked says nothing either way.
+      if (log.skipped || !log.sets.some((set) => set.done)) continue
       const short = log.sets.some((set) => {
         if (set.achieved === undefined) return false
         const asked = Number((set.targetReps.match(/^\d+/) ?? [])[0])
         return Number.isFinite(asked) && asked - set.achieved >= 2
       })
-      if (short) out.set(log.exerciseId, (out.get(log.exerciseId) ?? 0) + 1)
+      let w = walks.get(log.exerciseId)
+      if (!w) walks.set(log.exerciseId, (w = { flagged: false, cleanRun: 0, shorts: [] }))
+      if (short) {
+        w.cleanRun = 0
+        w.shorts.push(s.date)
+        w.shorts = w.shorts.filter((d) => daysBetween(d, s.date) <= RECENT_DAYS)
+        if (w.shorts.length >= SHORT_SESSIONS_TO_ACT) w.flagged = true
+      } else {
+        w.cleanRun++
+        if (w.flagged && w.cleanRun >= CLEAN_SESSIONS_TO_UNFLAG) {
+          w.flagged = false
+          // Forgiven means forgiven: re-raising takes fresh evidence,
+          // not two of the old shortfalls plus one bad day.
+          w.shorts = []
+        }
+      }
     }
   }
+  const out = new Map<string, number>()
+  for (const [id, w] of walks) if (w.flagged) out.set(id, Math.max(w.shorts.length, 1))
   return out
 }
 
-/** Sessions a movement must come up short in before the load is questioned. */
-export const SHORT_SESSIONS_TO_ACT = 3
-
 export function nextSessionSuggestions(data: AppData, today: ISODate): FatigueSuggestion[] {
   const notes = notesInWindow(data, today)
-  const shortfalls = shortfallsInWindow(data, today)
+  const shortfalls = failingFlags(data, today)
   if (notes.length === 0 && shortfalls.size === 0) return []
 
   const byExercise = new Map<string, FatigueNote[]>()
@@ -217,16 +258,18 @@ export function nextSessionSuggestions(data: AppData, today: ISODate): FatigueSu
   //     went nowhere.
   //
   //     Sets that came up short are the same evidence, already on disk.
-  for (const [exerciseId, count] of shortfallsInWindow(data, today)) {
+  //     Once flagged, the flag holds until two clean sessions in a row
+  //     clear it (failingFlags above), so the count here can be smaller
+  //     than the one that raised it.
+  for (const [exerciseId, count] of shortfalls) {
     if (spokenFor.has(exerciseId)) continue
-    if (count < SHORT_SESSIONS_TO_ACT) continue
     spokenFor.add(exerciseId)
     out.push({
       kind: 'start-lighter',
       exerciseId,
       regions: regionsFor(exerciseId),
       count,
-      because: `You came up short on this in ${count} of the last ${RECENT_DAYS} days.`,
+      because: `You came up short on this in ${count} recent ${plural(count, 'session', 'sessions')}. Two clean sessions in a row puts it back to normal.`,
     })
   }
 

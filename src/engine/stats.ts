@@ -74,7 +74,11 @@ export function repMaxSeries(data: AppData, exerciseId: string): { date: ISODate
     .flatMap((s) => {
       const log = s.exercises.find((e) => e.exerciseId === exerciseId)
       if (!log) return []
-      const best = Math.max(0, ...log.sets.filter((x) => x.done).map((x) => x.reps ?? 0))
+      // What was done, not what was asked for. `reps` is the prescription
+      // copied in when the session was built, so a bodyweight athlete who
+      // came up short was credited the full ask, and the series could
+      // never show the struggle or the recovery from it.
+      const best = Math.max(0, ...log.sets.filter((x) => x.done).map((x) => x.achieved ?? x.reps ?? 0))
       return best > 0 ? [{ date: s.date, reps: best }] : []
     })
 }
@@ -102,8 +106,8 @@ export function detectPRs(data: AppData, session: SessionLog): PR[] {
         if (prevBest !== null) prs.push({ exerciseId: log.exerciseId, name: def.name, kind: 'e1rm', value: now, prev: prevBest })
       }
     } else {
-      // bodyweight rep PRs (pull-ups etc.)
-      const reps = Math.max(0, ...log.sets.filter((s) => s.done).map((s) => s.reps ?? 0))
+      // bodyweight rep PRs (pull-ups etc.), on the reps actually done
+      const reps = Math.max(0, ...log.sets.filter((s) => s.done).map((s) => s.achieved ?? s.reps ?? 0))
       if (reps > 0) {
         const history = repMaxSeries(data, log.exerciseId).filter((p) => p.date < session.date)
         const prevBest = history.length ? Math.max(...history.map((p) => p.reps)) : null

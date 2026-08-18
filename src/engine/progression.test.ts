@@ -3,7 +3,7 @@ import { emptyAppData, type AppData, type SessionLog } from '../types'
 import type { SetLog } from '../sessionTypes'
 import { addDaysISO } from './calendar'
 import { repStepFor, STALE_DAYS } from './reps'
-import { nextSessionSuggestions, SHORT_SESSIONS_TO_ACT } from './fatigue'
+import { CLEAN_SESSIONS_TO_UNFLAG, nextSessionSuggestions, SHORT_SESSIONS_TO_ACT } from './fatigue'
 
 // ============================================================
 // The progression that stopped progressing.
@@ -225,6 +225,58 @@ describe('a shortfall the athlete never taps a button about', () => {
     const d = fresh()
     logged(d, START, 'goblet-squat', { target: 10, weightLb: 100, achieved: 6 })
     expect(nextSessionSuggestions(d, addDaysISO(START, 2))).toEqual([])
+  })
+})
+
+describe('the failing flag has hysteresis', () => {
+  const flagged = (d: AppData, day: number) =>
+    nextSessionSuggestions(d, addDaysISO(START, day)).some(
+      (s) => s.kind === 'start-lighter' && s.exerciseId === 'goblet-squat',
+    )
+
+  /** Three short sessions, which is what raises the flag. */
+  function raise(d: AppData) {
+    for (let i = 0; i < SHORT_SESSIONS_TO_ACT; i++) {
+      logged(d, addDaysISO(START, i * 3), 'goblet-squat', { target: 10, weightLb: 100, achieved: 6 })
+    }
+  }
+
+  it('stays flagged through flag, clean, short, clean', () => {
+    // One good day between bad ones is not recovery. The flag only comes
+    // down on two clean sessions IN A ROW, and this run never has two.
+    const d = fresh()
+    raise(d)
+    logged(d, addDaysISO(START, 9), 'goblet-squat', { target: 10, weightLb: 100 })
+    logged(d, addDaysISO(START, 12), 'goblet-squat', { target: 10, weightLb: 100, achieved: 6 })
+    logged(d, addDaysISO(START, 15), 'goblet-squat', { target: 10, weightLb: 100 })
+    expect(flagged(d, 16)).toBe(true)
+  })
+
+  it('comes down after two clean sessions in a row', () => {
+    const d = fresh()
+    raise(d)
+    for (let i = 0; i < CLEAN_SESSIONS_TO_UNFLAG; i++) {
+      logged(d, addDaysISO(START, 9 + i * 3), 'goblet-squat', { target: 10, weightLb: 100 })
+    }
+    expect(flagged(d, 16)).toBe(false)
+  })
+
+  it('one clean session is not enough', () => {
+    const d = fresh()
+    raise(d)
+    logged(d, addDaysISO(START, 9), 'goblet-squat', { target: 10, weightLb: 100 })
+    expect(flagged(d, 11)).toBe(true)
+  })
+
+  it('needs fresh evidence to re-raise once it was earned down', () => {
+    // Two clean sessions clear the ledger as well as the flag: one new
+    // bad day after recovery is a bad day again, not strike three.
+    const d = fresh()
+    raise(d)
+    logged(d, addDaysISO(START, 9), 'goblet-squat', { target: 10, weightLb: 100 })
+    logged(d, addDaysISO(START, 12), 'goblet-squat', { target: 10, weightLb: 100 })
+    logged(d, addDaysISO(START, 15), 'goblet-squat', { target: 10, weightLb: 100, achieved: 6 })
+    expect(flagged(d, 16)).toBe(false)
   })
 })
 

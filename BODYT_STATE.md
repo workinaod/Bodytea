@@ -136,7 +136,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 |----|-----|------|--------|-----------|---------------|
 | J0 | Reconciliation audit + this file | - | done 2026-08-17 | - | BodyT project state reconciliation audit |
 | J1 | Reunify branches, carry this file to canonical branch, wire sims into npm, settle deploy branch | gate | **done 2026-08-18** (executed by the audit session after the algorithm session wedged; merge eaf3519 live) | J0 | reconciliation audit session |
-| J2 | Bodyweight progression (phase verdicts + in-session response for unloaded work, pct load floor) | engines | pending | J1 | Algorithm session |
+| J2 | Bodyweight progression (phase verdicts + in-session response for unloaded work, pct load floor) | engines | in-progress 2026-08-18 (engines lane session) | J1 | Algorithm session |
 | J3 | Onboarding closure: confirm review fixes, name decision, injuries->Prefs.limitations, foodLimits->meal plan, dead fields, first paired-profile eval | product | pending | J1 | App audit and refinement |
 | J4 | Freeform-first entry (composer primary, chips demote to examples; reuse inferGoal/readStatement) | product | pending | J3 | App audit session |
 | J5 | Booklet regenerates: goal edits -> generatePlan -> diff for approval; history preserved | product | pending | J3 | App audit session |

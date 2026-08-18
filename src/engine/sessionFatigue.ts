@@ -75,7 +75,21 @@ export function respondToSet(log: ExerciseLog, setIdx: number): FatigueResponse 
   if (remaining.length === 0) return null
 
   const weight = set.weightLb
-  if (weight === undefined || weight <= 0) return null
+  if (weight === undefined || weight <= 0) {
+    // Bodyweight work. There is no bar to lower, so the only honest
+    // lever is volume, and volume is always offered, never taken. The
+    // old behavior was silence, which told a bodyweight athlete their
+    // failing set was fine while a loaded one got coached.
+    const unloaded = log.sets.every((s) => s.weightLb === undefined || s.weightLb <= 0)
+    if (!unloaded) return null
+    const asked = askedFor(set)
+    const short = asked !== null && set.achieved !== undefined && asked - set.achieved >= SHORTFALL_TO_ACT
+    if (!short) return null
+    return {
+      kind: 'offer-ease',
+      because: `That set came up ${asked! - set.achieved!} short and there is no weight to take off. Want the rest of the day shortened?`,
+    }
+  }
 
   // Only when the sets ahead are still expecting the weight that just
   // failed. If the athlete has already taken it down themselves, they

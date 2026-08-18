@@ -1,0 +1,69 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden life > replays eight deterministic weeks exactly 1`] = `
+"w1 2026-01-05 lower: 17 sets, 0 lb
+  pogo-hop 4x12 | split-squat 4x6 | glute-bridge 3x8 | slider-leg-curl 3x6 | plank-side-plank 3x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w1 2026-01-07 push: 9 sets, 0 lb
+  push-up 4x6 | pike-push-up 3x8 | inverted-row 2x12
+w1 2026-01-09 pull: 4 sets, 0 lb
+  inverted-row 4xmax
+w2 2026-01-12 lower: 17 sets, 0 lb
+  pogo-hop 4x12 | split-squat 4x6 | glute-bridge 3x8 | slider-leg-curl 3x6 | plank-side-plank 3x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w2 2026-01-14 push: 9 sets, 0 lb
+  push-up 4x6 | pike-push-up 3x9 | inverted-row 2x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w2 2026-01-16 pull: 4 sets, 0 lb
+  inverted-row 4xmax
+w3 2026-01-19 lower: 18 sets, 0 lb
+  pogo-hop 4x12 | split-squat 5x6 | glute-bridge 3x8 | slider-leg-curl 3x6 | plank-side-plank 3x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w3 2026-01-21 push: 10 sets, 0 lb
+  push-up 5x6 | pike-push-up 3x10 | inverted-row 2x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w3 2026-01-23 pull: 5 sets, 0 lb
+  inverted-row 5xmax
+w4 2026-01-26 lower: 10 sets, 0 lb
+  pogo-hop 2x12 | split-squat 2x7 | glute-bridge 2x8 | slider-leg-curl 2x7 | plank-side-plank 2x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w4 2026-01-28 push: 5 sets, 0 lb
+  push-up 2x7 | pike-push-up 2x10 | inverted-row 1x12
+w4 2026-01-30 pull: 2 sets, 0 lb
+  inverted-row 2xmax
+w5 2026-02-02 lower: 17 sets, 0 lb
+  pogo-hop 4x12 | split-squat 4x4 | glute-bridge 3x8 | slider-leg-curl 3x4 | dead-bug 3x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w5 2026-02-04 push: 9 sets, 0 lb
+  push-up 4x6 | pike-push-up 3x13 | inverted-row 2x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w5 2026-02-06 pull: 4 sets, 0 lb
+  inverted-row 4xmax
+w6 2026-02-09 lower: 17 sets, 0 lb
+  pogo-hop 4x12 | split-squat 4x5 | glute-bridge 3x8 | slider-leg-curl 3x5 | dead-bug 3x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w6 2026-02-11 push: 9 sets, 0 lb
+  push-up 4x4 | pike-push-up 3x13 | inverted-row 2x12
+w6 2026-02-13 pull: 4 sets, 0 lb
+  inverted-row 4xmax
+w7 2026-02-16 lower: 18 sets, 0 lb
+  pogo-hop 4x12 | split-squat 5x5 | glute-bridge 3x8 | slider-leg-curl 3x5 | dead-bug 3x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w7 2026-02-18 push: 10 sets, 0 lb
+  push-up 5x4 | pike-push-up 3x14 | inverted-row 2x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w7 2026-02-20 pull: 5 sets, 0 lb
+  inverted-row 5xmax
+w8 2026-02-23 lower: 10 sets, 0 lb
+  pogo-hop 2x12 | split-squat 2x5 | glute-bridge 2x8 | slider-leg-curl 2x6 | dead-bug 2x12
+  ! That set came up 2 short and there is no weight to take off. Want the rest of the day shortened?
+w8 2026-02-25 push: 5 sets, 0 lb
+  push-up 2x4 | pike-push-up 2x14 | inverted-row 1x12
+w8 2026-02-27 pull: 2 sets, 0 lb
+  inverted-row 2xmax"
+`;

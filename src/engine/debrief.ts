@@ -23,6 +23,9 @@ export interface ComposedDebrief {
 export function composeDebrief(
   data: AppData,
   session: SessionLog,
+  // The day the session belongs to, not the wall clock. Callers used to
+  // pass todayISO(), so finishing at half past midnight put the streak
+  // and the insights window on tomorrow while the debrief named today.
   today: ISODate,
 ): ComposedDebrief {
   // A make-up session debriefs the workout it ran, not the rest day it ran on

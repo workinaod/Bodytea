@@ -171,10 +171,16 @@ function records(data: AppData, dates: ISODate[]): PrRun {
       const done = log.sets.filter((x) => x.done)
       if (done.length === 0) continue
 
-      const loaded = done.filter((x) => x.weightLb !== undefined && x.weightLb > 0 && x.reps)
+      // What was done outranks what was asked for, here as everywhere:
+      // `reps` is the prescription copied in at session build, `achieved`
+      // is the truth when they differ. Reading the ask credited records
+      // nobody set, and it hit bodyweight athletes hardest, since reps
+      // are the only number they have.
+      const repsOf = (x: (typeof done)[number]) => x.achieved ?? x.reps ?? 0
+      const loaded = done.filter((x) => x.weightLb !== undefined && x.weightLb > 0 && repsOf(x) > 0)
       let hit = false
       if (loaded.length) {
-        const now = Math.max(...loaded.map((x) => e1RM(x.weightLb!, x.reps!)))
+        const now = Math.max(...loaded.map((x) => e1RM(x.weightLb!, repsOf(x))))
         const prev = bestE1rm.get(log.exerciseId)
         if (prev && now > prev.value) {
           hit = true
@@ -182,7 +188,7 @@ function records(data: AppData, dates: ISODate[]): PrRun {
         }
         if (!prev || now > prev.value) bestE1rm.set(log.exerciseId, { value: now, since: date })
       } else {
-        const reps = Math.max(0, ...done.map((x) => x.reps ?? 0))
+        const reps = Math.max(0, ...done.map(repsOf))
         if (reps > 0) {
           const prev = bestReps.get(log.exerciseId)
           if (prev && reps > prev.value) {
@@ -335,7 +341,9 @@ function progression(data: AppData, first: ISODate, today: ISODate): number {
       if (s && DONE(s)) {
         for (const ex of s.exercises) {
           for (const set of ex.sets) {
-            if (set.done && set.weightLb && set.reps) load += set.weightLb * set.reps
+            // Tonnage on the reps actually done, same as stats.sessionTonnage.
+            const reps = set.achieved ?? set.reps
+            if (set.done && set.weightLb && reps) load += set.weightLb * reps
           }
         }
       }

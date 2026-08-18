@@ -241,6 +241,109 @@ describe('platform isolation', () => {
   })
 })
 
+// ---------- Dead exports ----------
+
+// An exported function nobody calls is knowledge collected and not
+// consumed, which the owner rule says gets wired in or redone, never
+// kept for its own sake. Tests do not count as consumers: a function
+// whose only caller is its own test is a museum piece with a guard on
+// it. The sims in scripts/ DO count, because they drive the real code
+// paths the app drives.
+const SCRIPTS = join(SRC, '..', 'scripts')
+const REFERENCE_FILES = [
+  ...FILES,
+  ...readdirSync(SCRIPTS)
+    .filter((n) => /\.(ts|mjs)$/.test(n))
+    .map((n) => ({ path: `scripts/${n}`, text: readFileSync(join(SCRIPTS, n), 'utf8') })),
+].filter((f) => !/\.test\.tsx?$/.test(f.path))
+
+/**
+ * Exported but unreferenced when the rule landed. Each is either owed a
+ * caller or owed a deletion; the list only ever shrinks, and nothing
+ * new may join it.
+ */
+const DEAD_EXPORT_ALLOWED = new Set([
+  'engine/achievements.ts:earnedAchievements',
+  'engine/activityLog.ts:isRunMirror',
+  'engine/adapt.ts:weekLoad',
+  'engine/calendar.ts:toDate',
+  'engine/calendar.ts:isToday',
+  'engine/calibration.ts:intensityBias',
+  'engine/calibration.ts:personalBand',
+  'engine/calibration.ts:calibrationNote',
+  'engine/calibration.ts:needsIntensityAnswer',
+  'engine/calibration.ts:gradedCount',
+  'engine/coach.ts:unprovenExcusesInWindow',
+  'engine/coach.ts:gigSanctioned',
+  'engine/coach.ts:anyGigFlag',
+  'engine/elevation.ts:altOf',
+  'engine/elevation.ts:hasElevation',
+  'engine/elevation.ts:smoothAltitudes',
+  'engine/intensity.ts:usableHeightIn',
+  'engine/journey.ts:orderPath',
+  'engine/phase.ts:phaseIndexFor',
+  'engine/phase.ts:anchorVerdicts',
+  'engine/phase.ts:phaseSlotOverrides',
+  'engine/places.ts:mapsLinks',
+  'engine/places.ts:hoursLabel',
+  'engine/reactions.ts:greatRunPaceSec',
+  'engine/reactions.ts:greatBikeMph',
+  'engine/reps.ts:repTargetFor',
+  'engine/resolveDay.ts:blockMathFor',
+  'engine/resolveDay.ts:cardioRequiredForWeek',
+  'engine/runs.ts:estKcalFromMet',
+  'engine/runs.ts:mileSplits',
+  'engine/runs.ts:compressTrack',
+  'engine/sequence.ts:lowRep',
+  'engine/transforms.ts:scaleExplosive',
+  'engine/transforms.ts:isExplosiveKind',
+  'engine/transforms.ts:entryLabel',
+  'engine/volume.ts:kindWeight',
+  'engine/volume.ts:focusRegions',
+  'engine/volume.ts:ceilingFor',
+  'engine/volume.ts:regionName',
+  'engine/volume.ts:regionLoad',
+  'logic/actions.ts:toggleBallToday',
+  'logic/clock.ts:stopClock',
+  'logic/fatigueActions.ts:applySetFeedback',
+  'logic/fatigueActions.ts:undoSetFeedback',
+  'logic/reminders.ts:markNotificationsRead',
+  'logic/reminders.ts:armPageTimers',
+  'logic/volumeActions.ts:sessionVerdict',
+  'logic/volumeActions.ts:trimSessionVolume',
+])
+
+/** Exported function names: declarations plus arrow-function consts. */
+function exportedFunctions(text: string): string[] {
+  const names: string[] = []
+  for (const m of text.matchAll(/export (?:async )?function (\w+)/g)) names.push(m[1])
+  for (const m of text.matchAll(/export const (\w+) = (?:async )?\(/g)) names.push(m[1])
+  return names
+}
+
+describe('dead exports', () => {
+  const targets = REFERENCE_FILES.filter(
+    (f) => f.path.startsWith('engine/') || f.path.startsWith('logic/'),
+  )
+  const deadNow = targets.flatMap((f) =>
+    exportedFunctions(f.text).flatMap((name) => {
+      const re = new RegExp(`\\b${name}\\b`)
+      const used = REFERENCE_FILES.some((o) => o !== f && re.test(o.text))
+      return used ? [] : [`${f.path}:${name}`]
+    }),
+  )
+
+  it('never ships a new engine or logic export that nothing calls', () => {
+    expect(deadNow.filter((d) => !DEAD_EXPORT_ALLOWED.has(d))).toEqual([])
+  })
+
+  it('has no stale dead-export allowlist entries', () => {
+    // An export that found a caller, or got deleted, must leave the list.
+    const stale = [...DEAD_EXPORT_ALLOWED].filter((d) => !deadNow.includes(d))
+    expect(stale).toEqual([])
+  })
+})
+
 // ---------- Locked sheets ----------
 
 /**

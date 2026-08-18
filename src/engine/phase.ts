@@ -4,7 +4,7 @@ import { canDo } from '../plan/equip'
 import { getExercise } from '../plan/exercises'
 import { MOVEMENT } from '../plan/movement'
 import { addDaysISO, mondayOf, weekIndexFor } from './calendar'
-import { liftSeries } from './stats'
+import { liftSeries, repMaxSeries } from './stats'
 
 // ============================================================
 // What happens after week sixteen.
@@ -46,6 +46,15 @@ export const MIN_SESSIONS_TO_JUDGE = 8
 /** Estimated 1RM gain that counts as "this is working". */
 export const GAIN_TO_PROMOTE = 0.05
 
+/**
+ * The rep-gain floor for unloaded work. GAIN_TO_PROMOTE applied to a
+ * set of ten is half a rep, which no set can show, so a percentage
+ * alone would promote on noise or never. Two whole reps on a max set
+ * is the smallest gain that is unambiguously training and not a good
+ * day.
+ */
+export const REP_GAIN_TO_PROMOTE = 2
+
 /** 1-based. Weeks 1 to 16 are phase 1, 17 to 32 are phase 2. */
 export function phaseIndexFor(weekIndex: number): number {
   return Math.floor((Math.max(1, weekIndex) - 1) / PHASE_WEEKS) + 1
@@ -76,6 +85,20 @@ function verdictFor(
   toWeekStart: string,
 ): Exclude<AnchorOutcome, 'promoted' | 'topped-out'> | 'earned' {
   const series = liftSeries(data, exerciseId).filter((p) => p.date >= fromWeekStart && p.date < toWeekStart)
+  if (series.length === 0) {
+    // No loaded set all phase: bodyweight work. liftSeries needs a
+    // weight to say anything, so a pull-up athlete who doubled their
+    // reps in sixteen weeks was scored "untested" and never promoted.
+    // The rep-max series is the same evidence in the units they
+    // actually train in, judged on the same session minimum.
+    const reps = repMaxSeries(data, exerciseId).filter((p) => p.date >= fromWeekStart && p.date < toWeekStart)
+    if (reps.length < MIN_SESSIONS_TO_JUDGE) return 'untested'
+    const first = reps[0].reps
+    const last = Math.max(...reps.slice(-3).map((p) => p.reps))
+    if (first <= 0) return 'untested'
+    const needed = Math.max(REP_GAIN_TO_PROMOTE, Math.ceil(first * GAIN_TO_PROMOTE))
+    return last - first >= needed ? 'earned' : 'stalled'
+  }
   if (series.length < MIN_SESSIONS_TO_JUDGE) return 'untested'
   const first = series[0].e1rm
   const last = Math.max(...series.slice(-3).map((p) => p.e1rm))

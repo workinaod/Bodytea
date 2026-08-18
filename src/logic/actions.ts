@@ -248,7 +248,7 @@ export function finishSession(date: ISODate): DebriefData {
   const data = store().data
   const session = data.sessions[date]!
   const prs = detectPRs(data, session)
-  const composed = composeDebrief(data, session, todayISO())
+  const composed = composeDebrief(data, session, session.date)
 
   // 2. Persist debrief + anti-repeat state + insight cooldowns
   store().update((d) => {

@@ -101,18 +101,28 @@ export function prefillFor(
   )
   /**
    * Light day first, then a movement with a pattern of dying. Never both,
-   * and never below a single load step.
+   * and never below the floor.
    *
    * The floor is not decoration. Softening reads a baseline and returns a
    * smaller number, so without one it composes with itself every time the
    * pattern persists, and a movement somebody keeps failing walks to zero
    * while still being prescribed. A weight of nothing is not a lighter
    * prescription, it is the absence of one.
+   *
+   * The floor is proportional, not one step. One step was 20% of a
+   * 25 lb dumbbell but 3% of a 180 lb squat, so a light lift that was
+   * failing AND stale could be handed back at a fifth of its working
+   * weight while technically floored. Sixty percent of the baseline the
+   * reductions were computed FROM is below any working weight worth the
+   * name, and above the point where the prescription stops being one.
+   * The floor never raises the number above what the arithmetic chose,
+   * it only refuses to soften past it.
    */
   const softened = opts.lightMode === true || failing
-  const soften = (w: number) => {
+  const soften = (w: number, baseline = w) => {
     const out = opts.lightMode ? lightLoad(w) : failing ? dropTo(w) : w
-    return Math.max(out, Math.min(w, loadStepLb(exerciseId)))
+    const floor = Math.max(loadStepLb(exerciseId), Math.round((baseline * 0.6) / 5) * 5)
+    return Math.max(out, Math.min(w, floor))
   }
 
   const sessions = Object.values(data.sessions)
@@ -155,7 +165,7 @@ export function prefillFor(
         ? Math.max(floor, best.weightLb + bump + wrapStep + backOff + staleGiveBack)
         : undefined
     return {
-      weightLb: w !== undefined ? soften(w) : undefined,
+      weightLb: w !== undefined ? soften(w, best.weightLb) : undefined,
       reps: best.achieved ?? best.reps,
       softened,
     }
