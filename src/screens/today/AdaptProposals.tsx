@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import type { EquipTag, ISODate } from '../../types'
+import type { ISODate } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
-import { planAdjustments, readSignals } from '../../engine/adapt'
+import { adaptContext, planAdjustments } from '../../engine/adapt'
 import { acceptAdaptation, undoAdaptation } from '../../logic/fatigueActions'
 
 /**
@@ -34,10 +34,9 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   const proposals = useMemo(() => {
     const resolved = resolveDay(date, data)
     if (resolved.kind !== 'session') return []
-    return planAdjustments(resolved.exercises, {
-      owned: new Set<EquipTag>(['none', ...data.plan.equipment]),
-      signals: readSignals(data, date),
-    }).filter((a) => !a.automatic)
+    return planAdjustments(resolved.exercises, adaptContext(data, date, data.plan.equipment)).filter(
+      (a) => !a.automatic,
+    )
   }, [data, date])
 
   // Nothing to offer, or the day is already under way: a session in

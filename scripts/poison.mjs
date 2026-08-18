@@ -752,6 +752,46 @@ const MUTATIONS = [
     to: '      ? { reps: range.low, wrapped: false, backOff: false, staleSteps: 0 }',
     spec: 'src/engine/increment.test.ts',
   },
+  {
+    id: 'sleep-cut-lands-twice',
+    bug: 'the proposals screen offers a set off every lift on top of the third the resolver already took for two bad nights',
+    file: 'src/engine/adapt.ts',
+    find: '    alreadyCutForSleep: twoConsecutiveBadNightsBefore(data, dateISO),',
+    to: '    alreadyCutForSleep: false,',
+    spec: 'src/engine/adaptContext.test.ts',
+  },
+  {
+    id: 'offers-ignore-what-the-athlete-said',
+    bug: 'the offers route into movements the athlete has blocked and joints they have told us about',
+    file: 'src/engine/adapt.ts',
+    find: '    blocked: blockedIds(data.prefs),',
+    to: '    blocked: undefined,',
+    spec: 'src/engine/adaptContext.test.ts',
+  },
+  {
+    id: 'allergy-fix-skips-the-stack',
+    bug: 'a declared fish allergy is honoured for every meal and ignored for fish oil',
+    file: 'src/plan/foods.ts',
+    find: '        blockedBy({ name: s.name, ingredients: SUPPLEMENT_SOURCES[s.id] ?? [] }, limits) === null,',
+    to: '        true,',
+    spec: 'src/plan/supplements.test.ts',
+  },
+  {
+    id: 'vegetarians-served-fish-oil',
+    bug: 'the diet filter names vegans and means everybody, so vegetarians are handed fish oil and collagen',
+    file: 'src/plan/foods.ts',
+    find: '  fishOil: [\'vegetarian\', \'vegan\'],',
+    to: '  fishOil: [\'vegan\'],',
+    spec: 'src/plan/supplements.test.ts',
+  },
+  {
+    id: 'magnesium-over-its-upper-limit',
+    bug: 'the shipped dose asks for more supplemental magnesium than the published upper limit allows',
+    file: 'src/plan/foods.ts',
+    find: "dose: '200-350 mg', when: 'With a meal' }",
+    to: "dose: '200-400 mg', when: 'With a meal' }",
+    spec: 'src/plan/supplements.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [
