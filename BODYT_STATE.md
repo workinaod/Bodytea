@@ -170,9 +170,10 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
 | R3 | Autoregulation thresholds (weight-trend bands, volume windows, plateau evidence) | research | pending | J7 | engines lane, start of J8 |
 | R4 | Meal + recipe corpus expansion (axes, goal x diet x cost coverage; guards-first) | research | pending | J1 | product lane, inside J9 |
-| R5 | Program-family corpus: 4-6 typed archetype families + tradeoffs (the standalone research job) | research | pending | J7 schemas stable | planner owner, before J11 |
+| R5 | Program-family corpus | research | **synthesized 2026-08-18** (research/R5-program-families.md; 10 families, 19 sources, ProgramFamily record, selection logic, 8-axis convergence metric, 18 fixtures of which 4 fail today) | J7 schemas stable | planner owner, before J11 |
 | B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | pending | starts with R1 | any lane, rolling |
+| R-ONT | Exercise ontology expansion (capability fields, alias resolution, substitution at scale, corpus licensing) | research | **synthesized 2026-08-18** (research/RONT-exercise-ontology.md) | J1 | feeds J6 + B3 |
 | B3 | Knowledge store + retrieval layer | infra | **designed 2026-08-18** (research/B3-knowledge-store.md; tiered storage, 32KB/24-record DecisionPacket cap, lexicographic ranking, derived confidence, pg_trgm over vector DB; stage plan 0-4) | J7 contracts stable | engines lane, alongside R5, before J11 |
 | IW | Ingestion waves: mass corpus expansion (exercises, programs, evidence, food) through B3's pipeline toward millions of records | research | pending, post-gate | J12 + B3 | dedicated sessions per wave |
 
