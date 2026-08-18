@@ -812,6 +812,22 @@ const MUTATIONS = [
     to: '    return jointsInText(label).length ? [{ label, joints: jointsInText(label), since }] : []',
     spec: 'src/plan/limitations.test.ts',
   },
+  {
+    id: 'minimum-age-becomes-a-gate',
+    bug: 'the age minimum stops being a sentence and starts being a wall, which is not what was asked for',
+    file: 'src/screens/onboarding/MeStep.tsx',
+    find: '  const ready = named && sex !== null && age !== null && heightIn !== null && weight !== null',
+    to: '  const ready = named && sex !== null && age !== null && !tooYoung && heightIn !== null && weight !== null',
+    spec: 'src/screens/onboarding/minAge.test.ts',
+  },
+  {
+    id: 'minimum-age-told-to-everybody',
+    bug: 'the age line renders for every athlete instead of only the one it is about',
+    file: 'src/screens/onboarding/MeStep.tsx',
+    find: '        {tooYoung && (',
+    to: '        {age !== null && (',
+    spec: 'src/screens/onboarding/minAge.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [

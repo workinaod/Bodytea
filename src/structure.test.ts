@@ -121,7 +121,9 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // coach shortlist changed parses unchanged and retires its own pick.
   // The meal-plan shapes went to store/mealPlanSchema.ts, and foodLimits
   // was added there rather than here: -15 net, and the allowance follows.
-  'store/schema.ts': 634,
+  // Then settings and profile to store/settingsSchema.ts, which is where
+  // the age field landed rather than here. -24 more.
+  'store/schema.ts': 610,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,

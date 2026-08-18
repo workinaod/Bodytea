@@ -98,6 +98,7 @@ export function Onboarding() {
   // Null until they say. A default of 180 lb is the app inventing a
   // person and then building that person a plan.
   const [weight, setWeight] = useState<number | null>(null)
+  const [age, setAge] = useState<number | null>(null)
   const [heightIn, setHeightIn] = useState<number | null>(null)
   const bodyweightLb = weight ?? 175
 
@@ -195,6 +196,7 @@ export function Onboarding() {
       d.prefs.limitations = limitationsFrom(answers.goalAnswers, start)
       if (sex) d.profile.bfFormula = sex
       if (heightIn !== null) d.profile.heightIn = heightIn
+      if (age !== null) d.profile.age = age
       const at = new Date().toISOString()
       for (const n of notes.slice(0, 4)) {
         d.coach.feed.unshift({ id: uid(), at, kind: 'insight', text: `📓 Routine notes: ${n.text}` })
@@ -358,6 +360,8 @@ export function Onboarding() {
           setDisplayName={setDisplayName}
           sex={sex}
           setSex={setSex}
+          age={age}
+          setAge={setAge}
           heightIn={heightIn}
           setHeightIn={setHeightIn}
           weight={weight}

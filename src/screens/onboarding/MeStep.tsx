@@ -24,13 +24,26 @@ import { Bar, Kicker, Label, Quiet, Tag, Title, fieldCls, fieldStyle } from './k
 // Nothing here explains itself. "Sex" with a note underneath
 // about tape formulas is the app talking about its own
 // internals; the question is the question.
+//
+// Age is asked here and stated nowhere else. There is no terms
+// screen, no age wall, and no "you must be 11 to continue"
+// sitting in front of somebody who is thirty. The minimum is
+// mentioned only to the person it is about, once, at the moment
+// they type a number below it, and then they carry on. A rule
+// that announces itself to everybody is a rule that treats
+// everybody as a suspect.
 // ============================================================
+
+/** Under this, the app says so once. It does not stop anybody. */
+export const MIN_AGE = 11
 
 export function MeStep({
   displayName,
   setDisplayName,
   sex,
   setSex,
+  age,
+  setAge,
   heightIn,
   setHeightIn,
   weight,
@@ -41,6 +54,8 @@ export function MeStep({
   setDisplayName: (s: string) => void
   sex: 'male' | 'female' | null
   setSex: (s: 'male' | 'female') => void
+  age: number | null
+  setAge: (n: number | null) => void
   heightIn: number | null
   setHeightIn: (n: number | null) => void
   weight: number | null
@@ -48,9 +63,12 @@ export function MeStep({
   onNext: () => void
 }) {
   const named = displayName.trim().length > 0
-  const showHeight = named && sex !== null
+  const showAge = named && sex !== null
+  const showHeight = showAge && age !== null
   const showWeight = showHeight && heightIn !== null
-  const ready = named && sex !== null && heightIn !== null && weight !== null
+  const ready = named && sex !== null && age !== null && heightIn !== null && weight !== null
+  // Said to the one person it is about, and never in the way of Next.
+  const tooYoung = age !== null && age < MIN_AGE
 
   return (
     <div className="flex flex-1 flex-col">
@@ -74,6 +92,26 @@ export function MeStep({
             Female
           </Tag>
         </div>
+      </Reveal>
+
+      <Reveal when={showAge} className="mt-8">
+        <Label>How old are you?</Label>
+        <input
+          inputMode="numeric"
+          value={age ?? ''}
+          onChange={(e) => {
+            const n = Number(e.target.value.replace(/\D/g, '').slice(0, 3))
+            setAge(e.target.value.trim() === '' || n === 0 ? null : n)
+          }}
+          placeholder="Age"
+          className={fieldCls}
+          style={fieldStyle}
+        />
+        {tooYoung && (
+          <p className="mt-2 text-[12px] font-semibold leading-snug text-gold">
+            BodyT is built for {MIN_AGE} and up. Some of what it asks for will not fit you yet.
+          </p>
+        )}
       </Reveal>
 
       <Reveal when={showHeight} className="mt-8">

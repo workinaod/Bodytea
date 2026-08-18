@@ -14,29 +14,10 @@ import { isoDate, weekday } from './primitives'
 // Session and activity shapes live beside the types they mirror.
 import { sessionSchema } from './sessionSchema'
 import { prefsSchema } from './prefsSchema'
+import { profileSchema, settingsSchema } from './settingsSchema'
 import { foodLimitsSchema, mealPlanSchema } from './mealPlanSchema'
 import { cardioEntrySchema, runLogSchema } from './activitySchema'
 
-const settingsSchema = z.object({
-  phaseStartDate: isoDate,
-  installedAt: isoDate,
-  checkinWeekday: weekday,
-  trainingDayKcalBonus: z.union([z.literal(0), z.literal(150), z.literal(200)]),
-  proteinTargetG: z.number().positive(),
-  restTimerEnabled: z.boolean(),
-  lastExportAt: z.string().nullable(),
-  onboarded: z.boolean(),
-  remindersEnabled: z.boolean(),
-  reminderTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/)).max(3),
-  units: z.enum(['imperial', 'metric']),
-  reviewsSeen: z.array(z.string()).optional(),
-  voiceCoach: z.boolean().optional(),
-  voiceURI: z.string().optional(),
-  voiceSetVersion: z.number().optional(),
-  soundMode: z.enum(['voice', 'beeps-names', 'beeps', 'silent']).optional(),
-  cadenceSpeed: z.number().min(0.5).max(2).optional(),
-  voiceUsed: z.boolean().optional(),
-})
 
 // ---------- Plan config (the booklet) ----------
 
@@ -225,12 +206,7 @@ const coachSchema = z.object({
 const appDataSchema = z.object({
   settings: settingsSchema,
   plan: planConfigSchema,
-  profile: z.object({
-    displayName: z.string().optional(),
-    username: z.string().optional(),
-    heightIn: z.number().optional(),
-    bfFormula: z.enum(['male', 'female']).optional(),
-  }),
+  profile: profileSchema,
   weeks: z.record(z.string(), weekSchema),
   sessions: z.record(z.string(), sessionSchema),
   excuses: z.array(excuseSchema),

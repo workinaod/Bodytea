@@ -247,6 +247,7 @@ export interface Profile {
   heightIn?: number
   /** Which Navy formula fits their body, asked once in the estimator. */
   bfFormula?: 'male' | 'female'
+  age?: number // Years. The one number this app states a minimum of: onboarding/MeStep.tsx
 }
 
 // ---------- Resolved day (engine output) ----------
@@ -318,7 +319,6 @@ export interface WeekState {
 }
 
 // ---------- GPS-tracked runs & rides ----------
-
 
 // Type-only cycle: activityTypes needs ISODate from here, this needs its
 // shapes for AppData. TypeScript erases both, so nothing circular survives
