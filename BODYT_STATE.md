@@ -168,7 +168,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
-| R3 | Autoregulation thresholds (weight-trend bands, volume windows, plateau evidence) | research | pending | J7 | engines lane, start of J8 |
+| R3 | Autoregulation thresholds | research | **synthesized 2026-08-18** (research/R3-autoregulation.md; 35 sources, per-engine constant audit, 7-rung plateau ladder, 31 eval cases) | J7 | engines lane, start of J8 |
 | R4 | Meal + recipe corpus expansion | research | **synthesized 2026-08-18** (research/R4-meals.md; USDA CC0 vs OFF ODbL fence, 720-cell coverage predicate, 158-record gap, 20 fixtures) | J1 | product lane, inside J9 |
 | R5 | Program-family corpus | research | **synthesized 2026-08-18** (research/R5-program-families.md; 10 families, 19 sources, ProgramFamily record, selection logic, 8-axis convergence metric, 18 fixtures of which 4 fail today) | J7 schemas stable | planner owner, before J11 |
 | B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
@@ -244,6 +244,20 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 ---
 
 ## 7. KNOWN GAPS AND FAILURES LEDGER (turn each into a regression when fixed)
+- **Layoff levers are backwards (R3, strongest-evidence finding):** after 2+ weeks off the
+  CSCCa/NSCA consensus cuts VOLUME 50 percent in week 1 and 30 percent in week 2, while
+  strength is largely retained to ~4 weeks (Mujika/Padilla). BodyT resets reps at 21 days
+  and gives load back at 28, and cuts no volume at all. Fix in J8.
+- **loadStepLb defect (R3):** a 5 lb step on a sub-40 lb single-joint movement is 12 to 25
+  percent, outside ACSM 2 to 10 percent. Proportional step needed.
+- **Rest defaults short for heavy compounds (R3):** ACSM says 3 to 5 min for 1 to 6 RM;
+  BodyT caps at 240 s and mostly prescribes 90 to 150 s. The moderator is training status,
+  not exercise type.
+- **Readiness 2-of-4 over-weights weak items (R3):** sleep and low energy are evidence
+  backed, soreness is not; proposed weights 1.0/1.0/0.5/0.5 at threshold 1.5. Golden-lock
+  visible, so it ships alone.
+- **Declined proposals are discarded (R3 + B1):** nothing records a no, so the same offer
+  returns. Needs a cooldown shaped like surfacedInsights.
 - **ALLERGY SAFETY BUG (found by R4, fix first in J9):** onboarding writes `foodLimits`
   { dairyFree, allergies } into an object typed OnboardingAnswers, which has no such
   field. Excess-property checking is lost through useMemo so tsc stays silent. Only one
