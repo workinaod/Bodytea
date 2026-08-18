@@ -1,5 +1,5 @@
 import type { AppData, DebriefData, ISODate, SessionLog } from '../types'
-import { EAT_NOW, RECOVERY_POOLS, SLEEP_TIPS } from '../plan/debrief'
+import { EAT_NOW, EAT_NOW_GOAL, RECOVERY_GOAL, RECOVERY_POOLS, SLEEP_TIPS } from '../plan/debrief'
 import { addDaysISO, formatDayLabel } from './calendar'
 import { interpolate, pickVariant } from './coach'
 import { generateInsights } from './insights'
@@ -69,9 +69,17 @@ export function composeDebrief(
   surfacedInsightIds.push(...insights.map((i) => i.ruleId))
 
   // ---- Recovery ----
+  // The role pool knows what the session was; the goal pool knows what
+  // the athlete is for. Goal lines are appended AFTER the role lines so
+  // the existing variant ids (poolId:index) keep meaning the same text.
   const poolKey = recoveryPoolKey(data, session.templateId, resolved.kind)
   const recovery: string[] = [...insightTexts]
-  recovery.push(take(`recovery-${poolKey}`, RECOVERY_POOLS[poolKey] ?? RECOVERY_POOLS.generic))
+  recovery.push(
+    take(`recovery-${poolKey}`, [
+      ...(RECOVERY_POOLS[poolKey] ?? RECOVERY_POOLS.generic),
+      ...(RECOVERY_GOAL[data.plan.goal] ?? []),
+    ]),
+  )
 
   // ---- Eat now ----
   const dayType = nutritionDayType(session.date, data)
@@ -80,7 +88,7 @@ export function composeDebrief(
   const kcalTarget = kcalTargetFor(data, dayType)
   const kcalLeft = Math.max(0, kcalTarget - kcalFor(data, session.date))
   const eat = [
-    take(`eat-${dayType}`, EAT_NOW[dayType], {
+    take(`eat-${dayType}`, [...EAT_NOW[dayType], ...(EAT_NOW_GOAL[data.plan.goal]?.[dayType] ?? [])], {
       proteinSoFar,
       proteinLeft,
       kcalLeft,

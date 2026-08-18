@@ -1,3 +1,5 @@
+import type { Goal } from '../types'
+
 // ============================================================
 // Post-session debrief content pools. Selected by day type with
 // anti-repeat rotation (see engine/coach.ts pickVariant) so the
@@ -78,6 +80,128 @@ export const RECOVERY_POOLS: Record<string, string[]> = {
     'That’s a wrap. Low lights, big plate, early night. The least glamorous, most effective stack there is.',
     'Complete. One session never matters, the streak always does. Protect it with boring evenings.',
   ],
+}
+
+/**
+ * Goal-aware recovery lines, appended to whichever role pool the day
+ * used. The role pools know what the SESSION was; these know what the
+ * athlete is FOR, which is the half of the debrief that was missing:
+ * a dunker and a marathoner got word-for-word the same evenings.
+ * Appended after the role lines so existing variant ids stay stable.
+ */
+export const RECOVERY_GOAL: Partial<Record<Goal, string[]>> = {
+  vertical: [
+    'Tendons adapt slower than muscles. The spring you loaded today gets wound tonight, in sleep, not in extra jumps.',
+    'Stiff ankles leak bounce. Two easy minutes of ankle circles tonight keeps the landing gear honest.',
+    'Vert is power to weight. Recover on real food, not junk: the engine grows, the airframe stays light.',
+  ],
+  speed: [
+    'Hamstrings are the speed muscle and the first to sulk after short sleep. Give them the full night.',
+    'Speed is a skill and skills consolidate overnight. The fast version of you is being written right now.',
+    'Easy walking tomorrow keeps the hips moving without spending anything you will want for the next fast day.',
+  ],
+  muscle: [
+    'Muscle is built between sessions, not during them. Tonight is the anabolic half of today.',
+    'The pump left hours ago but the growth signal runs about two days. Feed it protein at every meal until then.',
+    'Soreness is a receipt, not a scorecard. Show up to the next session either way and the size takes care of itself.',
+  ],
+  strength: [
+    'Strength is a nervous-system skill. It consolidates in deep sleep, which makes tonight part of the program.',
+    'Heavy work leaves the joints wanting warmth: hot shower, easy evening, nothing brave.',
+    'The bar goes up next week because tonight was boring. That is the trade and it is a good one.',
+  ],
+  lean: [
+    'Fat loss happens in the quiet hours between meals, and sleep is the longest quiet stretch you have. Protect it.',
+    'A short walk tonight costs no recovery and buys appetite control tomorrow. Cheapest tool in the cut.',
+    'Losing weight while keeping muscle is the hard version. The muscle stays because protein and sleep both showed up.',
+  ],
+  general: [
+    'Consistency is the whole trick. Tonight asks for nothing except not undoing today.',
+    'Energy tomorrow is decided tonight: dinner, water, bed. Three chores, ten minutes of effort total.',
+    'You trained today so ordinary life feels lighter. Let the evening be exactly that: ordinary.',
+  ],
+  endurance: [
+    'Long-distance legs are built on easy days honoured. Nothing extra tonight, the miles already banked it.',
+    'Endurance eats glycogen. Refill tonight or tomorrow runs on fumes and feels twice as long.',
+    'Feet and calves carry the miles. Five minutes with the legs up tonight is maintenance on the chassis.',
+  ],
+}
+
+/**
+ * Goal-aware eat-now lines, appended to the day-type pool the same way.
+ * Same placeholders as EAT_NOW.
+ */
+export const EAT_NOW_GOAL: Partial<Record<Goal, { training: string[]; rest: string[] }>> = {
+  vertical: {
+    training: [
+      'Power to weight cuts both ways: {proteinLeft} g protein left feeds the spring without padding the airframe.',
+      'Jump work runs on carbs. Refill inside your {kcalLeft} kcal and the legs arrive springy next time.',
+    ],
+    rest: [
+      'No jumping today, but tendons rebuild on protein all the same. {proteinLeft} g to go.',
+      'Rest-day food is still vert training: full protein, no bonus calories to haul up with you.',
+    ],
+  },
+  speed: {
+    training: [
+      'Sprint work empties the tank faster than it looks. {kcalLeft} kcal left today and dinner should take most of it.',
+      'Hamstrings rebuild on protein: {proteinLeft} g left. Short them and the next fast day shows it.',
+    ],
+    rest: [
+      'Off day, same fuel rules: protein full, {kcalLeft} kcal on the day, legs ready when the stopwatch returns.',
+      'Speed rewards the light and strong. Rest-day discipline is where light gets kept. {proteinLeft} g protein to go.',
+    ],
+  },
+  muscle: {
+    training: [
+      'Growth is a surplus spent on protein. {proteinSoFar} g down, {proteinLeft} g to go, and the {kcalLeft} kcal left are part of the plan, not a treat.',
+      'The window is not thirty minutes, it is the whole evening. Two protein feeds before bed beat one pile.',
+    ],
+    rest: [
+      'Muscle is built on rest days if the protein shows: {proteinLeft} g left today.',
+      'No session, same construction site. Keep the feeds coming and let the soreness finish its work.',
+    ],
+  },
+  strength: {
+    training: [
+      'Strength work is expensive: {kcalLeft} kcal left and the bar next week wants them spent on dinner tonight.',
+      'Protein is the repair crew for heavy sets: {proteinLeft} g still to arrive on site.',
+    ],
+    rest: [
+      'Heavy days leave a two-day repair bill. Today pays it: {proteinLeft} g protein left.',
+      'Rest-day eating like a lifter: full protein, honest calories, nothing heroic.',
+    ],
+  },
+  lean: {
+    training: [
+      'Training days are the easy days of a cut: more food, most of it earned. {kcalLeft} kcal left, spend them on the plan.',
+      'The deficit does the losing, the protein does the keeping: {proteinLeft} g left tonight.',
+    ],
+    rest: [
+      'Rest days are where cuts are won or lost. {kcalLeft} kcal left is the whole game tonight.',
+      'Hungry evening on a rest day is normal, not an emergency. Protein first: {proteinLeft} g to go.',
+    ],
+  },
+  general: {
+    training: [
+      'Nothing fancy tonight: {proteinLeft} g protein left, water, and a plate that looks like food.',
+      'You moved today, so eat like it mattered: {kcalLeft} kcal left and dinner covers most of it.',
+    ],
+    rest: [
+      'Easy day, easy rules: protein to {proteinTarget} g, calories to {kcalTarget}, done.',
+      'Rest days keep the habit warm. Log the food, hit the protein, call it a win.',
+    ],
+  },
+  endurance: {
+    training: [
+      'Miles run on carbs and rebuild on protein: {proteinLeft} g left tonight, plus real carbs at dinner.',
+      'Under-fuelling an endurance block feels fine for a week and then it does not. {kcalLeft} kcal left, eat them.',
+    ],
+    rest: [
+      'Rest-day fuel is next week’s pace. Keep protein full: {proteinLeft} g to go.',
+      'The long stuff rewards a boring, consistent kitchen. {kcalTarget} kcal today, mostly food with one ingredient.',
+    ],
+  },
 }
 
 /** Sleep guidance pool, engine appends a tomorrow-aware line. */
