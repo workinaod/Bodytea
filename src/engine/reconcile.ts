@@ -93,6 +93,53 @@ export function makeupCandidate(data: AppData, today: ISODate): MakeupCandidate 
   return null
 }
 
+// ---------- The recent-days shelf ----------
+
+export interface PlanDayRow {
+  date: ISODate
+  templateId: string
+  title: string
+  cns: boolean
+  /** What became of the day: missed and skipped are the make-up cases. */
+  status: 'missed' | 'skipped' | 'partial' | 'done'
+}
+
+/**
+ * The plan's recent past, one row per scheduled training day, newest
+ * first: what each day was and what became of it. This is what lets an
+ * athlete run ANY previous day today, not just the single missed-day
+ * offer makeupCandidate makes. A missed or skipped day is a make-up; a
+ * done one is a rerun. Cardio-backup days stay out: their session is a
+ * choice, not a workout to reproduce.
+ */
+export function recentPlanDays(data: AppData, today: ISODate, maxDays = 14): PlanDayRow[] {
+  const out: PlanDayRow[] = []
+  for (let i = 1; i <= maxDays; i++) {
+    const date = addDaysISO(today, -i)
+    if (daysBetween(data.settings.phaseStartDate, date) < 0) break
+    if (daysBetween(data.settings.installedAt, date) < 0) break
+    const resolved = resolveDay(date, data)
+    if (resolved.kind !== 'session' && resolved.kind !== 'mobility') continue
+    if (!resolved.templateId || resolved.exercises.length === 0) continue
+    const s = data.sessions[date]
+    const status: PlanDayRow['status'] = !s
+      ? 'missed'
+      : s.status === 'skipped'
+        ? 'skipped'
+        : s.status === 'partial' && !s.endedAt
+          ? 'partial'
+          : 'done'
+    out.push({
+      date,
+      templateId: resolved.templateId,
+      title: resolved.title,
+      cns: resolved.cns,
+      status,
+    })
+  }
+  return out
+}
+
 /** Group misses by week Monday, used for the bulk "that was a travel week" resolution. */
 export function groupMissesByWeek(misses: MissedDay[]): Map<ISODate, MissedDay[]> {
   const map = new Map<ISODate, MissedDay[]>()

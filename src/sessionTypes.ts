@@ -125,6 +125,14 @@ export interface SessionLog {
   intensity?: SessionIntensity
   /** Rest-day make-up: the missed date whose workout this session ran. */
   makeupFor?: ISODate
+  /**
+   * Name of an off-plan workout: one built from the exercise list, or
+   * picked from the general workouts shelf. Present exactly when
+   * templateId is 'custom', and the record's only source of a title,
+   * since no template can be looked up for it. Sessions the plan
+   * scheduled never carry it.
+   */
+  customTitle?: string
   /** "Running long" cut point, exercises at index >= this were dropped (bottom-first rule). */
   trimmedFromIndex?: number
   exercises: ExerciseLog[]

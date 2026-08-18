@@ -14,7 +14,7 @@ import {
 } from './coach'
 import { validateProofFile } from '../store/storage'
 import { generateInsights } from './insights'
-import { findUnexplainedMisses, makeupCandidate } from './reconcile'
+import { findUnexplainedMisses, makeupCandidate, recentPlanDays } from './reconcile'
 import { composeDebrief } from './debrief'
 import { defaultWeekState } from '../types'
 
@@ -373,6 +373,43 @@ describe('rest-day make-up', () => {
     expect(makeupCandidate(d, '2026-08-16')?.date).toBe('2026-08-10')
     d.excuses.push({ ...excuse('2026-08-10', true, 'travel'), scope: 'week' })
     expect(makeupCandidate(d, '2026-08-16')).toBeNull()
+  })
+})
+
+describe('the recent-days shelf', () => {
+  it('lists scheduled days newest first with what became of each', () => {
+    const d = makeData()
+    d.sessions['2026-08-10'] = { date: '2026-08-10', templateId: 'monday', status: 'completed', exercises: [] }
+    d.sessions['2026-08-11'] = { date: '2026-08-11', templateId: 'tuesday', status: 'skipped', exercises: [] }
+    // Wednesday never logged, Thursday is mobility, Sunday is rest.
+    const rows = recentPlanDays(d, '2026-08-16')
+    expect(rows.map((r) => [r.date, r.status])).toEqual([
+      ['2026-08-15', 'missed'],
+      ['2026-08-14', 'missed'],
+      ['2026-08-13', 'missed'],
+      ['2026-08-12', 'missed'],
+      ['2026-08-11', 'skipped'],
+      ['2026-08-10', 'done'],
+    ])
+    // Every row is runnable: a real template and a real title.
+    for (const r of rows) {
+      expect(r.templateId, r.date).toBeTruthy()
+      expect(r.title, r.date).toBeTruthy()
+    }
+  })
+
+  it('never reaches past the install date or the phase start', () => {
+    const d = makeData()
+    d.settings.installedAt = '2026-08-13'
+    const rows = recentPlanDays(d, '2026-08-16')
+    expect(rows.every((r) => r.date >= '2026-08-13')).toBe(true)
+  })
+
+  it('rest days and cardio-backup chooser days stay off the shelf', () => {
+    const d = makeData()
+    const rows = recentPlanDays(d, '2026-08-17')
+    // Sunday the 16th is rest on the preset: not a day anyone can rerun.
+    expect(rows.map((r) => r.date)).not.toContain('2026-08-16')
   })
 })
 

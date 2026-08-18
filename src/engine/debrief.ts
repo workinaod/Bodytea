@@ -3,7 +3,8 @@ import { EAT_NOW, EAT_NOW_GOAL, RECOVERY_GOAL, RECOVERY_POOLS, SLEEP_TIPS } from
 import { addDaysISO, formatDayLabel } from './calendar'
 import { interpolate, pickVariant } from './coach'
 import { generateInsights } from './insights'
-import { kcalTargetFor, nutritionDayType, recoveryPoolKey, resolveDay } from './resolveDay'
+import { kcalTargetFor, nutritionDayType, recoveryPoolKey } from './dayType'
+import { resolveDay } from './resolveDay'
 import { detectPRs, GRADE_LABEL, kcalFor, proteinFor, sessionGrade, sessionSetsDone, sessionTonnage, currentStreak } from './stats'
 
 // ============================================================
@@ -45,7 +46,16 @@ export function composeDebrief(
   const recap: string[] = []
   const { done, total } = sessionSetsDone(session)
   if (total > 0) recap.push(`${done}/${total} sets, graded ${GRADE_LABEL[sessionGrade(session)].toLowerCase()}.`)
-  if (session.makeupFor) recap.push(`Make-up for ${session.makeupFor.slice(5)}. The missed day got its work.`)
+  if (session.makeupFor) {
+    // A day can be run again as well as made up. The record should say
+    // which one happened: the missed date has no log, a rerun one does.
+    const orig = data.sessions[session.makeupFor]
+    recap.push(
+      orig && orig.status !== 'skipped'
+        ? `Ran ${session.makeupFor.slice(5)}'s workout again. Extra reps on the pattern.`
+        : `Make-up for ${session.makeupFor.slice(5)}. The missed day got its work.`,
+    )
+  }
   const tonnage = sessionTonnage(session)
   if (tonnage > 0) recap.push(`${tonnage.toLocaleString()} lb moved across the session.`)
   const prs = detectPRs(data, session)
@@ -119,7 +129,9 @@ export function composeDebrief(
   return {
     debrief: {
       date: session.date,
-      title: `${formatDayLabel(session.date)} · ${resolved.title}`,
+      // An off-plan workout has no template to be titled from; its own
+      // name is the only honest one. Scheduled days keep the resolver's.
+      title: `${formatDayLabel(session.date)} · ${session.customTitle ?? resolved.title}`,
       recap,
       recovery,
       eat,

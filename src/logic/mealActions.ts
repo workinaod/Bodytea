@@ -2,7 +2,7 @@ import type { ISODate, MealEntry, MealTemplateDef } from '../types'
 import { FOODS } from '../plan/foods'
 import { DEFAULT_SUPPLEMENTS } from '../types'
 import { uid, useAppStore } from '../store/appStore'
-import { nutritionDayType } from '../engine/resolveDay'
+import { nutritionDayType } from '../engine/dayType'
 
 // ============================================================
 // Food logging, split out of logic/actions.ts. The meal day is

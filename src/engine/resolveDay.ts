@@ -27,7 +27,6 @@ import { capAccessorySets, orderSession } from './sequence'
 import { parseRepRange, repLabel } from './reps'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
-import { MIN_KCAL_REST, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
 import { adaptSession, twoConsecutiveBadNightsBefore } from './adapt'
 
 // ============================================================
@@ -560,40 +559,4 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     exercises,
     note: template.note,
   }
-}
-
-// ---------- Nutrition day type ----------
-
-export function nutritionDayType(dateISO: ISODate, data: AppData): 'training' | 'rest' {
-  const meal = data.meals[dateISO]
-  if (meal?.dayTypeOverride) return meal.dayTypeOverride
-  const resolved = resolveDay(dateISO, data)
-  if (resolved.kind === 'session' || resolved.kind === 'cardio-backup') {
-    const session = data.sessions[dateISO]
-    if (session?.status === 'skipped') return 'rest'
-    return 'training'
-  }
-  return 'rest'
-}
-
-/**
- * Floored on the way out as well as on the way in.
- *
- * The migration repairs what is on disk, but a booklet is also editable
- * by hand and importable from another device, so the number the meals
- * ring is drawn from gets checked at the point of use too. Cheap, and it
- * means no future path can reintroduce a target nobody should eat to.
- */
-export function kcalTargetFor(data: AppData, dayType: 'training' | 'rest'): number {
-  const n = data.plan.nutrition
-  return dayType === 'training'
-    ? Math.max(MIN_KCAL_TRAINING, n.kcalTraining) + data.settings.trainingDayKcalBonus
-    : Math.max(MIN_KCAL_REST, n.kcalRest)
-}
-
-/** The debrief/recovery pool key for a template (role-keyed via debriefKey). */
-export function recoveryPoolKey(data: AppData, templateId: string | null, kind: string): string {
-  if (kind === 'cardio-backup') return 'cardio'
-  if (!templateId) return 'generic'
-  return data.plan.templates[templateId]?.debriefKey ?? 'generic'
 }

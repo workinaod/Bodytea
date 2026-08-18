@@ -44,6 +44,12 @@ export function cutToEssentials(date: ISODate): CutResult | null {
   const session = data.sessions[date]
   if (!session) return null
 
+  // An off-plan workout has no template and so no authored essentials.
+  // Cutting it against the underlying plan day would stand down the
+  // athlete's own picks wholesale; the in-session bottom-first trim is
+  // the honest tool there, and the sheet already explains the null.
+  if (session.customTitle) return null
+
   const day = resolveDay(session.makeupFor ?? date, data)
   if (!day.templateId) return null
   const template = planTemplate(data.plan, day.templateId)

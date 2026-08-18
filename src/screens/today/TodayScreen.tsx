@@ -13,11 +13,11 @@ import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
 import { chooseCardio, finishSession, reopenSession, restoreToday, swapExercise, toggleCnsSwap } from '../../logic/actions'
 import { startSession } from '../../logic/sessionStart'
-import { makeupCandidate } from '../../engine/reconcile'
 import { sessionGrade } from '../../engine/stats'
 import { streakDays } from '../../engine/streak'
 import { quitCopy } from '../../engine/quit'
 import { AdaptProposals } from './AdaptProposals'
+import { ExtraTraining } from './ExtraTraining'
 import { swapCandidatesFor } from '../../plan/subs'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
@@ -169,8 +169,12 @@ export function TodayScreen() {
           {day.isDeload && <Chip tone="lime">deload</Chip>}
           {day.cns && <Chip tone="accent">CNS day</Chip>}
         </div>
-        <h1 className="mt-1.5 headline text-[31px]">{day.title}</h1>
-        <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">{day.tagline}</p>
+        {/* A make-up or an off-plan workout IS the day once it exists;
+            the hero says what is actually being done, not the schedule */}
+        <h1 className="mt-1.5 headline text-[31px]">{session?.customTitle ?? viewDay.title}</h1>
+        <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">
+          {session?.customTitle ? 'Off the plan, on the record.' : viewDay.tagline}
+        </p>
       </div>
 
       {/* Actions live at the top, no reaching past the list to start */}
@@ -297,30 +301,20 @@ export function TodayScreen() {
         </Card>
       )}
 
-      {/* Rest-day make-up: a missed workout this week is still winnable */}
-      {today && !session && day.kind === 'rest' && (() => {
-        const makeup = makeupCandidate(data, date)
-        if (!makeup) return null
-        return (
-          <Card className="border-accent/40">
-            <div className="text-[11px] font-black uppercase tracking-wider text-accent">Make-up day</div>
-            <p className="mt-1 text-[13px] leading-snug text-ink-dim">
-              You missed <span className="font-bold text-ink">{makeup.title}</span> this week. Off day, open
-              window. Run it now and the week stays whole.
-            </p>
-            <Btn
-              className="mt-2.5 w-full"
-              onClick={() => {
-                setMakeupTarget(makeup.date)
-                if (makeup.cns) setReadinessOpen(true)
-                else setIntensityOpen(true)
-              }}
-            >
-              Make it up today
-            </Btn>
-          </Card>
-        )
-      })()}
+      {/* Training the plan didn't schedule: make-ups, reruns, the
+          workouts shelf, and the build-your-own path all live here */}
+      <ExtraTraining
+        date={date}
+        active={today}
+        hasSession={!!session}
+        dayKind={day.kind}
+        onRunDay={(d, cns) => {
+          setMakeupTarget(d)
+          if (cns) setReadinessOpen(true)
+          else setIntensityOpen(true)
+        }}
+        onLogged={(d) => setDebrief({ data: d })}
+      />
 
       {skipped && (
         <Card className="border-danger/30">

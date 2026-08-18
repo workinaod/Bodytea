@@ -46,7 +46,15 @@ export function WeekScreen() {
   function statusFor(d: ResolvedDay): { dot: string; label: string } {
     const s = data.sessions[d.date]
     const scheduled = d.kind !== 'rest'
-    if (!scheduled) return { dot: 'bg-edge', label: 'rest' }
+    if (!scheduled) {
+      // An off day somebody trained anyway (a make-up, an off-plan
+      // workout) is work on the record, not "rest".
+      if (s && s.status !== 'skipped') {
+        if (!s.endedAt && s.status === 'partial') return { dot: 'bg-gold', label: 'in progress' }
+        return { dot: 'bg-lime', label: s.makeupFor ? `made up ${formatShort(s.makeupFor)}` : 'trained anyway' }
+      }
+      return { dot: 'bg-edge', label: 'rest' }
+    }
     if (s) {
       if (s.status === 'skipped') return { dot: 'bg-danger', label: 'skipped' }
       if (s.status === 'completed') return { dot: 'bg-lime', label: 'done' }
@@ -199,7 +207,9 @@ export function WeekScreen() {
               </div>
               <span className={`h-2 w-2 shrink-0 rounded-full ${st.dot}`} />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[13.5px] font-bold">{d.title}</div>
+                <div className="truncate text-[13.5px] font-bold">
+                  {data.sessions[d.date]?.customTitle ?? d.title}
+                </div>
                 <div className="text-[11px] font-medium text-ink-faint">
                   {st.label}
                   {markersFor(d).map((m) => (
@@ -300,7 +310,11 @@ export function WeekScreen() {
       </div>
 
       {/* Day preview sheet */}
-      <Sheet open={!!preview} onClose={() => setPreview(null)} title={preview ? `${formatShort(preview.date)} · ${preview.title}` : ''}>
+      <Sheet
+        open={!!preview}
+        onClose={() => setPreview(null)}
+        title={preview ? `${formatShort(preview.date)} · ${data.sessions[preview.date]?.customTitle ?? preview.title}` : ''}
+      >
         {preview && (
           <div className="space-y-3 pb-6">
             <p className="text-[12.5px] leading-snug text-ink-dim">{preview.tagline}</p>
