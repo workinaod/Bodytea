@@ -321,6 +321,24 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 
 ## 9. CHECKPOINT LOG (append-only; newest last)
 
+- **2026-08-18 - FIX WAVE 1 - Reconciliation audit session.** Research found defects the
+  code review never would, so they were fixed before more research ran. Shipped live at
+  a395512: (1) THE WIPE - dietStyle 'pescatarian' was written by the generator and
+  rejected by the plan schema, so hydrate threw, parked the state as corrupt and returned
+  an empty app; every session and measurement vanished from view for that athlete. Fixed
+  the enum, added store/dietStyle.test.ts which derives the list from the DietStyle union
+  itself (a new style that is not added here stops the build), and taught hydrate to
+  reclaim a parked copy when it validates and only over a state nobody has onboarded into.
+  (2) TWO PHANTOM KEYS - the generator read 'speed-now' and the runs engine read
+  'race-distance'; the real ids are 'sprint-feel' and 'race-what' and the compared option
+  text had drifted too, so the gentler sprint ramp and the race picker were both dead.
+  runs.test.ts had been seeding the phantom key. New plan/goalAnswerKeys.test.ts walks the
+  source and checks every goalAnswers read against what buildFollowups actually produces.
+  (3) scripts/poison.mjs no longer hardcodes its root. Validation: 1,207 unit, e2e 38,
+  sim 20 personas, poison 81/81, deploy confirmed. NEXT FIXES: the allergy leak (foodLimits
+  never reaches the meal plan), the em-dash sweep with a repo-wide guard, and J6's
+  limit-range mode so a knee limitation stops emptying the squat pattern.
+
 - **2026-08-18 · J1 · Reconciliation audit session (stand-in executor).** The algorithm
   session wedged (two wake attempts died before any turn ran; archived). J1 executed
   here per owner approval: merged the sibling into the algo line (conflicts resolved
