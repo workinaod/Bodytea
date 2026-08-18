@@ -173,6 +173,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R5 | Program-family corpus | research | **synthesized 2026-08-18** (research/R5-program-families.md; 10 families, 19 sources, ProgramFamily record, selection logic, 8-axis convergence metric, 18 fixtures of which 4 fail today) | J7 schemas stable | planner owner, before J11 |
 | B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | pending | starts with R1 | any lane, rolling |
+| R10 | Technique, cueing and motor learning (no camera) | research | **synthesized 2026-08-18** (research/R10-technique-cueing.md; 24 sources, cue corpus measured, selection and outcome-tracking design) | J1 | feeds J10 |
 | R-ONT | Exercise ontology expansion (capability fields, alias resolution, substitution at scale, corpus licensing) | research | **synthesized 2026-08-18** (research/RONT-exercise-ontology.md) | J1 | feeds J6 + B3 |
 | B3 | Knowledge store + retrieval layer | infra | **designed 2026-08-18** (research/B3-knowledge-store.md; tiered storage, 32KB/24-record DecisionPacket cap, lexicographic ranking, derived confidence, pg_trgm over vector DB; stage plan 0-4) | J7 contracts stable | engines lane, alongside R5, before J11 |
 | IW | Ingestion waves: mass corpus expansion (exercises, programs, evidence, food) through B3's pipeline toward millions of records | research | pending, post-gate | J12 + B3 | dedicated sessions per wave |
@@ -244,6 +245,14 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 ---
 
 ## 7. KNOWN GAPS AND FAILURES LEDGER (turn each into a regression when fixed)
+- **Technique content is opt-in only (R10):** 129 of 194 exercises carry a cue, 65 carry
+  none, and no test guards it. Cues are spoken only when the athlete taps STEPS or asks,
+  so somebody who never asks hears zero technique for a whole block. 50 of 129 cues stack
+  two or three instructions; 31 use ALL-CAPS that speech synthesis silently discards.
+- **Em dashes are in shipped user-visible strings (R10):** 190 in src, 41 on code or string
+  lines across roughly 14 files, including engine/adapt.ts joint-pain advice and
+  VoicePicker copy. A repo-wide guard is owed, exempting regex character classes and the
+  label migration in schema.ts.
 - **Layoff levers are backwards (R3, strongest-evidence finding):** after 2+ weeks off the
   CSCCa/NSCA consensus cuts VOLUME 50 percent in week 1 and 30 percent in week 2, while
   strength is largely retained to ~4 weeks (Mujika/Padilla). BodyT resets reps at 21 days
