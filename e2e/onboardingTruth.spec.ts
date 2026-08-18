@@ -17,6 +17,9 @@ async function toPreview(page: import('@playwright/test').Page) {
   await page.getByLabel('Height').fill('510')
   await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
+  // The rebuilt goal step blocks Next until a goal is actually chosen.
+  // Lose weight, because the protein sentence under test is the cut's.
+  await page.getByText('Lose weight').click()
   await page.getByRole('button', { name: /Next: a few questions/ }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: 'Next: my gear' }).click()
@@ -55,14 +58,8 @@ test('every onboarding choice is a real button', async ({ page }) => {
     await expect(page.getByRole('button', { name: new RegExp(label) }).first()).toBeVisible()
   }
 
-  // Focus areas wait their turn behind the detail box, and arrive on the
-  // next tap — which is the "or nothing to add" answer.
-  await expect(page.getByRole('button', { name: 'Arms' })).toHaveCount(0)
-  await page.getByText("Let's get specific").click()
-  for (const label of ['Arms', 'Core']) {
-    await expect(page.getByRole('button', { name: label, exact: true })).toBeVisible()
-  }
-
+  // The goal follow-ups arrive as real buttons too.
+  await page.getByText('Lose weight').click()
   await page.getByRole('button', { name: /Next: a few questions/ }).click()
   await expect(page.getByRole('button', { name: 'A few pounds' })).toBeVisible()
 

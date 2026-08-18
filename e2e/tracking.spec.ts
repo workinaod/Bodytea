@@ -26,7 +26,7 @@ async function onboard(page: Page) {
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
-  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1" }).click()
 }
 
 const timer = (page: Page) => page.locator('.fixed.inset-0.z-\\[90\\]')

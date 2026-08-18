@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-18 (J2 done, engines lane session)
+Last updated: 2026-08-18 (OP1 done, off-plan training session)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -162,7 +162,22 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
   - Validation after W4: typecheck clean, **1,239/1,239 unit tests**, build green,
     **e2e 38 passed** (31.5m, same 3 voice skips), sim 20x20 identical session for
     session, poison **85/85** at W3 and 4 more mutations added at W4.
-- Superseded branches: `claude/fitness-tracking-app-ugo5xt` (content ported; glance at the
+- **OP1 (2026-08-18), on branch `claude/custom-exercises-missed-workouts-t3130o`
+  (based on the deploy branch tip, NOT yet merged):** off-plan training. The owner asked
+  for three things that were impossible: doing specific exercises of your own choosing,
+  logging small workouts done outside the app, and running previous plan days (missed
+  ones especially). Now: sessions with templateId 'custom' + customTitle (schema
+  addition, optional, no migration), built by logic/sessionStart.ts startCustomSession
+  through the same setsFor/prefill/rep-collapse path as scheduled days; a general
+  workouts shelf (plan/generalWorkouts.ts, 14 workouts, equipment-fitted through
+  resolveForEquipment, duplicates deduped, sub-3-item results dropped); engine/
+  reconcile.ts recentPlanDays (14-day shelf of session/mobility days with status)
+  feeding a run-any-day sheet on Today, reusing the makeupFor machinery; ExercisePicker
+  extracted from BookletEditor for reuse; rest days with ticked work now eat as
+  training days (engine/dayType.ts, extracted whole from resolveDay.ts which was at
+  its cap); debrief titles custom sessions by their own name and tells a rerun from a
+  make-up; WeekScreen shows off-day sessions as trained instead of "rest". Entry
+  points: rest-day card + one quiet line on scheduled days, both on Today only.
   two adapted commits 0374307/d5e71a4 before deleting), `claude/bodytea-link-display-r1sue6`
   (stale ancestor pointer). `claude/workout-form-feedback-pain-0xnonz` never existed.
 - Cloud: Supabase project **bodytea-prod** (elnvzitkfwzybkxcjytf, us-west-1). Tables:
@@ -196,6 +211,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending | C2 | cloud session |
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
 | RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
+| OP1 | Off-plan training (owner request): own-workout builder from the exercise list, general workouts shelf, run-any-previous-day make-ups and reruns | product | **done 2026-08-18** (off-plan training session; branch claude/custom-exercises-missed-workouts-t3130o, awaiting owner merge to the deploy branch) | J1 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -449,6 +465,55 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   (a knee limitation currently empties the squat pattern instead of narrowing it, which
   R7 and B3 both call the highest-value single change available). J3 and C1 still want
   their own sessions.
+
+- **2026-08-18 · OP1 · Off-plan training session (owner request).** The owner: "I
+  currently cant do specific exercises or log small workouts i did myself. People should
+  be able to scroll through various general workouts or do previous days from their plan
+  especially if they missed a day and want to make it up." All three shipped on branch
+  `claude/custom-exercises-missed-workouts-t3130o` (based on deploy-branch tip b7c0745;
+  owner merges when ready, deploy.yml untouched per the one-deploy-branch rule):
+  (1) OWN WORKOUTS: startCustomSession in logic/sessionStart.ts builds a real SessionLog
+  (templateId 'custom', new optional customTitle field in sessionTypes + sessionSchema,
+  no migration needed) from picked items, through a setsFor helper extracted from
+  startSession so prefill, rep-range collapse via repLabel, and the light-flag rules
+  cannot drift between the scheduled and off-plan paths; markDone logs it after the fact
+  and finishSession debriefs it. ExercisePicker extracted from BookletEditor.tsx (479 ->
+  312 lines) to screens/booklet/ExercisePicker.tsx and reused by the new
+  OwnWorkoutSheet. (2) GENERAL WORKOUTS SHELF: plan/generalWorkouts.ts, 14 authored
+  workouts fitted per athlete through resolveForEquipment (whole-workout drop when an
+  item cannot resolve, dedupe when two items degrade to the same movement, minimum 3
+  distinct items), browsed in WorkoutsSheet with focus filters. (3) PREVIOUS DAYS:
+  engine/reconcile.ts recentPlanDays lists the last 14 scheduled days with what became
+  of each; MakeupSheet runs any of them today via the existing makeupFor machinery
+  (missed/skipped = make-up, done = rerun; the debrief now says which, and the one-day
+  makeupCandidate card stays, with a "pick a different day" door added). All entries
+  live in screens/today/ExtraTraining.tsx: a card on rest days, one quiet line on
+  scheduled days, Today only, suggest-only throughout. Ride-alongs: rest days with
+  ticked work now eat as training days (nutritionDayType), the nutrition/pool tail of
+  resolveDay.ts moved whole to engine/dayType.ts (resolveDay was at 600 exactly; no
+  allowance touched), WeekScreen shows off-day sessions as "trained anyway"/"made up",
+  cutToEssentials returns null for custom sessions instead of cutting them against the
+  underlying plan day. Tests: 1,258/1,258 unit (19 new: shelf validity + equipment
+  fitting + dedupe-drop proof, custom-session build/prefill/markDone, recentPlanDays,
+  rest-day nutrition flip, debrief title + rerun-vs-makeup), typecheck clean, build
+  green, **e2e 75 passed / 0 failed** including 3 new offplan specs, sim 20x20 zero
+  invariant failures, sim 20x8 clean, poison 91/91.
+  LEARNED, IMPORTANT FOR EVERY LANE: the e2e suite on the deploy tip was silently
+  unrunnable on a fresh checkout. 17 spec files still clicked "Start Week 1, let's
+  work" but the generated-path button has said "Start Week 1" since the onboarding
+  polish (f4105e7, Aug 13), and the goal step now blocks Next until a goal is picked,
+  which stranded four more walks; the truth-test also asserted the pre-rebuild
+  focus-area toggle ("Let's get specific") that no longer exists, and reset.spec
+  asserted pre-rebuild rebuild copy. Past "passes" can only have come off a stale
+  preview server: playwright.config.ts has reuseExistingServer true and `vite preview`
+  serves whatever dist/ is lying around, so a server left over from before a copy
+  change validates the old build. Kill the port or bust the server before trusting a
+  run. Fixed all of it: 18 label call sites, goal picks in 4 walks, truth-test
+  rewritten to the current flow, reset copy updated; suite green end to end for the
+  first time since the polish landed. When the owner merges this, the deploy branch's
+  e2e goes from silently-red to green. NEXT: nothing owed on OP1. J3 (product), J7
+  (engines), C1 (cloud) remain the open lane heads; the research relaunches
+  (R15/R17/R18) still want doing.
 
 ## 10. SOURCES
 

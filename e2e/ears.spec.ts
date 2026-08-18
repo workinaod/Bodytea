@@ -29,7 +29,7 @@ async function onboard(page: Page) {
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
-  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1" }).click()
 }
 
 /** A recognizer we drive by hand, exposed on window for the test. */

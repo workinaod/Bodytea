@@ -29,7 +29,7 @@ async function onboardGenerated(page: Page) {
   await page.getByRole('button', { name: 'Skip' }).click()
   await expect(page.getByText('Jump Higher · 6-Day')).toBeVisible()
   await expect(page.getByText(/jump higher, by June/)).toBeVisible()
-  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1" }).click()
 }
 
 test('full core loop: onboard-generate → session → meals → debrief → export', async ({ page }) => {

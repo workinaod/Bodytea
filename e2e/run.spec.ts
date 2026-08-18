@@ -23,7 +23,7 @@ async function quickOnboard(page: Page) {
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
-  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1" }).click()
 }
 
 test('track a run with GPS: live stats → finish → logged everywhere', async ({ page, context }) => {

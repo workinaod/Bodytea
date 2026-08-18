@@ -21,7 +21,7 @@ async function buildPlan(page: Page, startLabel: string, goalChip: string, state
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
-  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1" }).click()
   await expect(page.getByText(/Week \d+/).first()).toBeVisible()
 }
 
@@ -84,7 +84,7 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
   await rewindAndReload(page)
 
   // Back in onboarding, told why, and told nothing was lost
-  await expect(page.getByText('Your plan is being rebuilt.')).toBeVisible()
+  await expect(page.getByText('Rebuilding.')).toBeVisible()
   await expect(page.getByText(/Everything you logged is safe/)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Rebuild my plan' })).toBeVisible()
 

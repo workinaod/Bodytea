@@ -20,7 +20,7 @@ async function onboard(page: Page) {
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
-  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1" }).click()
 }
 test('a custom activity keeps the name you typed', async ({ page }) => {
   test.setTimeout(120_000)

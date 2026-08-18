@@ -62,7 +62,7 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await expect(page.getByText(/jumps and sprints ARE the engine/)).toBeVisible()
   await expect(page.getByText(/automatic deload/)).toBeVisible()
 
-  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1" }).click()
 
   // Bring-your-own-routine reaches the permissions screen too. It used
   // to commit straight from the notes, which made it the one path never

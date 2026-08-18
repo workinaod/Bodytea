@@ -75,6 +75,7 @@ test('the coach speaks English, not shorthand', async ({ page }) => {
   await page.getByLabel('Height').fill('510')
   await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
+  await page.getByText('Get stronger').click()
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '4 days' }).click()
@@ -83,7 +84,7 @@ test('the coach speaks English, not shorthand', async ({ page }) => {
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
-  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1" }).click()
 
   await startSession(page)
 
@@ -113,6 +114,7 @@ test('the set intro is several utterances, not one flat sentence', async ({ page
   await page.getByLabel('Height').fill('510')
   await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()
+  await page.getByText('All-round fitness').click()
   await page.getByRole('button', { name: 'Next: a few questions' }).click()
   await page.getByRole('button', { name: 'Next: my week' }).click()
   await page.getByRole('button', { name: '4 days' }).click()
@@ -121,7 +123,7 @@ test('the set intro is several utterances, not one flat sentence', async ({ page
   await page.getByRole('button', { name: 'Next: food' }).click()
   await page.getByRole('button', { name: 'Build my plan' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
-  await page.getByRole('button', { name: "Start Week 1, let's work" }).click()
+  await page.getByRole('button', { name: "Start Week 1" }).click()
   await startSession(page)
 
   const spoken = await page.evaluate(() => (window as unknown as { __spoken: string[] }).__spoken)
