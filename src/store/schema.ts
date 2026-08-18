@@ -104,7 +104,7 @@ export const planConfigSchema = z.object({
   rationale: z.record(z.string(), z.string()),
   nutrition: z.object({ kcalTraining: z.number().positive(), kcalRest: z.number().positive() }),
   sportMode: z.enum(['ball', 'generic']).optional(),
-  dietStyle: z.enum(['omnivore', 'vegetarian', 'vegan']).optional(),
+  dietStyle: z.enum(['omnivore', 'vegetarian', 'vegan', 'pescatarian']).optional(), // all four, or the missing one wipes that athlete: store/dietStyle.test.ts
   experience: z.enum(['new', 'returning', 'casual', 'trained']).optional(),
   goalAnswers: z.record(z.string(), z.string()).optional(),
   mealPlan: z.object({

@@ -34,11 +34,51 @@ function adoptLegacyGrocery(data: AppData): AppData {
   return data
 }
 
+/**
+ * Read back a copy parked by an earlier failed load, but only if it parses
+ * NOW and only to replace a state nobody has used yet.
+ *
+ * A validation bug can park a perfectly good state (a pescatarian plan did
+ * exactly that: the plan schema listed three diet styles, the fourth threw
+ * out of migrate, and the athlete was handed an empty app). Once the bug is
+ * fixed the parked copy is readable again, but nothing was ever going to
+ * look at it, so their history stayed invisible while a fresh empty state
+ * saved over the top.
+ *
+ * The two conditions are what make this safe rather than clever: the parked
+ * copy has to survive the same validation as any other load, and the state
+ * it would replace has to be one the user has not onboarded into. A real
+ * account is never overwritten by an old parked one.
+ */
+function reclaimParked(current: AppData): AppData {
+  if (current.settings.onboarded) return current
+  let parked: string | null = null
+  try {
+    parked = localStorage.getItem(`${STATE_KEY}.corrupt`)
+  } catch {
+    return current
+  }
+  if (!parked) return current
+  try {
+    const recovered = adoptLegacyGrocery(parseEnvelope(parked).data)
+    if (!recovered.settings.onboarded) return current
+    console.info('Recovered a parked state that now validates')
+    try {
+      localStorage.removeItem(`${STATE_KEY}.corrupt`)
+    } catch {
+      /* ignore */
+    }
+    return recovered
+  } catch {
+    return current
+  }
+}
+
 function hydrate(): AppData {
   const raw = driver.load()
-  if (!raw) return emptyAppData(mondayOf(todayISO()), todayISO())
+  if (!raw) return reclaimParked(emptyAppData(mondayOf(todayISO()), todayISO()))
   try {
-    return adoptLegacyGrocery(parseEnvelope(raw).data)
+    return reclaimParked(adoptLegacyGrocery(parseEnvelope(raw).data))
   } catch (e) {
     // Never destroy possibly-recoverable data, park it and start fresh.
     console.error('State failed to load; parking corrupt copy', e)
