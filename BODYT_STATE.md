@@ -165,9 +165,9 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending | C2 | cloud session |
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
 | RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
-| R6 | Safety boundaries + functional constraints pack (red-flag table, GREEN/YELLOW/RED tiers, capability fields; tier-A sources; adversarial evals) | research | pending | J1 | product lane, with J3/J6 |
+| R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
-| R1 | Nutrition evidence pack (BMR eqns, activity-from-logs, carb cycling, fibre floor; cited) | research | pending | J1 | engines lane, start of J7 |
+| R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
 | R3 | Autoregulation thresholds (weight-trend bands, volume windows, plateau evidence) | research | pending | J7 | engines lane, start of J8 |
 | R4 | Meal + recipe corpus expansion (axes, goal x diet x cost coverage; guards-first) | research | pending | J1 | product lane, inside J9 |
 | R5 | Program-family corpus: 4-6 typed archetype families + tradeoffs (the standalone research job) | research | pending | J7 schemas stable | planner owner, before J11 |
@@ -330,6 +330,15 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   instructions in the dashboard (section 08/09) and section 2 above.
 
 ---
+
+- **2026-08-18 · R6 + R1 · Reconciliation audit session.** Research packs synthesized and
+  committed to research/ on the working line. R6: red-flag classifier, GYR rules,
+  targeted questions, functional mappings, 28 adversarial cases, RED-unbypassable-by-type
+  integration design (ACOG paywalled, compensated conservatively; disagreements preserved).
+  R1: BMR model selection, activity-from-logs, weight bands + step rule, sourced macro and
+  fibre rules, 14 table-tests. Both: RESEARCH SYNTHESIZED, not yet engine-integrated.
+  NEXT: J3 consumes R6 (product lane); J7 consumes R1 (engines lane); C1 spawn pending
+  session-tool availability.
 
 ## 10. SOURCES
 
