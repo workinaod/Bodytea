@@ -167,6 +167,19 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
     separator. 12 tests. Owner calls left open in the ledger: whether zinc comes out of
     the catalog at all, and whether the stack should be opt-in rather than written into
     every plan, which is what "suggest only, never auto" would say.
+  - **W6 (adapt context drift, from R12):** `planAdjustments` has two callers, the engine
+    taking the automatic adjustments and `AdaptProposals.tsx` offering the rest, and both
+    built the context by hand. The screen passed 2 of 5 fields. `alreadyCutForSleep` is a
+    guard, so omitting it read as "nothing has been cut", and on a day the resolver had
+    already taken a third off for two bad nights the screen offered a set off every lift
+    on top. `blocked` and `limited` were missing too, so the offers ignored movements the
+    athlete has blocked and joints they have declared (inert today: R12 also found
+    `data.prefs` is read in 4 places and written in 0). One `adaptContext` builder now,
+    plus a structural test that fails if any call site hand-rolls the object, because a
+    behavioural test alone would pass the day a third caller repeated the mistake.
+    `engine/adapt.ts` went over the 600 cap making room, so the reading half moved to
+    `engine/signals.ts`, the split the file's own header has been describing: adapt.ts is
+    453 lines now and needs no allowance.
   - Structure allowances came DOWN to pay for all of it, never up: types.ts 705 -> 696
     (FoodLimits moved to foodTypes.ts), store/schema.ts 649 -> 634 (meal-plan shapes moved
     to store/mealPlanSchema.ts), plan/generator.ts 941 -> 940.
@@ -334,6 +347,18 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   CSCCa/NSCA consensus cuts VOLUME 50 percent in week 1 and 30 percent in week 2, while
   strength is largely retained to ~4 weeks (Mujika/Padilla). BodyT resets reps at 21 days
   and gives load back at 28, and cuts no volume at all. Fix in J8.
+- ~~**Declined proposals are discarded (R3 + B1).**~~ STILL OPEN and now sharper: R12
+  found the proposal card has no decline control at all, so there is not even a decline to
+  record (`logic/fatigueActions.ts:93-96`, `screens/today/AdaptProposals.tsx:25-27`). The
+  same offer can return every day for the whole 14-day signal window. Needs a cooldown
+  shaped like surfacedInsights AND a way to say no. Sits with J8.
+- **Four SEV1s from R12 still open.** `phase.ts:172-178` silently swaps the anchor lift at
+  week 17 with no proposal and no undo, and the only opt-out (`prefs.pinned`) is unwritable.
+  `prescription.ts:99-126` opens a flagged movement 12.5 percent lighter and says nothing,
+  the sentence being built at `fatigue.ts:246` and discarded. `types.ts:680` `data.prefs`
+  is read in 4 places and written in 0, so four shipped engine branches are dead code, and
+  that one is the root of the other two. The proposals-context defect was the fifth and is
+  fixed in W6.
 - ~~**loadStepLb defect (R3).**~~ Fixed 2026-08-18 (5782733): at the top of the range a
   small-muscle lift whose only plate exceeds 10 percent of the working load spends the
   exposure on a rep and converts the second time round. increment.test.ts + 4 mutations.
@@ -344,8 +369,6 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 - **Readiness 2-of-4 over-weights weak items (R3):** sleep and low energy are evidence
   backed, soreness is not; proposed weights 1.0/1.0/0.5/0.5 at threshold 1.5. Golden-lock
   visible, so it ships alone.
-- **Declined proposals are discarded (R3 + B1):** nothing records a no, so the same offer
-  returns. Needs a cooldown shaped like surfacedInsights.
 - ~~**ALLERGY SAFETY BUG (found by R4).**~~ Fixed 2026-08-18 (38f9f2e): plan/foodLimits.ts
   reads it, exclusion-only, applied after the pool widening, empty stays empty. Meals,
   written examples, grocery list and swap sheet all filtered; the sheet names what it is
