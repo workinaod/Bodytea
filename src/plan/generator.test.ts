@@ -167,7 +167,9 @@ describe('generated meal plans (v10)', () => {
       }
       expect(mp.templates.some((t) => t.slot === 'Breakfast')).toBe(true)
       expect(mp.grocery.length).toBeGreaterThanOrEqual(3)
-      expect(mp.supplements.length).toBeGreaterThanOrEqual(1)
+      // The stack is opt-in: a generated plan arrives with nobody's
+      // supplements in it. offeredSupplements is what the Meals tab shows.
+      expect(mp.supplements).toEqual([])
       expect(new Set(mp.templates.map((t) => t.id)).size).toBe(mp.templates.length)
     })
   }

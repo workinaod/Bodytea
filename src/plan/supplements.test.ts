@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SUPPLEMENT_CATALOG, buildMealPlan } from './foods'
+import { SUPPLEMENT_CATALOG, buildMealPlan, offeredSupplements } from './foods'
 import type { DietStyle } from '../types'
 
 // ============================================================
@@ -14,8 +14,10 @@ import type { DietStyle } from '../types'
 // ============================================================
 
 const NUTRITION = { kcalTraining: 2800, kcalRest: 2600 }
-const plan = (diet: DietStyle, limits?: { dairyFree?: boolean; allergies?: string }) =>
-  buildMealPlan('muscle', 170, NUTRITION, 4, diet, limits)
+/** What this athlete would be OFFERED. The plan itself ships no stack. */
+const plan = (diet: DietStyle, limits?: { dairyFree?: boolean; allergies?: string }) => ({
+  supplements: offeredSupplements(diet, limits),
+})
 
 describe('what the stack is made of', () => {
   it('never hands fish oil to somebody who declared a fish allergy', () => {
@@ -33,14 +35,14 @@ describe('what the stack is made of', () => {
     )
   })
 
-  it('keeps the stack for somebody whose allergy touches none of it', () => {
-    const s = plan('omnivore', { allergies: 'peanuts' }).supplements
-    expect(s.length).toBe(3)
+  it('keeps the offer for somebody whose allergy touches none of it', () => {
+    expect(plan('omnivore', { allergies: 'peanuts' }).supplements.length).toBe(SUPPLEMENT_CATALOG.length)
   })
 
-  it('still fills a stack when the first choices are ruled out', () => {
-    // Ruling one out has to promote the next, not leave a short list.
-    expect(plan('omnivore', { allergies: 'fish, beef' }).supplements.length).toBe(3)
+  it('rules out only what the allergy actually reaches', () => {
+    const s = plan('omnivore', { allergies: 'fish, beef' }).supplements
+    expect(s.length).toBe(SUPPLEMENT_CATALOG.length - 2)
+    expect(s.some((x) => /fish|collagen/i.test(x.name))).toBe(false)
   })
 })
 
@@ -84,6 +86,12 @@ describe('doses inside their published limits', () => {
     expect(find('fishOil').dose).toMatch(/EPA/)
   })
 
+  it('does not offer zinc, which has no supportable claim', () => {
+    // Removed from the catalog rather than filtered: anybody already
+    // taking it keeps it in their own stack, it is just not offered.
+    expect(SUPPLEMENT_CATALOG.some((s) => s.id === 'zinc')).toBe(false)
+  })
+
   it('does not name the pre-workout category', () => {
     // Caffeine is well evidenced. The shelf it is sold on is the most
     // adulterated one in the shop, and naming it endorses it.
@@ -95,5 +103,24 @@ describe('doses inside their published limits', () => {
       expect(s.dose.trim().length, s.id).toBeGreaterThan(0)
       expect(s.when.trim().length, s.id).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('the stack is opt-in', () => {
+  it('ships no supplements in a generated plan', () => {
+    // The one place the app used to decide instead of suggest. A plan
+    // arrived with three things in somebody's stack that they had never
+    // agreed to take.
+    const mp = buildMealPlan('muscle', 170, NUTRITION, 4, 'omnivore')
+    expect(mp.supplements).toEqual([])
+  })
+
+  it('ships none even when there is nothing to filter out', () => {
+    expect(buildMealPlan('lean', 150, NUTRITION, 3, 'vegan', { allergies: 'soy' }).supplements).toEqual([])
+  })
+
+  it('still has something to offer once they go looking', () => {
+    // Opt-in is only honest if the offer is there when they want it.
+    expect(offeredSupplements('omnivore').length).toBeGreaterThan(3)
   })
 })

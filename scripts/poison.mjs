@@ -776,8 +776,8 @@ const MUTATIONS = [
     id: 'allergy-fix-skips-the-stack',
     bug: 'a declared fish allergy is honoured for every meal and ignored for fish oil',
     file: 'src/plan/foods.ts',
-    find: '        blockedBy({ name: s.name, ingredients: SUPPLEMENT_SOURCES[s.id] ?? [] }, limits) === null,',
-    to: '        true,',
+    find: '      blockedBy({ name: s.name, ingredients: SUPPLEMENT_SOURCES[s.id] ?? [] }, limits) === null,',
+    to: '      true,',
     spec: 'src/plan/supplements.test.ts',
   },
   {
@@ -827,6 +827,22 @@ const MUTATIONS = [
     find: '        {tooYoung && (',
     to: '        {age !== null && (',
     spec: 'src/screens/onboarding/minAge.test.ts',
+  },
+  {
+    id: 'stack-written-in-again',
+    bug: 'the plan decides three supplements for somebody instead of offering them, which is the one auto-apply in the app',
+    file: 'src/plan/foods.ts',
+    find: '    supplements: [],',
+    to: '    supplements: offeredSupplements(dietStyle, limits).slice(0, 3),',
+    spec: 'src/plan/supplements.test.ts',
+  },
+  {
+    id: 'zinc-back-in-the-catalog',
+    bug: 'an entry with no supportable claim and a copper-deficiency risk is offered again',
+    file: 'src/plan/foods.ts',
+    find: "  { id: 'collagen', name: 'Collagen + vitamin C', dose: '10-15 g', when: '30-60 min before jumps/sprints' },\n]",
+    to: "  { id: 'collagen', name: 'Collagen + vitamin C', dose: '10-15 g', when: '30-60 min before jumps/sprints' },\n  { id: 'zinc', name: 'Zinc', dose: '15-25 mg', when: 'Evening' },\n]",
+    spec: 'src/plan/supplements.test.ts',
   },
 ]
 

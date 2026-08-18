@@ -199,6 +199,12 @@ export const LATE_NIGHT = {
  * asked for exactly that, then put a multivitamin next to it, so taking
  * the plan as written went over. A ceiling is not a target.
  *
+ * Zinc is gone entirely. There is no supportable claim for it in a
+ * healthy athlete eating enough, and 15 to 25 mg taken indefinitely runs
+ * at one and a half to three times the RDA, which is where the
+ * copper-deficiency reports start. Anybody already taking it keeps it in
+ * their own stack; it is simply not offered any more.
+ *
  * "Pre-workout" is gone from the caffeine line. Caffeine is one of the
  * best-evidenced things in here; the pre-workout CATEGORY is the most
  * adulterated shelf in the shop, and naming it is an endorsement we have
@@ -213,7 +219,6 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'multivitamin', name: 'Multivitamin', dose: '1 serving', when: 'With breakfast' },
   { id: 'caffeine', name: 'Caffeine', dose: '100-200 mg', when: '30-45 min pre-session' },
   { id: 'collagen', name: 'Collagen + vitamin C', dose: '10-15 g', when: '30-60 min before jumps/sprints' },
-  { id: 'zinc', name: 'Zinc', dose: '15-25 mg', when: 'Evening, not with calcium' },
 ]
 
 /**
@@ -240,6 +245,29 @@ const SUPPLEMENT_SOURCES: Record<string, string[]> = {
 const NOT_FOR: Record<string, DietStyle[]> = {
   fishOil: ['vegetarian', 'vegan'],
   collagen: ['vegetarian', 'vegan'],
+}
+
+/**
+ * What this athlete may be offered, which is not the same as what they
+ * take. The plan used to write three of these into every booklet, which
+ * is the one place in the app that decided something instead of
+ * suggesting it. The stack is opt-in now: the plan ships empty and the
+ * Meals tab offers the list.
+ *
+ * The diet and allergy filtering moved here with it. It used to run at
+ * plan-build time, and leaving it there would have meant a vegan with a
+ * fish allergy seeing an empty booklet section and then being offered
+ * fish oil on the very next screen.
+ */
+export function offeredSupplements(
+  dietStyle: DietStyle = 'omnivore',
+  limits?: FoodLimits,
+): SupplementDef[] {
+  return SUPPLEMENT_CATALOG.filter(
+    (s) =>
+      !(NOT_FOR[s.id] ?? []).includes(dietStyle) &&
+      blockedBy({ name: s.name, ingredients: SUPPLEMENT_SOURCES[s.id] ?? [] }, limits) === null,
+  ).map((s) => ({ ...s }))
 }
 
 /** The owner's booklet keeps his PDF meal plan verbatim. */
@@ -354,13 +382,9 @@ export function buildMealPlan(
       { category: 'Fats', items: shop(['Olive oil', 'Nut butter', 'Nuts or seeds', 'Avocados']) },
       { category: 'Veg', items: shop(['2-3 vegetables you will actually eat', 'Salad bag', 'Frozen veg backup']) },
     ],
-    supplements: SUPPLEMENT_CATALOG.filter(
-      (s) =>
-        !(NOT_FOR[s.id] ?? []).includes(dietStyle) &&
-        blockedBy({ name: s.name, ingredients: SUPPLEMENT_SOURCES[s.id] ?? [] }, limits) === null,
-    )
-      .slice(0, 3)
-      .map((s) => ({ ...s })),
+    // Empty on purpose. See offeredSupplements: the stack is somebody's
+    // own list now, not three things the plan decided for them.
+    supplements: [],
     lateNight: { yes: [...LATE_NIGHT.yes], no: [...LATE_NIGHT.no] },
   }
 }

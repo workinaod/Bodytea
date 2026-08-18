@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { SupplementDef } from '../../types'
 import { uid, useAppStore } from '../../store/appStore'
-import { SUPPLEMENT_CATALOG } from '../../plan/foods'
+import { offeredSupplements } from '../../plan/foods'
 import { Btn, Chip } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 
@@ -12,7 +12,12 @@ export function SupplementStackSheet({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('')
   const [dose, setDose] = useState('')
   const [when, setWhen] = useState('')
-  const available = SUPPLEMENT_CATALOG.filter((c) => !stack.some((s) => s.id === c.id))
+  // What we may offer THIS person: their diet and their allergies, same
+  // rules the meals go through. The plan no longer picks a stack for
+  // anybody, so this list is the whole offer.
+  const diet = useAppStore((s) => s.data.plan.dietStyle)
+  const limits = useAppStore((s) => s.data.plan.foodLimits)
+  const available = offeredSupplements(diet, limits).filter((c) => !stack.some((s) => s.id === c.id))
   const field = 'rounded-xl bg-white/[0.07] px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint'
 
   function add(s: SupplementDef) {
