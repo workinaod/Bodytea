@@ -131,6 +131,37 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
   tests**, golden lock unchanged, goldenLife deterministic across runs, e2e 38 passed
   (31.5m, 3 voice skips), poison 81/81, sim 20x20 clean with **untested verdicts down
   from 41/80 to 2/80** and push-up athletes promoted to decline push-ups.
+- **Fix waves 1-4 (2026-08-18) shipped on the deploy branch.** Each is a defect the
+  research packs found in live code, fixed with a test that goes red without it and a
+  poison mutation that proves the test bites:
+  - **W1 (a395512, adf7344):** the pescatarian enum gap that wiped an athlete's whole
+    account on next launch (schema enum missing one of four values, migrate throws, state
+    parked, empty app returned), plus a recovery path that adopts a parked state once it
+    validates again; and two phantom `goalAnswers` keys whose branches had never once run,
+    one of them (`sprint-feel`) gating a tendon-safety ramp. Guarded by a type-derived
+    enum test and a walker that validates every `goalAnswers[...]` key in src against
+    what `buildFollowups` can actually ask.
+  - **W2 (38f9f2e):** THE ALLERGY LEAK. Onboarding had collected `foodLimits` since the
+    screen existed and nothing read it, so a declared dairy-free plus nut allergy could be
+    shown a Greek yogurt bowl on the next screen. `plan/foodLimits.ts` is the reader:
+    exclusion only (unknown terms exclude by raw substring, known ones expand to their
+    family), applied AFTER mealAlternatives widens a thin slot pool, and an empty result
+    stays empty. Threaded onto generated and BYOR plans, through every written meal
+    example, through the grocery list, and into the swap sheet, which now names what it is
+    skipping. 21 tests, 4 poison mutations including the ordering one.
+  - **W3 (17e34f3):** 16 em dashes in shipped copy, rewritten per sentence rather than
+    swapped for hyphens, plus `src/copy.test.ts` so a new one cannot land. Two exemptions,
+    both files that handle the character rather than speak it.
+  - **W4 (5782733):** the `loadStepLb` band defect. A 5 lb plate on a 20 lb lateral raise
+    is a 25 percent jump, so the top of the range now spends one exposure on a rep and
+    takes the plate the second time round. Scoped to small-muscle primaries: a novice on
+    the 30 lb dumbbells still takes the 35s, because that is how a rack works.
+  - Structure allowances came DOWN to pay for all of it, never up: types.ts 705 -> 696
+    (FoodLimits moved to foodTypes.ts), store/schema.ts 649 -> 634 (meal-plan shapes moved
+    to store/mealPlanSchema.ts), plan/generator.ts 941 -> 940.
+  - Validation after W4: typecheck clean, **1,239/1,239 unit tests**, build green,
+    **e2e 38 passed** (31.5m, same 3 voice skips), sim 20x20 identical session for
+    session, poison **85/85** at W3 and 4 more mutations added at W4.
 - Superseded branches: `claude/fitness-tracking-app-ugo5xt` (content ported; glance at the
   two adapted commits 0374307/d5e71a4 before deleting), `claude/bodytea-link-display-r1sue6`
   (stale ancestor pointer). `claude/workout-form-feedback-pain-0xnonz` never existed.
@@ -168,12 +199,25 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
-| R3 | Autoregulation thresholds (weight-trend bands, volume windows, plateau evidence) | research | pending | J7 | engines lane, start of J8 |
-| R4 | Meal + recipe corpus expansion (axes, goal x diet x cost coverage; guards-first) | research | pending | J1 | product lane, inside J9 |
-| R5 | Program-family corpus: 4-6 typed archetype families + tradeoffs (the standalone research job) | research | pending | J7 schemas stable | planner owner, before J11 |
+| R3 | Autoregulation thresholds | research | **synthesized 2026-08-18** (research/R3-autoregulation.md; 35 sources, per-engine constant audit, 7-rung plateau ladder, 31 eval cases) | J7 | engines lane, start of J8 |
+| R4 | Meal + recipe corpus expansion | research | **synthesized 2026-08-18** (research/R4-meals.md; USDA CC0 vs OFF ODbL fence, 720-cell coverage predicate, 158-record gap, 20 fixtures) | J1 | product lane, inside J9 |
+| R5 | Program-family corpus | research | **synthesized 2026-08-18** (research/R5-program-families.md; 10 families, 19 sources, ProgramFamily record, selection logic, 8-axis convergence metric, 18 fixtures of which 4 fail today) | J7 schemas stable | planner owner, before J11 |
 | B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | pending | starts with R1 | any lane, rolling |
-| B3 | Knowledge store + retrieval layer: versioned knowledge packs outside the bundle (IndexedDB-loaded, indexed), provenance/confidence/contradiction fields, deterministic filter-rank-packet retrieval API, high-cardinality scale tests. THE scale path to millions of records; built during core on a small high-quality corpus, then fed by post-gate ingestion waves | infra | pending | J7 contracts stable | engines lane, alongside R5, before J11 |
+| R10 | Technique, cueing and motor learning (no camera) | research | **synthesized 2026-08-18** (research/R10-technique-cueing.md; 24 sources, cue corpus measured, selection and outcome-tracking design) | J1 | feeds J10 |
+| R7 | Populations and adaptive training (function-first) | research | **synthesized 2026-08-18** (research/R7-populations.md; 24 tier-A sources, 11 functional dimensions, 10 population packs, 30 paired fixtures, ME/CFS pacing policy) | J1 | J6 |
+| R8 | Endurance, conditioning and concurrent training | research | **synthesized 2026-08-18** (research/R8-endurance.md; 42 sources, EndurancePlan shape, 20 fixtures; the 10 percent rule fails, session-vs-30-day-max is the real signal) | J1 | future endurance planner |
+| R9 | Calisthenics, skill progression, mobility and warm-up | research | **synthesized 2026-08-18** (research/R9-calisthenics-mobility.md; 27 sources, ~94 rungs specified, ramp-set algorithm) | J1 | J2 follow-up + warm-up engine |
+| R11 | Athletic and sport-specific S&C | research | **synthesized 2026-08-18** (research/R11-athletic-sport.md; 23 sources, SportProfile shape, 20 fixtures) | J1 | engines lane, sport-wiring job |
+| R-ONT | Exercise ontology expansion (capability fields, alias resolution, substitution at scale, corpus licensing) | research | **synthesized 2026-08-18** (research/RONT-exercise-ontology.md) | J1 | feeds J6 + B3 |
+| B3 | Knowledge store + retrieval layer | infra | **designed 2026-08-18** (research/B3-knowledge-store.md; tiered storage, 32KB/24-record DecisionPacket cap, lexicographic ranking, derived confidence, pg_trgm over vector DB; stage plan 0-4) | J7 contracts stable | engines lane, alongside R5, before J11 |
+| R12 | Trainer authority, coaching relationship, override model (v12 s51) | research | **partial 2026-08-18** (research/R12-trainer-authority.md; sources only, agent cut off by a session limit, resumed) | J1 | feeds J10 + the whole suggest-only contract |
+| R13 | Population learning, cohort inference, privacy-preserving aggregation (v12 s52) | research | **partial 2026-08-18** (research/R13-population-learning.md; sources only, resumed) | B3 | engines lane, inside J8 |
+| R14 | Wearables, passive signals, integration boundaries (v12 s32-33) | research | **outline 2026-08-18** (research/R14-wearables-signals.md; resumed) | J7 | engines lane, post-gate |
+| R15 | Lifespan programming, youth LTAD through masters (v12 s12) | research | pending (agent died on the session limit before writing; relaunch) | J1 | J6, with R6/R7 |
+| R16 | Supplements, evidence tiers, claims fence (v12 s27) | research | **partial 2026-08-18** (research/R16-supplements.md; sources only, resumed). NOTE: the app already ships dose and timing advice in plan/foods.ts SUPPLEMENT_CATALOG, unaudited | J1 | product lane, urgent given what ships today |
+| R17 | Routine-import intelligence + competitive landscape (v12 s39) | research | pending (agent died on the session limit; relaunch) | R-ONT | J4/J5 |
+| R18 | Pilates, yoga, barre, group-fitness modalities (v12 s19) | research | pending (agent died on the session limit; relaunch) | R9, R-ONT | catalog expansion |
 | IW | Ingestion waves: mass corpus expansion (exercises, programs, evidence, food) through B3's pipeline toward millions of records | research | pending, post-gate | J12 + B3 | dedicated sessions per wave |
 
 **Deferred (do not start):** mass research ingestion, population learning, trainer/CRM,
@@ -243,11 +287,45 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 ---
 
 ## 7. KNOWN GAPS AND FAILURES LEDGER (turn each into a regression when fixed)
+- **Technique content is opt-in only (R10):** 129 of 194 exercises carry a cue, 65 carry
+  none, and no test guards it. Cues are spoken only when the athlete taps STEPS or asks,
+  so somebody who never asks hears zero technique for a whole block. 50 of 129 cues stack
+  two or three instructions; 31 use ALL-CAPS that speech synthesis silently discards.
+- ~~**Em dashes are in shipped user-visible strings (R10).**~~ Fixed 2026-08-18 (17e34f3):
+  16 in shipped copy rewritten per sentence; src/copy.test.ts guards it, exempting
+  platform/speakable.ts and the label migration in store/schema.ts; 2 poison mutations.
+- **Layoff levers are backwards (R3, strongest-evidence finding):** after 2+ weeks off the
+  CSCCa/NSCA consensus cuts VOLUME 50 percent in week 1 and 30 percent in week 2, while
+  strength is largely retained to ~4 weeks (Mujika/Padilla). BodyT resets reps at 21 days
+  and gives load back at 28, and cuts no volume at all. Fix in J8.
+- ~~**loadStepLb defect (R3).**~~ Fixed 2026-08-18 (5782733): at the top of the range a
+  small-muscle lift whose only plate exceeds 10 percent of the working load spends the
+  exposure on a rep and converts the second time round. increment.test.ts + 4 mutations.
+  The wider per-lift banding R3 sketches stays with J7.
+- **Rest defaults short for heavy compounds (R3):** ACSM says 3 to 5 min for 1 to 6 RM;
+  BodyT caps at 240 s and mostly prescribes 90 to 150 s. The moderator is training status,
+  not exercise type.
+- **Readiness 2-of-4 over-weights weak items (R3):** sleep and low energy are evidence
+  backed, soreness is not; proposed weights 1.0/1.0/0.5/0.5 at threshold 1.5. Golden-lock
+  visible, so it ships alone.
+- **Declined proposals are discarded (R3 + B1):** nothing records a no, so the same offer
+  returns. Needs a cooldown shaped like surfacedInsights.
+- ~~**ALLERGY SAFETY BUG (found by R4).**~~ Fixed 2026-08-18 (38f9f2e): plan/foodLimits.ts
+  reads it, exclusion-only, applied after the pool widening, empty stays empty. Meals,
+  written examples, grocery list and swap sheet all filtered; the sheet names what it is
+  skipping. 21 tests, 4 mutations. The rest of J9 (cost/minutes/effort axes, batch
+  chaining, fit-remaining-macros) is untouched and still blocked on carbs/fat below.
+- **Meal records carry protein and kcal only, no carbs or fat**, so every swap taken
+  punches a hole in the macro ring by construction (engine/stats.ts macrosFor requires
+  both). Blocks any fit-the-remaining-macros ranker until fixed.
+- **Vegan cliff:** effective meal pool by diet is omnivore 42, pescatarian 29,
+  vegetarian 26, vegan 11; vegan breakfast and late-night are 2 each, and
+  mealAlternatives silently widens rather than saying why.
 
 - ~~Bodyweight athletes cannot be promoted; in-session engine silent on bodyweight (J2).~~
   Fixed 2026-08-18: rep-max verdicts + offer-ease; regressions in block.test.ts,
   sessionFatigue.test.ts, goldenLife.test.ts. Untested verdicts 41/80 -> 2/80.
-- Injuries answer unread; foodLimits dropped; secondaryGoal dead (J3).
+- Injuries answer unread; secondaryGoal dead (J3). ~~foodLimits dropped~~ fixed 2026-08-18.
 - Explain shelf: 181 distinct lines / 1,742 shown (J10).
 - ~~Load floor = one step (20% of a 25 lb dumbbell); failing-flag opens a band not a line (J2/J7).~~
   Fixed 2026-08-18: proportional floor + flag hysteresis; regressions in
@@ -281,6 +359,24 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 ---
 
 ## 9. CHECKPOINT LOG (append-only; newest last)
+
+- **2026-08-18 - FIX WAVE 1 - Reconciliation audit session.** Research found defects the
+  code review never would, so they were fixed before more research ran. Shipped live at
+  a395512: (1) THE WIPE - dietStyle 'pescatarian' was written by the generator and
+  rejected by the plan schema, so hydrate threw, parked the state as corrupt and returned
+  an empty app; every session and measurement vanished from view for that athlete. Fixed
+  the enum, added store/dietStyle.test.ts which derives the list from the DietStyle union
+  itself (a new style that is not added here stops the build), and taught hydrate to
+  reclaim a parked copy when it validates and only over a state nobody has onboarded into.
+  (2) TWO PHANTOM KEYS - the generator read 'speed-now' and the runs engine read
+  'race-distance'; the real ids are 'sprint-feel' and 'race-what' and the compared option
+  text had drifted too, so the gentler sprint ramp and the race picker were both dead.
+  runs.test.ts had been seeding the phantom key. New plan/goalAnswerKeys.test.ts walks the
+  source and checks every goalAnswers read against what buildFollowups actually produces.
+  (3) scripts/poison.mjs no longer hardcodes its root. Validation: 1,207 unit, e2e 38,
+  sim 20 personas, poison 81/81, deploy confirmed. NEXT FIXES: the allergy leak (foodLimits
+  never reaches the meal plan), the em-dash sweep with a repo-wide guard, and J6's
+  limit-range mode so a knee limitation stops emptying the squat pattern.
 
 - **2026-08-18 · J1 · Reconciliation audit session (stand-in executor).** The algorithm
   session wedged (two wake attempts died before any turn ran; archived). J1 executed
@@ -339,6 +435,20 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   fibre rules, 14 table-tests. Both: RESEARCH SYNTHESIZED, not yet engine-integrated.
   NEXT: J3 consumes R6 (product lane); J7 consumes R1 (engines lane); C1 spawn pending
   session-tool availability.
+
+- **2026-08-18 · fix waves 1-4 + research wave 3 · reconciliation audit session.** Four
+  defect waves shipped to the deploy branch (see section 2 for the detail): the
+  pescatarian account-wipe and two phantom goalAnswers keys, the allergy leak, the em-dash
+  sweep and its guard, and the load-increment band. Every one came out of a research pack
+  reading live code rather than out of a bug report, which is the argument for finishing
+  the packs. Structure allowances went down three times to pay for the changes and never
+  up. Research wave 3 launched 5 packs and wave 4 launched 2; all 7 agents hit a session
+  limit, 3 got their source tables onto disk and 1 its outline, and 4 have been resumed
+  from their own transcripts. R15, R17 and R18 need relaunching.
+  NEXT, in order: finish R12/R13/R14/R16, relaunch R15/R17/R18, then J6 limit-range mode
+  (a knee limitation currently empties the squat pattern instead of narrowing it, which
+  R7 and B3 both call the highest-value single change available). J3 and C1 still want
+  their own sessions.
 
 ## 10. SOURCES
 
