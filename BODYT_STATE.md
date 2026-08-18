@@ -416,6 +416,21 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 - ~~Bodyweight athletes cannot be promoted; in-session engine silent on bodyweight (J2).~~
   Fixed 2026-08-18: rep-max verdicts + offer-ease; regressions in block.test.ts,
   sessionFatigue.test.ts, goldenLife.test.ts. Untested verdicts 41/80 -> 2/80.
+- **The bring-your-own-routine path asks almost nothing (found by R17, verified):** the
+  goal step sends a BYOR athlete straight to the builder
+  (`Onboarding.tsx:379 onNext={() => (mode === 'byor' ? enterBuilder() : next())}`), which
+  skips FOLLOWUPS and GearStep entirely. Two consequences. (1) `goalAnswers` stays `{}`,
+  so W7's limitations write is a no-op for them: **an athlete who brought their own
+  routine is never asked what hurts.** (2) `makeEmptyByorPlan` sets `equipment: ALL_TAGS`
+  and `owned = ['none', ...ALL_TAGS]` (`bookletOps.ts:93,108`), so they are assumed to own
+  everything and substitution can offer a sled to somebody in a bedroom. Both are the same
+  shape as every other defect this session: a question the engine needs and nobody asks.
+- **There is no paste path for a routine at all (R17):** the only training free text in the
+  BYOR flow is `whyWorks` (`RoutineSteps.tsx:92-98`); everything else is retyped through a
+  picker over 194 catalog ids, one weekday at a time (`BookletEditor.tsx:368`), and the
+  same day cannot run twice a week because templates are keyed `day-${wd}`
+  (`BookletEditor.tsx:40`). Supersets, rest, RPE, percentage, tempo and per-exercise notes
+  have no field. R17's 61-rule notation corpus is the input to fixing it. Feeds J4/J5.
 - secondaryGoal dead (J3). ~~foodLimits dropped~~ fixed 2026-08-18 (W2). ~~Injuries answer unread~~ fixed 2026-08-18 (W7): it seeds prefs.limitations now, though the lifecycle (expiry, edit, limit-range instead of remove) is still J6.
 - Explain shelf: 181 distinct lines / 1,742 shown (J10).
 - ~~Load floor = one step (20% of a 25 lb dumbbell); failing-flag opens a band not a line (J2/J7).~~

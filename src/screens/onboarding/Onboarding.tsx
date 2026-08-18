@@ -184,8 +184,14 @@ export function Onboarding() {
       // "Anything that hurts right now?" has been asked since the
       // onboarding rebuild and read by nothing. Its own informs line says
       // it routes the plan around the joint from day one; this is the line
-      // that makes that true. Both paths write it: a bad knee is a bad
-      // knee whether the plan was generated or brought from home.
+      // that makes that true.
+      //
+      // For the generated path. A bring-your-own-routine athlete never
+      // reaches FOLLOWUPS at all (the goal step sends them to the builder
+      // instead), so goalAnswers is still {} here and this writes nothing
+      // for them. That is not a bug in this line, it is the question
+      // never being asked, and it is logged in BODYT_STATE.md as its own
+      // gap. Somebody who brought their own routine can still hurt.
       d.prefs.limitations = limitationsFrom(answers.goalAnswers, start)
       if (sex) d.profile.bfFormula = sex
       if (heightIn !== null) d.profile.heightIn = heightIn
