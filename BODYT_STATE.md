@@ -351,6 +351,25 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   written examples, grocery list and swap sheet all filtered; the sheet names what it is
   skipping. 21 tests, 4 mutations. The rest of J9 (cost/minutes/effort axes, batch
   chaining, fit-remaining-macros) is untouched and still blocked on carbs/fat below.
+- **LIVE PRIVACY DEFECT, needs an owner decision before C1 (found by R13):**
+  `supabase/migrations/0001_core_tables_rls.sql:45-46` reads
+  `create policy "board read all" ... for select to authenticated using (true)`.
+  The username, goal statement and stats being visible IS the leaderboard, so that part
+  is the feature. `updated_at` is not: it is server-stamped, exposed to every signed-in
+  user, and nothing in the app displays it. Polled hourly it reconstructs when each
+  athlete trained, which nobody opted into. The policy also has no server-side row limit,
+  so the client's `.limit(50)` is a convention any authenticated caller can ignore and
+  page the whole table. The fix is a `board_public` view exposing the leaderboard columns
+  with `updated_at` coarsened (the client uses it only as a 45-day staleness filter at
+  `cloud/board.ts:75` and a tiebreaker at `:77`, both of which survive coarsening), the
+  table policy narrowed to own-row, and the client pointed at the view. NOT APPLIED: this
+  changes a production database and would break the board for everyone if wrong, so it
+  waits for the owner. Prerequisite for C1, not a follow-up to it.
+- **Supplement stack is written into every plan unconditionally**
+  (`plan/foods.ts` `.slice(0, 3)`), which is the one place the app auto-applies rather
+  than suggesting. R16 calls it a suggest-only violation. Owner call: opt-in instead.
+  Related and also an owner call: R16 says zinc has no supportable claim for any user
+  and should leave the catalog. Neither is in the default three, so neither is urgent.
 - **Meal records carry protein and kcal only, no carbs or fat**, so every swap taken
   punches a hole in the macro ring by construction (engine/stats.ts macrosFor requires
   both). Blocks any fit-the-remaining-macros ranker until fixed.
