@@ -792,6 +792,22 @@ const MUTATIONS = [
     to: "dose: '200-400 mg', when: 'With a meal' }",
     spec: 'src/plan/supplements.test.ts',
   },
+  {
+    id: 'declared-injury-still-goes-nowhere',
+    bug: 'the joint somebody typed in onboarding never reaches the engine, exactly as it shipped',
+    file: 'src/plan/limitations.ts',
+    find: '  return [{ label: picked, joints, since }]',
+    to: '  return []',
+    spec: 'src/plan/limitations.test.ts',
+  },
+  {
+    id: 'their-own-words-thrown-away',
+    bug: 'a free-text injury we cannot map to a joint is dropped instead of kept for the coach to say back',
+    file: 'src/plan/limitations.ts',
+    find: '    return [{ label, joints: jointsInText(label), since }]',
+    to: '    return jointsInText(label).length ? [{ label, joints: jointsInText(label), since }] : []',
+    spec: 'src/plan/limitations.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [

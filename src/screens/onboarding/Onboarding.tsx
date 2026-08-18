@@ -7,6 +7,7 @@ import { saveMeasurement } from '../../logic/actions'
 import { generatePlan, type FocusArea, type OnboardingAnswers } from '../../plan/generator'
 import { byorNutrition, makeEmptyByorPlan, normalizeBooklet } from '../../plan/bookletOps'
 import { analyzeRoutine, type RoutineNote } from '../../plan/analyze'
+import { limitationsFrom } from '../../plan/limitations'
 import { Reveal } from '../../components/ui'
 import { Bar, Kicker, Label, Lane, OnPaper, Tag, Title, fieldCls, fieldStyle } from './kit'
 import { AmbientBackdrop } from '../../components/AmbientBackdrop'
@@ -180,6 +181,12 @@ export function Onboarding() {
       d.plan = plan
       d.settings.proteinTargetG = proteinTargetG
       d.profile.displayName = displayName.trim() || undefined
+      // "Anything that hurts right now?" has been asked since the
+      // onboarding rebuild and read by nothing. Its own informs line says
+      // it routes the plan around the joint from day one; this is the line
+      // that makes that true. Both paths write it: a bad knee is a bad
+      // knee whether the plan was generated or brought from home.
+      d.prefs.limitations = limitationsFrom(answers.goalAnswers, start)
       if (sex) d.profile.bfFormula = sex
       if (heightIn !== null) d.profile.heightIn = heightIn
       const at = new Date().toISOString()
