@@ -337,7 +337,7 @@ const RACES: { key: RegExp; label: string; mi: number; peakLong: number; peakWee
 ]
 
 function raceTarget(data: AppData): (typeof RACES)[number] | null {
-  const ans = data.plan.goalAnswers?.['race-distance'] ?? ''
+  const ans = data.plan.goalAnswers?.['race-what'] ?? ''
   const text = `${ans} ${data.plan.goalStatement}`
   for (const r of RACES) if (r.key.test(text)) return r
   return null

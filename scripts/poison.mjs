@@ -6,8 +6,15 @@
 // red — a mutation that survives is a test that was decorative.
 import { execSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = '/home/user/Bodytea'
+// The checkout this script is sitting in, not the one it was written in. A
+// hardcoded path meant the harness mutated whatever happened to be at that
+// address: in a worktree it read files that were not there, and on a branch
+// without src/ it crashed after restoring nothing, because there was
+// nothing of ours to restore.
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = process.argv[2]
 
 /** file, find, replace, the spec that must go red, and what bug it is. */

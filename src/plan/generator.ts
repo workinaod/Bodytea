@@ -758,7 +758,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
   const gentleExplosive =
     explosive &&
     (a.goalAnswers?.['jump-history'] === 'Never' ||
-      a.goalAnswers?.['speed-now'] === 'Have not sprinted in years')
+      a.goalAnswers?.['sprint-feel'] === 'It has been years')
   if (gentleExplosive) {
     for (const t of Object.values(templates)) {
       if (t.kind !== 'session') continue

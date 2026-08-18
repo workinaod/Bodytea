@@ -128,7 +128,7 @@ describe('runGoalReview', () => {
   })
 
   it('marathon pickers get a marathon check-in with long-run guidance', () => {
-    const d = dataWith('endurance', { 'race-distance': 'Marathon' })
+    const d = dataWith('endurance', { 'race-what': 'Marathon' })
     const log = run('r1', '2026-08-12', 4, 2400)
     d.runs.push(log)
     const rev = runGoalReview(d, log)!
@@ -157,7 +157,7 @@ describe('runGoalReview', () => {
   })
 
   it('rides never get a run review', () => {
-    const d = dataWith('endurance', { 'race-distance': 'Marathon' })
+    const d = dataWith('endurance', { 'race-what': 'Marathon' })
     const log = { ...run('r1', '2026-08-12', 10, 2400), activity: 'bike' as const }
     expect(runGoalReview(d, log)).toBeNull()
   })
