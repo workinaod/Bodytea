@@ -1137,6 +1137,38 @@ const MUTATIONS = [
     to: "",
     spec: "src/plan/supplements.test.ts",
   },
+  {
+    id: "ront-alias-resolves-what-it-should-only-suggest",
+    bug: "a below-threshold guess is written into somebody's week as if it were certain, which is the parsing version of the load spiral",
+    file: "src/plan/aliases.ts",
+    find: "  if (sure.length === 1) return { kind: 'resolved', id: sure[0].id, how: 'alias' }",
+    to: "  if (hits.length >= 1) return { kind: 'resolved', id: hits[0].id, how: 'alias' }",
+    spec: "src/plan/aliases.test.ts",
+  },
+  {
+    id: "ront-parenthetical-thrown-away",
+    bug: "the qualifier is discarded, so Turkish Get-Up (Lunge) and (Squat) become the same movement",
+    file: "src/plan/aliases.ts",
+    find: "    quals.push(inner.trim())",
+    to: "    void inner",
+    spec: "src/plan/aliases.test.ts",
+  },
+  {
+    id: "ront-singularizer-stops-short",
+    bug: "short plurals stop converging, so push ups and push up are two different movements",
+    file: "src/plan/aliases.ts",
+    find: "  if (t.length <= 2) return t",
+    to: "  if (t.length <= 3) return t",
+    spec: "src/plan/aliases.test.ts",
+  },
+  {
+    id: "ront-alias-table-shadows-the-catalog",
+    bug: "a row the catalog already answers goes unnoticed, which is a dead row that reads as coverage",
+    file: "src/plan/aliases.ts",
+    find: "  { key: 'press', id: 'leg-press', source: 'bodyt', confidence: 0.4 },",
+    to: "  { key: 'press', id: 'leg-press', source: 'bodyt', confidence: 0.4 },\n  { key: 'goblet squat', id: 'goblet-squat', source: 'bodyt', confidence: 1 },",
+    spec: "src/plan/aliases.test.ts",
+  },
 ]
 
 const E2E_MUTATIONS = [

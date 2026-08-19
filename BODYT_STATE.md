@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (W17 safety gap, on top of OP4 live at deploy 2817eed)
+Last updated: 2026-08-19 (R-ONT wave 1: a typed movement can become an exercise, or honestly fail to)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -1069,6 +1069,41 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   Chromium cannot reach production. deploy.yml untouched: one deploy branch, moved by
   fast-forward, never added to. NEXT: nothing owed on OP4; J3 (product), J7 (engines),
   C1 (cloud) remain the open lane heads.
+
+- **2026-08-19 · R-ONT wave 1, the alias resolver · audit session.** R17 will not start
+  without this. Its build order says so in as many words: aliases and the prescription
+  model are prerequisites, not parallel work, and the notation parser has nowhere to land
+  until a string can become an exercise id.
+  R-ONT sized the problem with real data and the number is the whole argument. With an
+  aggressive normalizer, only 26 of BodyT's 194 names matched free-exercise-db exactly,
+  and "bulgarian" returns ZERO hits in that corpus because the same movement is filed
+  under another family name. So a name matcher is a candidate generator that a person
+  confirms, never an authority, and everything past step three of the ladder SUGGESTS.
+  An alias that silently maps a typed movement to the wrong exercise is the parsing
+  version of the load spiral: quiet, confident and wrong.
+  What landed: plan/aliases.ts with the six-step normalizer, an 18-row alias table, and
+  the resolution ladder from R-ONT s5.3. The parenthetical is KEPT rather than stripped,
+  because R-ONT found that stripping it creates four name collisions inside
+  free-exercise-db alone and every time the parenthetical was the distinction. Turkish
+  Get-Up (Lunge style) is not (Squat style).
+  THREE THINGS THE TESTS CAUGHT IN MY OWN WORK, which is the point of writing them first.
+  The singularizer was INVERTED: it turned "press" into "pres" and left "squats" alone,
+  which is both failure modes at once. A test that a word ending in s survives caught it.
+  Then the alias table turned out to be nearly half dead: 15 of 34 rows were exact
+  catalog names, which step 2 answers before step 3 ever runs, so they could never fire.
+  Fifteen rows that read as coverage and were not. A guard now refuses that class, and
+  the table is 18 rows that genuinely earn their place. And one row pointed at db-rdl for
+  "romanian deadlift" when the catalog has a literal Romanian Deadlift, so the alias was
+  both dead AND aimed at the wrong exercise.
+  LANDED AHEAD OF ITS CONSUMER, knowingly and on the ledger. All three exports are dead
+  today and sit in the plan/ dead-export list with the reason and the next slice named:
+  the picker's "I do not see my exercise" exit, which R17 s9 lists as worth shipping on
+  its own. Three rows and a date rather than an open-ended IOU, and the list is
+  shrink-only so it is a countdown.
+  Validation: typecheck clean, **1,477/1,477 unit** (24 new, 6 guards each proven to bite
+  against a known-bad input first), build green, poison 142/142 (4 new).
+  NEXT: wire resolveExercise into the picker, which kills three ledger rows and delivers
+  R17 s9 item 3, then plan/notation.ts.
 
 ## 10. SOURCES
 

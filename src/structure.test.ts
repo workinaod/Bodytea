@@ -370,6 +370,16 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'plan/safetyRules.ts:constraintsFor',
   'plan/safetyRules.ts:planningLimits',
 
+  // R-ONT wave 1, landed 2026-08-19 AHEAD of its consumer and knowingly.
+  // R17 calls the alias resolver a prerequisite rather than parallel work:
+  // the notation parser has nowhere to land without it. So all three sit
+  // here, dead, until the picker's "I do not see my exercise" exit calls
+  // resolveExercise, which is the next slice and the shortest path off
+  // this list. Three rows and a date, not an open-ended IOU.
+  'plan/aliases.ts:resolveExercise',
+  'plan/aliases.ts:normalizeName',
+  'plan/aliases.ts:nameScore',
+
   // Older, and each one a small unfinished wire of its own.
   'plan/bookletOps.ts:primaryGoalOf',
   'plan/bookletOps.ts:referencedIds',
