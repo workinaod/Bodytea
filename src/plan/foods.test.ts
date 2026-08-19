@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMealPlan, FOODS, MEAL_TEMPLATES, type MealsPerDay } from './foods'
+import { buildMealPlan, FOODS, MEAL_TEMPLATES, type MealsPerDay , offeredSupplements } from './foods'
 
 const NUTRITION = { kcalTraining: 3000, kcalRest: 2600 }
 
@@ -64,7 +64,11 @@ describe('diet styles in generated meal plans', () => {
         expect(t.detail.replace(/soy milk/gi, ''), `${n}-meal ${t.slot}: ${t.detail}`).not.toMatch(ANIMAL)
       }
       expect(plan.grocery.find((g) => g.category === 'Protein')!.items.join(' ')).toMatch(/tofu/i)
-      expect(plan.supplements.some((s) => /fish|collagen/i.test(s.name))).toBe(false)
+      // A generated plan ships no stack at all, and what a vegan would be
+      // OFFERED has no fish in it. Asserting the first alone would have
+      // been vacuous the moment the stack became opt-in.
+      expect(plan.supplements).toEqual([])
+      expect(offeredSupplements('vegan').some((s) => /fish|collagen/i.test(s.name))).toBe(false)
     }
   })
 

@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { SCHEMA_VERSION, type Envelope, type Goal } from '../types'
 import { buildNaodPreset } from '../plan/presets/naod'
 import { buildMealPlan, buildNaodMealPlan } from '../plan/foods'
-import { MIN_KCAL_REST, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
+import { migrateCalorieFloor } from '../plan/kcalFloor'
 import { addDaysISO } from '../engine/calendar'
 
 // ============================================================
@@ -15,7 +15,7 @@ import { isoDate, weekday } from './primitives'
 import { sessionSchema } from './sessionSchema'
 import { prefsSchema } from './prefsSchema'
 import { profileSchema, settingsSchema } from './settingsSchema'
-import { foodLimitsSchema, mealPlanSchema } from './mealPlanSchema'
+import { foodLimitsSchema, mealPlanSchema, migrateSupplementStack } from './mealPlanSchema'
 import { cardioEntrySchema, runLogSchema } from './activitySchema'
 
 
@@ -570,17 +570,8 @@ const migrations: Record<number, (env: Record<string, unknown>) => Record<string
   //
   // Maintenance is not recoverable from a stored plan, so this applies
   // the absolute minimums only. That is the part that matters here.
-  19: (env) => {
-    const e = env as {
-      data?: { plan?: { nutrition?: { kcalTraining?: number; kcalRest?: number } } }
-    }
-    const n = e.data?.plan?.nutrition
-    if (n) {
-      if (typeof n.kcalTraining === 'number') n.kcalTraining = Math.max(MIN_KCAL_TRAINING, n.kcalTraining)
-      if (typeof n.kcalRest === 'number') n.kcalRest = Math.max(MIN_KCAL_REST, n.kcalRest)
-    }
-    return env
-  },
+  19: migrateCalorieFloor,
+  20: migrateSupplementStack, // v20 → v21: stacks store ids, not doses. See mealPlanSchema.ts.
 }
 
 export function migrate(env: unknown): Envelope {

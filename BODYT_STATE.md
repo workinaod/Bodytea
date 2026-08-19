@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (OP4 done on its feature branch, 3D body muscle models session)
+Last updated: 2026-08-19 (W16 wiring wave live; OP4 real-anatomy muscle maps merged on top)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -283,21 +283,21 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R5 | Program-family corpus | research | **synthesized 2026-08-18** (research/R5-program-families.md; 10 families, 19 sources, ProgramFamily record, selection logic, 8-axis convergence metric, 18 fixtures of which 4 fail today) | J7 schemas stable | planner owner, before J11 |
 | W1n-a | First slice of W1n, done inside B2: R1's protein bands, deficit ceiling and calorie floors carry provenance. The floors are tier D and say so | wiring | **done 2026-08-19** | B2 | the rest of W1n waits on J7 |
 | W-ONT | Wire R-ONT: capability fields onto the exercise catalog, alias resolution, substitution at scale | wiring | **capability slice done 2026-08-19** (plan/capability.ts: CapabilityBlock, CapabilityDemands, demandsOf, blockedByCapability; SubstituteQuery gains `cannot`; one filter line in substitutesFor; 12 tests + 3 mutations). WHAT IT UNBLOCKS: seven joints were the entire vocabulary of limitation the planner had, so R6's cannot-kneel / cannot-get-to-floor / cannot-raise-arm-overhead mapped to nothing and R6 was unshippable. They map now. Demands are DERIVED from pattern with an override list for the 30 the defaults get wrong, and the test asserts overrides stay under a third of the catalog rather than trusting R-ONT's 70 percent estimate. STILL OPEN in W-ONT: alias resolution (R-ONT s5), the Demand-scale fields (standingBalance, dynamicBalance, gripDemand, coordination), the logistics fields (spotter, space, noise, setup), and CapabilityVariants as substitution edges | wiring | B2 done | next: W6s consumes this |
-| W9 | Wire R9: calisthenics/mobility rungs + the ramp-set algorithm into the catalog and a warm-up engine | wiring | **first slice done 2026-08-19** (8 previously dead-end unloaded movements gained same-pattern progressions; unloaded dead ends 40 -> 32, counted by a test rather than claimed). R9's finding: J2 taught the engine to judge an unloaded lift and 40 of 47 had nowhere to promote to, so nextUp returned null and the verdict collapsed to topped-out. STILL OPEN and the honest reason: the remaining 32 need rungs nobody has authored. The pull-up chain is the one R9 calls most valuable and it CANNOT be closed from what exists, because scapular-pull, arch-hang and negative-pull-up are not in the catalog and a weighted pull-up needs `loadable` to become a function of movement AND equipment. A test asserts pull-up still has no progression so the day somebody authors those rungs it points them here. Also open: the ramp-set algorithm and the warm-up engine, which does not exist at all | W-ONT | |
-| W18 | Wire R18: 72 mind-body records + the three-channel counting model (energy, regional volume, systemic fatigue) | wiring | pending | W-ONT | also fixes the yoga-satisfies-conditioning bug |
-| W11 | Wire R11: SportProfile shape + 32 sport rows; the sport answer is currently collected and unread | wiring | pending | W-ONT | |
+| W9 | Wire R9: calisthenics/mobility rungs + the ramp-set algorithm into the catalog and a warm-up engine | wiring | **first slice done 2026-08-19** (8 previously dead-end unloaded movements gained same-pattern progressions; unloaded dead ends 40 -> 32, counted by a test rather than claimed). R9's finding: J2 taught the engine to judge an unloaded lift and 40 of 47 had nowhere to promote to, so nextUp returned null and the verdict collapsed to topped-out. STILL OPEN and the honest reason: the remaining 32 need rungs nobody has authored. The pull-up chain is the one R9 calls most valuable and it CANNOT be closed from what exists, because scapular-pull, arch-hang and negative-pull-up are not in the catalog and a weighted pull-up needs `loadable` to become a function of movement AND equipment. A test asserts pull-up still has no progression so the day somebody authors those rungs it points them here. Also open: the ramp-set algorithm and the warm-up engine, which does not exist at all. Mutation coverage was missing at the time and was added afterwards (2 mutations: a chain cut, and a second chain cut so the dead-end count is proven measured rather than spot-checked on one row) | W-ONT | |
+| W18 | Wire R18: 72 mind-body records + the three-channel counting model (energy, regional volume, systemic fatigue) | wiring | **live-bug half done 2026-08-19** (six studio/class activities at compendium METs, none of the mat ones flagged conditioning; sculpt-class at 5.5 is the one that earns it; `custom` loses `conditioning: true` and drops 6.0 -> 4.0 METs; mat classes get no steps and no distance. classes.test.ts, 12 tests, 4 mutations). MEASURED BEFORE: logging a yoga class through `custom` satisfied `cardioRequiredForWeek`, so the app's ONE mandatory health rule was switched off by an activity measuring 2.9-3.3 METs, which is light on the ACSM and AHA scale, while the calorie estimate ran roughly double on an assumed 6.0. MEASURED AFTER: an hour of yoga, and an hour of anything the app cannot name, both leave the week still owing a session; a sculpt class and a run both close it. The end-to-end assertion runs through `cardioRequiredForWeek`, not the catalog, because a flag nobody reads is a flag that can be quietly re-flipped. STILL OPEN in W18: the 72 records themselves and the three-channel counting model (energy, regional volume, systemic fatigue), which is the actual wiring job | W-ONT | the yoga-satisfies-conditioning bug is closed |
+| W11 | Wire R11: SportProfile shape + 32 sport rows; the sport answer is currently collected and unread | wiring | **steps 1-3 of R11 s5.5 done 2026-08-19** (plan/sportProfiles.ts: SportProfile with WEIGHTS 0-3 rather than an ordered list, all 28 real sports, 15 position tables; plan/sportPlan.ts: the transfer join; followups.ts derives SPORT_QUALITIES and POSITIONS from the profiles so there is one table; generator reads sport + position, re-ranks slots, writes sportMode and a strategy line. 16 + 4 tests, 6 mutations). MEASURED BEFORE: `sportOf` was exported and called from NOWHERE, `SPORT_QUALITIES` was read only by a test of its own shape, and `MOVEMENT.transfer` was declared 52 times and read by one test. Four questions collected, none read. MEASURED AFTER: two sports give two different booklets; a basketball answer sets sportMode ball, which switches on practice machinery resolveDay has had all along. STILL OPEN in W11: R11 steps 4-6, which are quality-resolved DRILL slots out of the athletic library, season state and practice load. Two honest tripwires pin what this slice cannot do: keeper and striker still get the same booklet (nothing in the barbell pools transfers to reactive-agility or force-absorption), and 7 of the qualities sports LEAD on are unreachable through `transfer` at all, golf being the starkest since rotation is the entire sport. Both lists shrink when step 4 lands | W-ONT | |
 | W6s | Wire R6: SafetyRule shape, red-flag classifier, PAR-Q+ gate | wiring | **constraint half done 2026-08-19** (plan/safetyRules.ts: ConstraintId, SafetyConstraint, CONSTRAINTS covering all 12 of R6 s5's non-pregnancy rows, constraintsFor, planningLimits; 13 tests + 3 mutations). R6's table has been synthesized and UNUSABLE since it was written because its rows are positions and the planner only spoke joints; W-ONT gave it the vocabulary. Joint rows now carry the deep-range block as well as the joint route, which is the gap that let a bad knee still be asked for a full-depth squat. Impact caps take the minimum across limitations, never an average. Per-row confidence is preserved and a test pins that only the two rows R6 marks sourced are marked sourced. STILL OPEN in W6s: the RED/YELLOW/GREEN classifier, the PAR-Q+ question gate, the pregnancy and postpartum rows (they need a trimester input that does not exist), and userCopy | B2 | pairs with J3 |
 | W7p | Wire R7: 11 functional dimensions + 10 population packs, and limit-range mode | wiring | **limit-range done 2026-08-19, which closes J6's headline** (SubstituteQuery gains `limited`; planningLimits returns limited rather than avoid; the penalty dominates the closeness scoring rather than trading against it). MEASURED BEFORE: a declared bad knee returned NOTHING for all seven squat movements, because every squat in the catalog stresses the knee and `avoid` is a hard reject, so that athlete got no lower body work at all. MEASURED AFTER: every one returns leg-press and wall-sit, which is what R6's own knee row prescribes. `avoid` keeps its hard-reject meaning for the pain path, which is a different input. STILL OPEN in W7p: the 11 functional dimensions and the 10 population packs | W6s | J6 headline closed |
 | W1n | Wire R1 + R3: NutritionRule and ProgressionRule tables, replacing invented constants | wiring | pending | J7 partial | J7 owns the shapes these hang off |
-| W4m | Wire R4: meal corpus to the 720-cell coverage predicate, carbs and fat on every record | wiring | pending | B2 | unblocks J9 |
-| W16 | Wire R16: SupplementRecord + v21 migration, 27 routing rules (the W5 fixes were the urgent subset only) | wiring | pending | B2 | |
+| W4m | Wire R4: meal corpus to the 720-cell coverage predicate, carbs and fat on every record | wiring | **macros + the predicate done 2026-08-19** (carbsG and fatG on all 42 records, reconciled 4P + 4C + 9F against the stated calories to within 0.9 percent on every one; plan/mealCoverage.test.ts states both of R4 s6.1 guarantees as MEASURED numbers; slotKindOf reads the two-meal split; 9 tests, 3 mutations). R4 says the guarantees must be written BEFORE any corpus authoring so they fail loudly against today's 42 and turn green as waves land, so they are written as exact shortfalls rather than a red suite: the pool count for all 20 diet-by-slot cells is pinned, the three cells that cannot offer three choices are named (all vegan: breakfast 2, snack 2, late 2), and the protein ceiling is pinned at 59 g against the 90 g a two-meal anchor slot needs. FIXED HERE: slotKindOf mapped the two-meal split's own slot names to null, which switches slot filtering off, so somebody eating twice a day was offered late-night snacks for slots carrying 45 and 55 percent of their protein. STILL OPEN in W4m: the corpus itself (42 to 200, R4 s6.2), the fit-the-remaining-macros ranker (s5), cost tier, effort, batch and leftovers chaining, and the widening that hands a vegan dinners for breakfast without saying so | B2 | unblocks J9 |
+| W16 | Wire R16: SupplementRecord + v21 migration, 27 routing rules (the W5 fixes were the urgent subset only) | wiring | **shape + migration done 2026-08-19** (supplementTypes.ts: SupplementRecord with dose ranges, upper limits, evidence tier, AIS group, app class, suppression signals and source refs, plus StackItem which stores an ID; plan/supplements.ts: the catalog out of foods.ts, 8 offered rows and 4 named `never`; store v21 migration; three screens resolve at read time; 11 + 5 tests, 6 mutations). WHY IT MATTERED: the W5 corrections reached the catalog and reached NOBODY. A dose was a STRING copied into a booklet at signup and read forever, so the 400 mg magnesium line, the vitamin D range sitting on its own 4,000 IU ceiling and the withdrawn zinc were all still on the screen of every account that existed before the fix. Same failure the v19 calorie repair names, with a sharper edge. After this an app suggestion is an id and its dose comes from the catalog at render time, so the NEXT correction ships to everybody with no migration. zinc is withdrawn from stored plans, not just the catalog; anything the athlete typed themselves is kept word for word, because the app may retract its own advice and may not edit somebody's health record. STILL OPEN in W16: 22 of the 27 routing rules need signals that do not exist (medications, conditions, tested-athlete, bedtime), the demand-derived rules (SR-22 to SR-24) need reading the athlete's own training, and `appClass` and `requiresDemand` are carried as data that nothing reads, pinned by a test that says so | B2 | SR-2 became LIVE off W8's age field |
 | W5p | Wire R5: ProgramFamily records + selection logic (10 families) | wiring | pending | J7 partial | before J11 |
 | W17 | Wire R17: 140-rule notation corpus + the import/repair model | wiring | pending | W-ONT | this IS most of J4/J5 |
 | W12 | Wire R12: AuthorityRule, the override model, a decline control and its cooldown | wiring | pending | B1 | needs the event log to record a no |
 | W13 | Wire R13: CohortPrior + the credibility blend; calibration.ts already has the shape | wiring | pending | J7, B1 | |
 | W14 | Wire R14: PassiveReading + the conflict rule. Mostly post-Capacitor; the accepted list is short | wiring | pending | J7 | post-gate for the sensor half |
 | W15 | Wire R15: age bands into loading ceilings, calorie baseline, plyometric gating. Age is collected (W8) and read by nothing | wiring | pending | J7 partial | |
-| W10 | Wire R10: cue corpus coverage (65 of 194 movements carry no cue) + selection and outcome tracking | wiring | pending | W-ONT | feeds J10 |
+| W10 | Wire R10: cue corpus coverage (65 of 194 movements carry no cue) + selection and outcome tracking | wiring | **coverage done 2026-08-19** (plan/cues.ts: all 65 written in the house style, merged at catalog assembly; 16 guards, 6 proven to bite, 4 mutations). R10 calls the corpus the long pole and a CONTENT job, and this is that job done: coverage 129/194 to 194/194. The reason it hid is in data.test.ts, which asserts steps, muscles, qualities, why, mistakes, a video query and a rest time and never once asked for a cue, so a silent field was not a crash. It asks now. The guards are the ones R10 s10.4 names: fits the box, fits a breath, survives speakable, makes no claim about a body the app cannot see, promises nobody an injury prevented, no em dashes. Also fixed: one shipped cue was over the voice budget at 13 words. STILL OPEN in W10: selection (engine/cueing.ts, the trigger ladder, one cue ever, silence as the common output), outcome tracking (the CueIssue ledger, which R10 says belongs inside B1 rather than a private array), the TECHNIQUE table proper, and familiarity | W-ONT | feeds J10 |
 | W8e | Wire R8: EndurancePlan shape, session-vs-30-day-max load rule (the 10 percent rule fails) | wiring | pending | J7 partial | future endurance planner |
 | B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | **done 2026-08-19** (plan/knowledge.ts 136 lines: SourceRef, KnowledgeRecord, EvidenceTier A-D, confidenceOf; plan/knowledgeRegistry.ts as the list, separate file because a refs module needs confidenceOf and the registry needs the refs module; plan/nutrition.refs.ts as the first, annotating R1's constants IN PLACE by importing the live values so a number cannot drift from its citation; plan/knowledge.test.ts 14 checks + 3 poison mutations). Guards: a sourced tier without a source, a dangling source id, a tier better than its best source, a source nothing cites, hand-typed confidence, a duplicate or malformed id, and a refs module on disk that the registry does not name. Written down in the test: nothing here can catch a number we invented, cited to real papers that do not name it, and labelled A. That is a review problem and the record shape makes it legible, which a bare `= 1500` never did | starts with R1 | done in the audit session |
@@ -797,6 +797,189 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   after sleep sync ships. Proposed shapes fit the existing split (signalTypes.ts +
   store/signalSchema.ts + platform/health.ts + engine/signals.ts) with a defaulted store
   key, so no SCHEMA_VERSION bump and no migration. No production code touched.
+
+- **2026-08-19 · W18 (live-bug half) · audit session.** R18 found the one that mattered
+  most and it was not a missing record, it was a live defect: `custom` cardio shipped with
+  `conditioning: true` at an assumed 6.0 METs, and `custom` is where a yoga class gets
+  logged because there was nowhere else to put one. So the single health rule this app
+  refuses to bend, at least one conditioning session a week, was being switched off by an
+  activity that measures 2.9 to 3.3 METs. That is LIGHT on both the ACSM and the AHA
+  scale, and a typical hatha session does not meet the intensity recommendation for
+  cardiorespiratory fitness at all. The calorie estimate ran roughly double at the same
+  time, on no evidence about the activity whatsoever.
+  Fixed by giving the classes somewhere honest to go: yoga slower (2.5), yoga flowing
+  (4.0), pilates (3.0), barre (3.5), tai chi (3.0), none carrying `conditioning`, plus
+  sculpt/weights class at 5.5 which does carry it, because 5.5 is moderate and the flag
+  is not a blanket no. `custom` loses the flag and drops to 4.0. Mat classes get
+  `steps: false` and `distance: 'none'`, since step-counting a Pilates class credits
+  somebody with crossing a room they never left.
+  The test that matters runs through `cardioRequiredForWeek`, not the catalog: an hour
+  of yoga, and an hour of anything the app cannot name, both leave the week still owing
+  a session, and a sculpt class and a run both close it. Asserting the flag alone would
+  have pinned data nobody reads, and the whole defect was that the flag WAS read.
+  Written into the source, because the pressure will come: the day somebody with four
+  classes a week sees the banner, the tempting fix is to flip these to true. That trades
+  an awkward sentence for a broken health rule, and the sentence is the right thing to
+  fix. A mutation now enforces it.
+  Also paid off here: W9 shipped without mutation coverage. Two mutations added, cutting
+  two different chains, so the dead-end count of 32 is proven measured rather than spot
+  checked on one row.
+  Validation: typecheck clean, **1,389/1,389 unit** (12 new), build green, **poison
+  119/119** (6 new: 2 for W9, 4 for W18). The harness refused to start against a dirty
+  tree, which is the guard added after an interrupted run left live poison in
+  generator.ts, and it was right to: the run had to wait for the commit.
+  NEXT: W11 (SportProfile; the sport answer is collected and never read), then W10, W4m,
+  W16, W17, in that order.
+
+- **2026-08-19 · W11 steps 1-3 · audit session.** R11 called the sport answer "the
+  biggest single lever there is" and then measured what it actually moved: nothing.
+  `sportOf` was exported and called from nowhere at all, not even from a test.
+  `SPORT_QUALITIES` was read only by a test asserting the table was well formed.
+  `sport-role`, `sport-level` and `in-season` were asked and read by nothing. Four
+  questions deep into onboarding, and a keeper and a lineman got the same booklet.
+  The two things needed to fix it were already in the repo and both were dead:
+  SPORT_QUALITIES says which qualities a sport needs, `MOVEMENT.transfer` says which
+  lifts feed which qualities. Two halves of one bridge, neither load bearing. Joining
+  them makes two sports produce two different plans with NO new data.
+  What landed: weights 0 to 3 instead of an ordered list, because a list cannot say
+  "volleyball needs absorption as much as vertical power and needs max velocity not at
+  all", and a 0 is an instruction. All 28 real sports, 12 of them from R11's own needs
+  analysis and 16 read off the old list and marked house so a later session can tell
+  which is which. 15 position tables including baseball, which R11 flagged as missing
+  despite being the most position-divergent sport in the list. followups.ts DERIVES its
+  old tables from the profiles, so the question bank cannot offer a position the plan
+  does not know.
+  THE GOLDEN LOCK EARNED ITS KEEP. First run turned a press slot over for an athlete
+  who had never mentioned a sport: `profileForSport(null)` was returning the general
+  athletic base, so an answer nobody gave was changing plans. No sport and an unknown
+  sport are different cases and now have different profiles. That is a mutation now.
+  Two tripwires say what this slice CANNOT do, rather than leaving it implied. A keeper
+  and a striker still get the same booklet, because nothing in the barbell pools
+  transfers to reactive-agility or force-absorption; that needs drill slots resolved
+  out of the athletic library, R11 step 4. And 7 of the qualities sports lead on at
+  weight 3 are unreachable through `transfer` at all, golf worst of all since rotation
+  is the entire sport. Both are asserted as exact lists, so they shrink visibly.
+  TWO GUARDS WIDENED, both of which found more than expected. The dead-export scan now
+  covers plan/, which returned 34 exports nothing calls, allowlisted with the job that
+  owns each and shrink-only. And the simulation harness's own persona seeds are now
+  checked against the questions: R11 named one bad seed, the guard found 11 keys that
+  are not questions and 13 values not on offer, spread across nearly every persona. No
+  goal-answer branch in the generator had EVER been simulated. All corrected.
+  generator.ts also shed the 180 lines of deep-goal copy to plan/strategy.ts, and its
+  allowance came down 940 to 790 with it.
+  Validation: typecheck clean, **1,409/1,409 unit** (20 new), build green, sim 20
+  personas with zero invariant failures, **poison 125/125** (6 new).
+  NEXT: W10 (65 of 194 movements carry no cue), then W4m, W16, W17.
+
+- **2026-08-19 · W10 coverage · audit session.** R10 counted the cue corpus: 194
+  movements, 129 cues, 65 movements with NOTHING to say in the one line an athlete
+  reads with a bar in their hands. It calls this the long pole of the whole pack and,
+  usefully, a content job rather than an engineering one. So it is done: all 65 written.
+  The reason it went unnoticed for the life of the app is one line of missing test.
+  data.test.ts asserts steps, at least one muscle, at least one quality, a why over 40
+  characters, at least one mistake, a video query and a rest time. It never asked for a
+  cue, and a missing optional field is not a crash. It asks now.
+  House style out of R10 s3.7: verb, external referent, one target, under 80 characters
+  and under 12 words, because the voice layer says these out loud and speech.ts costs a
+  10-word cue at about 4.3 seconds. External focus by default and held loosely, since
+  the meta-analytic support is contested and nothing here depends on the effect being
+  real. The lateral raise is the documented exception and gets to talk about feeling
+  the side delt work.
+  Six guards, each fed a known-bad input and watched to fail first. FIVE bit on the
+  first try. The sixth, the one checking cues survive the voice layer, did NOT: it
+  tested for the symbols speakable() already expands, so a planted 3x8 at 70 percent
+  sailed through. Rewritten to check what speakable actually leaves behind, which is a
+  digit glued to letters, because the abbreviation table matches on word boundaries and
+  RPE7 and 30s come out of the synthesizer as erpee seven and thirty ess. That version
+  bites. Also fixed on the way past: one already-shipped cue ran 13 words, over budget.
+  The cues live in plan/cues.ts rather than beside their defs because exercises.ts sits
+  four lines under its allowance and the allowances are shrink-only. A def may carry its
+  own cue OR appear in the table, never both, and a test enforces it, so there is still
+  exactly one place any cue can come from.
+  Validation: typecheck clean, **1,425/1,425 unit** (16 new), build green, poison
+  129/129 (4 new).
+  NEXT: W4m, then W16, then W17.
+
+- **2026-08-19 · W4m macros and coverage · audit session.** R4 gives one instruction
+  about order and it is unusual: write the coverage guarantees BEFORE authoring any
+  corpus, so they fail loudly against today's 42 records and turn green as waves land.
+  Done, and written as measured shortfalls rather than a red suite, which is the same
+  shape as the dead-end count in W9 and the unreachable-qualities list in W11.
+  Carbs and fat now sit on all 42 records, which the fit-the-remaining-macros ranker
+  needs and could not work without: a plan that has already spent its fat for the day
+  cannot tell peanut noodles from a chicken plate on protein and calories alone. They
+  are standard-serving estimates rather than measurements, so what makes them
+  trustworthy is that they have to agree with each other: a test reconciles
+  4P + 4C + 9F against each record's own calorie number and the worst drift across all
+  42 is 0.9 percent. Same rule the knowledge records live under.
+  What the guarantees now say out loud. The pool for all 20 diet-by-slot cells is
+  pinned. Three cells cannot offer three choices and all three are vegan: breakfast 2,
+  snack 2, late 2. A test asserts the consequence rather than the count, which is that
+  a vegan asking for a breakfast swap gets dinners back, because mealAlternatives
+  widens a thin slot rather than returning nothing and nobody is told. And the protein
+  ceiling is pinned at 59 g against the 90 g a two-meal anchor slot needs for a 200 lb
+  athlete, so the day the corpus can serve that person the test says so.
+  ONE LIVE BUG FIXED. slotKindOf mapped Meal 1 and Meal 2, the two-meals-a-day split's
+  own slot names, to null. Null means no slot filtering at all, so the split where the
+  slot matters MOST was the one where it was ignored, and somebody eating twice a day
+  could be offered a late-night snack for a slot carrying 55 percent of their protein.
+  Mapped to lunch and dinner, narrowly: Meal 3 and up are not names anything produces,
+  so an unknown label still means unknown. An existing test pinned that and was right.
+  R4 s1.5 lists the dropped-restriction bug as the thing that must be fixed first. It
+  already was, in fix wave 2. R4 also lists burger and chili as missing CookingMeta;
+  both have it now. Both notes are stale and the pack is otherwise accurate.
+  Validation: typecheck clean, **1,434/1,434 unit** (9 new), build green, poison
+  132/132 (3 new).
+  NEXT: W16, then W17.
+
+- **2026-08-19 · W16 shape and migration · audit session.** The uncomfortable finding
+  first: the W5 supplement fixes fixed nobody. Magnesium came down under its 350 mg
+  upper limit from a range asking for 400, vitamin D came off its own 4,000 IU ceiling,
+  and zinc was withdrawn for having no supportable claim. All three landed in the
+  catalog, and all three reached exactly zero existing accounts, because a dose was a
+  STRING copied into a booklet at signup and read forever after. Their screen still
+  said 400 mg. store/schema.ts already names this exact failure mode in the v19 comment
+  about calorie targets, and it was true here with a sharper edge.
+  So the shape changed. An app-suggested item now stores an ID and nothing else, and
+  its name, dose and timing are read from the catalog at render time. The property
+  that buys is the whole reason for the work: the NEXT correction ships to every user
+  on the next deploy with no migration at all.
+  The v20 to v21 migration makes three calls worth arguing about, all written into the
+  code beside the reasoning. Zinc is withdrawn from stored plans rather than left on
+  disk, because leaving it means the app keeps telling somebody to take it for years;
+  anybody who wants it can add it back, and then it is theirs and not the app's.
+  Anything the athlete typed themselves is kept word for word: the app may retract its
+  own advice, it may not edit a person's record of what they take. And addedAt is left
+  ABSENT on migrated rows rather than stamped with today, because inventing a date is a
+  lie the rest of the app then reads as fact.
+  The record can now carry what a four-string type could not: an AIS group, an evidence
+  tier, an upper limit, suppression signals, source ids, and a hedge that has to be
+  present whenever the app offers something. Fish oil is the case that proves the hedge
+  field earns its place, since its best-established supplement-specific effect is a
+  harm rather than a benefit, and that now sits in the same breath as the claim.
+  Four rows are carried classed `never` with the reason attached: zinc, BCAAs,
+  testosterone boosters, fat burners. That is stronger than deleting them, because the
+  next session that thinks of adding one finds the argument rather than an empty space,
+  and a test proves nothing classed never can reach a shelf.
+  SR-2, suppress everything for an under-18 account, went LIVE off the age field W8
+  shipped, which is a phase-order dependency landing exactly as the rule intends. Note
+  for the owner: that is a stricter line than the app-access decision, which was 11 and
+  let through. Suppressing supplement copy for a minor is a different question from
+  letting somebody train, and this takes the conservative side of it.
+  Two things fixed on the way past. schema.ts was AT its allowance, so the v19 calorie
+  repair moved to plan/kcalFloor.ts beside the floors that decide what a repair means,
+  and the allowance came down 610 to 602 with it. And the dead-export scan turned out
+  to count a mention in a COMMENT as a caller, which this job tripped by naming an
+  unrelated export in a doc block; the caveat is now recorded where the scan is defined,
+  and tightening it is its own job because it will unmask more than it fixes.
+  ONE MUTATION SURVIVED the first run and it was mine: removing the whole-person
+  suppression from the shelf changed nothing any test could see, because nothing
+  exercised the minor signal. The guard existed and the test did not. Three tests added
+  and the mutation now bites. That is the harness doing the job it exists for, on the
+  same day the code was written rather than five days later.
+  Validation: typecheck clean, **1,451/1,451 unit** (19 new), build green, e2e 82
+  passed, poison 138/138 (6 new, one of them only after the test that catches it).
+  NEXT: W17, the routine import corpus.
 
 - **2026-08-19 · OP4 · 3D body muscle models session (owner request).** "Can we use a
   real 3d human with muscles showing and actually highlight the actual muscles instead of

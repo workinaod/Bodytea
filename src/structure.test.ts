@@ -86,7 +86,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // and the relocated coreMovers landed in one file.
   // -1: foodLimits threading paid for itself by putting the buildMealPlan
   // call on one line instead of six.
-  'plan/generator.ts': 940,
+  // The deep-goal copy moved to plan/strategy.ts: 180 lines of prose
+  // that decided nothing, sitting inside the allowance of the file
+  // that decides everything. The allowance follows it down.
+  'plan/generator.ts': 790,
   // Was 835, which it blew through and broke three deploys on. Meal
   // logging moved to logic/mealActions.ts, then the prescription (what
   // load and how many reps to ask for) to logic/prescription.ts, then
@@ -123,7 +126,11 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // was added there rather than here: -15 net, and the allowance follows.
   // Then settings and profile to store/settingsSchema.ts, which is where
   // the age field landed rather than here. -24 more.
-  'store/schema.ts': 610,
+  // The v19 calorie repair moved to plan/kcalFloor.ts, beside the
+  // floors that decide what the repair means, so the v20 supplement
+  // migration could land without raising the allowance. Both are now
+  // delegated to; this file is a list of what a data file holds.
+  'store/schema.ts': 602,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,
@@ -320,8 +327,68 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'logic/reminders.ts:armPageTimers',
   'logic/volumeActions.ts:sessionVerdict',
   'logic/volumeActions.ts:trimSessionVolume',
+
+  // ---- plan/, first swept W11 ----
+  // Widening the scan to plan/ returned 34 exports nothing calls. That
+  // is not a tidy-up backlog, it is a map of research that was
+  // synthesized and never wired, and it is the reason W11 existed at
+  // all: the sport answer was four questions deep and read by nothing.
+  //
+  // Allowlisted with the job that owns each, NOT to excuse them. The
+  // stale-entry test above makes this shrink-only: the moment one of
+  // these finds a caller it must leave the list, so the list is a
+  // countdown rather than a drawer.
+
+  // W4m (meals): the corpus and its macros are built and unread.
+  'plan/cooking.ts:batchableIds',
+  'plan/cooking.ts:noCookIds',
+  'plan/cooking.ts:withinActiveMinutes',
+  'plan/foods.ts:getFood',
+  'plan/mealAlts.ts:slotKindOf',
+  'plan/sportsNutrition.ts:carbTargetG',
+  'plan/sportsNutrition.ts:fatFloorG',
+  'plan/sportsNutrition.ts:mlToOz',
+  'plan/sportsNutrition.ts:proteinPerMealG',
+  'plan/sportsNutrition.ts:waterTargetMl',
+  'plan/sportsNutrition.ts:weeklyGainRangeLb',
+  'plan/sportsNutrition.ts:weeklyLossRangeLb',
+
+  // W-ONT / W9: the movement ontology, most of it still unconsumed.
+  'plan/movement.ts:movementChain',
+  'plan/movement.ts:movementFor',
+  'plan/movement.ts:oppositePattern',
+  'plan/movement.ts:patternImbalances',
+  'plan/movement.ts:patternLoad',
+  'plan/movement.ts:progressionFor',
+  'plan/movement.ts:regressionFor',
+  'plan/movement.ts:stressing',
+  // transfersTo is the OTHER direction of the bridge W11 just built:
+  // quality to lifts, for resolving drill slots. That is R11 step 4.
+  'plan/movement.ts:transfersTo',
+
+  // W6s: R6 s5 became a table and the planner does not read it yet.
+  'plan/safetyRules.ts:constraintsFor',
+  'plan/safetyRules.ts:planningLimits',
+
+  // Older, and each one a small unfinished wire of its own.
+  'plan/bookletOps.ts:primaryGoalOf',
+  'plan/bookletOps.ts:referencedIds',
+  'plan/followups.ts:mergedAnswers',
+  'plan/followups.ts:readStatement',
+  'plan/foodLimits.ts:allergyTerms',
+  'plan/generator.ts:ownedTags',
+  'plan/generator.ts:proteinContextFor',
+  'plan/milestones.ts:weeksPerLoadStep',
+  'plan/reach.ts:bmiOf',
+  'plan/reach.ts:dunkVertNeededIn',
+  'plan/reach.ts:standingReachIn',
 ])
 
+// KNOWN LIMIT of the scan below: it looks for the NAME in other files,
+// so a mention in a comment counts as a caller. W16 tripped it by
+// naming an unrelated export in a doc block. Tightening it to real call
+// sites is worth doing and will unmask more dead exports than it fixes,
+// so it is its own job rather than a side effect of this one.
 /** Exported function names: declarations plus arrow-function consts. */
 function exportedFunctions(text: string): string[] {
   const names: string[] = []
@@ -331,8 +398,13 @@ function exportedFunctions(text: string): string[] {
 }
 
 describe('dead exports', () => {
+  // plan/ was outside this net until W11, and that is exactly how
+  // `sportOf`, `qualitiesForSport` and `SPORT_QUALITIES` sat dead
+  // through a full audit: the sport answer was collected, four
+  // questions deep, and consumed by nothing. A missing caller is not a
+  // crash, so nothing else was ever going to notice.
   const targets = REFERENCE_FILES.filter(
-    (f) => f.path.startsWith('engine/') || f.path.startsWith('logic/'),
+    (f) => f.path.startsWith('engine/') || f.path.startsWith('logic/') || f.path.startsWith('plan/'),
   )
   const deadNow = targets.flatMap((f) =>
     exportedFunctions(f.text).flatMap((name) => {

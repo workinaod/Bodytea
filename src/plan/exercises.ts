@@ -3,6 +3,7 @@ import { ATHLETIC_EXERCISES } from './athleticExercises'
 import { GYM_EXERCISES } from './gymExercises'
 import { HOME_EXERCISES } from './homeExercises'
 import { ATHLETIC_COVERAGE_EXERCISES } from './athleticCoverage'
+import { withCue } from './cues'
 
 // ============================================================
 // Full exercise guides. `cue` lines and several `why`/`mistakes`
@@ -1224,7 +1225,7 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
         'Slowing down into the jump instead of converting speed through it.',
         'A long, slow last step that kills the spring. Penultimate long, last step SHORT.',
       ],
-      cue: 'Lower the hips on the second-to-last step. Fire off one foot, knee UP.',
+      cue: 'Sink on the second-to-last step. Fire off one foot, knee UP.',
       videoId: 'cvhNlIEZvS4',
       videoQuery: 'penultimate step single leg jump technique',
       restSec: 180,
@@ -1824,7 +1825,7 @@ export const EXERCISES: Record<string, ExerciseDef> = Object.fromEntries(
     ...HOME_EXERCISES,
     // ---- Drills filling measured gaps in the athletic library ----
     ...ATHLETIC_COVERAGE_EXERCISES,
-  ].map((e) => [e.id, e]),
+  ].map((e) => [e.id, withCue(e)]),
 )
 
 export function getExercise(id: string): ExerciseDef {
