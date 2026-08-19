@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-18 (OP1 + OP2 done, off-plan training session)
+Last updated: 2026-08-19 (OP1 + OP2 done and LIVE, off-plan training session)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -162,8 +162,15 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
   - Validation after W4: typecheck clean, **1,239/1,239 unit tests**, build green,
     **e2e 38 passed** (31.5m, same 3 voice skips), sim 20x20 identical session for
     session, poison **85/85** at W3 and 4 more mutations added at W4.
-- **OP1 (2026-08-18), on branch `claude/custom-exercises-missed-workouts-t3130o`
-  (based on the deploy branch tip, NOT yet merged):** off-plan training. The owner asked
+- **OP1 + OP2 are LIVE (2026-08-19, deploy `65ed650`).** Owner approved the merge; the
+  feature branch fast-forwarded into `claude/app-audit-refinement-sjw2va` (no conflicts,
+  it was a direct descendant). gh-pages at `deploy: 65ed650`, live bundle
+  `index-D31AZv_E.js` confirmed byte-identical to the local build by sha256, not just by
+  filename. deploy.yml also lost its `main` trigger in the same push: the file's own
+  comment says only one working branch is ever listed, and the list named two, the second
+  being the one-commit scaffold. One push to main would have published an empty app over
+  the working site.
+- **OP1 (2026-08-18):** off-plan training. The owner asked
   for three things that were impossible: doing specific exercises of your own choosing,
   logging small workouts done outside the app, and running previous plan days (missed
   ones especially). Now: sessions with templateId 'custom' + customTitle (schema
@@ -211,8 +218,8 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending | C2 | cloud session |
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
 | RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
-| OP1 | Off-plan training (owner request): own-workout builder from the exercise list, general workouts shelf, run-any-previous-day make-ups and reruns | product | **done 2026-08-18** (off-plan training session; branch claude/custom-exercises-missed-workouts-t3130o, awaiting owner merge to the deploy branch) | J1 | off-plan training session |
-| OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done 2026-08-18** (off-plan training session, same branch) | OP1 | off-plan training session |
+| OP1 | Off-plan training (owner request): own-workout builder from the exercise list, general workouts shelf, run-any-previous-day make-ups and reruns | product | **done + LIVE 2026-08-19** (deploy 65ed650, owner approved the merge) | J1 | off-plan training session |
+| OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done + LIVE 2026-08-19** (deploy 65ed650) | OP1 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -545,6 +552,22 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   green, **e2e 78 passed / 0 failed** (3 new specs, one of which pins that a generated-plan
   athlete never sees the owner's prose), 390px screenshots reviewed on all four surfaces.
   NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+
+- **2026-08-19 · DEPLOY · Off-plan training session.** Owner asked "Is this deployed?",
+  which it was not: the work sat on the feature branch and deploy.yml ships from
+  `claude/app-audit-refinement-sjw2va` only. Confirmed the gap three ways before saying so
+  (gh-pages tip still `deploy: b7c0745`, live bundle `index-D_pbSwcq.js` against a local
+  `index-D31AZv_E.js`, deploy branch a direct ancestor missing all three commits), then
+  shipped on the owner's approval: fast-forward, push, CI run 32209553488, gh-pages moved
+  to `deploy: 65ed650`, and the live bundle verified byte-identical to the local build by
+  **sha256 of the actual production asset** rather than by filename. Also removed `main`
+  from the deploy triggers with the owner's approval, for the reason above.
+  LEARNED, for the next session that tries to screenshot production: Chromium cannot reach
+  the public internet from this sandbox (ERR_CONNECTION_RESET even with the proxy passed
+  through `chromium.launch({ proxy })`), while curl goes through the agent proxy fine. The
+  workable substitute is to curl the deployed assets and hash them against dist/, which is
+  a stronger check than a screenshot anyway; take the 390px screenshots off a local
+  preview server serving the same verified bytes.
 
 ## 10. SOURCES
 
