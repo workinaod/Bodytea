@@ -4,8 +4,8 @@ import { equipFor } from './equip'
 import { pickCardio, rationaleFor } from './generator'
 import { buildMealPlan, type MealsPerDay } from './foods'
 import { flooredTargets } from './kcalFloor'
-import { heightAdjustmentKcal, proteinTargetG } from './sportsNutrition'
-import { DEFAULT_SESSIONS_PER_WEEK, KCAL_PER_LB, maintenanceKcal } from './bmr'
+import { proteinTargetG } from './sportsNutrition'
+import { bodyweightHeuristicKcal, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal } from './bmr'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -53,11 +53,10 @@ export function byorNutrition(
   // under it. Both paths used to compute this line themselves and had
   // already drifted apart once; that is what plan/kcalFloor.ts exists to
   // stop, and there is no reason to reopen it here.
-  const heuristic = Math.round((bw * KCAL_PER_LB[sex ?? 'male']) / 50) * 50 + heightAdjustmentKcal(heightIn, sex)
   const base = maintenanceKcal(
     { bodyweightLb: bw, sex, heightIn, ageYears: body.ageYears, bodyFatPct: body.bodyFatPct },
     { sessionsPerWeek: body.sessionsPerWeek ?? DEFAULT_SESSIONS_PER_WEEK },
-    heuristic,
+    bodyweightHeuristicKcal(bw, sex, heightIn),
   ).kcal
   let adj = 0
   if (goals.includes('muscle')) adj += 300

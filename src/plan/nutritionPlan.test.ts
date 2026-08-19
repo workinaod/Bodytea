@@ -69,17 +69,26 @@ describe('the movement answer', () => {
   })
 
   it('is not charged twice once the multiplier already contains it', () => {
-    // The old code took 50 kcal off a sitting cut. That subtraction now
-    // fires only on the heuristic branch, because everywhere else the
-    // same answer is already inside the activity multiplier.
-    const sitting = buildNutrition('lean', 190, 'male', { 'day-movement': 'Sitting' }, 70, known)
-    const unanswered = buildNutrition('lean', 190, 'male', {}, 70, known)
-    expect(unanswered.kcalTraining - sitting.kcalTraining).not.toBe(50)
+    // The old code took a flat 50 kcal off a sitting CUT, and only a cut.
+    // That subtraction now fires on the heuristic branch alone, because
+    // everywhere else the same answer is already inside the activity
+    // multiplier.
+    //
+    // Asserted by holding the movement answer fixed and changing only the
+    // goal, so the activity multiplier is identical on both sides and the
+    // only thing that can move the gap is the flat 50. Comparing two
+    // movement answers instead cannot see the bug: the multiplier moves
+    // too, and any extra 50 hides inside the difference. That weaker
+    // version is what let this mutation survive the first time.
+    const sitting = (goal: 'lean' | 'general') =>
+      buildNutrition(goal, 190, 'male', { 'day-movement': 'Sitting' }, 70, known).kcalTraining
+    const GOAL_GAP = 100 - -300 // general +100, lean -300
+    expect(sitting('general') - sitting('lean')).toBe(GOAL_GAP)
 
     // and on the heuristic branch it still does its old job
-    const sittingRough = buildNutrition('lean', 190, 'male', { 'day-movement': 'Sitting' }, 70, {})
-    const unansweredRough = buildNutrition('lean', 190, 'male', {}, 70, {})
-    expect(unansweredRough.kcalTraining - sittingRough.kcalTraining).toBe(50)
+    const rough = (goal: 'lean' | 'general') =>
+      buildNutrition(goal, 190, 'male', { 'day-movement': 'Sitting' }, 70, {}).kcalTraining
+    expect(rough('general') - rough('lean')).toBe(GOAL_GAP + 50)
   })
 })
 
