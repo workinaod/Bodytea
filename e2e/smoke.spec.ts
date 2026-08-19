@@ -8,6 +8,7 @@ async function onboardGenerated(page: Page) {
   await page.getByRole('button', { name: "Let's get started" }).click()
   await page.locator('input').first().fill('Sam')
   await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByPlaceholder('Age').fill('30')
   await page.getByLabel('Height').fill('510')
   await page.getByLabel('Weight').fill('180')
   await page.getByRole('button', { name: 'Next: the goal' }).click()

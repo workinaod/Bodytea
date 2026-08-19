@@ -86,7 +86,7 @@ test('a proposal is offered, taken, and actually changes the day', async ({ page
   const state = seed((d) => {
     // Two bad nights AND two unplanned hours of sport: the combination
     // that earns both offers.
-    d.weeks['2026-08-10'].badSleepDates = ['2026-08-09', '2026-08-10']
+    d.weeks['2026-08-10'].badSleepDates = ['2026-08-08', '2026-08-10']
     d.cardio['2026-08-10'] = [
       { id: 'c1', activityId: 'basketball', label: 'Basketball', when: 'solo', minutes: 120, at: '2026-08-10T20:00:00.000Z' },
     ] as never
@@ -117,7 +117,7 @@ test('short sleep offers fewer SETS, never a day off', async ({ page }) => {
   // today" also read as "hold OFF on the weights today" to a real person
   // looking at the card, which is a title that WILL be misread.
   const state = seed((d) => {
-    d.weeks['2026-08-10'].badSleepDates = ['2026-08-09', '2026-08-10']
+    d.weeks['2026-08-10'].badSleepDates = ['2026-08-08', '2026-08-10']
   })
   await boot(page, state)
   await expect(page.getByText('A set off each lift', { exact: true })).toBeVisible()
@@ -128,11 +128,25 @@ test('short sleep offers fewer SETS, never a day off', async ({ page }) => {
 
 test('declining leaves no trace', async ({ page }) => {
   const state = seed((d) => {
-    d.weeks['2026-08-10'].badSleepDates = ['2026-08-09', '2026-08-10']
+    d.weeks['2026-08-10'].badSleepDates = ['2026-08-08', '2026-08-10']
   })
   await boot(page, state)
 
   await expect(page.getByText('A set off each lift', { exact: true })).toBeVisible()
   // Ignore it entirely and move on. Nothing about the session changed.
   await expect(page.getByText(/because you asked for it/)).toHaveCount(0)
+})
+
+test('two nights running is cut once, not twice', async ({ page }) => {
+  // The resolver takes a third off automatically after two consecutive bad
+  // nights. Offering "a set off each lift" on top of that is two
+  // reductions for one night's sleep, which is what adapt.ts has always
+  // said must not happen and what the proposals screen did anyway: it
+  // built its own context and left the guard field out.
+  const state = seed((d) => {
+    d.weeks['2026-08-10'].badSleepDates = ['2026-08-09', '2026-08-10']
+  })
+  await boot(page, state)
+  await expect(page.getByText(/volume cut by a third/)).toBeVisible()
+  await expect(page.getByText('A set off each lift', { exact: true })).toHaveCount(0)
 })
