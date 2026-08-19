@@ -230,7 +230,7 @@ export const TYPICAL_SESSION_HOURS = 1
  */
 export const DEFAULT_SESSIONS_PER_WEEK = 4
 
-function sessionKcal(bodyweightLb: number, hours: number, activity: MetActivity = 'strength'): number {
+export function sessionKcal(bodyweightLb: number, hours: number, activity: MetActivity = 'strength'): number {
   if (!(bodyweightLb > 0) || !(hours > 0)) return 0
   return Math.round((MET_ANCHORS[activity] - 1) * toKg(bodyweightLb) * hours)
 }
