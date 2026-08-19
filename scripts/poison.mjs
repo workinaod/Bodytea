@@ -222,9 +222,12 @@ const MUTATIONS = [
   {
     id: 'byor-ignores-sex',
     bug: 'women get a man\'s maintenance again',
-    file: 'src/plan/bookletOps.ts',
-    find: "  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50",
-    to: '  const base = Math.round((bw * 15) / 50) * 50',
+    // The line moved: both nutrition paths now share one fallback in
+    // plan/bmr.ts, which is the point of extracting it. Same bug, one
+    // place to reintroduce it instead of two.
+    file: 'src/plan/bmr.ts',
+    find: "  return Math.round((bodyweightLb * KCAL_PER_LB[sex ?? 'male']) / 50) * 50 + heightAdjustmentKcal(heightIn, sex)",
+    to: "  return Math.round((bodyweightLb * KCAL_PER_LB.male) / 50) * 50 + heightAdjustmentKcal(heightIn, sex)",
     spec: 'src/plan/kcalFloor.test.ts',
   },
   {
@@ -869,7 +872,7 @@ const MUTATIONS = [
     id: 'knowledge-module-unregistered',
     bug: 'a refs module exists on disk and no check can see it, which reads as coverage',
     file: 'src/plan/knowledgeRegistry.ts',
-    find: 'export const KNOWLEDGE: ModuleRefs[] = [NUTRITION_REFS]',
+    find: 'export const KNOWLEDGE: ModuleRefs[] = [NUTRITION_REFS, BMR_REFS]',
     to: 'export const KNOWLEDGE: ModuleRefs[] = [{ ...NUTRITION_REFS, records: [] }]',
     spec: 'src/plan/knowledge.test.ts',
   },
@@ -1309,8 +1312,8 @@ const MUTATIONS = [
     id: "bmr-moves-a-number-nobody-informed",
     bug: "an athlete we know nothing new about has their calorie target quietly changed anyway",
     file: "src/plan/bmr.ts",
-    find: "      kcal: round50(heuristicKcal),",
-    to: "      kcal: round50(heuristicKcal * 1.1),",
+    find: "      kcal: heuristicKcal,",
+    to: "      kcal: round50(heuristicKcal),",
     spec: "src/plan/nutritionPlan.test.ts",
   },
 ]
