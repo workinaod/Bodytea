@@ -20,7 +20,7 @@ export const PERSONAS = [
       customTargets: [{ label: 'Vert', target: 30, unit: 'in' }],
       daysPerWeek: 4, equipProfile: 'gym', extraEquip: [], experience: 'new',
       bodyweightLb: 165, sex: 'male', mealsPerDay: 4,
-      goalAnswers: { 'vert-now': 'Not close yet', 'jump-history': 'Never', 'vert-missing': 'Not sure' },
+      goalAnswers: { 'vert-now': 'Not close', 'jump-history': 'Never', limiting: 'Not sure' },
     },
   },
   {
@@ -32,7 +32,7 @@ export const PERSONAS = [
       daysPerWeek: 3, equipProfile: 'home-db', extraEquip: [], experience: 'new',
       bodyweightLb: 250, sex: 'male', mealsPerDay: 3,
       lifeSeeds: [{ label: 'Desk job', kind: 'on-feet' }],
-      goalAnswers: { 'lose-amount': '30+ lb', 'food-struggle': 'Late-night eating', 'day-activity': 'Mostly sitting' },
+      goalAnswers: { 'lose-amount': '30 to 60 lb', 'food-struggle': 'Late at night', 'day-movement': 'Sitting' },
     },
   },
   {
@@ -43,7 +43,7 @@ export const PERSONAS = [
       customTargets: [{ label: 'Longest run', target: 26.2, unit: 'mi' }],
       daysPerWeek: 4, equipProfile: 'minimal', extraEquip: [], experience: 'returning',
       bodyweightLb: 155, sex: 'female', mealsPerDay: 4,
-      goalAnswers: { 'race-what': 'Marathon', 'run-now': '10 to 25 mi', 'race-when': '3 to 6 months' },
+      goalAnswers: { 'race-what': 'Marathon', 'run-now': '10 to 25', 'race-when': '3 to 6 months' },
     },
   },
   {
@@ -54,7 +54,7 @@ export const PERSONAS = [
       customTargets: [{ label: 'Front Squat', target: 315, unit: 'lb' }],
       daysPerWeek: 5, equipProfile: 'gym', extraEquip: [], experience: 'trained',
       bodyweightLb: 190, sex: 'male', mealsPerDay: 4,
-      goalAnswers: { 'lift-focus': 'Squat', 'maxes-known': 'Yes', 'bar-years': '3+ years' },
+      goalAnswers: { 'lift-focus': 'Squat', 'maxes-known': 'Yes', 'bar-years': 'Longer' },
     },
   },
   {
@@ -65,7 +65,7 @@ export const PERSONAS = [
       customTargets: [{ label: 'Bodyweight', target: 175, unit: 'lb' }],
       daysPerWeek: 4, equipProfile: 'home-db', extraEquip: [], experience: 'new',
       bodyweightLb: 145, sex: 'male', mealsPerDay: 5,
-      goalAnswers: { 'gain-amount': '20 lb', 'appetite': 'Struggle to eat enough', 'sleep-hours': 'Under 6 h' },
+      goalAnswers: { 'gain-amount': 'Noticeably bigger', 'appetite': 'Struggle to eat enough', 'sleep-hours': 'Under 6 hours' },
     },
   },
   {
@@ -76,7 +76,7 @@ export const PERSONAS = [
       customTargets: [], daysPerWeek: 3, equipProfile: 'minimal', extraEquip: [],
       experience: 'returning', bodyweightLb: 165, sex: 'female', mealsPerDay: 3,
       lifeSeeds: [{ label: 'Night shift', kind: 'late-night' }, { label: 'On-feet shift', kind: 'on-feet' }],
-      goalAnswers: { 'general-what': 'Energy', 'day-activity': 'On my feet', 'streak-killer': 'Energy' },
+      goalAnswers: { 'matters-most': 'More energy', 'starting-from': 'A bit here and there', barrier: 'No energy' },
     },
   },
   {
@@ -86,7 +86,7 @@ export const PERSONAS = [
       goal: 'speed', goalStatement: 'run a faster 40',
       customTargets: [], daysPerWeek: 5, equipProfile: 'gym', extraEquip: [],
       experience: 'returning', bodyweightLb: 180, sex: 'male', mealsPerDay: 4,
-      goalAnswers: { 'sprint-feel': 'Smooth', 'sprint-space': 'Yes', 'speed-for': 'My sport' },
+      goalAnswers: { 'sprint-feel': 'It has been years', 'sprint-space': 'Track or field', sport: 'Football', 'sport-role': 'Skill / back' },
     },
   },
   {
@@ -108,7 +108,7 @@ export const PERSONAS = [
       daysPerWeek: 3, equipProfile: 'home-db', extraEquip: [], experience: 'returning',
       bodyweightLb: 160, sex: 'female', mealsPerDay: 4,
       lifeSeeds: [{ label: 'Up with the kids', kind: 'late-night' }],
-      goalAnswers: { 'lose-amount': '15 to 30 lb', 'food-struggle': 'Snacking', 'day-activity': 'Pretty active' },
+      goalAnswers: { 'lose-amount': '10 to 30 lb', 'food-struggle': 'Snacking', 'day-movement': 'On my feet' },
     },
   },
   {
@@ -118,7 +118,7 @@ export const PERSONAS = [
       goal: 'strength', goalStatement: 'still be lifting at 70',
       customTargets: [], daysPerWeek: 3, equipProfile: 'gym', extraEquip: [],
       experience: 'trained', bodyweightLb: 200, sex: 'male', mealsPerDay: 3,
-      goalAnswers: { 'lift-focus': 'All of them', 'maxes-known': 'Roughly', 'bar-years': '3+ years' },
+      goalAnswers: { 'lift-focus': 'All of them', 'maxes-known': 'Roughly', 'bar-years': 'Longer' },
     },
   },
   {
@@ -128,7 +128,7 @@ export const PERSONAS = [
       goal: 'general', goalStatement: 'be an all-around athlete',
       customTargets: [], daysPerWeek: 6, equipProfile: 'gym', extraEquip: [],
       experience: 'returning', bodyweightLb: 175, sex: 'male', mealsPerDay: 4,
-      goalAnswers: { 'general-what': 'All of it', 'day-activity': 'Pretty active', 'streak-killer': 'Boredom' },
+      goalAnswers: { 'matters-most': 'Get stronger', 'starting-from': 'Fairly active', barrier: 'It gets boring' },
     },
   },
   {
@@ -140,7 +140,7 @@ export const PERSONAS = [
       daysPerWeek: 4, equipProfile: 'minimal', extraEquip: ['kettlebell', 'pullup-bar'],
       experience: 'returning', bodyweightLb: 185, sex: 'male', mealsPerDay: 4,
       dietStyle: 'vegan',
-      goalAnswers: { 'lose-amount': 'Under 15 lb', 'food-struggle': 'Portions', 'day-activity': 'Mostly sitting' },
+      goalAnswers: { 'lose-amount': 'A few pounds', 'food-struggle': 'Big portions', 'day-movement': 'Sitting' },
     },
   },
 ]

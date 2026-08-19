@@ -1,4 +1,5 @@
 import type { Goal } from '../types'
+import { DEFAULT_SPORT_PROFILE, orderedQualities, SPORT_PROFILES } from './sportProfiles'
 
 // ============================================================
 // The questions a coach asks, generated rather than listed.
@@ -64,57 +65,27 @@ export const SPORTS = [
 ] as const
 
 /**
- * What each sport is mostly made of, in the engine's own vocabulary.
+ * What each sport is mostly made of, and which positions change it.
  *
- * This is what makes the app work for somebody it has never heard of.
- * There will always be a sport not on the list — the answer is not to
- * keep adding bespoke plans, it is to describe every sport as a mix of
- * the qualities the engine already trains. A climber is grip, pulling
- * and body control; a snowboarder is landing forces, rotation and knees
- * that can take it. Neither needs its own engine.
+ * Both tables are DERIVED from `SPORT_PROFILES` now. They used to be
+ * hand-written here, and they were read by nothing: R11 grepped the repo
+ * and found `SPORT_QUALITIES`, `qualitiesForSport` and `sportOf` had zero
+ * production call sites between them. The bank asked the one answer its
+ * own informs string calls "the biggest single lever there is", and the
+ * plan never saw it.
  *
- * `DEFAULT_SPORT_QUALITIES` is what an unrecognised answer gets: the
- * general athletic base almost every sport shares. Somebody who types
- * "korfball" still gets a coherent plan rather than a shrug.
+ * Deriving rather than duplicating is the point: the question bank and
+ * the generator read one table, so the app cannot offer a position the
+ * plan does not know, or claim a sport the plan cannot weight. Both keep
+ * their exact old shapes, so every existing caller and test carries on
+ * unchanged.
  */
-export const SPORT_QUALITIES: Record<string, string[]> = {
-  Basketball: ['vertical-power', 'cod', 'reactive-agility', 'elastic-reactive', 'acceleration'],
-  Soccer: ['acceleration', 'max-velocity', 'cod', 'sprint-hamstring', 'deceleration'],
-  Football: ['acceleration', 'explosive-strength', 'athletic-strength', 'cod', 'force-absorption'],
-  'Track & field': ['max-velocity', 'sprint-mechanics', 'acceleration', 'elastic-reactive', 'ankle-stiffness'],
-  Tennis: ['lateral-power', 'rotational-power', 'reactive-agility', 'deceleration', 'cod'],
-  Volleyball: ['vertical-power', 'elastic-reactive', 'force-absorption', 'lateral-power', 'coordination'],
-  'Baseball / softball': ['rotational-power', 'acceleration', 'coordination', 'explosive-strength'],
-  Hockey: ['lateral-power', 'acceleration', 'balance-stability', 'rotational-power', 'cod'],
-  Rugby: ['acceleration', 'athletic-strength', 'explosive-strength', 'force-absorption', 'deceleration'],
-  Netball: ['deceleration', 'vertical-power', 'cod', 'force-absorption', 'balance-stability'],
-  Cricket: ['rotational-power', 'acceleration', 'coordination', 'explosive-strength'],
-  Lacrosse: ['acceleration', 'rotational-power', 'cod', 'max-velocity'],
-  Swimming: ['rotational-power', 'athletic-strength', 'coordination', 'balance-stability'],
-  Rowing: ['athletic-strength', 'explosive-strength', 'balance-stability', 'coordination'],
-  Cycling: ['athletic-strength', 'explosive-strength', 'balance-stability'],
-  Running: ['sprint-mechanics', 'foot-ankle', 'sprint-hamstring', 'elastic-reactive'],
-  // Grip and pulling, and the body control to stay on the wall.
-  Climbing: ['athletic-strength', 'balance-stability', 'coordination', 'foot-ankle'],
-  // Landing forces first: the injuries here are knees on impact.
-  'Snowboard / ski': ['force-absorption', 'deceleration', 'rotational-power', 'balance-stability', 'athletic-strength'],
-  Surfing: ['balance-stability', 'rotational-power', 'explosive-strength', 'coordination'],
-  Skating: ['lateral-power', 'balance-stability', 'acceleration', 'foot-ankle'],
-  'Martial arts / boxing': ['rotational-power', 'reactive-agility', 'explosive-strength', 'coordination'],
-  Wrestling: ['athletic-strength', 'explosive-strength', 'rotational-power', 'balance-stability'],
-  Gymnastics: ['athletic-strength', 'elastic-reactive', 'balance-stability', 'coordination', 'force-absorption'],
-  Dance: ['elastic-reactive', 'balance-stability', 'coordination', 'force-absorption', 'foot-ankle'],
-  CrossFit: ['athletic-strength', 'explosive-strength', 'coordination'],
-  Powerlifting: ['athletic-strength', 'explosive-strength'],
-  // Bodybuilding is not an athletic-quality sport, but a plan still has
-  // to hold a body together: the control to own the range and the base
-  // strength the size is built on.
-  Bodybuilding: ['athletic-strength', 'balance-stability', 'coordination'],
-  Golf: ['rotational-power', 'balance-stability', 'coordination'],
-}
+export const SPORT_QUALITIES: Record<string, string[]> = Object.fromEntries(
+  Object.entries(SPORT_PROFILES).map(([sport, p]) => [sport, orderedQualities(p)]),
+)
 
 /** What an unrecognised sport gets: the base nearly all of them share. */
-export const DEFAULT_SPORT_QUALITIES = ['acceleration', 'athletic-strength', 'cod', 'balance-stability']
+export const DEFAULT_SPORT_QUALITIES = orderedQualities(DEFAULT_SPORT_PROFILE)
 
 /** The qualities to bias toward, for any answer including one we do not know. */
 export function qualitiesForSport(sport: string | null): string[] {
@@ -123,22 +94,11 @@ export function qualitiesForSport(sport: string | null): string[] {
 }
 
 /** Positions worth asking about, per sport. Absent = do not ask. */
-const POSITIONS: Record<string, string[]> = {
-  Basketball: ['Guard', 'Wing', 'Big'],
-  Soccer: ['Keeper', 'Defender', 'Midfield', 'Forward'],
-  Football: ['Skill / back', 'Line', 'Both ways'],
-  Hockey: ['Keeper', 'Defence', 'Forward'],
-  Rugby: ['Back', 'Forward'],
-  'Track & field': ['Sprints', 'Jumps', 'Throws', 'Distance'],
-  Netball: ['Shooter', 'Centre court', 'Defence'],
-  Cricket: ['Batter', 'Bowler', 'Keeper', 'All-rounder'],
-  Climbing: ['Bouldering', 'Sport / lead', 'Trad', 'A bit of everything'],
-  'Snowboard / ski': ['Park / freestyle', 'All-mountain', 'Racing'],
-  Swimming: ['Sprint', 'Distance', 'Mixed'],
-  Rowing: ['Sweep', 'Sculling', 'Erg only'],
-  'Martial arts / boxing': ['Striking', 'Grappling', 'Both'],
-  Gymnastics: ['Floor / tumbling', 'Bars / rings', 'All-around'],
-}
+const POSITIONS: Record<string, string[]> = Object.fromEntries(
+  Object.entries(SPORT_PROFILES)
+    .filter(([, p]) => p.positions)
+    .map(([sport, p]) => [sport, Object.keys(p.positions ?? {})]),
+)
 
 // ---------------- The bank ----------------
 
@@ -538,6 +498,17 @@ export function sportOf(answers: Record<string, string>): string | null {
   if (!s) return null
   if (s === 'Something else') return answers['sport-other']?.trim() || null
   return s
+}
+
+/**
+ * The position they play, or null.
+ *
+ * Only ever asked for the sports where position changes the training,
+ * so an answer here is always meaningful. A position EDITS the sport
+ * profile, it never replaces it: a keeper is still playing soccer.
+ */
+export function positionOf(answers: Record<string, string>): string | null {
+  return answers['sport-role']?.trim() || null
 }
 
 /** Kept for the plan generator, which still reads per-goal question sets. */
