@@ -400,8 +400,13 @@ Taken while building the recheck, recorded rather than buried. Three states:
   today's knowledge onto the basis, so it goes quiet until something moves AGAIN. Saying no
   once should not mute the app through the next forty pounds.
 
-The middle state is permanent by design. If the owner would rather a hand-typed target be
-re-offered after a big enough change, that is a one-line change to the same rule.
+**RESOLVED SAME DAY by the owner: re-offer it.** A target typed at 200 lb is a real decision
+and is also not advice at 170, so the hand-typed case now behaves like the declined one. The
+booklet editor no longer clears `nutritionBasis`; the basis keeps saying what BodyT last
+computed, and the GAP between that and the stored number is how the app knows a person owns
+it. That gap changes what the card says ("You set this one. Since then the scale has moved.")
+and never whether it appears. Absence of a basis still means silence, but that is now only
+the pre-existing plans that genuinely have no record of what built them.
 
 ## 6. STANDING CONSTRAINTS (permanent; from the owner)
 
@@ -1388,10 +1393,27 @@ re-offered after a big enough change, that is a one-line change to the same rule
   One of my new specs needed the age field another session added to onboarding.
   NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
 
+### 2026-08-19 · owner call · a target you set yourself is re-offered too
+  The rule shipped an hour earlier muted the recheck permanently once somebody typed their
+  own calorie number. Owner overruled it, correctly: a target set at 200 lb is a real
+  decision and it is also not advice at 170.
+  The booklet editor no longer clears nutritionBasis. The basis keeps recording what BodyT
+  last computed, and the gap between that and the stored number is the ownership signal. It
+  changes the sentence ("You set this one. Since then the scale has moved.") and never
+  whether the card appears. Four tests, one mutation.
+  Also published: BodyT Build Line, the whole 63-row board on a timeline with the marker at
+  where the build actually stands. Its summary counts are derived from its own rows at render
+  time rather than typed into the header, because the first draft had a hand-typed 23 against
+  a real 21 and a status board that disagrees with its own summary is worse than no summary.
+  Validation: tsc -b clean, **1,556/1,556 unit** (4 new), build green, **84/84 e2e**,
+  **poison 168/168** (1 new).
+
 ## 10. SOURCES
 
 - Living dashboard (this plan, rendered, republishable via url):
   https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
+- BodyT Build Line (the whole board on a timeline, counts derived from this file's rows):
+  https://claude.ai/code/artifact/c7d11318-1190-48c7-b8c9-114b1d96825d
 - Bodytea Open Work: https://claude.ai/code/artifact/fc913f9c-ce3c-4ac8-91f2-51d35de8328e
 - Bodytea Build Ledger: https://claude.ai/code/artifact/b4466656-ceb2-4d54-ae8e-5b8870e8d0b6
 - Onboarding Rebuild Review: https://claude.ai/code/artifact/5210b444-304f-483b-9f1d-5e5d8070e843
