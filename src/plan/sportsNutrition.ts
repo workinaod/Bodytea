@@ -1,3 +1,4 @@
+import type { Goal } from '../types'
 // ============================================================
 // The sports-nutrition evidence base.
 //
@@ -91,6 +92,21 @@ export type ProteinContext = keyof typeof PROTEIN_G_PER_KG
  * out the carbs and fat that do have jobs. A ceiling, not a target.
  */
 export const PROTEIN_CEILING_G_PER_KG = 2.8
+
+/** Which protein band this athlete's goal and answers put them in. */
+export function proteinContextFor(goal: Goal, ans: Record<string, string> = {}): ProteinContext {
+  if (goal === 'lean') {
+    // A big cut, or a desk-bound day making the deficit bite harder, is
+    // where lean mass is most at risk and protein matters most.
+    return (ans['lose-amount'] === '30 to 60 lb' || ans['lose-amount'] === 'More than that') || ans['lose-amount'] === '10 to 30 lb'
+      ? 'aggressiveDeficit'
+      : 'deficit'
+  }
+  if (goal === 'endurance') return 'endurance'
+  if (goal === 'muscle' || goal === 'strength' || goal === 'vertical') return 'hypertrophy'
+  return 'general'
+}
+
 
 /** Daily protein in grams, for this athlete in this situation. */
 export function proteinTargetG(bodyweightLb: number, context: ProteinContext): number {

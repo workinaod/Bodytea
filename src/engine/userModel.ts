@@ -2,6 +2,7 @@ import type { AppData, ISODate } from '../types'
 import { addDaysISO, daysBetween, weekdayOf } from './calendar'
 import { groupsOf, type MuscleGroup } from './pickHelp'
 import { supplementRecord } from '../plan/supplements'
+import { smoothBodyFat, tapeIsFresh } from '../plan/bmr'
 
 // ============================================================
 // What the app has worked out about this person, and how sure it is.
@@ -88,6 +89,49 @@ function fact<T>(
  * trend is still returned, because hiding it would be worse, but it
  * carries the caveat and a downstream engine can decline to act on it.
  */
+/**
+ * Body fat from the tape, smoothed, and only while it still describes
+ * this body.
+ *
+ * This is the input the good calorie model wants. The app has had a full
+ * tape flow behind it since day one, with step-by-step instructions and
+ * a Navy-formula estimator, and the number it produced went to the
+ * progress chart and nowhere near the calorie target.
+ *
+ * Two things can make a reading stop being true, and both retire it
+ * rather than downgrade it: two months of calendar, or a weight change
+ * big enough that the composition behind it has moved regardless of the
+ * date. A retired tape reading is worse than none, because a stale
+ * fat-free mass is confidently wrong where the anthropometric model is
+ * only ever roughly right, and the equation cannot tell which it got.
+ */
+function bodyComposition(data: AppData, today: ISODate): UserFact<number> | null {
+  const taped = (data.measurements ?? [])
+    .filter((m) => typeof m.bodyFatPct === 'number' && daysBetween(m.date, today) >= 0)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  if (taped.length === 0) return null
+
+  const recent = taped.slice(-3)
+  const pct = smoothBodyFat(recent.map((m) => m.bodyFatPct as number))
+  if (pct === null) return null
+
+  const last = taped[taped.length - 1]
+  const weighed = (data.measurements ?? [])
+    .filter((m) => typeof m.weightLb === 'number' && daysBetween(m.date, today) >= 0)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  // No current weight means no drift check, not a failed one: an absent
+  // reading must never retire a tape the calendar says is still good.
+  const now = weighed[weighed.length - 1]?.weightLb
+  const fresh = tapeIsFresh({
+    ageDays: daysBetween(last.date, today),
+    weightAtTapeLb: now === undefined ? undefined : last.weightLb,
+    bodyweightLb: now ?? 0,
+  })
+  if (!fresh) return null
+
+  return fact(pct, 'measurements', last.date, recent.length, today)
+}
+
 export function weightTrend(data: AppData, today: ISODate): UserFact<number> | null {
   const points = (data.measurements ?? [])
     .filter((m) => typeof m.weightLb === 'number' && daysBetween(m.date, today) >= 0)
@@ -194,6 +238,7 @@ export function adherenceShape(
 }
 
 export interface UserModel {
+  bodyFatPct: UserFact<number> | null
   weightTrendLbPerWeek: UserFact<number> | null
   hardSetsPerWeek: UserFact<number> | null
   daysSinceRegion: UserFact<Partial<Record<MuscleGroup, number>>> | null
@@ -215,6 +260,7 @@ export interface UserModel {
  */
 export function readUserModel(data: AppData, today: ISODate): UserModel {
   return {
+    bodyFatPct: bodyComposition(data, today),
     weightTrendLbPerWeek: weightTrend(data, today),
     hardSetsPerWeek: workCapacity(data, today),
     daysSinceRegion: recoveryByRegion(data, today),

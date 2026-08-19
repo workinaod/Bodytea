@@ -89,7 +89,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // The deep-goal copy moved to plan/strategy.ts: 180 lines of prose
   // that decided nothing, sitting inside the allowance of the file
   // that decides everything. The allowance follows it down.
-  'plan/generator.ts': 790,
+  'plan/generator.ts': 747,
   // Was 835, which it blew through and broke three deploys on. Meal
   // logging moved to logic/mealActions.ts, then the prescription (what
   // load and how many reps to ask for) to logic/prescription.ts, then
@@ -395,7 +395,6 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'plan/followups.ts:readStatement',
   'plan/foodLimits.ts:allergyTerms',
   'plan/generator.ts:ownedTags',
-  'plan/generator.ts:proteinContextFor',
   'plan/milestones.ts:weeksPerLoadStep',
   'plan/reach.ts:bmiOf',
   'plan/reach.ts:dunkVertNeededIn',

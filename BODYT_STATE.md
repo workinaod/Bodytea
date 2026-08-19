@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (J7 facts layer: the app knows what it knows, and how sure it is)
+Last updated: 2026-08-19 (J7 nutrition slice 1: the calorie baseline stops guessing)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -261,7 +261,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | J4 | Freeform-first entry (composer primary, chips demote to examples; reuse inferGoal/readStatement) | product | pending | J3 | App audit session |
 | J5 | Booklet regenerates: goal edits -> generatePlan -> diff for approval; history preserved | product | pending | J3 | App audit session |
 | J6 | Limitations lifecycle (short/long-term, what hurts, region routing, expiry+restore) + core coverage guarantee + advisory volume cap for user-authored routines | either | **headline done 2026-08-19 via W7p** (limit-range: a declared joint narrows the plan instead of emptying a whole pattern). Remaining: the lifecycle itself (short vs long term, expiry and restore, editing), the core coverage guarantee, and the advisory volume cap for user-authored routines | J1 (J3 helps) | tbd |
-| J7 | User model (userModel.ts: EWMA weight, lean mass, work capacity, per-muscle recovery, per-exercise progression rate, adherence shape; facts carry source/confidence/recency) + nutrition engine (Katch-McArdle when BF known, activity from logs, carb cycling, fibre floor, self-explaining numbers) + calorie-autoregulation seed | engines | **facts layer done 2026-08-19** (engine/userModel.ts: UserFact<T> carrying value, source, sample count, asOf and a DERIVED confidence; weightTrend as an EWMA that knows when creatine is confounding it, workCapacity, recoveryByRegion, adherenceShape, readUserModel; 12 tests, 5 guards proven to bite, 6 mutations). Every function returns null until it has something to say, which is the calibration.ts pattern and the right answer for a new account. FIRST CONSUMER WIRED THE SAME DAY: kcalBumpSuggestion rests entirely on "the scale is not moving" and read two raw weigh-ins to decide it; it now declines when the trend is confounded, because the dangerous direction is coming OFF creatine, where the water drop reads as under-eating and the app would tell somebody to add calories they do not need. STILL OPEN in J7: the nutrition engine half (Katch-McArdle when body fat is known, activity from logs, carb cycling, fibre floor, self-explaining numbers) and the calorie-autoregulation seed. Four of the five exports are on the dead-export ledger with J8 named as the consumer: volume autoregulation needs hardSetsPerWeek, schedule fit needs trainsOnWeekday, exercise fit needs daysSinceRegion | J1, J2 | Algorithm session |
+| J7 | User model (userModel.ts: EWMA weight, lean mass, work capacity, per-muscle recovery, per-exercise progression rate, adherence shape; facts carry source/confidence/recency) + nutrition engine (Katch-McArdle when BF known, activity from logs, carb cycling, fibre floor, self-explaining numbers) + calorie-autoregulation seed | engines | **facts layer + BMR model chain done 2026-08-19** (engine/userModel.ts: UserFact<T> carrying value, source, sample count, asOf and a DERIVED confidence; weightTrend as an EWMA that knows when creatine is confounding it, workCapacity, recoveryByRegion, adherenceShape, readUserModel; 12 tests, 5 guards proven to bite, 6 mutations). Every function returns null until it has something to say, which is the calibration.ts pattern and the right answer for a new account. FIRST CONSUMER WIRED THE SAME DAY: kcalBumpSuggestion rests entirely on "the scale is not moving" and read two raw weigh-ins to decide it; it now declines when the trend is confounded, because the dangerous direction is coming OFF creatine, where the water drop reads as under-eating and the app would tell somebody to add calories they do not need. NUTRITION SLICE 1 (2026-08-19): plan/bmr.ts, R1 section 2 and 3. The calorie baseline was bodyweight x 15 with no study behind it, no age term, and linear in total mass, so it put a 320 lb man at 4,875 kcal maintenance while two validated equations put him near 3,200. Three models now, best-first: Katch-McArdle (Cunningham 1991) when a fresh tape reading exists, Mifflin-St Jeor when height AND age exist, the old number last and unchanged so nobody moves without new information. Activity is R1 architecture (a): a non-training multiplier off the NASEM PAL bands plus each session's own net MET cost, never a blended multiplier, so a workout cannot be counted twice. Age was collected at signup and read by ONE screen; the tape estimator fed a chart and nothing else. Both reach the number now. engine/userModel.ts gained bodyComposition as a fifth fact (median of the last 3 readings, retired by 60 days OR 5 percent weight drift). plan/bmr.refs.ts carries the provenance and is the file that makes the tier column earn its keep: two A-tier equations and one tier-D house number that has no source, sitting side by side in code that made them look identical. 40 new tests, 9 mutations. STILL OPEN in J7: weight-trend calorie steps, carb cycling scaled to bodyweight, the fibre floor, self-explaining number templates, and the calorie-autoregulation seed. Four of the five exports are on the dead-export ledger with J8 named as the consumer: volume autoregulation needs hardSetsPerWeek, schedule fit needs trainsOnWeekday, exercise fit needs daysSinceRegion | J1, J2 | Algorithm session |
 | J8 | Learning loop completion: volume autoregulation, schedule fit, exercise fit, intervention follow-up; all suggest-only on the calibration.ts pattern | engines | pending | J7 | Algorithm session |
 | J9 | Meal & chef engine: cost/minutes/effort/batchFriendly axes, fit-remaining-macros, batch chaining, no-repeat guards, sliders | product | pending | J1 (J7 feeds it) | product lane |
 | J10 | Explain expansion + jargon-ban sweep; machine rationale split from user sentence | tbd by Q1 | blocked on Q1 | J1 | tbd |
@@ -570,6 +570,22 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   before deleting that branch (J1).
 
 ---
+
+- R1's own eval table (section 8, "Maint. est" column) is NOT internally consistent under
+  the architecture the same pack tells J7 to build. Persona 1's range only fits if that
+  column means a training day; persona 11's only fits if it means a rest day; personas 2
+  and 7 sit in the same activity band while requiring multipliers on opposite sides of it
+  (1.366 max vs 1.376 min). plan/bmr.test.ts therefore asserts the BMR column, which is
+  the published equation applied to the persona's own numbers and reproduces all nine to
+  the kcal, and asserts behaviour rather than fitting a tolerance until the contradiction
+  goes green. Worth a pass over R1 to pin what that column means before slice 2 uses it.
+
+- NOTHING RECOMPUTES NUTRITION AFTER SIGNUP. buildNutrition runs once, inside generatePlan,
+  and the two calorie numbers are stored on the plan. So the tape-measure model can only
+  ever fire on a rebuild, and there is no rebuild path in the app. An athlete who runs the
+  body-fat estimator today gets a better chart and the same calorie target. bodyComposition
+  exists and is tested; the consumer does not. This is the first thing slice 2 needs, and
+  it is a bigger deal than any single constant in R1.
 
 ## 8. SESSION DIRECTORY
 
@@ -1218,6 +1234,54 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   (6 new).
   NEXT: J8 is now unblocked and is the natural continuation, or the nutrition-engine half
   of J7. Both are the owner's call.
+
+### 2026-08-19 · J7 nutrition slice 1 · the calorie baseline stops guessing
+  WHAT WAS WRONG: every calorie target in the app came from bodyweight x 15 (x 14 for
+  women). That number has no study behind it, no age term, and scales linearly with total
+  mass, so it inflates at the top: a 320 lb man asking for help losing weight was told his
+  maintenance was 4,875 kcal, about 1,700 above what two validated equations say. It also
+  cannot tell a 22 year old from a 55 year old at the same weight.
+  Meanwhile the app already knew better and never asked itself. Age is collected in
+  onboarding and was read by exactly one screen (the W16 minor check). Body fat has a whole
+  tape flow behind it, step-by-step instructions and a Navy-formula estimator, and the
+  number went to the progress chart and nowhere near the calorie target. Two collected
+  answers, both the exact input a validated equation wants, both ignored by the number they
+  were collected for. Same pattern as W11, W17 and W18.
+  WHAT SHIPPED: plan/bmr.ts, R1 sections 2 and 3. Katch-McArdle (Cunningham 1991, asserted
+  not to be the 1980 variant) when a fresh tape reading exists; Mifflin-St Jeor when height
+  AND age exist; the old bodyweight number last, unchanged, flagged, so nobody's target
+  moves without new information about them. Activity is architecture (a) as the pack
+  recommends: a non-training multiplier from the NASEM PAL bands plus each session's own
+  net (MET - 1) x kg x hours, added only on the day it happens. Never a blended multiplier,
+  because a multiplier that already contains training plus a session add is the classic
+  double-count. plan/nutritionPlan.ts carries buildNutrition out of generator.ts, which was
+  at its cap and about to take the rest of R1. engine/userModel.ts gained bodyComposition:
+  median of the last three readings, retired outright by 60 days OR 5 percent weight drift
+  rather than downgraded, because a stale fat-free mass is confidently wrong where the
+  anthropometric model is only ever roughly right. plan/bmr.refs.ts carries provenance and
+  is where the tier column earns its keep: two A-tier equations and a tier-D house number
+  with an empty source list, in code that made all three look the same.
+  A DEFECT I SHIPPED AND THE E2E CAUGHT: maintenanceKcal rounded the fallback number to 50
+  on its way out. The fallback is already rounded to 50 and THEN nudged by height in steps
+  of 25, so rounding again deleted the nudge and moved the target for somebody who had told
+  us nothing new, which is the one thing this change promised not to do. My unit test could
+  not see it because it used an athlete with no height. The end-to-end test that pins a
+  real athlete's rest-day calories went red. Fixed, and the unit test now asserts a height
+  case; the fallback reproduces 2925/2625 for that persona exactly as before.
+  DECISIONS TAKEN, both R1's own open questions, both resolved its way and recorded:
+  architecture (a) over (b) for activity, and a stale tape falls back to Mifflin rather
+  than carrying an old fat-free mass forward.
+  ALLOWANCES SHRANK: plan/generator.ts 790 to 747, and plan/generator.ts:proteinContextFor
+  came off the dead-export list by moving to sportsNutrition.ts beside the bands it selects.
+  The dead-export guard also did real work here: it flagged eight exports on the new module,
+  which was correct twice over. Six were internals that did not need exporting and are now
+  private, and two were the tape helpers with no caller at all, which is how I found that
+  Katch-McArdle could never actually fire.
+  Validation: tsc -b clean, **1,535/1,535 unit** (40 new), build green, sim 20 personas,
+  **84/84 e2e**, poison pending at time of writing.
+  NEXT: J7 slice 2 is the rest of R1 (weight-trend calorie steps, bodyweight-scaled carb
+  cycling in place of the flat 300, fibre floor, self-explaining numbers) and it needs a
+  recompute path first, which does not exist. J8 remains unblocked.
 
 ## 10. SOURCES
 

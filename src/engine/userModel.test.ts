@@ -29,6 +29,11 @@ function weighIn(d: AppData, daysAgo: number, lb: number): AppData {
   return d
 }
 
+function taped(d: AppData, daysAgo: number, pct: number, lb?: number): AppData {
+  d.measurements.push({ date: addDaysISO(TODAY, -daysAgo), bodyFatPct: pct, weightLb: lb, photoIds: {} })
+  return d
+}
+
 function trained(d: AppData, daysAgo: number, exerciseId: string, sets = 3): AppData {
   const date = addDaysISO(TODAY, -daysAgo)
   d.sessions[date] = {
@@ -204,5 +209,59 @@ describe('the fact reaches the decision it exists for', () => {
 
     d.plan.mealPlan.supplements = [{ id: 'creatine', source: 'app' }]
     expect(kcalBumpSuggestion(d), 'and go quiet once the scale is unreliable').toBeNull()
+  })
+})
+
+describe('the tape reading, which the calorie model has never seen', () => {
+  it('says nothing when nobody has picked up a tape', () => {
+    expect(readUserModel(blank(), TODAY).bodyFatPct).toBeNull()
+  })
+
+  it('smooths a sloppy reading instead of following it', () => {
+    // Two careful 20s and one bad 28 is a 20, not a 22.7. Three body-fat
+    // points is roughly 3 kg of fat-free mass, which is a meal a day.
+    const d = blank()
+    taped(d, 40, 20)
+    taped(d, 20, 20)
+    taped(d, 2, 28)
+    expect(readUserModel(d, TODAY).bodyFatPct?.value).toBe(20)
+  })
+
+  it('retires a reading the calendar has outrun', () => {
+    const d = blank()
+    taped(d, 90, 18)
+    expect(readUserModel(d, TODAY).bodyFatPct).toBeNull()
+    // and a fresh one brings it straight back
+    taped(d, 5, 18)
+    expect(readUserModel(d, TODAY).bodyFatPct?.value).toBe(18)
+  })
+
+  it('retires a reading the body has outrun, even when the date is fine', () => {
+    // Three weeks old is well inside the calendar window. Fifteen pounds
+    // is not: whatever composition that tape described, it is not this
+    // body, and a stale fat-free mass is confidently wrong.
+    const d = blank()
+    taped(d, 21, 18, 175)
+    weighIn(d, 1, 190)
+    expect(readUserModel(d, TODAY).bodyFatPct).toBeNull()
+  })
+
+  it('does not retire a good reading just because nobody has weighed in', () => {
+    const d = blank()
+    taped(d, 21, 18, 175)
+    expect(readUserModel(d, TODAY).bodyFatPct?.value).toBe(18)
+  })
+
+  it('carries confidence that rides on how many readings there are', () => {
+    const one = blank()
+    taped(one, 3, 18)
+    const three = blank()
+    taped(three, 30, 18)
+    taped(three, 16, 18)
+    taped(three, 3, 18)
+    expect(readUserModel(three, TODAY).bodyFatPct!.confidence).toBeGreaterThan(
+      readUserModel(one, TODAY).bodyFatPct!.confidence,
+    )
+    expect(readUserModel(three, TODAY).bodyFatPct!.samples).toBe(3)
   })
 })

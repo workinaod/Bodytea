@@ -5,6 +5,7 @@ import { pickCardio, rationaleFor } from './generator'
 import { buildMealPlan, type MealsPerDay } from './foods'
 import { flooredTargets } from './kcalFloor'
 import { heightAdjustmentKcal, proteinTargetG } from './sportsNutrition'
+import { DEFAULT_SESSIONS_PER_WEEK, KCAL_PER_LB, maintenanceKcal } from './bmr'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -45,12 +46,19 @@ export function byorNutrition(
   bodyweightLb: number,
   sex?: 'male' | 'female',
   heightIn?: number,
+  body: { ageYears?: number; bodyFatPct?: number; sessionsPerWeek?: number } = {},
 ) {
   const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
-  // Same baseline as the guided path: a notch lower for women. This used
-  // to be a flat ×15, which handed every woman building her own routine
-  // a man's maintenance estimate.
-  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50 + heightAdjustmentKcal(heightIn, sex)
+  // Same model chain as the guided path, and same last-resort number
+  // under it. Both paths used to compute this line themselves and had
+  // already drifted apart once; that is what plan/kcalFloor.ts exists to
+  // stop, and there is no reason to reopen it here.
+  const heuristic = Math.round((bw * KCAL_PER_LB[sex ?? 'male']) / 50) * 50 + heightAdjustmentKcal(heightIn, sex)
+  const base = maintenanceKcal(
+    { bodyweightLb: bw, sex, heightIn, ageYears: body.ageYears, bodyFatPct: body.bodyFatPct },
+    { sessionsPerWeek: body.sessionsPerWeek ?? DEFAULT_SESSIONS_PER_WEEK },
+    heuristic,
+  ).kcal
   let adj = 0
   if (goals.includes('muscle')) adj += 300
   if (goals.includes('lose-weight')) adj -= 400
