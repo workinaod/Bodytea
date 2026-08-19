@@ -9,6 +9,11 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+// NEVER import this file to check it parses. It is a script, not a module:
+// `node -e "import('./scripts/poison.mjs')"` RUNS the whole harness, and if
+// the tree happens to be clean at that moment it starts mutating source
+// behind whatever else is going on. Use `node --check` or read it.
+//
 // The checkout this script is sitting in, not the one it was written in. A
 // hardcoded path meant the harness mutated whatever happened to be at that
 // address: in a worktree it read files that were not there, and on a branch
@@ -1198,6 +1203,14 @@ const E2E_MUTATIONS = [
     find: '    const raf = requestAnimationFrame(() => sheetRef.current?.focus())',
     to: '    const raf = requestAnimationFrame(() => {})',
     spec: 'e2e/sheet.spec.ts',
+  },
+  {
+    id: "w17-byor-athlete-cannot-say-what-hurts",
+    bug: "a routine brought from home commits with no limitations, so every joint the athlete declared is thrown away",
+    file: "src/screens/onboarding/Onboarding.tsx",
+    find: "      d.prefs.limitations = limitationsFrom(answers.goalAnswers, start)",
+    to: "      d.prefs.limitations = limitationsFrom(mode === 'byor' ? {} : answers.goalAnswers, start)",
+    spec: "e2e/booklet.spec.ts",
   },
 ]
 

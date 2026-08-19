@@ -122,3 +122,54 @@ test('generated booklet: fine-tune before starting', async ({ page }) => {
   await page.getByRole('button', { name: 'Coach', exact: true }).click()
   await expect(page.getByText(/My Booklet · My Dunk Plan/)).toBeVisible()
 })
+
+test('a routine brought from home can also declare a bad knee', async ({ page }) => {
+  // R17's highest-severity finding, and it was not the importer. Every
+  // athlete who brought their own routine was committed with
+  // prefs.limitations = [], because "Anything that hurts right now?"
+  // lives on a screen the routine path never reaches. The question was
+  // asked of exactly half the userbase, under a comment in commitPlan
+  // promising that a bad knee is a bad knee whichever way the plan
+  // arrived.
+  //
+  // This runs the same flow as the test above, declares a knee, and then
+  // asks for a swap. What comes back has to be something that does not
+  // load the knee, which is the W7p limit-range behaviour reaching an
+  // athlete it could never reach before.
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+
+  await throughGoal(page, 'I already have a routine', '💪 Gaining muscle', 'add 10 lb of lean muscle')
+  await page.getByRole('button', { name: 'Next: build my week' }).click()
+
+  await page.getByRole('button', { name: '+ add a training day' }).first().click()
+  await page.getByRole('textbox').first().fill('Full Body A')
+  for (const [query, name] of [
+    ['Goblet', 'Goblet Squat'],
+    ['Romanian', 'DB Romanian Deadlift'],
+    ['One-Arm', 'One-Arm DB Row'],
+  ] as const) {
+    await page.getByRole('button', { name: '+ Add exercise' }).click()
+    await page.getByPlaceholder(/Search a name, a muscle/).fill(query)
+    await page.getByRole('button', { name: new RegExp(name) }).first().click()
+  }
+  await page.getByRole('button', { name: 'Done with this day' }).click()
+  await page.getByRole('button', { name: "My routine's in, next" }).click()
+
+  // The question this path never asked, on the screen it now asks it.
+  await expect(page.getByText('Anything that hurts right now?')).toBeVisible()
+  await page.getByRole('button', { name: 'Knees', exact: true }).click()
+  await page.getByRole('button', { name: 'Give me the notes' }).click()
+
+  await page.getByRole('button', { name: 'Start Week 1' }).click()
+  await page.getByRole('button', { name: 'Skip' }).click()
+
+  // Their own routine still runs. The app does not rewrite what they
+  // brought; the knee only changes what it offers when THEY ask.
+  await expect(page.getByText('Full Body A').first()).toBeVisible()
+  await page.getByRole('button', { name: 'Swap Goblet Squat' }).click()
+  await expect(page.getByText('swapped')).toBeVisible()
+  // The same swap without a declared knee returns a split squat, which
+  // loads it. With one declared, it must not.
+  await expect(page.getByText('Split Squat')).toHaveCount(0)
+})

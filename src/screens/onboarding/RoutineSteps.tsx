@@ -6,6 +6,8 @@ import { normalizeBooklet, validateBooklet } from '../../plan/bookletOps'
 import { BookletEditor } from '../booklet/BookletEditor'
 import { Btn } from '../../components/ui'
 import { NOTE_LABEL, NOTE_TONE } from './RoutineNotes'
+import { buildFollowups } from '../../plan/followups'
+import { Tag, fieldCls, fieldStyle } from './kit'
 
 // ============================================================
 // The four screens for a routine that already exists.
@@ -17,6 +19,14 @@ import { NOTE_LABEL, NOTE_TONE } from './RoutineNotes'
 // almost none of the wizard state the goal-driven steps do,
 // which is what makes them separable at all.
 // ============================================================
+
+/**
+ * The chips, taken from the question bank rather than retyped, so this
+ * path and the generated one can never drift into offering different
+ * answers to the same question.
+ */
+const HURT_OPTIONS =
+  buildFollowups({ goal: 'general', answers: {} }).find((q) => q.id === 'injuries')?.options ?? []
 
 export function RoutineSteps(p: {
   step: number
@@ -32,6 +42,16 @@ export function RoutineSteps(p: {
   setTuneProblems: Dispatch<SetStateAction<string[]>>
   whyWorks: string
   setWhyWorks: (s: string) => void
+  /**
+   * The same goalAnswers object the generated path fills in.
+   *
+   * Only one key is written from here, `injuries`, and it is written into
+   * the shared object rather than a private one so commitPlan's existing
+   * limitationsFrom call picks it up with no second code path. Two ways
+   * to record a bad knee is how one of them goes stale.
+   */
+  answers: Record<string, string>
+  setAnswers: Dispatch<SetStateAction<Record<string, string>>>
   weight: number
   goal: Goal
   commitPlan: (plan: PlanConfig, proteinTargetG: number, notes?: RoutineNote[], strategy?: string[]) => void
@@ -43,6 +63,19 @@ export function RoutineSteps(p: {
     tuneDraft, setTuneDraft, tuneProblems, setTuneProblems, whyWorks, setWhyWorks, weight,
     goal, commitPlan, onReady,
   } = p
+
+  /**
+   * Tapping the same chip twice clears it, so "Nothing" and "never
+   * answered" stay different states. limitationsFrom treats them the
+   * same way today, and that is its call to make, not this screen's.
+   */
+  const setHurt = (o: string) =>
+    p.setAnswers((a) => {
+      const next: Record<string, string> = { ...a, injuries: a.injuries === o ? '' : o }
+      if (next.injuries !== 'Something else') delete next['injury-what']
+      return next
+    })
+
   return (
     <>
         {step === 8 && byorDraft && (
@@ -83,7 +116,7 @@ export function RoutineSteps(p: {
 
         {step === 9 && byorDraft && (
           <div className="flex flex-1 flex-col">
-            <div className="text-center text-[11px] font-black uppercase tracking-[0.2em] text-accent">One honest question</div>
+            <div className="text-center text-[11px] font-black uppercase tracking-[0.2em] text-accent">Two things</div>
             <h2 className="headline mt-1 text-center text-[26px]">Why has this routine been working for you?</h2>
             <p className="mt-1 text-center text-[13px] leading-relaxed text-ink-dim">
               Be specific: “bench goes up every month”, “I actually show up when it's only 3 days”, “my
@@ -99,6 +132,35 @@ export function RoutineSteps(p: {
             <p className="mt-1 text-[11px] text-ink-faint">
               Goes on record in your coach feed. Empty is fine if it honestly hasn't been working. That's an answer too.
             </p>
+            {/* The question every real coach asks in the first minute, and
+                the one this path never asked. A bring-your-own-routine
+                athlete was committed with prefs.limitations = [] every
+                time, under a comment promising a bad knee is a bad knee
+                whichever way the plan arrived. It is now. */}
+            <div className="mt-7 border-t border-white/[0.08] pt-5">
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-ink-faint">
+                Anything that hurts right now?
+              </div>
+              <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">
+                Routes the plan around the joint from day one instead of waiting for it to flare.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {HURT_OPTIONS.map((o) => (
+                  <Tag key={o} selected={p.answers.injuries === o} onClick={() => setHurt(o)}>
+                    {o}
+                  </Tag>
+                ))}
+              </div>
+              {p.answers.injuries === 'Something else' && (
+                <input
+                  value={p.answers['injury-what'] ?? ''}
+                  onChange={(e) => p.setAnswers((a) => ({ ...a, 'injury-what': e.target.value }))}
+                  placeholder="What is it?"
+                  className={`mt-3 ${fieldCls}`}
+                  style={fieldStyle}
+                />
+              )}
+            </div>
             <Btn
               className="mt-6 w-full py-4"
               onClick={() => {

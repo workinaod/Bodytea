@@ -187,12 +187,12 @@ export function Onboarding() {
       // it routes the plan around the joint from day one; this is the line
       // that makes that true.
       //
-      // For the generated path. A bring-your-own-routine athlete never
-      // reaches FOLLOWUPS at all (the goal step sends them to the builder
-      // instead), so goalAnswers is still {} here and this writes nothing
-      // for them. That is not a bug in this line, it is the question
-      // never being asked, and it is logged in BODYT_STATE.md as its own
-      // gap. Somebody who brought their own routine can still hurt.
+      // BOTH paths, and it took two jobs to be true. A bring-your-own
+      // routine athlete never reaches FOLLOWUPS (the goal step sends them
+      // to the builder instead), so this line used to write [] for every
+      // one of them while the comment above it said otherwise. The routine
+      // flow asks the question itself now, into this same object, so there
+      // is one answer and one reader rather than two of each.
       d.prefs.limitations = limitationsFrom(answers.goalAnswers, start)
       if (sex) d.profile.bfFormula = sex
       if (heightIn !== null) d.profile.heightIn = heightIn
@@ -569,6 +569,8 @@ export function Onboarding() {
         setTuneProblems={setTuneProblems}
         whyWorks={whyWorks}
         setWhyWorks={setWhyWorks}
+        answers={goalAnswers}
+        setAnswers={setGoalAnswers}
         weight={bodyweightLb}
         goal={goal}
         commitPlan={commitPlan}

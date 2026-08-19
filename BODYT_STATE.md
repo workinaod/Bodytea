@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (OP4 + wiring wave LIVE at deploy 2817eed)
+Last updated: 2026-08-19 (W17 safety gap, on top of OP4 live at deploy 2817eed)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -293,7 +293,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | W4m | Wire R4: meal corpus to the 720-cell coverage predicate, carbs and fat on every record | wiring | **macros + the predicate done 2026-08-19** (carbsG and fatG on all 42 records, reconciled 4P + 4C + 9F against the stated calories to within 0.9 percent on every one; plan/mealCoverage.test.ts states both of R4 s6.1 guarantees as MEASURED numbers; slotKindOf reads the two-meal split; 9 tests, 3 mutations). R4 says the guarantees must be written BEFORE any corpus authoring so they fail loudly against today's 42 and turn green as waves land, so they are written as exact shortfalls rather than a red suite: the pool count for all 20 diet-by-slot cells is pinned, the three cells that cannot offer three choices are named (all vegan: breakfast 2, snack 2, late 2), and the protein ceiling is pinned at 59 g against the 90 g a two-meal anchor slot needs. FIXED HERE: slotKindOf mapped the two-meal split's own slot names to null, which switches slot filtering off, so somebody eating twice a day was offered late-night snacks for slots carrying 45 and 55 percent of their protein. STILL OPEN in W4m: the corpus itself (42 to 200, R4 s6.2), the fit-the-remaining-macros ranker (s5), cost tier, effort, batch and leftovers chaining, and the widening that hands a vegan dinners for breakfast without saying so | B2 | unblocks J9 |
 | W16 | Wire R16: SupplementRecord + v21 migration, 27 routing rules (the W5 fixes were the urgent subset only) | wiring | **shape + migration done 2026-08-19** (supplementTypes.ts: SupplementRecord with dose ranges, upper limits, evidence tier, AIS group, app class, suppression signals and source refs, plus StackItem which stores an ID; plan/supplements.ts: the catalog out of foods.ts, 8 offered rows and 4 named `never`; store v21 migration; three screens resolve at read time; 11 + 5 tests, 6 mutations). WHY IT MATTERED: the W5 corrections reached the catalog and reached NOBODY. A dose was a STRING copied into a booklet at signup and read forever, so the 400 mg magnesium line, the vitamin D range sitting on its own 4,000 IU ceiling and the withdrawn zinc were all still on the screen of every account that existed before the fix. Same failure the v19 calorie repair names, with a sharper edge. After this an app suggestion is an id and its dose comes from the catalog at render time, so the NEXT correction ships to everybody with no migration. zinc is withdrawn from stored plans, not just the catalog; anything the athlete typed themselves is kept word for word, because the app may retract its own advice and may not edit somebody's health record. STILL OPEN in W16: 22 of the 27 routing rules need signals that do not exist (medications, conditions, tested-athlete, bedtime), the demand-derived rules (SR-22 to SR-24) need reading the athlete's own training, and `appClass` and `requiresDemand` are carried as data that nothing reads, pinned by a test that says so | B2 | SR-2 became LIVE off W8's age field |
 | W5p | Wire R5: ProgramFamily records + selection logic (10 families) | wiring | pending | J7 partial | before J11 |
-| W17 | Wire R17: 140-rule notation corpus + the import/repair model | wiring | pending | W-ONT | this IS most of J4/J5 |
+| W17 | Wire R17: 140-rule notation corpus + the import/repair model | wiring | **the safety gap closed 2026-08-19** (the routine flow asks "Anything that hurts right now?" on its own screen, into the SAME goalAnswers object, so commitPlan's existing limitationsFrom call picks it up with no second code path; 1 e2e, 1 mutation). R17 lists this first and says explicitly it is independent of everything else in the pack and should not wait for an importer. MEASURED BEFORE: every bring-your-own-routine athlete committed with prefs.limitations = [], because the injuries question lives on a screen that path never reaches, under a comment in commitPlan promising a bad knee is a bad knee whichever way the plan arrived. Half the userbase was never asked. It also meant NONE of W6s or W7p reached them. MEASURED AFTER: an e2e declares a knee in the routine flow and the swap comes back without a split squat, which is W7p limit-range behaviour reaching an athlete it could not reach before; severing the wiring puts the split squat straight back. STILL OPEN in W17: everything else in the pack, and it is the biggest one left. plan/notation.ts and its 140 rules (R17 calls this the highest-value lowest-risk piece and it needs R-ONT wave 1 first: aliases.ts and the PrescriptionUnit model), importSegment and importResolve, the review screen, the two editor fixes, and s5's advisory changes | W-ONT | this IS most of J4/J5 |
 | W12 | Wire R12: AuthorityRule, the override model, a decline control and its cooldown | wiring | pending | B1 | needs the event log to record a no |
 | W13 | Wire R13: CohortPrior + the credibility blend; calibration.ts already has the shape | wiring | pending | J7, B1 | |
 | W14 | Wire R14: PassiveReading + the conflict rule. Mostly post-Capacitor; the accepted list is short | wiring | pending | J7 | post-gate for the sensor half |
@@ -1011,6 +1011,37 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   gap shows as a black hole in it. NEXT: nothing owed on OP4. If the owner later wants
   the figure interactive (tap a muscle to filter exercises), the per-region paths are
   already the hit targets; that is post-core work under the visual-overhaul fence.
+- **2026-08-19 · W17 safety gap · audit session.** R17 opens its ordered next-steps list
+  with something that is not about importing anything: every athlete who brings their own
+  routine is committed with prefs.limitations = [], and it calls this the
+  highest-severity finding in the audit. The injuries question lives on a screen the
+  routine path never reaches, so "Anything that hurts right now?" was asked of about half
+  the userbase, under a comment in commitPlan promising the opposite. Two jobs of
+  limitation work, W6s and W7p, reached none of those athletes.
+  The routine flow asks it now, on the screen that was already asking one honest
+  question, writing into the SAME goalAnswers object the generated path fills. One
+  answer and one reader rather than two of each, because two ways to record a bad knee
+  is how one of them goes stale. The chips come from buildFollowups rather than being
+  retyped, so the two paths cannot drift into offering different answers.
+  The test is end to end and it was proven to bite before it was trusted: declare a knee
+  in the routine flow, ask for a swap, and a split squat must not come back. Sever the
+  wiring and the split squat returns immediately, which is the W7p behaviour arriving
+  for an athlete who could never reach it.
+  TWO PROCESS FAILURES this session, both mine and both worth the space. A poison run was
+  started in the foreground and its caller timed out at two minutes; the node process
+  kept going detached, mutating source while commits happened around it, and one poisoned
+  line reached a commit. The first attempt to clean it restored the line BACKWARDS, since
+  a shortened list reads like the honest version and a padded one reads like tampering.
+  equipCoverage.test.ts caught that; reading the diff did not. Then, later, checking the
+  harness parsed by importing it RAN it, because it is a script and not a module. A
+  warning now sits at the top of the file naming `node --check` as the way to do that.
+  The rule that comes out of both: this harness is never run anywhere it can be
+  interrupted, and never imported at all.
+  Validation: typecheck clean, **1,451/1,451 unit**, build green, **e2e 83 passed**
+  (1 new), poison 138/138 unit and 9/9 e2e (1 new, and it needed the e2e mode: a
+  mutation filed in the wrong array is a mutation that never fires).
+  NEXT: R-ONT wave 1 (aliases.ts + the PrescriptionUnit model), which R17 names as a
+  prerequisite rather than parallel work, then plan/notation.ts.
 
 - **2026-08-19 · OP4 DEPLOY · 3D body muscle models session.** Owner: "Deploy". The
   deploy branch had moved while OP4 was built (the W10/W11/W16/W18/W4m wiring wave,
