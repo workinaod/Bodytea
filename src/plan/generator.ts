@@ -726,6 +726,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     lifeEvents: (a.lifeSeeds ?? []).map((s, i) => ({ id: `life-${i + 1}`, label: s.label, kind: s.kind })),
     rationale,
     nutrition: { kcalTraining: nutrition.kcalTraining, kcalRest: nutrition.kcalRest },
+    nutritionBasis: nutrition.basis,
     mealPlan: a.skipMeals ? { ...mealPlanFull, templates: [] } : mealPlanFull,
     // resolveDay has had the practice machinery for ages: ballDates
     // suppress scheduled conditioning and raise two banners. The only

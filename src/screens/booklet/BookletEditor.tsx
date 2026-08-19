@@ -125,6 +125,10 @@ export function BookletEditor({
                 mutate((p) => {
                   p.nutrition.kcalTraining = Math.max(1500, Math.min(5000, v))
                   p.nutrition.kcalRest = p.nutrition.kcalTraining - 300
+                  // Typed by a person, so it is theirs. Clearing the basis
+                  // is how engine/nutritionRecheck.ts knows never to offer
+                  // to change it back.
+                  delete p.nutritionBasis
                 })
               }
               step={50}

@@ -220,7 +220,8 @@ export interface PlanConfig {
   lifeEvents: LifeEventDef[]
   /** exerciseId → goal-specific "why it's in YOUR plan" (falls back to def.why). */
   rationale: Record<string, string>
-  nutrition: { kcalTraining: number; kcalRest: number }
+  nutrition: CalorieTargets
+  nutritionBasis?: NutritionBasis
   /** The eating side of the booklet, per-user, editable (v10+). */
   mealPlan: MealPlanConfig
   /**
@@ -239,21 +240,15 @@ export interface PlanConfig {
   goalAnswers?: Record<string, string>
 }
 
-export interface Profile {
-  displayName?: string
-  /** Cached leaderboard username (set when an account exists). */
-  username?: string
-  /** For the tape-measure body-fat estimate (US Navy method). */
-  heightIn?: number
-  /** Which Navy formula fits their body, asked once in the estimator. */
-  bfFormula?: 'male' | 'female'
-  age?: number // Years. The one number this app states a minimum of: onboarding/MeStep.tsx
-}
 
 // ---------- Resolved day (engine output) ----------
 
-// Moved to resolvedTypes.ts; the allowance here followed it down.
+// Moved to resolvedTypes.ts, nutritionTypes.ts and profileTypes.ts; the
+// allowance here followed each of them down.
 export * from './resolvedTypes'
+export * from './profileTypes'
+import type { CalorieTargets, NutritionBasis } from './nutritionTypes'
+import type { Profile } from './profileTypes'
 
 // ---------- Logged state ----------
 

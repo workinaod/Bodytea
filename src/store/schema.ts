@@ -15,6 +15,8 @@ import { isoDate, weekday } from './primitives'
 import { sessionSchema } from './sessionSchema'
 import { prefsSchema } from './prefsSchema'
 import { profileSchema, settingsSchema } from './settingsSchema'
+import { calorieTargetsSchema, nutritionBasisSchema } from './nutritionSchema'
+import { measurementSchema, photoMetaSchema } from './measurementSchema'
 import { foodLimitsSchema, mealPlanSchema, migrateSupplementStack } from './mealPlanSchema'
 import { cardioEntrySchema, runLogSchema } from './activitySchema'
 
@@ -84,7 +86,8 @@ export const planConfigSchema = z.object({
     z.object({ id: z.string(), label: z.string().min(1), kind: z.enum(['late-night', 'on-feet']) }),
   ),
   rationale: z.record(z.string(), z.string()),
-  nutrition: z.object({ kcalTraining: z.number().positive(), kcalRest: z.number().positive() }),
+  nutrition: calorieTargetsSchema,
+  nutritionBasis: nutritionBasisSchema.optional(),
   sportMode: z.enum(['ball', 'generic']).optional(),
   dietStyle: z.enum(['omnivore', 'vegetarian', 'vegan', 'pescatarian']).optional(), // all four, or the missing one wipes that athlete: store/dietStyle.test.ts
   foodLimits: foodLimitsSchema.optional(), // dropped on the floor until now: a declared allergy that never reached a meal
@@ -149,32 +152,6 @@ const mealDaySchema = z.object({
   dayTypeOverride: z.enum(['training', 'rest']).optional(),
 })
 
-const measurementSchema = z.object({
-  date: isoDate,
-  weightLb: z.number().optional(),
-  bodyFatPct: z.number().optional(),
-  neckIn: z.number().optional(),
-  hipIn: z.number().optional(),
-  waistIn: z.number().optional(),
-  chestIn: z.number().optional(),
-  armsIn: z.number().optional(),
-  thighIn: z.number().optional(),
-  vertIn: z.number().optional(),
-  photoIds: z.object({
-    front: z.string().optional(),
-    side: z.string().optional(),
-    back: z.string().optional(),
-  }),
-})
-
-const photoMetaSchema = z.object({
-  id: z.string(),
-  kind: z.enum(['progress', 'proof']),
-  takenAt: z.string(),
-  w: z.number(),
-  h: z.number(),
-  bytes: z.number(),
-})
 
 const coachSchema = z.object({
   feed: z.array(

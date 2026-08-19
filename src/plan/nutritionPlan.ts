@@ -1,4 +1,5 @@
 import type { Goal } from '../types'
+import type { NutritionBasis } from '../nutritionTypes'
 import { bodyweightHeuristicKcal, dayMovementOf, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal } from './bmr'
 import { flooredTargets } from './kcalFloor'
 import { proteinContextFor, proteinTargetG } from './sportsNutrition'
@@ -56,6 +57,16 @@ export function buildNutrition(
     // an endurance athlete was being handed protein instead of the carbs
     // they run on. See plan/sportsNutrition.ts for the ranges and why.
     proteinTargetG: proteinTargetG(bw, proteinContextFor(goal, ans)),
+    // What the two numbers were computed from, so the app can later tell
+    // "this target is out of date" from "this target is fine" instead of
+    // throwing the inputs away and never asking again.
+    basis: {
+      bodyweightLb: bw,
+      model: maintenance.model,
+      ...(body.ageYears !== undefined ? { ageYears: body.ageYears } : {}),
+      ...(body.bodyFatPct !== undefined ? { bodyFatPct: body.bodyFatPct } : {}),
+      ...(body.sessionsPerWeek !== undefined ? { sessionsPerWeek: body.sessionsPerWeek } : {}),
+    } satisfies NutritionBasis,
     // 1700 above is lean-only; this floors every goal, and the rest day.
     ...flooredTargets(kcalTraining, base),
   }

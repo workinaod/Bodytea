@@ -1,4 +1,5 @@
 import type { CustomTarget, DayTemplate, DietStyle, FoodLimits, Goal, LifeEventKind, PlanConfig, RoutineGoal, TemplateEntry, Weekday } from '../types'
+import type { NutritionBasis } from '../nutritionTypes'
 import { getExercise, EXERCISES } from './exercises'
 import { equipFor } from './equip'
 import { pickCardio, rationaleFor } from './generator'
@@ -53,11 +54,12 @@ export function byorNutrition(
   // under it. Both paths used to compute this line themselves and had
   // already drifted apart once; that is what plan/kcalFloor.ts exists to
   // stop, and there is no reason to reopen it here.
-  const base = maintenanceKcal(
+  const maintenance = maintenanceKcal(
     { bodyweightLb: bw, sex, heightIn, ageYears: body.ageYears, bodyFatPct: body.bodyFatPct },
     { sessionsPerWeek: body.sessionsPerWeek ?? DEFAULT_SESSIONS_PER_WEEK },
     bodyweightHeuristicKcal(bw, sex, heightIn),
-  ).kcal
+  )
+  const base = maintenance.kcal
   let adj = 0
   if (goals.includes('muscle')) adj += 300
   if (goals.includes('lose-weight')) adj -= 400
@@ -77,6 +79,15 @@ export function byorNutrition(
           ? 'hypertrophy'
           : 'general',
     ),
+    // Same record of what the number came from as the guided path, so a
+    // routine the athlete brought is just as rechecked as one BodyT wrote.
+    basis: {
+      bodyweightLb: bw,
+      model: maintenance.model,
+      ...(body.ageYears !== undefined ? { ageYears: body.ageYears } : {}),
+      ...(body.bodyFatPct !== undefined ? { bodyFatPct: body.bodyFatPct } : {}),
+      ...(body.sessionsPerWeek !== undefined ? { sessionsPerWeek: body.sessionsPerWeek } : {}),
+    } satisfies NutritionBasis,
     // Floored, because this path had no floor at all: see plan/kcalFloor.ts.
     ...flooredTargets(base + adj, base),
   }
@@ -144,6 +155,7 @@ export function makeEmptyByorPlan(args: {
       lifeEvents: (args.lifeSeeds ?? []).map((s, i) => ({ id: `life-${i + 1}`, label: s.label, kind: s.kind })),
       rationale: {},
       nutrition: { kcalTraining: n.kcalTraining, kcalRest: n.kcalRest },
+      nutritionBasis: n.basis,
       mealPlan: (() => {
         const mp = buildMealPlan(goal, n.proteinTargetG, n, args.mealsPerDay ?? 4, args.dietStyle ?? 'omnivore', args.foodLimits)
         return args.skipMeals ? { ...mp, templates: [] } : mp

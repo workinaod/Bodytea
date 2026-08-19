@@ -5,6 +5,7 @@ import { addDaysISO, formatDayLabel } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { kcalTargetFor, nutritionDayType } from '../../engine/dayType'
 import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor, proteinStreak } from '../../engine/stats'
+import { applyRecheck, learnedCopy, nutritionRecheck } from '../../engine/nutritionRecheck'
 import { macroTargets } from '../../plan/sportsNutrition'
 import { Btn, Card, Chip, DayArrow, Ring, ScreenHeader, SectionTitle } from '../../components/ui'
 import { cycleDayTypeOverride, removeMealEntry, setMealServings, toggleSupplement } from '../../logic/actions'
@@ -60,6 +61,7 @@ export function MealsScreen() {
   )
   const pStreak = proteinStreak(data)
   const bump = useMemo(() => kcalBumpSuggestion(data), [data])
+  const recheck = useMemo(() => nutritionRecheck(data, today), [data, today])
 
   return (
     <div className="space-y-3 pb-6">
@@ -130,6 +132,31 @@ export function MealsScreen() {
             <Chip tone="lime">protein never drops: {data.settings.proteinTargetG} g</Chip>
             {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
           </div>
+
+          {recheck && (
+            <Card className="border-accent/40">
+              <p className="text-[13px] font-bold text-accent-soft">Your target was set before this</p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
+                {learnedCopy(recheck.learned)} On what I know now your training days come out at{' '}
+                {recheck.suggested.kcalTraining} kcal, not {recheck.current.kcalTraining}. Your call.
+              </p>
+              <div className="mt-2.5 flex gap-2">
+                <Btn kind="subtle" className="flex-1 !py-2"
+                  onClick={() => update((d) => {
+                    const next = applyRecheck(d, today)
+                    if (!next) return
+                    d.plan.nutrition = next.nutrition
+                    d.plan.nutritionBasis = next.nutritionBasis
+                  })}>
+                  Use {recheck.suggested.kcalTraining}
+                </Btn>
+                <Btn kind="subtle" className="flex-1 !py-2"
+                  onClick={() => update((d) => { d.plan.nutritionBasis = recheck.basis })}>
+                  Keep {recheck.current.kcalTraining}
+                </Btn>
+              </div>
+            </Card>
+          )}
 
           {bump && (
             <Card className="border-gold/40">

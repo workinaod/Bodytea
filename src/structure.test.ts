@@ -67,7 +67,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // FoodLimits moved to foodTypes.ts, beside journeyTypes and prefsTypes,
   // because a shape with a subsystem reading it (plan/foodLimits.ts) is no
   // longer a field. -11 even after PlanConfig gained foodLimits itself.
-  'types.ts': 696,
+  'types.ts': 691,
   // screens/onboarding/Onboarding.tsx came off this list too, which
   // empties the "real splits owed" section entirely. The chip tables and
   // the one goal heuristic went to onboardingData.ts, the goal step, the
@@ -130,7 +130,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // floors that decide what the repair means, so the v20 supplement
   // migration could land without raising the allowance. Both are now
   // delegated to; this file is a list of what a data file holds.
-  'store/schema.ts': 602,
+  'store/schema.ts': 578,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,
@@ -376,10 +376,8 @@ const DEAD_EXPORT_ALLOWED = new Set([
   // J8 is the next job rather than a someday: volume autoregulation
   // needs hardSetsPerWeek, schedule fit needs trainsOnWeekday, exercise
   // fit needs daysSinceRegion. Four rows and a named consumer.
-  'engine/userModel.ts:readUserModel',
   'engine/userModel.ts:workCapacity',
   'engine/userModel.ts:recoveryByRegion',
-  'engine/userModel.ts:adherenceShape',
 
   // R-ONT wave 1. resolveExercise left this list the same day it joined
   // it: the picker calls it now when a literal search comes back empty.
