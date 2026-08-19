@@ -203,7 +203,34 @@ export const CARDIO_ACTIVITIES: CardioActivityDef[] = [
     ],
   },
 
-  { id: 'custom', label: 'Custom', emoji: '✨', conditioning: true, met: 6.0, asks: { minutes: true } },
+  // ---------------- Studio and mat classes ----------------
+  //
+  // METs are compendium values for the real thing, and none of the mat
+  // classes carry `conditioning`. Full yoga sessions measure 2.9 to 3.3
+  // METs, which is LIGHT activity on the ACSM and AHA scale, and a
+  // typical hatha session does not meet the intensity recommendation for
+  // cardiorespiratory fitness. Counting one as the week's cardio does not
+  // make it cardio, it just stops the app asking for any.
+  //
+  // A sculpt or weights class is the exception and it is a real one: 5.5
+  // METs is moderate, so it counts.
+  //
+  // The temptation the day somebody with four classes a week sees the
+  // banner will be to flip these to true. That trades an awkward sentence
+  // for a broken health rule, and the sentence is the right thing to fix.
+  { id: 'yoga', label: 'Yoga, slower', emoji: '🧘', met: 2.5, asks: { minutes: true } },
+  { id: 'yoga-power', label: 'Yoga, flowing', emoji: '🧘', met: 4.0, asks: { minutes: true } },
+  { id: 'pilates', label: 'Pilates', emoji: '🤸', met: 3.0, asks: { minutes: true } },
+  { id: 'barre', label: 'Barre', emoji: '🩰', met: 3.5, asks: { minutes: true } },
+  { id: 'tai-chi', label: 'Tai chi', emoji: '☯️', met: 3.0, asks: { minutes: true } },
+  { id: 'sculpt-class', label: 'Sculpt / weights class', emoji: '🏋️', conditioning: true, met: 5.5, asks: { minutes: true } },
+
+  // Whatever they named it. NOT conditioning: the weekly rule exists for
+  // a specific cardiovascular dose and this is the one activity the app
+  // knows nothing about, so it cannot vouch for it. Before this, logging
+  // a yoga class here satisfied the only health rule the app makes
+  // mandatory, at an assumed 6.0 METs against a measured 2.9 to 3.3.
+  { id: 'custom', label: 'Custom', emoji: '✨', met: 4.0, asks: { minutes: true } },
 ]
 
 export function cardioActivity(id: string): CardioActivityDef {
@@ -437,13 +464,27 @@ const ACTIVITY_TRACKING: Record<string, ActivityTracking> = {
 
   // Whatever the user named it. Assume feet on ground and a normal
   // walking stride, and let GPS take over if it turns out to move.
+  //
+  // The standard MET came down from 6.0 with the conditioning flag: an
+  // unnamed activity was being credited as a moderate-to-vigorous session
+  // on no evidence at all, which ran the calorie estimate roughly double
+  // for anybody logging a mat class through here.
   custom: {
     steps: true,
     distance: 'gps',
     stride: 0.415,
     band: { low: 3000, high: 6000 },
-    met: { low: 4.0, standard: 6.0, high: 8.0 },
+    met: { low: 2.5, standard: 4.0, high: 7.0 },
   },
+
+  // Mat classes: no meaningful distance, and step counting a Pilates
+  // class credits somebody with travelling across a room they never left.
+  yoga: { steps: false, distance: 'none' },
+  'yoga-power': { steps: false, distance: 'none' },
+  pilates: { steps: false, distance: 'none' },
+  barre: { steps: false, distance: 'none' },
+  'tai-chi': { steps: false, distance: 'none' },
+  'sculpt-class': { steps: false, distance: 'none' },
 }
 
 export function trackingFor(activityId: string): ActivityTracking {

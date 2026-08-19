@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (OP1 + OP2 + OP3 done and LIVE, off-plan training session)
+Last updated: 2026-08-19 (W18 live-bug half: a yoga class no longer counts as the week's cardio)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -272,8 +272,8 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | R5 | Program-family corpus | research | **synthesized 2026-08-18** (research/R5-program-families.md; 10 families, 19 sources, ProgramFamily record, selection logic, 8-axis convergence metric, 18 fixtures of which 4 fail today) | J7 schemas stable | planner owner, before J11 |
 | W1n-a | First slice of W1n, done inside B2: R1's protein bands, deficit ceiling and calorie floors carry provenance. The floors are tier D and say so | wiring | **done 2026-08-19** | B2 | the rest of W1n waits on J7 |
 | W-ONT | Wire R-ONT: capability fields onto the exercise catalog, alias resolution, substitution at scale | wiring | **capability slice done 2026-08-19** (plan/capability.ts: CapabilityBlock, CapabilityDemands, demandsOf, blockedByCapability; SubstituteQuery gains `cannot`; one filter line in substitutesFor; 12 tests + 3 mutations). WHAT IT UNBLOCKS: seven joints were the entire vocabulary of limitation the planner had, so R6's cannot-kneel / cannot-get-to-floor / cannot-raise-arm-overhead mapped to nothing and R6 was unshippable. They map now. Demands are DERIVED from pattern with an override list for the 30 the defaults get wrong, and the test asserts overrides stay under a third of the catalog rather than trusting R-ONT's 70 percent estimate. STILL OPEN in W-ONT: alias resolution (R-ONT s5), the Demand-scale fields (standingBalance, dynamicBalance, gripDemand, coordination), the logistics fields (spotter, space, noise, setup), and CapabilityVariants as substitution edges | wiring | B2 done | next: W6s consumes this |
-| W9 | Wire R9: calisthenics/mobility rungs + the ramp-set algorithm into the catalog and a warm-up engine | wiring | **first slice done 2026-08-19** (8 previously dead-end unloaded movements gained same-pattern progressions; unloaded dead ends 40 -> 32, counted by a test rather than claimed). R9's finding: J2 taught the engine to judge an unloaded lift and 40 of 47 had nowhere to promote to, so nextUp returned null and the verdict collapsed to topped-out. STILL OPEN and the honest reason: the remaining 32 need rungs nobody has authored. The pull-up chain is the one R9 calls most valuable and it CANNOT be closed from what exists, because scapular-pull, arch-hang and negative-pull-up are not in the catalog and a weighted pull-up needs `loadable` to become a function of movement AND equipment. A test asserts pull-up still has no progression so the day somebody authors those rungs it points them here. Also open: the ramp-set algorithm and the warm-up engine, which does not exist at all | W-ONT | |
-| W18 | Wire R18: 72 mind-body records + the three-channel counting model (energy, regional volume, systemic fatigue) | wiring | pending | W-ONT | also fixes the yoga-satisfies-conditioning bug |
+| W9 | Wire R9: calisthenics/mobility rungs + the ramp-set algorithm into the catalog and a warm-up engine | wiring | **first slice done 2026-08-19** (8 previously dead-end unloaded movements gained same-pattern progressions; unloaded dead ends 40 -> 32, counted by a test rather than claimed). R9's finding: J2 taught the engine to judge an unloaded lift and 40 of 47 had nowhere to promote to, so nextUp returned null and the verdict collapsed to topped-out. STILL OPEN and the honest reason: the remaining 32 need rungs nobody has authored. The pull-up chain is the one R9 calls most valuable and it CANNOT be closed from what exists, because scapular-pull, arch-hang and negative-pull-up are not in the catalog and a weighted pull-up needs `loadable` to become a function of movement AND equipment. A test asserts pull-up still has no progression so the day somebody authors those rungs it points them here. Also open: the ramp-set algorithm and the warm-up engine, which does not exist at all. Mutation coverage was missing at the time and was added afterwards (2 mutations: a chain cut, and a second chain cut so the dead-end count is proven measured rather than spot-checked on one row) | W-ONT | |
+| W18 | Wire R18: 72 mind-body records + the three-channel counting model (energy, regional volume, systemic fatigue) | wiring | **live-bug half done 2026-08-19** (six studio/class activities at compendium METs, none of the mat ones flagged conditioning; sculpt-class at 5.5 is the one that earns it; `custom` loses `conditioning: true` and drops 6.0 -> 4.0 METs; mat classes get no steps and no distance. classes.test.ts, 12 tests, 4 mutations). MEASURED BEFORE: logging a yoga class through `custom` satisfied `cardioRequiredForWeek`, so the app's ONE mandatory health rule was switched off by an activity measuring 2.9-3.3 METs, which is light on the ACSM and AHA scale, while the calorie estimate ran roughly double on an assumed 6.0. MEASURED AFTER: an hour of yoga, and an hour of anything the app cannot name, both leave the week still owing a session; a sculpt class and a run both close it. The end-to-end assertion runs through `cardioRequiredForWeek`, not the catalog, because a flag nobody reads is a flag that can be quietly re-flipped. STILL OPEN in W18: the 72 records themselves and the three-channel counting model (energy, regional volume, systemic fatigue), which is the actual wiring job | W-ONT | the yoga-satisfies-conditioning bug is closed |
 | W11 | Wire R11: SportProfile shape + 32 sport rows; the sport answer is currently collected and unread | wiring | pending | W-ONT | |
 | W6s | Wire R6: SafetyRule shape, red-flag classifier, PAR-Q+ gate | wiring | **constraint half done 2026-08-19** (plan/safetyRules.ts: ConstraintId, SafetyConstraint, CONSTRAINTS covering all 12 of R6 s5's non-pregnancy rows, constraintsFor, planningLimits; 13 tests + 3 mutations). R6's table has been synthesized and UNUSABLE since it was written because its rows are positions and the planner only spoke joints; W-ONT gave it the vocabulary. Joint rows now carry the deep-range block as well as the joint route, which is the gap that let a bad knee still be asked for a full-depth squat. Impact caps take the minimum across limitations, never an average. Per-row confidence is preserved and a test pins that only the two rows R6 marks sourced are marked sourced. STILL OPEN in W6s: the RED/YELLOW/GREEN classifier, the PAR-Q+ question gate, the pregnancy and postpartum rows (they need a trimester input that does not exist), and userCopy | B2 | pairs with J3 |
 | W7p | Wire R7: 11 functional dimensions + 10 population packs, and limit-range mode | wiring | **limit-range done 2026-08-19, which closes J6's headline** (SubstituteQuery gains `limited`; planningLimits returns limited rather than avoid; the penalty dominates the closeness scoring rather than trading against it). MEASURED BEFORE: a declared bad knee returned NOTHING for all seven squat movements, because every squat in the catalog stresses the knee and `avoid` is a hard reject, so that athlete got no lower body work at all. MEASURED AFTER: every one returns leg-press and wall-sit, which is what R6's own knee row prescribes. `avoid` keeps its hard-reject meaning for the pain path, which is a different input. STILL OPEN in W7p: the 11 functional dimensions and the 10 population packs | W6s | J6 headline closed |
@@ -786,6 +786,39 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   after sleep sync ships. Proposed shapes fit the existing split (signalTypes.ts +
   store/signalSchema.ts + platform/health.ts + engine/signals.ts) with a defaulted store
   key, so no SCHEMA_VERSION bump and no migration. No production code touched.
+
+- **2026-08-19 · W18 (live-bug half) · audit session.** R18 found the one that mattered
+  most and it was not a missing record, it was a live defect: `custom` cardio shipped with
+  `conditioning: true` at an assumed 6.0 METs, and `custom` is where a yoga class gets
+  logged because there was nowhere else to put one. So the single health rule this app
+  refuses to bend, at least one conditioning session a week, was being switched off by an
+  activity that measures 2.9 to 3.3 METs. That is LIGHT on both the ACSM and the AHA
+  scale, and a typical hatha session does not meet the intensity recommendation for
+  cardiorespiratory fitness at all. The calorie estimate ran roughly double at the same
+  time, on no evidence about the activity whatsoever.
+  Fixed by giving the classes somewhere honest to go: yoga slower (2.5), yoga flowing
+  (4.0), pilates (3.0), barre (3.5), tai chi (3.0), none carrying `conditioning`, plus
+  sculpt/weights class at 5.5 which does carry it, because 5.5 is moderate and the flag
+  is not a blanket no. `custom` loses the flag and drops to 4.0. Mat classes get
+  `steps: false` and `distance: 'none'`, since step-counting a Pilates class credits
+  somebody with crossing a room they never left.
+  The test that matters runs through `cardioRequiredForWeek`, not the catalog: an hour
+  of yoga, and an hour of anything the app cannot name, both leave the week still owing
+  a session, and a sculpt class and a run both close it. Asserting the flag alone would
+  have pinned data nobody reads, and the whole defect was that the flag WAS read.
+  Written into the source, because the pressure will come: the day somebody with four
+  classes a week sees the banner, the tempting fix is to flip these to true. That trades
+  an awkward sentence for a broken health rule, and the sentence is the right thing to
+  fix. A mutation now enforces it.
+  Also paid off here: W9 shipped without mutation coverage. Two mutations added, cutting
+  two different chains, so the dead-end count of 32 is proven measured rather than spot
+  checked on one row.
+  Validation: typecheck clean, **1,389/1,389 unit** (12 new), build green, **poison
+  119/119** (6 new: 2 for W9, 4 for W18). The harness refused to start against a dirty
+  tree, which is the guard added after an interrupted run left live poison in
+  generator.ts, and it was right to: the run had to wait for the commit.
+  NEXT: W11 (SportProfile; the sport answer is collected and never read), then W10, W4m,
+  W16, W17, in that order.
 
 ## 10. SOURCES
 
