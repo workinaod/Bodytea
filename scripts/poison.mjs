@@ -1028,6 +1028,38 @@ const MUTATIONS = [
     to: "'sprint-feel': 'Smooth'",
     spec: "src/plan/personaSeeds.test.ts",
   },
+  {
+    id: "w10-a-movement-goes-quiet-again",
+    bug: "a movement ships with nothing to say in the one line an athlete reads mid-set, which is how 65 of 194 shipped",
+    file: "src/plan/cues.ts",
+    find: "  'push-up': 'Push the floor away. One straight line from head to heels.',",
+    to: "",
+    spec: "src/plan/cues.test.ts",
+  },
+  {
+    id: "w10-cue-outgrows-its-box",
+    bug: "a cue runs past the two lines it renders in and gets cut off mid-sentence on a 390px screen",
+    file: "src/plan/cues.ts",
+    find: "  'push-up': 'Push the floor away. One straight line from head to heels.',",
+    to: "  'push-up': 'Push the floor away and keep one perfectly straight line running from the head down to the heels on every single rep.',",
+    spec: "src/plan/cues.test.ts",
+  },
+  {
+    id: "w10-cue-tells-somebody-what-it-cannot-see",
+    bug: "a cue diagnoses form the app has no camera to observe, which is the one thing R10 says it must never do",
+    file: "src/plan/cues.ts",
+    find: "  'push-up': 'Push the floor away. One straight line from head to heels.',",
+    to: "  'push-up': 'Your hips are sagging. Push the floor away.',",
+    spec: "src/plan/cues.test.ts",
+  },
+  {
+    id: "w10-cue-the-voice-cannot-say",
+    bug: "a cue keeps shorthand speakable does not expand, so the coach reads out erpee seven and thirty ess",
+    file: "src/plan/cues.ts",
+    find: "  'push-up': 'Push the floor away. One straight line from head to heels.',",
+    to: "  'push-up': 'Push the floor away. Hold 30s at RPE7.',",
+    spec: "src/plan/cues.test.ts",
+  },
 ]
 
 const E2E_MUTATIONS = [

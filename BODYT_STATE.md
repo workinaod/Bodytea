@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (W11 steps 1-3: the sport answer stops being a dead wire)
+Last updated: 2026-08-19 (W10 coverage: every movement has a cue, for the first time)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -286,7 +286,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | W13 | Wire R13: CohortPrior + the credibility blend; calibration.ts already has the shape | wiring | pending | J7, B1 | |
 | W14 | Wire R14: PassiveReading + the conflict rule. Mostly post-Capacitor; the accepted list is short | wiring | pending | J7 | post-gate for the sensor half |
 | W15 | Wire R15: age bands into loading ceilings, calorie baseline, plyometric gating. Age is collected (W8) and read by nothing | wiring | pending | J7 partial | |
-| W10 | Wire R10: cue corpus coverage (65 of 194 movements carry no cue) + selection and outcome tracking | wiring | pending | W-ONT | feeds J10 |
+| W10 | Wire R10: cue corpus coverage (65 of 194 movements carry no cue) + selection and outcome tracking | wiring | **coverage done 2026-08-19** (plan/cues.ts: all 65 written in the house style, merged at catalog assembly; 16 guards, 6 proven to bite, 4 mutations). R10 calls the corpus the long pole and a CONTENT job, and this is that job done: coverage 129/194 to 194/194. The reason it hid is in data.test.ts, which asserts steps, muscles, qualities, why, mistakes, a video query and a rest time and never once asked for a cue, so a silent field was not a crash. It asks now. The guards are the ones R10 s10.4 names: fits the box, fits a breath, survives speakable, makes no claim about a body the app cannot see, promises nobody an injury prevented, no em dashes. Also fixed: one shipped cue was over the voice budget at 13 words. STILL OPEN in W10: selection (engine/cueing.ts, the trigger ladder, one cue ever, silence as the common output), outcome tracking (the CueIssue ledger, which R10 says belongs inside B1 rather than a private array), the TECHNIQUE table proper, and familiarity | W-ONT | feeds J10 |
 | W8e | Wire R8: EndurancePlan shape, session-vs-30-day-max load rule (the 10 percent rule fails) | wiring | pending | J7 partial | future endurance planner |
 | B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | **done 2026-08-19** (plan/knowledge.ts 136 lines: SourceRef, KnowledgeRecord, EvidenceTier A-D, confidenceOf; plan/knowledgeRegistry.ts as the list, separate file because a refs module needs confidenceOf and the registry needs the refs module; plan/nutrition.refs.ts as the first, annotating R1's constants IN PLACE by importing the live values so a number cannot drift from its citation; plan/knowledge.test.ts 14 checks + 3 poison mutations). Guards: a sourced tier without a source, a dangling source id, a tier better than its best source, a source nothing cites, hand-typed confidence, a duplicate or malformed id, and a refs module on disk that the registry does not name. Written down in the test: nothing here can catch a number we invented, cited to real papers that do not name it, and labelled A. That is a review problem and the record shape makes it legible, which a bare `= 1500` never did | starts with R1 | done in the audit session |
@@ -859,6 +859,35 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   Validation: typecheck clean, **1,409/1,409 unit** (20 new), build green, sim 20
   personas with zero invariant failures, **poison 125/125** (6 new).
   NEXT: W10 (65 of 194 movements carry no cue), then W4m, W16, W17.
+
+- **2026-08-19 · W10 coverage · audit session.** R10 counted the cue corpus: 194
+  movements, 129 cues, 65 movements with NOTHING to say in the one line an athlete
+  reads with a bar in their hands. It calls this the long pole of the whole pack and,
+  usefully, a content job rather than an engineering one. So it is done: all 65 written.
+  The reason it went unnoticed for the life of the app is one line of missing test.
+  data.test.ts asserts steps, at least one muscle, at least one quality, a why over 40
+  characters, at least one mistake, a video query and a rest time. It never asked for a
+  cue, and a missing optional field is not a crash. It asks now.
+  House style out of R10 s3.7: verb, external referent, one target, under 80 characters
+  and under 12 words, because the voice layer says these out loud and speech.ts costs a
+  10-word cue at about 4.3 seconds. External focus by default and held loosely, since
+  the meta-analytic support is contested and nothing here depends on the effect being
+  real. The lateral raise is the documented exception and gets to talk about feeling
+  the side delt work.
+  Six guards, each fed a known-bad input and watched to fail first. FIVE bit on the
+  first try. The sixth, the one checking cues survive the voice layer, did NOT: it
+  tested for the symbols speakable() already expands, so a planted 3x8 at 70 percent
+  sailed through. Rewritten to check what speakable actually leaves behind, which is a
+  digit glued to letters, because the abbreviation table matches on word boundaries and
+  RPE7 and 30s come out of the synthesizer as erpee seven and thirty ess. That version
+  bites. Also fixed on the way past: one already-shipped cue ran 13 words, over budget.
+  The cues live in plan/cues.ts rather than beside their defs because exercises.ts sits
+  four lines under its allowance and the allowances are shrink-only. A def may carry its
+  own cue OR appear in the table, never both, and a test enforces it, so there is still
+  exactly one place any cue can come from.
+  Validation: typecheck clean, **1,425/1,425 unit** (16 new), build green, poison
+  129/129 (4 new).
+  NEXT: W4m, then W16, then W17.
 
 ## 10. SOURCES
 
