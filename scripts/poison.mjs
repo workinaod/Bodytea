@@ -1060,6 +1060,30 @@ const MUTATIONS = [
     to: "  'push-up': 'Push the floor away. Hold 30s at RPE7.',",
     spec: "src/plan/cues.test.ts",
   },
+  {
+    id: "w4m-a-macro-stops-adding-up",
+    bug: "a meal carries a fat number that contradicts its own calorie number, and nothing notices because both are estimates",
+    file: "src/plan/mealAlts.ts",
+    find: "carbsG: 38, fatG: 30,",
+    to: "carbsG: 38, fatG: 45,",
+    spec: "src/plan/mealCoverage.test.ts",
+  },
+  {
+    id: "w4m-two-meal-day-loses-its-slots",
+    bug: "the two-meals-a-day split's own slot names fall through to null, so a late-night snack is offered as half the day's food",
+    file: "src/plan/mealAlts.ts",
+    find: "  if (s === 'meal 2') return 'dinner'",
+    to: "",
+    spec: "src/plan/mealCoverage.test.ts",
+  },
+  {
+    id: "w4m-vegan-cliff-goes-unmeasured",
+    bug: "the thin-pool count drifts and the corpus gap stops being a number anybody can see",
+    file: "src/plan/mealAlts.ts",
+    find: "slots: ['breakfast'], diet: 'vegan' }",
+    to: "slots: ['breakfast', 'lunch'], diet: 'vegan' }",
+    spec: "src/plan/mealCoverage.test.ts",
+  },
 ]
 
 const E2E_MUTATIONS = [

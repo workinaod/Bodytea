@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (W10 coverage: every movement has a cue, for the first time)
+Last updated: 2026-08-19 (W4m: the meal macros add up, and the corpus gap is a number)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -278,7 +278,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | W6s | Wire R6: SafetyRule shape, red-flag classifier, PAR-Q+ gate | wiring | **constraint half done 2026-08-19** (plan/safetyRules.ts: ConstraintId, SafetyConstraint, CONSTRAINTS covering all 12 of R6 s5's non-pregnancy rows, constraintsFor, planningLimits; 13 tests + 3 mutations). R6's table has been synthesized and UNUSABLE since it was written because its rows are positions and the planner only spoke joints; W-ONT gave it the vocabulary. Joint rows now carry the deep-range block as well as the joint route, which is the gap that let a bad knee still be asked for a full-depth squat. Impact caps take the minimum across limitations, never an average. Per-row confidence is preserved and a test pins that only the two rows R6 marks sourced are marked sourced. STILL OPEN in W6s: the RED/YELLOW/GREEN classifier, the PAR-Q+ question gate, the pregnancy and postpartum rows (they need a trimester input that does not exist), and userCopy | B2 | pairs with J3 |
 | W7p | Wire R7: 11 functional dimensions + 10 population packs, and limit-range mode | wiring | **limit-range done 2026-08-19, which closes J6's headline** (SubstituteQuery gains `limited`; planningLimits returns limited rather than avoid; the penalty dominates the closeness scoring rather than trading against it). MEASURED BEFORE: a declared bad knee returned NOTHING for all seven squat movements, because every squat in the catalog stresses the knee and `avoid` is a hard reject, so that athlete got no lower body work at all. MEASURED AFTER: every one returns leg-press and wall-sit, which is what R6's own knee row prescribes. `avoid` keeps its hard-reject meaning for the pain path, which is a different input. STILL OPEN in W7p: the 11 functional dimensions and the 10 population packs | W6s | J6 headline closed |
 | W1n | Wire R1 + R3: NutritionRule and ProgressionRule tables, replacing invented constants | wiring | pending | J7 partial | J7 owns the shapes these hang off |
-| W4m | Wire R4: meal corpus to the 720-cell coverage predicate, carbs and fat on every record | wiring | pending | B2 | unblocks J9 |
+| W4m | Wire R4: meal corpus to the 720-cell coverage predicate, carbs and fat on every record | wiring | **macros + the predicate done 2026-08-19** (carbsG and fatG on all 42 records, reconciled 4P + 4C + 9F against the stated calories to within 0.9 percent on every one; plan/mealCoverage.test.ts states both of R4 s6.1 guarantees as MEASURED numbers; slotKindOf reads the two-meal split; 9 tests, 3 mutations). R4 says the guarantees must be written BEFORE any corpus authoring so they fail loudly against today's 42 and turn green as waves land, so they are written as exact shortfalls rather than a red suite: the pool count for all 20 diet-by-slot cells is pinned, the three cells that cannot offer three choices are named (all vegan: breakfast 2, snack 2, late 2), and the protein ceiling is pinned at 59 g against the 90 g a two-meal anchor slot needs. FIXED HERE: slotKindOf mapped the two-meal split's own slot names to null, which switches slot filtering off, so somebody eating twice a day was offered late-night snacks for slots carrying 45 and 55 percent of their protein. STILL OPEN in W4m: the corpus itself (42 to 200, R4 s6.2), the fit-the-remaining-macros ranker (s5), cost tier, effort, batch and leftovers chaining, and the widening that hands a vegan dinners for breakfast without saying so | B2 | unblocks J9 |
 | W16 | Wire R16: SupplementRecord + v21 migration, 27 routing rules (the W5 fixes were the urgent subset only) | wiring | pending | B2 | |
 | W5p | Wire R5: ProgramFamily records + selection logic (10 families) | wiring | pending | J7 partial | before J11 |
 | W17 | Wire R17: 140-rule notation corpus + the import/repair model | wiring | pending | W-ONT | this IS most of J4/J5 |
@@ -888,6 +888,38 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   Validation: typecheck clean, **1,425/1,425 unit** (16 new), build green, poison
   129/129 (4 new).
   NEXT: W4m, then W16, then W17.
+
+- **2026-08-19 · W4m macros and coverage · audit session.** R4 gives one instruction
+  about order and it is unusual: write the coverage guarantees BEFORE authoring any
+  corpus, so they fail loudly against today's 42 records and turn green as waves land.
+  Done, and written as measured shortfalls rather than a red suite, which is the same
+  shape as the dead-end count in W9 and the unreachable-qualities list in W11.
+  Carbs and fat now sit on all 42 records, which the fit-the-remaining-macros ranker
+  needs and could not work without: a plan that has already spent its fat for the day
+  cannot tell peanut noodles from a chicken plate on protein and calories alone. They
+  are standard-serving estimates rather than measurements, so what makes them
+  trustworthy is that they have to agree with each other: a test reconciles
+  4P + 4C + 9F against each record's own calorie number and the worst drift across all
+  42 is 0.9 percent. Same rule the knowledge records live under.
+  What the guarantees now say out loud. The pool for all 20 diet-by-slot cells is
+  pinned. Three cells cannot offer three choices and all three are vegan: breakfast 2,
+  snack 2, late 2. A test asserts the consequence rather than the count, which is that
+  a vegan asking for a breakfast swap gets dinners back, because mealAlternatives
+  widens a thin slot rather than returning nothing and nobody is told. And the protein
+  ceiling is pinned at 59 g against the 90 g a two-meal anchor slot needs for a 200 lb
+  athlete, so the day the corpus can serve that person the test says so.
+  ONE LIVE BUG FIXED. slotKindOf mapped Meal 1 and Meal 2, the two-meals-a-day split's
+  own slot names, to null. Null means no slot filtering at all, so the split where the
+  slot matters MOST was the one where it was ignored, and somebody eating twice a day
+  could be offered a late-night snack for a slot carrying 55 percent of their protein.
+  Mapped to lunch and dinner, narrowly: Meal 3 and up are not names anything produces,
+  so an unknown label still means unknown. An existing test pinned that and was right.
+  R4 s1.5 lists the dropped-restriction bug as the thing that must be fixed first. It
+  already was, in fix wave 2. R4 also lists burger and chili as missing CookingMeta;
+  both have it now. Both notes are stale and the pack is otherwise accurate.
+  Validation: typecheck clean, **1,434/1,434 unit** (9 new), build green, poison
+  132/132 (3 new).
+  NEXT: W16, then W17.
 
 ## 10. SOURCES
 
