@@ -2,6 +2,7 @@ import type { AppData, ISODate, SessionLog } from '../types'
 import { addDaysISO, daysBetween, mondayOf, todayISO } from './calendar'
 import { resolveDay } from './resolveDay'
 import { getExercise } from '../plan/exercises'
+import { isAthleteAuthored } from '../plan/bookletOps'
 import { e1RM } from './stats'
 import { streakState } from './streak'
 import { travelMiles } from './activityLog'
@@ -312,7 +313,7 @@ function bodyweight(data: AppData) {
  * is the active one.
  */
 function ownRoutine(data: AppData, first: ISODate, today: ISODate) {
-  const custom = data.plan.routineGoals !== undefined || data.plan.whyWorks !== undefined
+  const custom = isAthleteAuthored(data.plan)
   if (!custom) return { hasOwnRoutine: false, weeks: 0, blocks: 0 }
   let weeks = 0
   for (let w = mondayOf(first); daysBetween(addDaysISO(w, 6), today) > 0; w = addDaysISO(w, 7)) {

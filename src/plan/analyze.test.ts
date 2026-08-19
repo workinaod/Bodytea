@@ -34,7 +34,12 @@ describe('analyzeRoutine', () => {
     const ids = analyzeRoutine(plan).map((n) => n.id)
     expect(ids).toContain('zero-pull')
     expect(ids).toContain('no-hinge')
-    expect(ids).toContain('deload-auto')
+    // Renamed from 'deload-auto' when the deload stopped being automatic
+    // on a routine the athlete built. The note is an OFFER now, and this
+    // screen is the honest read of their week, so the copy has to match
+    // what the engine actually does on week 4.
+    expect(ids).toContain('deload-offer')
+    expect(ids).not.toContain('deload-auto')
   })
 
   it('praises a balanced routine', () => {

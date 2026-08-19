@@ -230,10 +230,17 @@ export function analyzeRoutine(plan: PlanConfig): RoutineNote[] {
     }
   }
 
+  // This used to promise "every 4th week is an automatic deload (sets
+  // halved, same weights)" to somebody whose routine the app does not
+  // touch. It was written when the deload was a calendar rule that ran
+  // on every plan; it is a decision now, and on a routine the athlete
+  // built it is offered rather than applied. The note has to say what
+  // actually happens, because the whole point of this screen is that it
+  // is the honest read of their week.
   notes.push({
-    id: 'deload-auto',
+    id: 'deload-offer',
     tone: 'info',
-    text: 'Built in for you: every 4th week is an automatic deload (sets halved, same weights), A/B weeks alternate your accessories, and busy weeks can drop to lighter fallback tiers without losing the thread.',
+    text: 'Your routine stays yours: nothing here gets rewritten behind you. On week 4 I will offer a deload, same weights and half the sets, and you take it or leave it. Busy weeks can drop to a lighter version without losing the thread.',
   })
 
   const order = { warn: 0, good: 1, info: 2 }

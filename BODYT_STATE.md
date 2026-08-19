@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (R-ONT wave 1 wired into the picker; resolveExercise off the dead list)
+Last updated: 2026-08-19 (the deload became a decision: whose plan it is decides who unloads it)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -341,6 +341,26 @@ retrieval/vector infra, all post-core experience work.
 ---
 
 ## 5. DECISIONS
+- **A deload is dynamic, not a calendar law (owner, 2026-08-19).** R17 flagged that the app
+  said two contradictory things: `analyze.ts` promised imported athletes an automatic
+  fourth-week deload with sets halved, and R5's F9 said preserve an imported routine
+  untouched. Asked to settle it, the owner said it "needs to be dynamic pending
+  situations", so neither blanket is right and the engine decides from what it can see.
+  The situation it can see today is WHOSE PLAN IT IS. A booklet BodyT wrote carries a
+  block BodyT designed, so running the unload week is doing the job it was asked to do. A
+  routine somebody brought from home is theirs, and the standing rule is suggest only,
+  never auto: they get the offer and the reason on week 4 and their sets are left exactly
+  where they put them. Measured: 16 sets against 25 on the same date, the only difference
+  being who built the week.
+  More situations can join that decision later (accumulated fatigue pulling a deload
+  earlier, a block with too little work in it to unload from). Whose plan it is, is the
+  one the engine can answer today without new signals, and it is the one that was making
+  the app lie.
+- **Under-18 supplement suppression stands (owner, 2026-08-19).** Confirmed as built:
+  R16's SR-2 suppresses all supplement copy for an account that says it is under 18. Worth
+  keeping visible that this is STRICTER than the age decision for app access, which is 11
+  and lets them through. Being suggested a supplement and being allowed to train are
+  different questions and the owner took the conservative side of the first.
 
 **THE PLAN IS LOCKED (owner, 2026-08-17): roadmap J1-J12 + cloud lane C1-C3 + research
 program R1-R6 + infrastructure B1-B3 + redo-what-is-not-read rule + core-complete gate.
@@ -1129,6 +1149,33 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   (1 new), poison 143/143 (1 new). Dead-export ledger: 36 rows to 35.
   NEXT: unchanged. J7 is the highest-leverage thing left and nothing blocks it; the owner
   was asked and has not answered yet.
+
+- **2026-08-19 · The deload becomes a decision · audit session.** The owner settled R17's
+  blocking question and the answer was neither of the two things the app was saying. It
+  had been promising imported athletes an automatic fourth-week deload in `analyze.ts`
+  while R5 said leave an imported routine alone, and `isDeload` was a pure calendar fact,
+  `weekInBlock === 4`, applied to every plan alike.
+  Whose plan it is turns out to be a situation the engine can already see, and no schema
+  change was needed to see it: `achievementFacts.ts` has been asking exactly this question
+  inline since custom routines shipped. That predicate is now `isAthleteAuthored` in
+  bookletOps.ts with one definition instead of two that could drift, which is a duplicate
+  retired rather than a field added.
+  What changed: a booklet BodyT wrote still deloads on week 4, so the golden lock does not
+  move and nothing about a generated athlete's week is different. A routine the athlete
+  built gets a banner offering the deload and keeps every set. `day.isDeload` now means
+  what actually happens rather than what the calendar said, because debrief.ts and
+  workoutBrief.ts both read it to tell somebody what tomorrow is, and the old field would
+  have promised an unload that never arrived.
+  The `deload-auto` note is renamed and rewritten, because it was the specific sentence
+  the owner's decision made false, and it was shown to exactly the athletes whose plan the
+  app no longer touches.
+  One thing caught in my own test before it shipped: the sets comparison sat behind an
+  `if (exercises.length > 0)` guard, which would have let the whole assertion vanish the
+  day the fixture changed. Turned into an assertion. Same trap as the picker proof an hour
+  earlier, which is twice in one session and worth saying out loud.
+  Validation: typecheck clean, **1,483/1,483 unit** (6 new, both guards proven to bite),
+  build green, sim 20 personas zero invariant failures, poison 146/146 (3 new).
+  NEXT: unchanged. J7 is the highest-leverage thing left and nothing blocks it.
 
 ## 10. SOURCES
 

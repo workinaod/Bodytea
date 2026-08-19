@@ -1169,6 +1169,30 @@ const MUTATIONS = [
     to: "  { key: 'press', id: 'leg-press', source: 'bodyt', confidence: 0.4 },\n  { key: 'goblet squat', id: 'goblet-squat', source: 'bodyt', confidence: 1 },",
     spec: "src/plan/aliases.test.ts",
   },
+  {
+    id: "deload-rewrites-somebody-elses-week",
+    bug: "a routine the athlete built is halved on a calendar, which is not coaching, it is taking their week off them",
+    file: "src/engine/resolveDay.ts",
+    find: "    if (theirs) {",
+    to: "    if (false) {",
+    spec: "src/engine/deloadOwnership.test.ts",
+  },
+  {
+    id: "deload-promised-and-not-delivered",
+    bug: "the day says deload while the sets stay full, so the debrief promises an unload that never arrives",
+    file: "src/engine/resolveDay.ts",
+    find: "    isDeload: isDeload && !theirs,",
+    to: "    isDeload,",
+    spec: "src/engine/deloadOwnership.test.ts",
+  },
+  {
+    id: "routine-notes-promise-an-automatic-deload",
+    bug: "the honest-read screen tells an athlete their week is auto-deloaded when the engine no longer touches it",
+    file: "src/plan/analyze.ts",
+    find: "    id: 'deload-offer',",
+    to: "    id: 'deload-auto',",
+    spec: "src/plan/analyze.test.ts",
+  },
 ]
 
 const E2E_MUTATIONS = [

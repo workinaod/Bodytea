@@ -76,6 +76,23 @@ export function byorNutrition(
 }
 
 /** A blank booklet for the bring-your-own-routine builder. */
+/**
+ * Did the athlete build this week, or did BodyT?
+ *
+ * The distinction decides what the app is allowed to do to a plan
+ * without being asked. A booklet BodyT wrote, it may run: the deload is
+ * part of the block it designed. A routine somebody brought from home
+ * is theirs, and rewriting it on a calendar is not a coaching decision,
+ * it is taking their week off them.
+ *
+ * The predicate itself is not new. achievementFacts.ts has been asking
+ * exactly this question inline since custom routines shipped; it now
+ * asks it here, so there is one answer rather than two that can drift.
+ */
+export function isAthleteAuthored(plan: Pick<PlanConfig, 'routineGoals' | 'whyWorks'>): boolean {
+  return plan.routineGoals !== undefined || plan.whyWorks !== undefined
+}
+
 export function makeEmptyByorPlan(args: {
   routineGoals: RoutineGoal[]
   goalStatement: string
