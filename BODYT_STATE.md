@@ -1173,8 +1173,14 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   `if (exercises.length > 0)` guard, which would have let the whole assertion vanish the
   day the fixture changed. Turned into an assertion. Same trap as the picker proof an hour
   earlier, which is twice in one session and worth saying out loud.
+  ONE THING THE SUITE CAUGHT THAT I HAD MISSED. booklet.spec.ts asserted the old copy
+  verbatim, `/automatic deload/`, and went red. The sweep for stale references had grepped
+  e2e/ for the note's ID and not for its visible TEXT, which is what an e2e actually
+  asserts on. Renaming an id is not renaming a sentence, and only one of those two greps
+  would have found it.
   Validation: typecheck clean, **1,483/1,483 unit** (6 new, both guards proven to bite),
-  build green, sim 20 personas zero invariant failures, poison 146/146 (3 new).
+  build green, **e2e 84 passed** after that fix, sim 20 personas zero invariant failures,
+  poison 145/145 (3 new).
   NEXT: unchanged. J7 is the highest-leverage thing left and nothing blocks it.
 
 ## 10. SOURCES

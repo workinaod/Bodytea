@@ -61,7 +61,11 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await expect(page.getByText(/posterior chain gets its work/)).toBeVisible()
   // athletic goal + zero jump work → called out
   await expect(page.getByText(/jumps and sprints ARE the engine/)).toBeVisible()
-  await expect(page.getByText(/automatic deload/)).toBeVisible()
+  // The note used to promise "an automatic deload (sets halved)" to an
+  // athlete whose routine the app does not touch. It offers now, because
+  // the week is theirs, and this screen is the honest read of it.
+  await expect(page.getByText(/I will offer a deload/)).toBeVisible()
+  await expect(page.getByText(/automatic deload/)).toHaveCount(0)
 
   await page.getByRole('button', { name: "Start Week 1" }).click()
 
