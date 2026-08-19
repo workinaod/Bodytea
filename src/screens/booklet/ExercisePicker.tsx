@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { resolveExercise } from '../../plan/aliases'
 import type { EquipTag } from '../../types'
 import { EXERCISES } from '../../plan/exercises'
 import { EXERCISE_MUSCLES } from '../../plan/muscles'
@@ -183,6 +184,23 @@ export function ExercisePicker({
         .filter((g) => g.ids.length > 0)
     }
 
+    // A literal substring search misses things people actually type.
+    // "bulgarian split squats" does not contain "Bulgarian Split Squat"
+    // because of one letter, and the athlete is told nothing matches
+    // while the movement sits right there. So when the plain search
+    // comes back empty, ask the resolver, which normalizes and then
+    // falls back to near misses.
+    //
+    // It only ever SUGGESTS here, and the label says so. The resolver
+    // does not get to pick for somebody: it narrows a catalog of 194 to
+    // a handful, and the tap is still theirs.
+    if (query && matches.length === 0) {
+      const r = resolveExercise(q.trim())
+      const ids = (r.kind === 'resolved' ? [r.id] : r.kind === 'suggest' ? r.ids : [])
+        .filter((id) => EXERCISES[id] && all.includes(id))
+      if (ids.length) return [{ label: 'Closest I can find', ids }]
+    }
+
     const used = new Set<string>()
     return FAMILY_ORDER.map(([label, test]) => {
       const ids = matches.filter((id) => !used.has(id) && test(id))
@@ -294,8 +312,12 @@ export function ExercisePicker({
 
         {shown === 0 && (
           <p className="py-8 text-center text-[13px] font-semibold leading-snug text-ink-faint">
-            Nothing here matches.
+            {q.trim() ? `I do not have ${q.trim()}.` : 'Nothing here matches.'}
             {gearOnly && hiddenByGear > 0 && ' Tap "Only what I can do" to see the rest.'}
+            {/* Said plainly, because the alternative is letting somebody
+                think they typed it wrong. R17 is explicit that the fix is
+                NOT to invent a custom exercise record to absorb this. */}
+            {q.trim() && !(gearOnly && hiddenByGear > 0) && ' Try a muscle or a shorter word, or pick the closest thing.'}
           </p>
         )}
 

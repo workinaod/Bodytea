@@ -173,3 +173,27 @@ test('a routine brought from home can also declare a bad knee', async ({ page })
   // loads it. With one declared, it must not.
   await expect(page.getByText('Split Squat')).toHaveCount(0)
 })
+
+test('the picker finds what a literal search misses, and says so when it cannot', async ({ page }) => {
+  // R-ONT's whole argument in one interaction. The picker matched on
+  // substring, so "bulgarian split squats" did not contain "Bulgarian
+  // Split Squat" by one letter, and the athlete was told nothing matched
+  // while the movement sat right there in the catalog.
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+
+  await throughGoal(page, 'I already have a routine', '💪 Gaining muscle', 'add 10 lb of lean muscle')
+  await page.getByRole('button', { name: 'Next: build my week' }).click()
+  await page.getByRole('button', { name: '+ add a training day' }).first().click()
+  await page.getByRole('button', { name: '+ Add exercise' }).click()
+
+  // A plural the substring search cannot see.
+  await page.getByPlaceholder(/Search a name, a muscle/).fill('bulgarian split squats')
+  await expect(page.getByText('Closest I can find')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Bulgarian Split Squat/ }).first()).toBeVisible()
+
+  // And when it genuinely does not have it, it says that in words rather
+  // than leaving somebody thinking they typed it wrong.
+  await page.getByPlaceholder(/Search a name, a muscle/).fill('qzxwv')
+  await expect(page.getByText(/I do not have qzxwv/)).toBeVisible()
+})

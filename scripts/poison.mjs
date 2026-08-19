@@ -1244,6 +1244,14 @@ const E2E_MUTATIONS = [
     to: "      d.prefs.limitations = limitationsFrom(mode === 'byor' ? {} : answers.goalAnswers, start)",
     spec: "e2e/booklet.spec.ts",
   },
+  {
+    id: "ront-picker-goes-back-to-substrings",
+    bug: "a one-letter plural hides a movement that is right there, and the athlete is told nothing matches",
+    file: "src/screens/booklet/ExercisePicker.tsx",
+    find: "        .filter((id) => EXERCISES[id] && all.includes(id))",
+    to: "        .filter((id) => EXERCISES[id] && all.includes(id) && false)",
+    spec: "e2e/booklet.spec.ts",
+  },
 ]
 
 /**

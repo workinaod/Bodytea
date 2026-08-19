@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (R-ONT wave 1: a typed movement can become an exercise, or honestly fail to)
+Last updated: 2026-08-19 (R-ONT wave 1 wired into the picker; resolveExercise off the dead list)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -1104,6 +1104,31 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   against a known-bad input first), build green, poison 142/142 (4 new).
   NEXT: wire resolveExercise into the picker, which kills three ledger rows and delivers
   R17 s9 item 3, then plan/notation.ts.
+
+- **2026-08-19 · R-ONT wave 1, the consumer · audit session.** The slice named in the
+  previous entry, done the same day rather than left as an IOU: the picker calls
+  resolveExercise when a literal search comes back empty, and `resolveExercise` left the
+  dead-export ledger it had just joined.
+  The defect it closes is small and exactly the one R-ONT predicted. The picker matched on
+  substring, so "bulgarian split squats" did not contain "Bulgarian Split Squat" by a
+  single letter, and somebody was told nothing matched while the movement sat in the
+  catalog in front of them. The resolver normalizes, singularizes, token-sorts, and then
+  falls back to near misses, so the plural finds it.
+  It only ever SUGGESTS, and the group is labelled "Closest I can find" so the screen says
+  what it is doing. The tap stays the athlete's: this narrows 194 movements to a handful
+  and never picks one.
+  And when it genuinely does not have the movement, it now says "I do not have X" in
+  words, rather than a flat "nothing matches" that reads like the athlete typed it wrong.
+  R17 is explicit that the fix is NOT to invent a custom-exercise record to absorb these,
+  so the exit is honest copy and a nudge, not a new entity.
+  Proven by severing it: with the fallback filtered to nothing the e2e goes red, and the
+  first attempt at that proof silently did nothing because the mutation broke the build
+  and `&&` short-circuited the test run. A proof that cannot fail is not a proof, so it
+  was redone with one that compiles.
+  Validation: typecheck clean, **1,477/1,477 unit**, build green, **e2e 84 passed**
+  (1 new), poison 143/143 (1 new). Dead-export ledger: 36 rows to 35.
+  NEXT: unchanged. J7 is the highest-leverage thing left and nothing blocks it; the owner
+  was asked and has not answered yet.
 
 ## 10. SOURCES
 
