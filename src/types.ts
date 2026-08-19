@@ -386,12 +386,12 @@ export interface MealTemplateDef {
   kcal: number
 }
 
-export interface SupplementDef {
-  id: SupplementId
-  name: string
-  dose: string
-  when: string
-}
+// The supplement shapes moved to supplementTypes.ts, beside foodTypes
+// and prefsTypes for the reason those two give: a shape with a subsystem
+// reading it is no longer a field on this file. The old SupplementDef
+// was four strings with nowhere to put a contraindication.
+export * from './supplementTypes'
+import type { StackItem } from './supplementTypes'
 
 export interface GroceryCategory {
   category: string
@@ -406,7 +406,7 @@ export interface GroceryCategory {
 export interface MealPlanConfig {
   templates: MealTemplateDef[]
   grocery: GroceryCategory[]
-  supplements: SupplementDef[]
+  supplements: StackItem[]
   lateNight: { yes: string[]; no: string[] }
 }
 
@@ -607,7 +607,7 @@ export interface AppData {
   prefs: Prefs
 }
 
-export const SCHEMA_VERSION = 20
+export const SCHEMA_VERSION = 21
 
 export interface Envelope {
   schemaVersion: number

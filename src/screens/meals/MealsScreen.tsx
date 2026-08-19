@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
+import { supplementRecord } from '../../plan/supplements'
 import { addDaysISO, formatDayLabel } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { kcalTargetFor, nutritionDayType } from '../../engine/dayType'
@@ -212,6 +213,11 @@ export function MealsScreen() {
               <div className="grid grid-cols-2 gap-2">
                 {mealPlan.supplements.map((s) => {
                   const on = day?.supplements[s.id] ?? false
+                  const rec = s.source === 'app' ? supplementRecord(s.id) : undefined
+                  const name = rec?.name ?? s.name ?? s.id
+                  const detail = rec
+                    ? [rec.dose.display, rec.when].filter(Boolean).join(' · ')
+                    : [s.dose, s.when].filter(Boolean).join(' · ')
                   return (
                     <button
                       key={s.id}
@@ -219,9 +225,9 @@ export function MealsScreen() {
                       className={`rounded-xl border p-3 text-left ${on ? 'border-lime/40 bg-lime/8' : 'border-edge bg-white/[0.05]'}`}
                     >
                       <div className={`text-[12.5px] font-bold ${on ? 'text-lime' : 'text-ink'}`}>
-                        {on ? '✓ ' : ''}{s.name}
+                        {on ? '✓ ' : ''}{name}
                       </div>
-                      <div className="text-[10.5px] text-ink-faint">{[s.dose, s.when].filter(Boolean).join(' · ')}</div>
+                      <div className="text-[10.5px] text-ink-faint">{detail}</div>
                     </button>
                   )
                 })}

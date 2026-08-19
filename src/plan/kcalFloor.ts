@@ -73,3 +73,30 @@ export function flooredTargets(
     kcalRest: Math.max(training - REST_DAY_DROP, MIN_KCAL_REST),
   }
 }
+
+/**
+ * v19 to v20: repair calorie targets generated before there was a floor.
+ *
+ * Lives here rather than in schema.ts because it is the floors that
+ * decide what a repair means, and schema.ts should read as a list of
+ * what an app data file holds. It is delegated to from the migrations
+ * record, the same way the supplement stack repair is.
+ *
+ * Maintenance is not recoverable from a stored plan, so this applies the
+ * absolute minimums only. That is the part that matters: a plan built by
+ * the unfloored bring-your-own-routine path still carries what it was
+ * given, 1,400/1,100 for a 120 lb athlete on a cut and 950/650 at 90 lb,
+ * because a target is written into a booklet ONCE at onboarding and read
+ * forever after. Fixing a generator does nothing for a plan on disk.
+ */
+export function migrateCalorieFloor(env: Record<string, unknown>): Record<string, unknown> {
+  const e = env as unknown as {
+    data?: { plan?: { nutrition?: { kcalTraining?: number; kcalRest?: number } } }
+  }
+  const n = e.data?.plan?.nutrition
+  if (n) {
+    if (typeof n.kcalTraining === 'number') n.kcalTraining = Math.max(MIN_KCAL_TRAINING, n.kcalTraining)
+    if (typeof n.kcalRest === 'number') n.kcalRest = Math.max(MIN_KCAL_REST, n.kcalRest)
+  }
+  return env
+}

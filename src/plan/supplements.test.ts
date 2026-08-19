@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { SUPPLEMENT_CATALOG, buildMealPlan, offeredSupplements } from './foods'
+import { buildMealPlan, offeredSupplements } from './foods'
+import { SUPPLEMENT_CATALOG } from './supplements'
 import type { DietStyle } from '../types'
 
 // ============================================================
@@ -14,6 +15,12 @@ import type { DietStyle } from '../types'
 // ============================================================
 
 const NUTRITION = { kcalTraining: 2800, kcalRest: 2600 }
+/**
+ * The catalog now names things it will NEVER offer, with the reason,
+ * so a count of the catalog is no longer a count of the shelf. These
+ * tests count the shelf, which is what the athlete sees.
+ */
+const SHELF = SUPPLEMENT_CATALOG.filter((s) => s.appClass !== 'never').length
 /** What this athlete would be OFFERED. The plan itself ships no stack. */
 const plan = (diet: DietStyle, limits?: { dairyFree?: boolean; allergies?: string }) => ({
   supplements: offeredSupplements(diet, limits),
@@ -36,12 +43,12 @@ describe('what the stack is made of', () => {
   })
 
   it('keeps the offer for somebody whose allergy touches none of it', () => {
-    expect(plan('omnivore', { allergies: 'peanuts' }).supplements.length).toBe(SUPPLEMENT_CATALOG.length)
+    expect(plan('omnivore', { allergies: 'peanuts' }).supplements.length).toBe(SHELF)
   })
 
   it('rules out only what the allergy actually reaches', () => {
     const s = plan('omnivore', { allergies: 'fish, beef' }).supplements
-    expect(s.length).toBe(SUPPLEMENT_CATALOG.length - 2)
+    expect(s.length).toBe(SHELF - 2)
     expect(s.some((x) => /fish|collagen/i.test(x.name))).toBe(false)
   })
 })
@@ -70,26 +77,43 @@ describe('doses inside their published limits', () => {
 
   it('keeps supplemental magnesium at or under the 350 mg upper limit', () => {
     // IOM 1997. The shipped line asked for up to 400.
-    const top = Number(find('magnesium').dose.match(/(\d+)\s*mg/g)!.pop()!.replace(/\D/g, ''))
-    expect(top).toBeLessThanOrEqual(350)
+    expect(find('magnesium').dose.high).toBeLessThanOrEqual(350)
+    // And the record now carries the limit it has to stay under.
+    expect(find('magnesium').dose.upperLimit).toBe(350)
   })
 
   it('leaves headroom under the vitamin D limit rather than sitting on it', () => {
     // The adult UL is 4,000 IU. The shipped line asked for exactly that,
     // then put a multivitamin beside it, so the plan as written went over.
-    const top = Number(find('vitD3').dose.match(/(\d+)\s*IU/)![1])
-    expect(top).toBeLessThan(4000)
+    expect(find('vitD3').dose.high).toBeLessThan(find('vitD3').dose.upperLimit!)
+    expect(find('vitD3').dose.upperLimit).toBe(4000)
   })
 
   it('states the fish oil dose as the part that does the work', () => {
     // "1-2 g" of oil is not a dose. EPA and DHA are what was studied.
-    expect(find('fishOil').dose).toMatch(/EPA/)
+    expect(find('fishOil').dose.display).toMatch(/EPA/)
   })
 
-  it('does not offer zinc, which has no supportable claim', () => {
-    // Removed from the catalog rather than filtered: anybody already
-    // taking it keeps it in their own stack, it is just not offered.
-    expect(SUPPLEMENT_CATALOG.some((s) => s.id === 'zinc')).toBe(false)
+  it('never offers zinc, to anybody, under any diet', () => {
+    // It used to be deleted from the catalog. It is now IN the catalog
+    // classed 'never', with the reason attached, which is a stronger
+    // position than forgetting it existed: the next session that thinks
+    // of adding it finds the argument rather than an empty space.
+    const zinc = SUPPLEMENT_CATALOG.find((s) => s.id === 'zinc')
+    expect(zinc?.appClass).toBe('never')
+    expect(zinc?.hedge, 'a never row has to say why').toBeTruthy()
+    for (const diet of ['omnivore', 'pescatarian', 'vegetarian', 'vegan'] as DietStyle[]) {
+      expect(offeredSupplements(diet).some((s) => s.id === 'zinc'), diet).toBe(false)
+    }
+  })
+
+  it('offers nothing else it has classed never either', () => {
+    // The whole point of naming them: BCAAs, testosterone boosters and
+    // fat burners are the three a future session is most likely to add.
+    const never = SUPPLEMENT_CATALOG.filter((s) => s.appClass === 'never').map((s) => s.id)
+    expect(never.length).toBeGreaterThan(2)
+    const offered = offeredSupplements('omnivore').map((s) => s.id)
+    expect(never.filter((id) => offered.includes(id))).toEqual([])
   })
 
   it('does not name the pre-workout category', () => {
@@ -98,10 +122,30 @@ describe('doses inside their published limits', () => {
     expect(find('caffeine').name).not.toMatch(/pre-?workout/i)
   })
 
-  it('gives every entry a dose and a time', () => {
+  it('gives every offered entry a dose, a time and a source', () => {
     for (const s of SUPPLEMENT_CATALOG) {
-      expect(s.dose.trim().length, s.id).toBeGreaterThan(0)
-      expect(s.when.trim().length, s.id).toBeGreaterThan(0)
+      expect(s.dose.display.trim().length, s.id).toBeGreaterThan(0)
+      expect(s.sourceRefs.length, `${s.id} cites nothing`).toBeGreaterThan(0)
+      if (s.appClass === 'never') continue
+      expect(s.when?.trim().length, s.id).toBeGreaterThan(0)
+    }
+  })
+
+  it('makes every offer say what it is hedging', () => {
+    // R16's rule: an 'offer' is something whose claim needs a caveat in
+    // the same breath, not in a footnote. Fish oil is the case that
+    // proves it, since its best-established effect is a harm.
+    for (const s of SUPPLEMENT_CATALOG.filter((x) => x.appClass === 'offer')) {
+      expect(s.hedge, `${s.id} is offered with no hedge`).toBeTruthy()
+    }
+  })
+
+  it('never lets a displayed range top out at the published limit', () => {
+    // A ceiling is not a target. The old vitamin D line asked for exactly
+    // the upper limit and then put a multivitamin next to it.
+    for (const s of SUPPLEMENT_CATALOG.filter((x) => x.appClass !== 'never')) {
+      if (s.dose.upperLimit === undefined) continue
+      expect(s.dose.high, `${s.id} sits on its own upper limit`).toBeLessThanOrEqual(s.dose.upperLimit)
     }
   })
 })

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { MealTemplateDef } from '../../types'
+import { supplementRecord } from '../../plan/supplements'
 import { uid, useAppStore } from '../../store/appStore'
 import { Btn, Chip, SectionTitle } from '../../components/ui'
 import { MealDetailSheet } from './MealDetailSheet'
@@ -151,12 +152,19 @@ export function PlanView({
         Supplement stack
       </SectionTitle>
       <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
-        {plan.supplements.map((s, i) => (
-          <div key={s.id} className={`flex items-center justify-between px-4 py-2.5 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}>
-            <span className="text-[13px] font-bold">{s.name}</span>
-            <span className="text-[11px] text-ink-faint">{[s.dose, s.when].filter(Boolean).join(' · ')}</span>
-          </div>
-        ))}
+        {plan.supplements.map((s, i) => {
+          // An 'app' item resolves against the catalog every render, so a
+          // corrected dose reaches an existing booklet with no migration.
+          const rec = s.source === 'app' ? supplementRecord(s.id) : undefined
+          const name = rec?.name ?? s.name ?? s.id
+          const detail = rec ? [rec.dose.display, rec.when].filter(Boolean).join(' · ') : [s.dose, s.when].filter(Boolean).join(' · ')
+          return (
+            <div key={s.id} className={`flex items-center justify-between px-4 py-2.5 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}>
+              <span className="text-[13px] font-bold">{name}</span>
+              <span className="text-[11px] text-ink-faint">{detail}</span>
+            </div>
+          )
+        })}
         {plan.supplements.length === 0 && (
           <p className="px-4 py-3 text-center text-[12px] text-ink-faint">No stack yet. Add what you actually take.</p>
         )}

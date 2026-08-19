@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (W4m: the meal macros add up, and the corpus gap is a number)
+Last updated: 2026-08-19 (W16: a stack stores an id, so a correction reaches the people it was for)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -279,7 +279,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | W7p | Wire R7: 11 functional dimensions + 10 population packs, and limit-range mode | wiring | **limit-range done 2026-08-19, which closes J6's headline** (SubstituteQuery gains `limited`; planningLimits returns limited rather than avoid; the penalty dominates the closeness scoring rather than trading against it). MEASURED BEFORE: a declared bad knee returned NOTHING for all seven squat movements, because every squat in the catalog stresses the knee and `avoid` is a hard reject, so that athlete got no lower body work at all. MEASURED AFTER: every one returns leg-press and wall-sit, which is what R6's own knee row prescribes. `avoid` keeps its hard-reject meaning for the pain path, which is a different input. STILL OPEN in W7p: the 11 functional dimensions and the 10 population packs | W6s | J6 headline closed |
 | W1n | Wire R1 + R3: NutritionRule and ProgressionRule tables, replacing invented constants | wiring | pending | J7 partial | J7 owns the shapes these hang off |
 | W4m | Wire R4: meal corpus to the 720-cell coverage predicate, carbs and fat on every record | wiring | **macros + the predicate done 2026-08-19** (carbsG and fatG on all 42 records, reconciled 4P + 4C + 9F against the stated calories to within 0.9 percent on every one; plan/mealCoverage.test.ts states both of R4 s6.1 guarantees as MEASURED numbers; slotKindOf reads the two-meal split; 9 tests, 3 mutations). R4 says the guarantees must be written BEFORE any corpus authoring so they fail loudly against today's 42 and turn green as waves land, so they are written as exact shortfalls rather than a red suite: the pool count for all 20 diet-by-slot cells is pinned, the three cells that cannot offer three choices are named (all vegan: breakfast 2, snack 2, late 2), and the protein ceiling is pinned at 59 g against the 90 g a two-meal anchor slot needs. FIXED HERE: slotKindOf mapped the two-meal split's own slot names to null, which switches slot filtering off, so somebody eating twice a day was offered late-night snacks for slots carrying 45 and 55 percent of their protein. STILL OPEN in W4m: the corpus itself (42 to 200, R4 s6.2), the fit-the-remaining-macros ranker (s5), cost tier, effort, batch and leftovers chaining, and the widening that hands a vegan dinners for breakfast without saying so | B2 | unblocks J9 |
-| W16 | Wire R16: SupplementRecord + v21 migration, 27 routing rules (the W5 fixes were the urgent subset only) | wiring | pending | B2 | |
+| W16 | Wire R16: SupplementRecord + v21 migration, 27 routing rules (the W5 fixes were the urgent subset only) | wiring | **shape + migration done 2026-08-19** (supplementTypes.ts: SupplementRecord with dose ranges, upper limits, evidence tier, AIS group, app class, suppression signals and source refs, plus StackItem which stores an ID; plan/supplements.ts: the catalog out of foods.ts, 8 offered rows and 4 named `never`; store v21 migration; three screens resolve at read time; 11 + 5 tests, 6 mutations). WHY IT MATTERED: the W5 corrections reached the catalog and reached NOBODY. A dose was a STRING copied into a booklet at signup and read forever, so the 400 mg magnesium line, the vitamin D range sitting on its own 4,000 IU ceiling and the withdrawn zinc were all still on the screen of every account that existed before the fix. Same failure the v19 calorie repair names, with a sharper edge. After this an app suggestion is an id and its dose comes from the catalog at render time, so the NEXT correction ships to everybody with no migration. zinc is withdrawn from stored plans, not just the catalog; anything the athlete typed themselves is kept word for word, because the app may retract its own advice and may not edit somebody's health record. STILL OPEN in W16: 22 of the 27 routing rules need signals that do not exist (medications, conditions, tested-athlete, bedtime), the demand-derived rules (SR-22 to SR-24) need reading the athlete's own training, and `appClass` and `requiresDemand` are carried as data that nothing reads, pinned by a test that says so | B2 | SR-2 became LIVE off W8's age field |
 | W5p | Wire R5: ProgramFamily records + selection logic (10 families) | wiring | pending | J7 partial | before J11 |
 | W17 | Wire R17: 140-rule notation corpus + the import/repair model | wiring | pending | W-ONT | this IS most of J4/J5 |
 | W12 | Wire R12: AuthorityRule, the override model, a decline control and its cooldown | wiring | pending | B1 | needs the event log to record a no |
@@ -920,6 +920,50 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   Validation: typecheck clean, **1,434/1,434 unit** (9 new), build green, poison
   132/132 (3 new).
   NEXT: W16, then W17.
+
+- **2026-08-19 · W16 shape and migration · audit session.** The uncomfortable finding
+  first: the W5 supplement fixes fixed nobody. Magnesium came down under its 350 mg
+  upper limit from a range asking for 400, vitamin D came off its own 4,000 IU ceiling,
+  and zinc was withdrawn for having no supportable claim. All three landed in the
+  catalog, and all three reached exactly zero existing accounts, because a dose was a
+  STRING copied into a booklet at signup and read forever after. Their screen still
+  said 400 mg. store/schema.ts already names this exact failure mode in the v19 comment
+  about calorie targets, and it was true here with a sharper edge.
+  So the shape changed. An app-suggested item now stores an ID and nothing else, and
+  its name, dose and timing are read from the catalog at render time. The property
+  that buys is the whole reason for the work: the NEXT correction ships to every user
+  on the next deploy with no migration at all.
+  The v20 to v21 migration makes three calls worth arguing about, all written into the
+  code beside the reasoning. Zinc is withdrawn from stored plans rather than left on
+  disk, because leaving it means the app keeps telling somebody to take it for years;
+  anybody who wants it can add it back, and then it is theirs and not the app's.
+  Anything the athlete typed themselves is kept word for word: the app may retract its
+  own advice, it may not edit a person's record of what they take. And addedAt is left
+  ABSENT on migrated rows rather than stamped with today, because inventing a date is a
+  lie the rest of the app then reads as fact.
+  The record can now carry what a four-string type could not: an AIS group, an evidence
+  tier, an upper limit, suppression signals, source ids, and a hedge that has to be
+  present whenever the app offers something. Fish oil is the case that proves the hedge
+  field earns its place, since its best-established supplement-specific effect is a
+  harm rather than a benefit, and that now sits in the same breath as the claim.
+  Four rows are carried classed `never` with the reason attached: zinc, BCAAs,
+  testosterone boosters, fat burners. That is stronger than deleting them, because the
+  next session that thinks of adding one finds the argument rather than an empty space,
+  and a test proves nothing classed never can reach a shelf.
+  SR-2, suppress everything for an under-18 account, went LIVE off the age field W8
+  shipped, which is a phase-order dependency landing exactly as the rule intends. Note
+  for the owner: that is a stricter line than the app-access decision, which was 11 and
+  let through. Suppressing supplement copy for a minor is a different question from
+  letting somebody train, and this takes the conservative side of it.
+  Two things fixed on the way past. schema.ts was AT its allowance, so the v19 calorie
+  repair moved to plan/kcalFloor.ts beside the floors that decide what a repair means,
+  and the allowance came down 610 to 602 with it. And the dead-export scan turned out
+  to count a mention in a COMMENT as a caller, which this job tripped by naming an
+  unrelated export in a doc block; the caveat is now recorded where the scan is defined,
+  and tightening it is its own job because it will unmask more than it fixes.
+  Validation: typecheck clean, **1,448/1,448 unit** (16 new), build green, poison
+  138/138 (6 new).
+  NEXT: W17, the routine import corpus.
 
 ## 10. SOURCES
 

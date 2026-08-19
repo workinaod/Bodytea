@@ -1,4 +1,6 @@
-import type { DietStyle, FoodLimits, Goal, MealPlanConfig, MealTemplateDef, SupplementDef, SupplementId } from '../types'
+import type { DietStyle, FoodLimits, Goal, MealPlanConfig, MealTemplateDef } from '../types'
+import type { Demand, SuppressionSignal, SupplementRecord } from '../supplementTypes'
+import { offeredSupplements as offeredFromCatalog } from './supplements'
 import { mealAlternatives } from './mealAlts'
 import { blockedBy } from './foodLimits'
 
@@ -139,14 +141,6 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
   { id: 'r-late', dayType: 'rest', slot: 'Late night', name: 'Casein or cottage cheese', detail: 'Casein shake or cottage cheese', proteinG: 30, kcal: 250 },
 ]
 
-// ---------- Supplements (PDF table) ----------
-
-export const SUPPLEMENTS: { id: SupplementId; name: string; dose: string; when: string }[] = [
-  { id: 'creatine', name: 'Creatine monohydrate', dose: '5 g', when: 'Daily, any time' },
-  { id: 'fishOil', name: 'Fish oil', dose: '1-2 g', when: 'With a meal' },
-  { id: 'vitD3', name: 'Vitamin D3', dose: '2000-4000 IU', when: 'Morning, with fat' },
-  { id: 'electrolytes', name: 'Electrolytes', dose: '1 serving', when: 'Around training / hot days' },
-]
 
 // ---------- Weekly grocery list (PDF) ----------
 
@@ -191,91 +185,38 @@ export const LATE_NIGHT = {
 // ---------- Per-user meal plans (v10) ----------
 
 /**
- * Wider stack users can add from; the default stack is a subset.
+ * What the app may put in front of THIS person, as the meal layer
+ * asks for it.
  *
- * Every dose here sits inside a published upper limit, which two of them
- * did not. Supplemental magnesium tops out at 350 mg a day (IOM 1997) and
- * this asked for up to 400. Vitamin D's adult limit is 4,000 IU and this
- * asked for exactly that, then put a multivitamin next to it, so taking
- * the plan as written went over. A ceiling is not a target.
+ * An adapter, deliberately: the catalog moved to plan/supplements.ts and
+ * this keeps the entry point the meal screens have always used, with the
+ * omnivore default they rely on. A record there can
+ * carry a contraindication, an upper limit, an evidence tier and a
+ * source. What is left here is the call, so the meal layer keeps the
+ * same entry point it always had.
  *
- * Zinc is gone entirely. There is no supportable claim for it in a
- * healthy athlete eating enough, and 15 to 25 mg taken indefinitely runs
- * at one and a half to three times the RDA, which is where the
- * copper-deficiency reports start. Anybody already taking it keeps it in
- * their own stack; it is simply not offered any more.
- *
- * "Pre-workout" is gone from the caffeine line. Caffeine is one of the
- * best-evidenced things in here; the pre-workout CATEGORY is the most
- * adulterated shelf in the shop, and naming it is an endorsement we have
- * no way to stand behind. The dose is the coaching. The product is not.
- */
-export const SUPPLEMENT_CATALOG: SupplementDef[] = [
-  { id: 'creatine', name: 'Creatine monohydrate', dose: '5 g', when: 'Daily, any time' },
-  { id: 'fishOil', name: 'Fish oil', dose: '1-2 g combined EPA + DHA', when: 'With a meal' },
-  { id: 'vitD3', name: 'Vitamin D3', dose: '1000-2000 IU', when: 'With a meal that has fat in it' },
-  { id: 'electrolytes', name: 'Electrolytes', dose: '1 serving', when: 'Around training / hot days' },
-  { id: 'magnesium', name: 'Magnesium glycinate', dose: '200-350 mg', when: 'With a meal' },
-  { id: 'multivitamin', name: 'Multivitamin', dose: '1 serving', when: 'With breakfast' },
-  { id: 'caffeine', name: 'Caffeine', dose: '100-200 mg', when: '30-45 min pre-session' },
-  { id: 'collagen', name: 'Collagen + vitamin C', dose: '10-15 g', when: '30-60 min before jumps/sprints' },
-]
-
-/**
- * What each of these is made of, which is the question the meal plan has
- * been answering all along and the stack was not asked.
- *
- * A fish allergy stored in onboarding kept somebody away from salmon and
- * then handed them fish oil on the same screen. Sources vary by brand, so
- * collagen lists both the hide it usually comes from and the fish it
- * sometimes comes from: over-excluding costs a supplement nobody needs,
- * under-excluding costs a reaction.
- */
-const SUPPLEMENT_SOURCES: Record<string, string[]> = {
-  fishOil: ['fish'],
-  collagen: ['beef', 'fish'],
-}
-
-/**
- * Who cannot take it on principle rather than on safety. Fish oil is fish
- * and collagen is an animal by-product, so both were already excluded for
- * vegans; the check said `!== 'vegan'`, which handed them to every
- * vegetarian in the app.
- */
-const NOT_FOR: Record<string, DietStyle[]> = {
-  fishOil: ['vegetarian', 'vegan'],
-  collagen: ['vegetarian', 'vegan'],
-}
-
-/**
- * What this athlete may be offered, which is not the same as what they
- * take. The plan used to write three of these into every booklet, which
- * is the one place in the app that decided something instead of
- * suggesting it. The stack is opt-in now: the plan ships empty and the
- * Meals tab offers the list.
- *
- * The diet and allergy filtering moved here with it. It used to run at
- * plan-build time, and leaving it there would have meant a vegan with a
- * fish allergy seeing an empty booklet section and then being offered
- * fish oil on the very next screen.
+ * The diet and allergy filtering used to run at plan-build time, and
+ * leaving it there would have meant a vegan with a fish allergy seeing
+ * an empty booklet section and then being offered fish oil on the very
+ * next screen.
  */
 export function offeredSupplements(
   dietStyle: DietStyle = 'omnivore',
   limits?: FoodLimits,
-): SupplementDef[] {
-  return SUPPLEMENT_CATALOG.filter(
-    (s) =>
-      !(NOT_FOR[s.id] ?? []).includes(dietStyle) &&
-      blockedBy({ name: s.name, ingredients: SUPPLEMENT_SOURCES[s.id] ?? [] }, limits) === null,
-  ).map((s) => ({ ...s }))
+  signals: SuppressionSignal[] = [],
+  demands: Demand[] = [],
+): SupplementRecord[] {
+  return offeredFromCatalog({ dietStyle, limits, signals, demands })
 }
-
 /** The owner's booklet keeps his PDF meal plan verbatim. */
 export function buildNaodMealPlan(): MealPlanConfig {
   return {
     templates: MEAL_TEMPLATES.map((t) => ({ ...t })),
     grocery: GROCERY_LIST.map((g) => ({ category: g.category, items: [...g.items] })),
-    supplements: SUPPLEMENTS.map((s) => ({ ...s })),
+    // Ids, like everybody else's. The doses were identical to the
+    // catalog anyway, and stored as text they would have frozen the
+    // moment the catalog was corrected.
+    supplements: ['creatine', 'fishOil', 'vitD3', 'electrolytes'].map((id) => ({ id, source: 'app' as const })),
     lateNight: { yes: [...LATE_NIGHT.yes], no: [...LATE_NIGHT.no] },
   }
 }

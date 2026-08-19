@@ -126,7 +126,11 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // was added there rather than here: -15 net, and the allowance follows.
   // Then settings and profile to store/settingsSchema.ts, which is where
   // the age field landed rather than here. -24 more.
-  'store/schema.ts': 610,
+  // The v19 calorie repair moved to plan/kcalFloor.ts, beside the
+  // floors that decide what the repair means, so the v20 supplement
+  // migration could land without raising the allowance. Both are now
+  // delegated to; this file is a list of what a data file holds.
+  'store/schema.ts': 602,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,
@@ -380,6 +384,11 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'plan/reach.ts:standingReachIn',
 ])
 
+// KNOWN LIMIT of the scan below: it looks for the NAME in other files,
+// so a mention in a comment counts as a caller. W16 tripped it by
+// naming an unrelated export in a doc block. Tightening it to real call
+// sites is worth doing and will unmask more dead exports than it fixes,
+// so it is its own job rather than a side effect of this one.
 /** Exported function names: declarations plus arrow-function consts. */
 function exportedFunctions(text: string): string[] {
   const names: string[] = []
