@@ -268,8 +268,8 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | J11 | Candidate strategies lite: 2-3 genuinely different plans, scored, one recommended, compared in J5's diff UI; generic-convergence gate over 20 personas | planner | pending | J5, J7 | tbd |
 | J12 | Core-complete gate: sims + poison + paired profiles + convergence in CI; run the engine-ready checklist; passing unlocks post-core | prove | pending | all above | tbd |
 | C1 | Cloud foundation & security: RLS audit, server-side sign-in lockout, push backend (free push only), sync hardening, narrow username lookup (id/username/avatar ONLY), USDA food-proxy edge function; indexes + pagination day one | cloud | pending | J1 | new session or revived "Comback for native" |
-| C2 | Profile & social surface: social = 4th Progress view; profile via header avatar; pinned badges; zero new tabs | cloud | pending | C1 | cloud session |
-| C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending | C2 | cloud session |
+| C2 | Profile & social surface: social = 4th Progress view; profile via header avatar; pinned badges; zero new tabs | cloud | pending  **COLLABORATE FIRST: a UI/UX redesign is in flight in another session; ask it for the surface before building this.** | C1 | cloud session |
+| C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending  **COLLABORATE FIRST: same redesign lane as C2.** | C2 | cloud session |
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
 | RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
 | OP1 | Off-plan training (owner request): own-workout builder from the exercise list, general workouts shelf, run-any-previous-day make-ups and reruns | product | **done + LIVE 2026-08-19** (deploy 65ed650, owner approved the merge) | J1 | off-plan training session |
@@ -342,6 +342,23 @@ retrieval/vector infra, all post-core experience work.
   divergence: five files. The split is real.
 
 ---
+
+### UI/UX REDESIGN LANE (owner, 2026-08-19): runs in parallel, and C2/C3 must wait for it
+
+A UI/UX redesign is in flight in another session, alongside this work. The owner's
+instruction: **collaborate before building the friends/profile surfaces.**
+
+- **C2 (profile and social surface) and C3 (friends, groups, challenges) are the handshake
+  point.** Do not design or build those screens solo. Whoever picks them up asks the
+  redesign lane for the surface first, then wires behaviour into it.
+- **C1 is not blocked.** It is the security audit, the lockout, the push backend, the sync
+  hardening and the food proxy, all of which sit under the UI rather than in it. Build it.
+- Anything else that lands a NEW screen (J4's composer, J5's diff view, J11's comparison)
+  should check in before committing to a layout, for the same reason.
+- Engine, wiring and plan-layer work is unaffected. None of it owns a screen.
+
+Recorded here rather than in a checkpoint entry because it is a standing constraint on the
+board, not an event: it stays true until the redesign lands.
 
 ## 5. DECISIONS
 - **A deload is dynamic, not a calendar law (owner, 2026-08-19).** R17 flagged that the app
