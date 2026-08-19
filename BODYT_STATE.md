@@ -396,6 +396,17 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
 ---
 
 ## 7. KNOWN GAPS AND FAILURES LEDGER (turn each into a regression when fixed)
+- **One e2e flake, seen once, recorded rather than waved off (2026-08-19).**
+  `settings.spec.ts:68` "the detour flag does not linger for the next visit" failed one
+  full-suite run on the tree that merges W17 with OP4's anatomy figure, and passed in
+  isolation and on an immediate full re-run (83/83 twice either side of it). It is timing
+  sensitive by construction: it clicks Close and immediately asserts the Settings dialog
+  underneath, and `Sheet` moves focus on a requestAnimationFrame. The suspect mechanism is
+  that OP4 added roughly 740 lines of SVG anatomy paths, so first paint got heavier;
+  this spec never opens a muscle map, so that is a hypothesis and not a finding.
+  NOT treated as fixed. A re-run is only a legitimate answer when a job dies before any
+  test body runs, and this one ran and failed an assertion. If it recurs, the fix is to
+  wait on the dialog's own title rather than on the sheet closing, and it becomes a job.
 - **Technique content is opt-in only (R10):** 129 of 194 exercises carry a cue, 65 carry
   none, and no test guards it. Cues are spoken only when the athlete taps STEPS or asks,
   so somebody who never asks hears zero technique for a whole block. 50 of 129 cues stack
