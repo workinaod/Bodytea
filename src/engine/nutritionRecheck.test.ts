@@ -76,10 +76,7 @@ describe('it stays quiet', () => {
     expect(nutritionRecheck(d, TODAY)).toBeNull()
   })
 
-  it('when a person typed their own number into the editor', () => {
-    // The editor clears the basis, which is the whole mechanism: a plan
-    // with no basis is a plan whose calories belong to a human. Same call
-    // as the deload, whose plan it is decides who decides.
+  it('when the plan has no record of what its number came from at all', () => {
     const d = built()
     d.plan.nutrition = { kcalTraining: 2000, kcalRest: 1700 }
     delete d.plan.nutritionBasis
@@ -118,6 +115,41 @@ describe('it stays quiet', () => {
     const wouldBe = buildNutrition('lean', 210, 'male', {}, 70, { ageYears: 30, sessionsPerWeek: 4 })
     expect(wouldBe.kcalTraining - d.plan.nutrition.kcalTraining).toBe(50)
     expect(nutritionRecheck(d, TODAY)).toBeNull()
+  })
+})
+
+describe('a number the athlete set themselves', () => {
+  it('is still re-offered once the body it was set for has changed', () => {
+    // A target typed at 200 lb is a deliberate decision. It is also not
+    // advice at 170. Owner call: offer it again.
+    const d = built()
+    d.plan.nutrition = { kcalTraining: 2000, kcalRest: 1700 }
+    weighIn(d, 1, 170)
+    const r = nutritionRecheck(d, TODAY)
+    expect(r).not.toBeNull()
+    expect(r!.athleteSet).toBe(true)
+    expect(r!.current.kcalTraining).toBe(2000)
+  })
+
+  it('is offered in different words, because it is theirs', () => {
+    const d = built()
+    d.plan.nutrition = { kcalTraining: 2000, kcalRest: 1700 }
+    weighIn(d, 1, 170)
+    const r = nutritionRecheck(d, TODAY)!
+    expect(learnedCopy(r.learned, r.athleteSet)).toBe('You set this one. Since then the scale has moved.')
+    expect(learnedCopy(r.learned, false)).toBe('Since then the scale has moved.')
+  })
+
+  it('is left alone until something actually moves', () => {
+    const d = built()
+    d.plan.nutrition = { kcalTraining: 2000, kcalRest: 1700 }
+    expect(nutritionRecheck(d, TODAY)).toBeNull()
+  })
+
+  it('is not claimed as BodyT s when BodyT did build it', () => {
+    const d = built()
+    weighIn(d, 1, 170)
+    expect(nutritionRecheck(d, TODAY)!.athleteSet).toBe(false)
   })
 })
 

@@ -31,16 +31,17 @@ import { adherenceShape, readUserModel } from './userModel'
 //   that is not the one the plan assumed. Otherwise it is noise with a
 //   number attached.
 //
-//   It never argues with a number the athlete set themselves. Typing a
-//   target into the booklet editor clears the basis, and no basis means
-//   no recheck, ever. Same call as the deload: whose plan it is decides
-//   who decides.
+//   It knows whose number it is. If the stored target is not what the
+//   basis produces, a person typed it or declined an offer, and the card
+//   says so instead of pretending BodyT owns it. It still offers, because
+//   a target set at 200 lb is not advice at 170, but it offers the way
+//   you would to somebody who has already made a decision.
 //
 // The basis is what the target was last CONFIRMED against, not only what
-// first built it. Declining the offer keeps the number and stamps today's
-// knowledge onto it, so the card goes quiet and comes back only if
-// something moves again. Saying no once should not mute the app through
-// the next forty pounds.
+// first built it. Declining keeps the number and stamps today's knowledge
+// onto it, so the card goes quiet and comes back only if something moves
+// again. Saying no once should not mute the app through the next forty
+// pounds, and neither should typing your own number.
 //
 // And it returns a suggestion, never a mutation. Nothing in here writes.
 // ============================================================
@@ -78,6 +79,12 @@ export interface NutritionRecheck {
   deltaTraining: number
   /** Never empty: no new input, no suggestion. */
   learned: LearnedSince[]
+  /**
+   * The stored target is not what its basis produces, so a person put it
+   * there: typed in the booklet editor, or kept after declining an offer.
+   * Changes what the card SAYS, never whether it appears.
+   */
+  athleteSet: boolean
   /** What the suggested number is computed from, ready to store with it. */
   basis: NutritionBasis
 }
@@ -127,6 +134,14 @@ export function nutritionRecheck(data: AppData, today: ISODate): NutritionRechec
   if (learned.length === 0) return null
 
   const ans = plan.goalAnswers ?? {}
+  // Recomputed from the basis and compared to what is actually stored. A
+  // gap means a human intervened, which is worth saying out loud and is
+  // not worth going silent over.
+  const asBuilt = buildNutrition(plan.goal, basis.bodyweightLb, sex, ans, heightIn, {
+    ageYears: basis.ageYears,
+    bodyFatPct: basis.bodyFatPct,
+    sessionsPerWeek: basis.sessionsPerWeek,
+  })
   const now = buildNutrition(plan.goal, bodyweightLb, sex, ans, heightIn, {
     ageYears,
     bodyFatPct,
@@ -140,6 +155,7 @@ export function nutritionRecheck(data: AppData, today: ISODate): NutritionRechec
     suggested: { kcalTraining: now.kcalTraining, kcalRest: now.kcalRest },
     deltaTraining,
     learned,
+    athleteSet: asBuilt.kcalTraining !== current.kcalTraining,
     basis: now.basis,
   }
 }
@@ -168,7 +184,7 @@ export function applyRecheck(
  * recalculated" is not one. This names the thing that actually moved, so
  * the offer reads as a consequence rather than an algorithm twitching.
  */
-export function learnedCopy(learned: LearnedSince[]): string {
+export function learnedCopy(learned: LearnedSince[], athleteSet = false): string {
   const parts: string[] = []
   if (learned.includes('weight')) parts.push('the scale has moved')
   if (learned.includes('tape')) parts.push('you measured')
@@ -178,5 +194,8 @@ export function learnedCopy(learned: LearnedSince[]): string {
     parts.length === 1
       ? parts[0]
       : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`
-  return `Since then ${list}.`
+  // Whose number it is changes the sentence, not whether there is one.
+  // Telling somebody their own deliberate target is out of date reads
+  // very differently from telling them mine is.
+  return athleteSet ? `You set this one. Since then ${list}.` : `Since then ${list}.`
 }

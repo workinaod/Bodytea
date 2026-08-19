@@ -26,10 +26,15 @@ export interface CalorieTargets {
  * keeps the number and stamps today's inputs here, so the app goes quiet
  * until something moves again rather than through the next forty pounds.
  *
- * Optional on the plan, and absence is load-bearing. Plans built before
- * this existed do not carry one, and typing a target into the booklet
- * editor CLEARS it. Either way the meaning is the same: a human owns this
- * number, do not recheck it.
+ * Optional on the plan, and absence is load-bearing: a plan built before
+ * this existed has no record of what its number came from, and guessing
+ * is worse than silence, so those are never rechecked.
+ *
+ * Typing a target in the booklet editor does NOT clear it. The basis
+ * keeps saying what BodyT last computed, and the gap between that and the
+ * stored number is how the app knows a person owns it: enough to change
+ * what the offer SAYS, never enough to stop it. A target set at 200 lb is
+ * a real decision and still not advice at 170.
  */
 export interface NutritionBasis extends Partial<KnownBody> {
   bodyweightLb: number

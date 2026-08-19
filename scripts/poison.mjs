@@ -1357,6 +1357,14 @@ const MUTATIONS = [
     spec: "src/engine/nutritionRecheck.test.ts",
   },
   {
+    id: "recheck-mutes-a-typed-target",
+    bug: "a target somebody typed at 200 lb is never mentioned again, so it is still their advice at 170",
+    file: "src/engine/nutritionRecheck.ts",
+    find: "    athleteSet: asBuilt.kcalTraining !== current.kcalTraining,",
+    to: "    athleteSet: false,",
+    spec: "src/engine/nutritionRecheck.test.ts",
+  },
+  {
     id: "recheck-credits-the-wrong-cause",
     bug: "a change the scale made gets explained as a tape reading, which is a coach visibly guessing",
     file: "src/engine/nutritionRecheck.ts",

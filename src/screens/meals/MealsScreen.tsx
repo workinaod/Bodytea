@@ -135,9 +135,11 @@ export function MealsScreen() {
 
           {recheck && (
             <Card className="border-accent/40">
-              <p className="text-[13px] font-bold text-accent-soft">Your target was set before this</p>
+              <p className="text-[13px] font-bold text-accent-soft">
+                {recheck.athleteSet ? 'Worth another look' : 'Your target was set before this'}
+              </p>
               <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
-                {learnedCopy(recheck.learned)} On what I know now your training days come out at{' '}
+                {learnedCopy(recheck.learned, recheck.athleteSet)} On what I know now your training days come out at{' '}
                 {recheck.suggested.kcalTraining} kcal, not {recheck.current.kcalTraining}. Your call.
               </p>
               <div className="mt-2.5 flex gap-2">
