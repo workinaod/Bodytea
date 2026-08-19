@@ -2,6 +2,8 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { ALL_REGIONS, MuscleMap, type MuscleRegion } from './MuscleMap'
+import { FRONT } from './anatomy/front'
+import { BACK } from './anatomy/back'
 
 // ============================================================
 // Does lighting a region actually light something?
@@ -11,32 +13,34 @@ import { ALL_REGIONS, MuscleMap, type MuscleRegion } from './MuscleMap'
 // direction: a region the map knows about but never DRAWS lights
 // nothing at all, and the exercise using it shows a blank body
 // with no error anywhere. The compiler will not catch it either,
-// because a region that is simply never passed to f() is not a
-// type error.
+// because a region that is simply never passed to the state
+// function is not a type error.
+//
+// Lit paths are marked in the markup: data-m="p" for a working
+// muscle, "s" for an assisting one, "w" for the full-body wash.
 // ============================================================
 
 const render = (primary: MuscleRegion[], secondary: MuscleRegion[] = []) =>
   renderToStaticMarkup(createElement(MuscleMap, { primary, secondary }))
 
-/** Paths painted at full accent, which is what "primary" looks like. */
-const litCount = (markup: string) => markup.split('opacity="0.95"').length - 1
+const count = (markup: string, m: 'p' | 's' | 'w') => markup.split(`data-m="${m}"`).length - 1
 
 describe('every region the map advertises', () => {
   const drawn = ALL_REGIONS.filter((r) => r !== 'full-body' && r !== 'heart')
 
   for (const region of drawn) {
     it(`draws something for ${region}`, () => {
-      expect(litCount(render([region]))).toBeGreaterThan(0)
+      expect(count(render([region]), 'p')).toBeGreaterThan(0)
     })
   }
 
   it('lights nothing when nothing is asked for', () => {
-    expect(litCount(render([]))).toBe(0)
+    const markup = render([])
+    expect(count(markup, 'p') + count(markup, 's') + count(markup, 'w')).toBe(0)
   })
 
-  it('lights the whole body for full-body', () => {
-    const markup = render(['full-body'])
-    expect(markup.split('opacity="0.5"').length - 1).toBeGreaterThan(10)
+  it('washes the whole body for full-body', () => {
+    expect(count(render(['full-body']), 'w')).toBeGreaterThan(20)
   })
 
   it('shows the heart only when it is named', () => {
@@ -45,28 +49,51 @@ describe('every region the map advertises', () => {
   })
 })
 
+describe('the anatomy data stays inside the vocabulary', () => {
+  // A muscle bound to a misspelled region would compile (the type
+  // union catches new strings, not a stale list here) and then
+  // never light. Walk every drawn piece against ALL_REGIONS.
+  it('binds every drawn muscle to a region the map advertises', () => {
+    const bad = [...FRONT.parts, ...BACK.parts]
+      .filter((p) => p.r !== null && !ALL_REGIONS.includes(p.r))
+      .map((p) => p.r)
+    expect(bad).toEqual([])
+  })
+
+  it('draws both figures with distinct def namespaces', () => {
+    // Front and back render into one document; shared gradient and
+    // clip ids would silently resolve to whichever mounted first.
+    expect(FRONT.id).not.toBe(BACK.id)
+  })
+})
+
 describe('primary and assisting stay distinguishable', () => {
   it('paints an assisting region at a lower strength', () => {
     const asPrimary = render(['quads'])
     const asSecondary = render([], ['quads'])
-    expect(litCount(asPrimary)).toBeGreaterThan(0)
-    expect(litCount(asSecondary)).toBe(0)
-    expect(asSecondary).toContain('opacity="0.34"')
+    expect(count(asPrimary, 'p')).toBeGreaterThan(0)
+    expect(count(asSecondary, 'p')).toBe(0)
+    expect(count(asSecondary, 's')).toBeGreaterThan(0)
   })
 
-  it('gives a region lit both ways the stronger of the two', () => {
-    // Shoulder caps are shared between the front, side and rear heads,
-    // so one shape can be asked for twice at different strengths.
-    expect(litCount(render(['delts-side'], ['delts-front']))).toBeGreaterThan(0)
+  it('draws neighbouring shoulder heads independently', () => {
+    // The delt heads are separate muscles now; asking for one as
+    // primary and its neighbour as assisting must light both, at
+    // different strengths, not collapse into one cap.
+    const markup = render(['delts-side'], ['delts-front'])
+    expect(count(markup, 'p')).toBeGreaterThan(0)
+    expect(count(markup, 's')).toBeGreaterThan(0)
   })
 })
 
 describe('the resting body', () => {
-  it('draws no seam lines when nothing is lit', () => {
-    // Head divisions are definition on a working muscle. On a resting
-    // silhouette they are scratches, which is most of what made the old
-    // figure read as plate armour.
-    expect(render([])).not.toContain('fill="none"')
-    expect(render(['quads'])).toContain('fill="none"')
+  it('carries no accent when nothing is lit', () => {
+    // The figure shows its anatomy through sculpt, not colour: a
+    // resting body must not borrow the accent anywhere. Compact
+    // mode drops the legend, so the markup is the figure alone.
+    const compactRest = renderToStaticMarkup(
+      createElement(MuscleMap, { primary: [], secondary: [], compact: true }),
+    )
+    expect(compactRest).not.toContain('var(--color-accent)')
   })
 })

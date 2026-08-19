@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (OP1 + OP2 + OP3 done and LIVE, off-plan training session)
+Last updated: 2026-08-19 (OP4 done on its feature branch, 3D body muscle models session)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -230,6 +230,16 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
   points: rest-day card + one quiet line on scheduled days, both on Today only.
   two adapted commits 0374307/d5e71a4 before deleting), `claude/bodytea-link-display-r1sue6`
   (stale ancestor pointer). `claude/workout-form-feedback-pain-0xnonz` never existed.
+- **OP4 (2026-08-19): the muscle maps are anatomical now.** The MuscleMap silhouette
+  (flat fills, panel outlines) is replaced by a shaded figure drawn muscle by muscle:
+  `components/anatomy/front.ts` + `back.ts` hold ~60 named muscle paths (each bound to a
+  MuscleRegion or to null for bone/head/hands), `components/anatomy/AnatomyFigure.tsx`
+  renders them with per-belly gradients, one shared key light, and an accent glow for
+  working muscles; `MuscleMap.tsx` keeps its exact old API so ExerciseGuideSheet,
+  WorkoutBriefSheet, ExerciseBrief and BreakScreen changed zero lines. Region vocabulary
+  unchanged; muscleMap.test.ts re-pinned (every region lights, primary vs assisting
+  distinguishable, resting body carries no accent, anatomy pieces bind only known
+  regions). Sits on `claude/3d-body-muscle-models-gvvms9` for owner review, not deployed.
 - Cloud: Supabase project **bodytea-prod** (elnvzitkfwzybkxcjytf, us-west-1). Tables:
   profiles / states / board_stats. NEVER touch the "Forvm Data" project. Supabase use is
   APPROVED by the owner (2026-08-17); the cloud lane is scheduled work.
@@ -264,6 +274,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP1 | Off-plan training (owner request): own-workout builder from the exercise list, general workouts shelf, run-any-previous-day make-ups and reruns | product | **done + LIVE 2026-08-19** (deploy 65ed650, owner approved the merge) | J1 | off-plan training session |
 | OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done + LIVE 2026-08-19** (deploy 65ed650) | OP1 | off-plan training session |
 | OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
+| OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done 2026-08-19** on branch `claude/3d-body-muscle-models-gvvms9` (based on the deploy tip; owner merges when ready, deploy.yml untouched) | - | 3D body muscle models session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -786,6 +797,36 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   after sleep sync ships. Proposed shapes fit the existing split (signalTypes.ts +
   store/signalSchema.ts + platform/health.ts + engine/signals.ts) with a defaulted store
   key, so no SCHEMA_VERSION bump and no migration. No production code touched.
+
+- **2026-08-19 · OP4 · 3D body muscle models session (owner request).** "Can we use a
+  real 3d human with muscles showing and actually highlight the actual muscles instead of
+  what we have now." Shipped on `claude/3d-body-muscle-models-gvvms9` (based on the
+  deploy tip; owner merges when ready, deploy.yml untouched per the one-deploy-branch
+  rule). The judgement call, made explicit: a true WebGL model (three.js + a segmented
+  anatomy mesh) would cost megabytes of assets, a WebGL context per card on a screen that
+  renders up to three maps at once, and licence work, against an offline-first PWA with a
+  3.5 MB precache. What shipped instead is a render-style SVG figure that reads as 3D:
+  every superficial muscle drawn as its own path (three delt heads, both pec heads,
+  serratus teeth, sartorius ribbon, the quad's three visible bellies, gastroc pair,
+  erector columns, the trap kite) with per-belly gradient sculpt, one shared key light
+  clipped to the body, hairline-seam shared boundaries, and a bloom on working muscles.
+  Regions light the ACTUAL muscle shapes now: a squat lights VL/RF/VM plus the glute
+  medius sliver visible from the front; a pull-up lights the lat wing into the teres/
+  infraspinatus step. Structure: anatomy/front.ts (309 lines), anatomy/back.ts (232),
+  AnatomyFigure.tsx (201), MuscleMap.tsx down to 76; all under the 600 cap, no allowance
+  touched, public API unchanged so all four call sites needed zero edits. Tests: the map
+  test re-pinned to the new markup markers (data-m p/s/w) plus two new guards, one
+  walking every anatomy piece's region against ALL_REGIONS (a typo'd region would
+  compile and never light), one pinning front/back def-namespace separation (shared SVG
+  ids across two mounted figures silently resolve to whichever mounted first).
+  Validation: typecheck clean, 1,379/1,379 unit, build green, **e2e 82 passed / 0
+  failed** (3.0m, off a preview server started fresh after the build, per the
+  stale-server trap in the OP1 checkpoint), 390px screenshots reviewed on all four
+  surfaces (guide sheet, workout brief, focus view, break screen). Iterated via a scratchpad esbuild+playwright preview loop, six
+  visual passes; the wash state (full-body) doubles as a coverage probe since any body
+  gap shows as a black hole in it. NEXT: nothing owed on OP4. If the owner later wants
+  the figure interactive (tap a muscle to filter exercises), the per-region paths are
+  already the hit targets; that is post-core work under the visual-overhaul fence.
 
 ## 10. SOURCES
 
