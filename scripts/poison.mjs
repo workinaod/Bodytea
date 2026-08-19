@@ -892,6 +892,30 @@ const MUTATIONS = [
     to: "  'bird-dog': { floorTransfer: true },",
     spec: 'src/plan/capability.test.ts',
   },
+  {
+    id: 'cannot-kneel-means-nothing-again',
+    bug: 'a declared limitation resolves to no constraint, which is the state R6 sat unusable in',
+    file: 'src/plan/safetyRules.ts',
+    find: "    id: 'cannot-kneel', blocks: ['kneeling'], avoid: [],",
+    to: "    id: 'cannot-kneel', blocks: [], avoid: [],",
+    spec: 'src/plan/safetyRules.test.ts',
+  },
+  {
+    id: 'impact-caps-take-the-highest',
+    bug: 'two limitations combine into the more permissive cap instead of the stricter one',
+    file: 'src/plan/safetyRules.ts',
+    find: 'impactCap: caps.length ? (Math.min(...caps) as 0 | 1 | 2 | 3) : undefined,',
+    to: 'impactCap: caps.length ? (Math.max(...caps) as 0 | 1 | 2 | 3) : undefined,',
+    spec: 'src/plan/safetyRules.test.ts',
+  },
+  {
+    id: 'knee-keeps-the-joint-loses-the-depth',
+    bug: 'a bad knee routes load away and the plan still asks for a full-depth squat',
+    file: 'src/plan/safetyRules.ts',
+    find: "    id: 'knee', blocks: ['deepKneeFlexion'], avoid: ['knee'], impactCap: 1,",
+    to: "    id: 'knee', blocks: [], avoid: ['knee'], impactCap: 1,",
+    spec: 'src/plan/safetyRules.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [
