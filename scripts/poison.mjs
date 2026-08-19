@@ -1357,6 +1357,14 @@ const MUTATIONS = [
     spec: "src/engine/nutritionRecheck.test.ts",
   },
   {
+    id: "recheck-credits-the-wrong-cause",
+    bug: "a change the scale made gets explained as a tape reading, which is a coach visibly guessing",
+    file: "src/engine/nutritionRecheck.ts",
+    find: "const REAL_BF_CHANGE_PCT = 1.5",
+    to: "const REAL_BF_CHANGE_PCT = 0",
+    spec: "src/engine/nutritionRecheck.test.ts",
+  },
+  {
     id: "recheck-explains-nothing",
     bug: "a number changes with no reason attached, which reads as the algorithm twitching rather than a consequence",
     file: "src/engine/nutritionRecheck.ts",

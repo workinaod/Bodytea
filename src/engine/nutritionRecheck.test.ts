@@ -207,6 +207,25 @@ describe('taking the suggestion', () => {
 })
 
 describe('saying why', () => {
+  it('does not credit the tape for a change the tape did not make', () => {
+    // Thirty pounds down, and a body-fat reading a fifth of a point off
+    // the last one. The number moved because of the scale. Saying "you
+    // measured" here is a small lie, and it is the kind that teaches
+    // somebody the app is guessing.
+    //
+    // This is the assertion that makes REAL_BF_CHANGE_PCT load-bearing:
+    // the threshold never changes the calorie number, because the
+    // meaningful-kcal gate always fires first at any real bodyweight. It
+    // only decides whether the explanation is true.
+    const d = built({ bodyFatPct: 20 })
+    weighIn(d, 2, 170)
+    taped(d, 1, 20.2)
+    const r = nutritionRecheck(d, TODAY)!
+    expect(r.learned).toContain('weight')
+    expect(r.learned).not.toContain('tape')
+    expect(learnedCopy(r.learned)).toBe('Since then the scale has moved.')
+  })
+
   it('names the thing that moved, not the calculation', () => {
     expect(learnedCopy(['weight'])).toBe('Since then the scale has moved.')
     expect(learnedCopy(['tape'])).toBe('Since then you measured.')

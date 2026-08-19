@@ -51,7 +51,19 @@ export const MEANINGFUL_KCAL = 100
 /** Scale noise, water, one big meal. Not a new bodyweight. */
 const REAL_WEIGHT_CHANGE_LB = 3
 
-/** Inside the tape's own measurement error, so not a new reading. */
+/**
+ * Inside the tape's own measurement error, so not a new reading.
+ *
+ * This one never changes the calorie number: at any real bodyweight the
+ * meaningful-kcal gate below fires long before a sub-1.5-point tape
+ * change could matter. What it protects is the EXPLANATION. Without it,
+ * an athlete thirty pounds down who happened to re-measure gets told
+ * "you measured" for a change the scale made, and a coach who credits
+ * the wrong thing is a coach who is visibly guessing.
+ *
+ * Proven by mutation rather than assumed: the first version of this file
+ * had nothing that could tell the difference.
+ */
 const REAL_BF_CHANGE_PCT = 1.5
 
 const ADHERENCE_WINDOW_DAYS = 28
