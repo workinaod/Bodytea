@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { DayTemplate, PlanConfig, RoutineGoal, TemplateEntry, Weekday } from '../../types'
 import { getExercise } from '../../plan/exercises'
 import { ROUTINE_GOAL_LABELS } from '../../plan/bookletOps'
+import { restDaySwing } from '../../plan/bmr'
+import { MIN_KCAL_REST } from '../../plan/kcalFloor'
 import { Btn, Card, Chip, Stepper } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { ExercisePicker } from './ExercisePicker'
@@ -124,7 +126,13 @@ export function BookletEditor({
               onChange={(v) =>
                 mutate((p) => {
                   p.nutrition.kcalTraining = Math.max(1500, Math.min(5000, v))
-                  p.nutrition.kcalRest = p.nutrition.kcalTraining - 300
+                  // The same scaled gap the generator uses, not a flat
+                  // 300: a small athlete's rest day should not drop by
+                  // double what her session actually cost.
+                  p.nutrition.kcalRest = Math.max(
+                    MIN_KCAL_REST,
+                    p.nutrition.kcalTraining - restDaySwing(p.nutritionBasis?.bodyweightLb ?? 175),
+                  )
                   // nutritionBasis is deliberately left alone. It still
                   // records what BodyT last computed, and the gap between
                   // that and this typed number is how the recheck knows a

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildNutrition } from './nutritionPlan'
+import { restDaySwing } from './bmr'
 
 // ============================================================
 // Does the answer reach the number.
@@ -43,7 +44,10 @@ describe('age reaches the calorie target', () => {
     // without a height cannot see it happen.
     const tall = buildNutrition('vertical', 180, 'male', {}, 70, {})
     expect(tall.kcalTraining).toBe(2700 + 25 + 200)
-    expect(tall.kcalRest).toBe(2700 + 25 + 200 - 300)
+    // The rest day drops by this body's own session cost now, not a flat
+    // 300: (5 - 1) METs x 81.6 kg x 1 hour. The training day is what the
+    // heuristic branch promises to leave alone, not the gap under it.
+    expect(tall.kcalRest).toBe(2925 - restDaySwing(180))
   })
 })
 

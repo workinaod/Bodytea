@@ -191,9 +191,13 @@ test('midnight rollover advances the app without a reload', async ({ page }) => 
   // Sam is 30, so the calorie baseline runs Mifflin-St Jeor rather than
   // the bodyweight guess: 180 lb and 5'10" at 30 gives 1783 resting, a
   // six-day week puts the non-training multiplier at 1.425 for 2550, one
-  // session adds (5-1) x 82 kg for 2850 maintenance, +200 for the goal
-  // and −300 for a rest day. This number moving is the point of the
-  // change; it was 2625 while age was collected and read by nobody.
+  // session adds (5-1) x 82 kg for 2850 maintenance, and +200 for the
+  // goal makes 3050 on a training day.
+  //
+  // The rest day then drops by Sam's OWN session cost, 327, not the flat
+  // 300 every athlete used to get regardless of size. Both halves of this
+  // number have now moved for the same reason: a constant that was one
+  // body's arithmetic applied to everybody.
   await page.getByRole('button', { name: 'Meals', exact: true }).click()
-  await expect(page.getByText(/Rest day · 2750 kcal/)).toBeVisible()
+  await expect(page.getByText(/Rest day · 2723 kcal/)).toBeVisible()
 })

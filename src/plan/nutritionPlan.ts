@@ -1,6 +1,6 @@
 import type { Goal } from '../types'
 import type { NutritionBasis } from '../nutritionTypes'
-import { bodyweightHeuristicKcal, dayMovementOf, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal } from './bmr'
+import { bodyweightHeuristicKcal, dayMovementOf, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal, restDaySwing } from './bmr'
 import { flooredTargets } from './kcalFloor'
 import { proteinContextFor, proteinTargetG } from './sportsNutrition'
 
@@ -68,6 +68,8 @@ export function buildNutrition(
       ...(body.sessionsPerWeek !== undefined ? { sessionsPerWeek: body.sessionsPerWeek } : {}),
     } satisfies NutritionBasis,
     // 1700 above is lean-only; this floors every goal, and the rest day.
-    ...flooredTargets(kcalTraining, base),
+    // The rest-day gap is this athlete's own session cost now, not a flat
+    // 300 that was one 86 kg body's arithmetic applied to everybody.
+    ...flooredTargets(kcalTraining, base, restDaySwing(bw)),
   }
 }

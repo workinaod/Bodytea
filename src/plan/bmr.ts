@@ -235,6 +235,29 @@ function sessionKcal(bodyweightLb: number, hours: number, activity: MetActivity 
   return Math.round((MET_ANCHORS[activity] - 1) * toKg(bodyweightLb) * hours)
 }
 
+/**
+ * How far a rest day sits below a training day, for THIS body.
+ *
+ * It was a flat 300 for everybody. The direction is sourced (less work
+ * needs less fuel) but the size was not, and it mis-scales badly: 300 is
+ * about right for an 86 kg man lifting an hour, and roughly double the
+ * session cost of a 54 kg woman lifting 45 minutes, which turns her rest
+ * days punitive for no reason anyone could point at.
+ *
+ * So the swing is the session's own cost, bounded. The old 300 turns out
+ * to be the special case this rule produces for an 86 kg hour, which is
+ * the tell that the flat number was one person's arithmetic generalised.
+ *
+ * The whole swing rides on carbs. Protein and fat are identical every
+ * day: protein for daily repair, fat because of its floor.
+ */
+export const REST_SWING_MIN = 150
+export const REST_SWING_MAX = 400
+
+export function restDaySwing(bodyweightLb: number, hours = TYPICAL_SESSION_HOURS): number {
+  return Math.max(REST_SWING_MIN, Math.min(REST_SWING_MAX, sessionKcal(bodyweightLb, hours)))
+}
+
 // ---------------- The number everything else hangs off ----------------
 
 export interface BodyKnowledge {

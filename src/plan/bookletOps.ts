@@ -6,7 +6,7 @@ import { pickCardio, rationaleFor } from './generator'
 import { buildMealPlan, type MealsPerDay } from './foods'
 import { flooredTargets } from './kcalFloor'
 import { proteinTargetG } from './sportsNutrition'
-import { bodyweightHeuristicKcal, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal } from './bmr'
+import { bodyweightHeuristicKcal, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal, restDaySwing } from './bmr'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -89,7 +89,7 @@ export function byorNutrition(
       ...(body.sessionsPerWeek !== undefined ? { sessionsPerWeek: body.sessionsPerWeek } : {}),
     } satisfies NutritionBasis,
     // Floored, because this path had no floor at all: see plan/kcalFloor.ts.
-    ...flooredTargets(base + adj, base),
+    ...flooredTargets(base + adj, base, restDaySwing(bw)),
   }
 }
 
