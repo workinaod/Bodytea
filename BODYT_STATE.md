@@ -423,7 +423,24 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   written examples, grocery list and swap sheet all filtered; the sheet names what it is
   skipping. 21 tests, 4 mutations. The rest of J9 (cost/minutes/effort axes, batch
   chaining, fit-remaining-macros) is untouched and still blocked on carbs/fat below.
-- **LIVE PRIVACY DEFECT, needs an owner decision before C1 (found by R13):**
+- ~~**LIVE PRIVACY DEFECT (found by R13).**~~ FIXED on prod 2026-08-19, owner approved.
+  `public.board_public` serves the leaderboard with `updated_at` coarsened to the week,
+  the three-session floor and the 45-day cut moved inside the view, and `board_stats`
+  SELECT narrowed to own-row. Applied in three steps in this order and no other: create
+  the view, deploy the client that reads it, then narrow the table. Repo carries it as
+  `supabase/migrations/0002_board_public_view.sql`.
+  **The trap, written down because it nearly shipped:** a single-table view is
+  auto-updatable and this one is SECURITY DEFINER (it has to be, or an own-row table
+  gives every athlete a leaderboard of one). Supabase's default public-schema grants gave
+  `authenticated` INSERT, UPDATE, DELETE and TRUNCATE on it, and writes through a definer
+  view run as the owner and never see RLS. Any signed-in user could have rewritten or
+  deleted every other athlete's row. Revoked; the view has SELECT only, anon has nothing.
+  **Any future view over a private table needs the same revoke.** The database linter
+  flags the definer property and it is correct to flag it and wrong to "fix" it; the
+  reason is a comment on the view itself.
+- Also from the security advisor, unfixed and belonging to C1: leaked-password protection
+  is disabled (Supabase Auth can check HaveIBeenPwned on sign-up).
+- **SUPERSEDED, kept for the reasoning:**
   `supabase/migrations/0001_core_tables_rls.sql:45-46` reads
   `create policy "board read all" ... for select to authenticated using (true)`.
   The username, goal statement and stats being visible IS the leaderboard, so that part
