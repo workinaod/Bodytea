@@ -916,6 +916,22 @@ const MUTATIONS = [
     to: "    id: 'knee', blocks: [], avoid: ['knee'], impactCap: 1,",
     spec: 'src/plan/safetyRules.test.ts',
   },
+  {
+    id: 'declared-joint-empties-the-pattern',
+    bug: 'a declared bad knee removes every squat instead of narrowing to the gentle ones, which is how it shipped',
+    file: 'src/plan/movement.ts',
+    find: '    if (m.stress.some((j) => limited.has(j))) score -= 1000',
+    to: '    if (false) score -= 1000',
+    spec: 'src/plan/safetyRules.test.ts',
+  },
+  {
+    id: 'limited-joint-outranked-by-a-role-match',
+    bug: 'a movement loading the joint they told us about climbs back above one that does not',
+    file: 'src/plan/movement.ts',
+    find: '    if (m.stress.some((j) => limited.has(j))) score -= 1000',
+    to: '    if (m.stress.some((j) => limited.has(j))) score -= 3',
+    spec: 'src/plan/safetyRules.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [

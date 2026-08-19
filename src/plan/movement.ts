@@ -351,6 +351,22 @@ export interface SubstituteQuery {
   maxSkill?: 0 | 1 | 2 | 3
   /** Cap the systemic cost, for a day that has already taken enough. */
   maxFatigue?: 0 | 1 | 2 | 3
+  /**
+   * Joints to NARROW around rather than route around. Limit-range mode.
+   *
+   * `avoid` is a hard reject and it is right for a joint that hurt twice
+   * in a fortnight: that movement, today, is out. It is the wrong tool
+   * for a limitation somebody declared once and lives with, because
+   * every squat in this catalog stresses the knee, so a declared bad
+   * knee emptied the entire squat pattern and the athlete got no lower
+   * body work at all rather than a gentler version of it.
+   *
+   * R6's own row for the knee says what should happen instead: partial
+   * squats, leg-press-style patterns before deep free squats. So a
+   * limited joint keeps its movements and reorders them, and `cannot`
+   * removes the deep-range ones. Narrow, do not delete.
+   */
+  limited?: Joint[]
 }
 
 /**
@@ -371,6 +387,7 @@ export function substitutesFor(id: string, q: SubstituteQuery): string[] {
   const meta = MOVEMENT[id]
   if (!meta) return []
   const avoid = new Set(q.avoid ?? [])
+  const limited = new Set(q.limited ?? [])
   const maxSkill = q.maxSkill ?? Math.max(meta.skill, 1)
   const scored: { id: string; score: number }[] = []
   for (const [otherId, m] of Object.entries(MOVEMENT)) {
@@ -382,6 +399,16 @@ export function substitutesFor(id: string, q: SubstituteQuery): string[] {
     if (blockedByCapability(otherId, m.pattern, q.cannot ?? [])) continue
     if (!q.can(otherId)) continue
     let score = 0
+    // A movement that loads a limited joint is still offered, and offered
+    // after every movement that does not. This is the whole of
+    // limit-range mode: the pattern survives and the gentlest option
+    // surfaces first.
+    //
+    // The penalty is deliberately large enough to dominate the closeness
+    // scoring below rather than trade against it. A better role match is
+    // not a reason to put the knee they told us about back at the top of
+    // the list; within each group the normal ranking still decides.
+    if (m.stress.some((j) => limited.has(j))) score -= 1000
     if (m.role === meta.role) score += 4
     if (m.laterality === meta.laterality) score += 2
     if (m.stretchLoaded === meta.stretchLoaded) score += 1

@@ -125,14 +125,21 @@ export function constraintsFor(keys: readonly string[]): SafetyConstraint[] {
  */
 export function planningLimits(keys: readonly string[]): {
   cannot: CapabilityBlock[]
-  avoid: Joint[]
+  limited: Joint[]
   impactCap?: 0 | 1 | 2 | 3
 } {
   const cs = constraintsFor(keys)
   const caps = cs.map((c) => c.impactCap).filter((n): n is 0 | 1 | 2 | 3 => n !== undefined)
   return {
     cannot: [...new Set(cs.flatMap((c) => c.blocks))],
-    avoid: [...new Set(cs.flatMap((c) => c.avoid))],
+    // LIMITED, not avoided, and the distinction is the point of this
+    // whole job. Every squat in the catalog stresses the knee, so
+    // handing a declared bad knee to `avoid` emptied the squat pattern
+    // and gave that athlete nothing at all for their legs. A declared
+    // limitation is something somebody lives with; it narrows the plan,
+    // it does not delete a third of it. The deep-range versions still go
+    // through `cannot`, which is what actually protects the joint.
+    limited: [...new Set(cs.flatMap((c) => c.avoid))],
     impactCap: caps.length ? (Math.min(...caps) as 0 | 1 | 2 | 3) : undefined,
   }
 }

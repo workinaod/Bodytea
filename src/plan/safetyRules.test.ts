@@ -55,9 +55,10 @@ describe('what R6 could not say before', () => {
   it('gives a knee the deep-range block AND keeps the joint route', () => {
     // Routing load away from a knee never stopped the plan asking for a
     // full-depth squat, because depth is not a joint.
-    const { cannot, avoid } = planningLimits(['knee'])
+    const { cannot, limited } = planningLimits(['knee'])
     expect(cannot).toEqual(['deepKneeFlexion'])
-    expect(avoid).toEqual(['knee'])
+    // LIMITED, not avoided: see the squat-pattern test below for why.
+    expect(limited).toEqual(['knee'])
   })
 })
 
@@ -75,9 +76,9 @@ describe('unioning more than one', () => {
   })
 
   it('unions the blocks and the joints without duplicating', () => {
-    const { cannot, avoid } = planningLimits(['shoulder', 'cannot-raise-arm-overhead'])
+    const { cannot, limited } = planningLimits(['shoulder', 'cannot-raise-arm-overhead'])
     expect(cannot).toEqual(['overheadRom'])
-    expect(avoid).toEqual(['shoulder'])
+    expect(limited).toEqual(['shoulder'])
   })
 
   it('ignores a key it does not know rather than throwing', () => {
@@ -105,5 +106,65 @@ describe('it reaches the substitution engine', () => {
         expect(blockedByCapability(s, MOVEMENT[s].pattern, cannot), `${id} -> ${s}`).toBe(false)
       }
     }
+  })
+})
+
+describe('limit-range mode: a declared joint narrows the plan, it does not empty it', () => {
+  const SQUATS = Object.keys(MOVEMENT).filter((id) => MOVEMENT[id].pattern === 'squat')
+
+  it('still offers squat-pattern work to somebody with a bad knee', () => {
+    // The bug this whole job exists for. EVERY squat in the catalog
+    // stresses the knee, so a declared bad knee sent through `avoid`
+    // returned nothing for all seven of them, and that athlete got no
+    // lower body work at all rather than a gentler version of it.
+    const { cannot, limited } = planningLimits(['knee'])
+    for (const id of SQUATS) {
+      const subs = substitutesFor(id, { can: anyCan, cannot, limited })
+      expect(subs.length, `${id} has no substitute for a bad knee`).toBeGreaterThan(0)
+    }
+  })
+
+  it('offers the versions that do not demand deep knee flexion', () => {
+    // R6's row: leg-press-style patterns before deep free squats.
+    const { cannot, limited } = planningLimits(['knee'])
+    const offered = new Set(SQUATS.flatMap((id) => substitutesFor(id, { can: anyCan, cannot, limited })))
+    expect(offered.has('leg-press') || offered.has('wall-sit')).toBe(true)
+    for (const s of offered) {
+      expect(blockedByCapability(s, MOVEMENT[s].pattern, cannot), s).toBe(false)
+    }
+  })
+
+  it('never ranks a movement that loads the limited joint above one that does not', () => {
+    // Narrowing is only useful if the gentler option surfaces first.
+    //
+    // Asserting that the order CHANGES is the wrong test and I wrote it
+    // first: every squat in the catalog loads the knee, so every
+    // candidate takes the same penalty and the order is rightly
+    // identical. The real invariant holds everywhere, including there.
+    const JOINTS = ['knee', 'hip', 'shoulder', 'lower-back', 'ankle'] as const
+    for (const joint of JOINTS) {
+      for (const id of Object.keys(MOVEMENT)) {
+        const subs = substitutesFor(id, { can: anyCan, limited: [joint] })
+        const loads = subs.map((s) => MOVEMENT[s].stress.includes(joint))
+        const firstLoaded = loads.indexOf(true)
+        if (firstLoaded === -1) continue
+        expect(loads.slice(firstLoaded).every(Boolean), `${id} for a limited ${joint}: ${subs}`).toBe(true)
+      }
+    }
+  })
+
+  it('changes the order when the candidates actually differ', () => {
+    // And where a pattern does contain both kinds, it must reorder.
+    const differs = Object.keys(MOVEMENT).some((id) => {
+      const withLimit = substitutesFor(id, { can: anyCan, limited: ['knee'] })
+      return JSON.stringify(withLimit) !== JSON.stringify(substitutesFor(id, { can: anyCan }))
+    })
+    expect(differs).toBe(true)
+  })
+
+  it('keeps avoid available as a hard reject for the pain path', () => {
+    // A joint that hurt twice in a fortnight is a different input with
+    // different semantics, and that path still removes the movement.
+    expect(substitutesFor('front-squat', { can: anyCan, avoid: ['knee'] })).toEqual([])
   })
 })
