@@ -5,6 +5,7 @@ import { useToday } from '../../logic/clock'
 
 import { fuelVideosFor, MOTIVATION_QUOTES } from '../../plan/messages'
 import { GUIDE_SECTIONS } from '../../plan/guide'
+import { planBrief } from '../../engine/workoutBrief'
 import { EXERCISES } from '../../plan/exercises'
 import { Btn, Card, Chip, ScreenHeader, SectionTitle } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
@@ -315,9 +316,72 @@ function GuideReader({ onOpenExercise }: { onOpenExercise: (id: string) => void 
     return byKind
   }, [])
 
+  // The booklet the athlete actually trains on, described from itself.
+  // GUIDE_SECTIONS below is the OWNER's NAOD prose: real, but about
+  // dunking and DJ Fridays, so it only shows to the plan it was written
+  // for. Everyone else was reading somebody else's booklet.
+  const data = useAppStore((st) => st.data)
+  const bp = useMemo(() => planBrief(data), [data])
+  const ownerPlan = data.plan.sportMode === 'ball'
+
   return (
     <div className="space-y-2 pb-6">
-      {GUIDE_SECTIONS.map((s) => (
+      <div className="rounded-xl border border-accent/25 bg-accent/[0.07] p-4">
+        <div className="text-[13.5px] font-extrabold">{bp.name}</div>
+        <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">{bp.headline}</p>
+        {bp.goalStatement && (
+          <p className="mt-1.5 text-[12px] leading-snug text-accent-soft">
+            Your words: {bp.goalStatement}
+          </p>
+        )}
+      </div>
+
+      <div className="overflow-hidden rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05]">
+        <button
+          className="flex w-full items-center justify-between px-4 py-3 text-left"
+          onClick={() => setOpen(open === 'your-week' ? null : 'your-week')}
+        >
+          <span className="text-[13.5px] font-extrabold">Your week, day by day</span>
+          <span className="text-ink-faint">{open === 'your-week' ? '▾' : '▸'}</span>
+        </button>
+        {open === 'your-week' && (
+          <div className="space-y-2.5 border-t border-edge/60 px-4 py-3">
+            {bp.week.map((d) => (
+              <div key={d.weekday} className="flex gap-3">
+                <span className="w-[74px] shrink-0 text-[11px] font-black uppercase tracking-wide text-ink-faint">
+                  {d.weekday.slice(0, 3)}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-bold">{d.title}</span>
+                  <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-faint">{d.tagline}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="overflow-hidden rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05]">
+        <button
+          className="flex w-full items-center justify-between px-4 py-3 text-left"
+          onClick={() => setOpen(open === 'your-rules' ? null : 'your-rules')}
+        >
+          <span className="text-[13.5px] font-extrabold">How it progresses</span>
+          <span className="text-ink-faint">{open === 'your-rules' ? '▾' : '▸'}</span>
+        </button>
+        {open === 'your-rules' && (
+          <div className="space-y-3 border-t border-edge/60 px-4 py-3">
+            {bp.rules.map((r) => (
+              <div key={r.title}>
+                <div className="text-[12.5px] font-extrabold text-accent-soft">{r.title}</div>
+                <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-dim">{r.text}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {ownerPlan && GUIDE_SECTIONS.map((s) => (
         <div key={s.id} className="overflow-hidden rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05]">
           <button
             className="flex w-full items-center justify-between px-4 py-3 text-left"

@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-18 (OP1 done, off-plan training session)
+Last updated: 2026-08-18 (OP1 + OP2 done, off-plan training session)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -212,6 +212,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
 | RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
 | OP1 | Off-plan training (owner request): own-workout builder from the exercise list, general workouts shelf, run-any-previous-day make-ups and reruns | product | **done 2026-08-18** (off-plan training session; branch claude/custom-exercises-missed-workouts-t3130o, awaiting owner merge to the deploy branch) | J1 | off-plan training session |
+| OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done 2026-08-18** (off-plan training session, same branch) | OP1 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -514,6 +515,36 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   e2e goes from silently-red to green. NEXT: nothing owed on OP1. J3 (product), J7
   (engines), C1 (cloud) remain the open lane heads; the research relaunches
   (R15/R17/R18) still want doing.
+
+- **2026-08-18 · OP2 · Off-plan training session (owner request).** The owner, on seeing
+  OP1: "You need to add the how the workout works question mark so people can see what
+  workouts and plans they are doing." The app could explain a MOVEMENT (guide, demo,
+  muscle map, reason, on every exercise row) and could not explain a SESSION or, honestly,
+  a PLAN. Shipped on the same branch:
+  (1) `engine/workoutBrief.ts` composes the brief from the day on screen, never from the
+  template, so it cannot drift from what is actually being asked: size (sets, movements,
+  estimated minutes), what it works (counted per muscle, 1.0 prime mover / 0.5 assisting,
+  as a body map plus a bar per muscle), the order band by band WITH the sequencer's own
+  reasoning attached, and where the day sits (week, block, deload, max-effort, tier,
+  make-up, and the athlete's goal statement in their own words). `briefForItems` for
+  off-plan work, `briefForDay` for scheduled days, `briefForSession` owning the
+  custom-vs-scheduled fork so three screens do not each carry a copy.
+  (2) The `?` is on the Today hero (beside the day title, the twin of the per-exercise
+  one), on every shelf workout, and in the Week tab's day preview.
+  (3) THE PLAN READER WAS THE OWNER'S BOOKLET, SHOWN TO EVERYONE. Coach > The Plan
+  rendered plan/guide.ts GUIDE_SECTIONS ungated: dunking, DJ Fridays, the penultimate
+  step, read by somebody who onboarded to lose thirty pounds. `planBrief` now describes
+  the booklet the athlete actually trains on (name, their goal words, their real week
+  day by day off tier1ByWeekday, and the four rules that genuinely govern it: four-week
+  blocks, one rep number, tiers, suggest-only), and the NAOD prose is gated to
+  `sportMode === 'ball'`, the plan it was written for.
+  Guard payoff: `engine/volume.ts:regionLoad` and `:regionName` came OFF the dead-export
+  allowlist. Counted per-muscle volume was being computed for the trim and never shown to
+  the person doing the sets; the shrink-only list got shorter, which is the direction it
+  is allowed to move. Validation: typecheck clean, **1,270/1,270 unit** (12 new), build
+  green, **e2e 78 passed / 0 failed** (3 new specs, one of which pins that a generated-plan
+  athlete never sees the owner's prose), 390px screenshots reviewed on all four surfaces.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
 
 ## 10. SOURCES
 

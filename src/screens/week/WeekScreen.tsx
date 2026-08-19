@@ -11,6 +11,8 @@ import { Sheet } from '../../components/Sheet'
 import { changeTier } from '../../logic/actions'
 import { TierDropSheet } from './TierDropSheet'
 import { actualLine, dayRecap } from '../../engine/sessionRecap'
+import { briefForDay } from '../../engine/workoutBrief'
+import { WorkoutBriefSheet } from '../today/WorkoutBriefSheet'
 
 const WD_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -29,6 +31,11 @@ export function WeekScreen() {
   const weekStart = selected ?? mondayOf(today)
   const [preview, setPreview] = useState<ResolvedDay | null>(null)
   const [tierDropTo, setTierDropTo] = useState<Tier | null>(null)
+  const [briefOpen, setBriefOpen] = useState(false)
+  const brief = useMemo(
+    () => (preview && briefOpen ? briefForDay(preview, data) : null),
+    [preview, briefOpen, data],
+  )
   // Recomputed from `data`, so finishing a session or logging cardio
   // updates the sheet without it needing to know either happened.
   const recap = useMemo(() => (preview ? dayRecap(data, preview.date) : null), [data, preview])
@@ -317,7 +324,18 @@ export function WeekScreen() {
       >
         {preview && (
           <div className="space-y-3 pb-6">
-            <p className="text-[12.5px] leading-snug text-ink-dim">{preview.tagline}</p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="min-w-0 text-[12.5px] leading-snug text-ink-dim">{preview.tagline}</p>
+              {preview.kind !== 'rest' && preview.exercises.length > 0 && (
+                <button
+                  aria-label="How this workout works"
+                  onClick={() => setBriefOpen(true)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[13px] font-black text-cyan active:bg-white/[0.11]"
+                >
+                  ?
+                </button>
+              )}
+            </div>
 
             {recap && recap.exercises.length > 0 && (
               <>
@@ -411,6 +429,12 @@ export function WeekScreen() {
           </div>
         )}
       </Sheet>
+
+      <WorkoutBriefSheet
+        brief={brief}
+        title={preview ? preview.title : ''}
+        onClose={() => setBriefOpen(false)}
+      />
 
       {tierDropTo !== null && (
         <TierDropSheet

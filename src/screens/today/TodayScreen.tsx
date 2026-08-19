@@ -14,10 +14,12 @@ import { pickVariant } from '../../engine/coach'
 import { chooseCardio, finishSession, reopenSession, restoreToday, swapExercise, toggleCnsSwap } from '../../logic/actions'
 import { startSession } from '../../logic/sessionStart'
 import { sessionGrade } from '../../engine/stats'
+import { briefForDay, briefForSession } from '../../engine/workoutBrief'
 import { streakDays } from '../../engine/streak'
 import { quitCopy } from '../../engine/quit'
 import { AdaptProposals } from './AdaptProposals'
 import { ExtraTraining } from './ExtraTraining'
+import { WorkoutBriefSheet } from './WorkoutBriefSheet'
 import { swapCandidatesFor } from '../../plan/subs'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
@@ -43,6 +45,7 @@ export function TodayScreen() {
   const [guideId, setGuideId] = useState<string | null>(null)
   const [debrief, setDebrief] = useState<{ data: DebriefData; coachLine?: string } | null>(null)
   const [cardioOpen, setCardioOpen] = useState(false)
+  const [briefOpen, setBriefOpen] = useState(false)
   const [remindNudgeGone, setRemindNudgeGone] = useState(() => {
     try {
       return localStorage.getItem('bodytea.remnudge') === '1'
@@ -65,6 +68,12 @@ export function TodayScreen() {
   const viewDay = useMemo(
     () => (session?.makeupFor ? resolveDay(session.makeupFor, data) : day),
     [session, day, data],
+  )
+  // What today IS, explained: the session if one is running (custom work
+  // included), otherwise the day the plan resolved.
+  const brief = useMemo(
+    () => (briefOpen ? (session ? briefForSession(session, data) : briefForDay(viewDay, data)) : null),
+    [briefOpen, session, viewDay, data],
   )
   const [makeupTarget, setMakeupTarget] = useState<string | null>(null)
   const makeupResolved = useMemo(
@@ -171,7 +180,19 @@ export function TodayScreen() {
         </div>
         {/* A make-up or an off-plan workout IS the day once it exists;
             the hero says what is actually being done, not the schedule */}
-        <h1 className="mt-1.5 headline text-[31px]">{session?.customTitle ?? viewDay.title}</h1>
+        <div className="mt-1.5 flex items-start justify-between gap-3">
+          <h1 className="headline min-w-0 text-[31px]">{session?.customTitle ?? viewDay.title}</h1>
+          {/* The session-level "?", the twin of the one on every exercise row:
+              what this workout does, why it runs in this order, and where it
+              sits in the plan. */}
+          <button
+            aria-label="How this workout works"
+            onClick={() => setBriefOpen(true)}
+            className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[15px] font-black text-cyan active:bg-white/[0.11]"
+          >
+            ?
+          </button>
+        </div>
         <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">
           {session?.customTitle ? 'Off the plan, on the record.' : viewDay.tagline}
         </p>
@@ -562,6 +583,11 @@ export function TodayScreen() {
       <DebriefSheet debrief={debrief?.data ?? null} coachLine={debrief?.coachLine} onClose={() => setDebrief(null)} />
       <CardioSheet date={date} hasSession={day.kind === 'session'} open={cardioOpen} onClose={() => setCardioOpen(false)} />
       <ExerciseGuideSheet exerciseId={guideId} onClose={() => setGuideId(null)} />
+      <WorkoutBriefSheet
+        brief={brief}
+        title={session?.customTitle ?? viewDay.title}
+        onClose={() => setBriefOpen(false)}
+      />
     </div>
   )
 }

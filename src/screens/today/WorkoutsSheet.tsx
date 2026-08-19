@@ -7,6 +7,8 @@ import { Btn, Chip } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { startCustomSession } from '../../logic/sessionStart'
 import { finishSession } from '../../logic/actions'
+import { briefForItems } from '../../engine/workoutBrief'
+import { WorkoutBriefSheet } from './WorkoutBriefSheet'
 
 // ============================================================
 // The general workouts shelf on screen: scroll it, open one,
@@ -33,6 +35,7 @@ export function WorkoutsSheet({
   const equipment = useAppStore((s) => s.data.plan.equipment)
   const [focus, setFocus] = useState<WorkoutFocus | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [briefId, setBriefId] = useState<string | null>(null)
 
   const shelf = useMemo(() => generalWorkoutsFor(equipment), [equipment])
   const focuses = useMemo(
@@ -40,6 +43,12 @@ export function WorkoutsSheet({
     [shelf],
   )
   const shown = focus ? shelf.filter((w) => w.focus === focus) : shelf
+  // Built for the workout as this athlete's gear left it, never as authored.
+  const briefWorkout = shelf.find((w) => w.id === briefId) ?? null
+  const brief = useMemo(
+    () => (briefWorkout ? briefForItems(briefWorkout.items, briefWorkout.tagline) : null),
+    [briefWorkout],
+  )
 
   return (
     <Sheet open={open} onClose={onClose} title="Workouts">
@@ -84,7 +93,16 @@ export function WorkoutsSheet({
                 </button>
                 {expanded && (
                   <div className="space-y-2.5 border-t border-white/[0.05] px-4 pb-4 pt-3">
-                    <p className="text-[12px] leading-snug text-ink-dim">{w.tagline}</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="min-w-0 text-[12px] leading-snug text-ink-dim">{w.tagline}</p>
+                      <button
+                        aria-label={`How ${w.title} works`}
+                        onClick={() => setBriefId(w.id)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[13px] font-black text-cyan active:bg-white/[0.11]"
+                      >
+                        ?
+                      </button>
+                    </div>
                     <div>
                       {w.items.map((item, i) => (
                         <div
@@ -128,6 +146,12 @@ export function WorkoutsSheet({
           })}
         </div>
       </div>
+
+      <WorkoutBriefSheet
+        brief={brief}
+        title={briefWorkout?.title ?? ''}
+        onClose={() => setBriefId(null)}
+      />
     </Sheet>
   )
 }

@@ -305,9 +305,11 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'engine/transforms.ts:entryLabel',
   'engine/volume.ts:kindWeight',
   'engine/volume.ts:focusRegions',
+  // regionLoad and regionName came OFF this list: engine/workoutBrief.ts
+  // reads them to tell an athlete which muscles their session actually
+  // loads and by how much. Counted volume was being computed for the
+  // trim and then never shown to the person doing the sets.
   'engine/volume.ts:ceilingFor',
-  'engine/volume.ts:regionName',
-  'engine/volume.ts:regionLoad',
   'logic/actions.ts:toggleBallToday',
   'logic/clock.ts:stopClock',
   'logic/fatigueActions.ts:applySetFeedback',
