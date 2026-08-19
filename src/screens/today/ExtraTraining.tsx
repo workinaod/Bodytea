@@ -17,6 +17,13 @@ import { OwnWorkoutSheet } from './OwnWorkoutSheet'
 // moment to offer more work. On a scheduled day it stays one
 // quiet line, because the plan's session comes first and this
 // must never compete with the Start button above it.
+//
+// It also stays available AFTER the day's session is done. It
+// used to vanish the moment any session existed, which closed
+// the day out: finish the plan's work, then play ball or
+// remember the abs, and there was nowhere to put it. A day
+// takes more until 3am, and adding to it re-opens it rather
+// than replacing what is already logged.
 // ============================================================
 
 const GLASS =
@@ -24,16 +31,17 @@ const GLASS =
 
 export function ExtraTraining({
   date,
-  active,
-  hasSession,
+  open: dayOpen,
+  sessionState,
   dayKind,
   onRunDay,
   onLogged,
 }: {
   date: ISODate
-  /** True on the live day only; sessions start on their day. */
-  active: boolean
-  hasSession: boolean
+  /** The day still takes work: today, or last night before 3am. */
+  open: boolean
+  /** none = nothing logged yet, live = a session is running, done = finished. */
+  sessionState: 'none' | 'live' | 'done'
   dayKind: DayKind
   /** Start a previous plan day's workout today (readiness gate on CNS days). */
   onRunDay: (date: ISODate, cns: boolean) => void
@@ -46,10 +54,15 @@ export function ExtraTraining({
   const [workoutsOpen, setWorkoutsOpen] = useState(false)
   const [ownOpen, setOwnOpen] = useState(false)
 
-  if (!active || hasSession) return null
+  // While a session is actually running, the session view owns the
+  // screen and more work belongs inside it, not beside it.
+  if (!dayOpen || sessionState === 'live') return null
 
+  const done = sessionState === 'done'
   const offDay = dayKind === 'rest'
-  const makeup = offDay ? makeupCandidate(data, date) : null
+  // A make-up is an offer for a day with nothing on it yet. Once the
+  // athlete has trained, the day is not missing its work any more.
+  const makeup = offDay && !done ? makeupCandidate(data, date) : null
 
   const closeAll = () => {
     setHubOpen(false)
@@ -113,7 +126,17 @@ export function ExtraTraining({
         </Card>
       )}
 
-      {offDay ? (
+      {done ? (
+        <button
+          onClick={() => setHubOpen(true)}
+          className="flex w-full items-center justify-between gap-2 px-1 py-1.5 text-left"
+        >
+          <span className="text-[12.5px] font-semibold text-ink-faint">
+            Did something else too?
+          </span>
+          <span className="text-[12px] font-bold text-cyan">add it ›</span>
+        </button>
+      ) : offDay ? (
         <Card>
           <div className="text-[13.5px] font-extrabold">Off day, but want to move?</div>
           <p className="mb-2.5 mt-0.5 text-[11.5px] leading-snug text-ink-faint">
@@ -135,11 +158,16 @@ export function ExtraTraining({
         </button>
       )}
 
-      <Sheet open={hubOpen} onClose={() => setHubOpen(false)} title="Train off the plan">
+      <Sheet
+        open={hubOpen}
+        onClose={() => setHubOpen(false)}
+        title={done ? 'Add more work' : 'Train off the plan'}
+      >
         <div className="pb-8">
           <p className="mb-3 px-0.5 text-[12px] leading-snug text-ink-dim">
-            Today's scheduled session is still the best call. But done beats perfect, and any of
-            these logs as a real session.
+            {done
+              ? 'This gets added to today, it does not replace what you already logged. The day stays open until 3am.'
+              : "Today's scheduled session is still the best call. But done beats perfect, and any of these logs as a real session."}
           </p>
           {options}
         </div>

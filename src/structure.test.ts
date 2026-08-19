@@ -100,7 +100,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // +11: two stampReachedStages calls with the comments explaining why a
   // reached stage is written down rather than re-derived, plus the import.
   // The logic itself is in logic/journeyActions.ts.
-  'logic/actions.ts': 663,
+  // Answering the reconcile gate went to logic/reconcileActions.ts, which
+  // paid for the one-day-one-debrief prune in finishSession and then some.
+  // The allowance follows the file down, as always.
+  'logic/actions.ts': 609,
   // Was 836. The how-to reader and the rest screen both moved out, and
   // the allowance follows it down: an oversized file that shrinks does
   // not get to keep the headroom it earned.

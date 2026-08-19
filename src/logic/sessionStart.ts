@@ -133,8 +133,15 @@ export interface CustomWorkoutItem {
 }
 
 /**
- * Start a workout the plan never scheduled: one picked off the general
+ * Log a workout the plan never scheduled: one picked off the general
  * shelf, or built by hand from the exercise list.
+ *
+ * It ADDS to the day rather than replacing it. The first version of
+ * this assigned straight over `d.sessions[date]`, which meant an
+ * athlete who trained their planned session and then logged anything
+ * extra lost the whole first session: every ticked set, the readiness
+ * answers, the make-up link, the fatigue notes. A day is a record of
+ * everything done in it, not of the last thing started.
  *
  * It becomes an ordinary SessionLog under templateId 'custom', so the
  * whole record pipeline (grades, PRs, tonnage, the debrief, prefill for
@@ -193,6 +200,31 @@ export function startCustomSession(
     }),
   }
   store().update((d) => {
-    d.sessions[date] = skeleton
+    const existing = d.sessions[date]
+    if (!existing || existing.status === 'skipped') {
+      // A skipped day that somebody then trains anyway is a day they
+      // trained; the skip was the plan for it, not the record of it.
+      d.sessions[date] = skeleton
+      return
+    }
+
+    // Same movement twice in a day merges its sets into the entry that
+    // is already there. Two entries for one exercise would read as two
+    // to the session view and as one to the day recap, which keys by
+    // exercise id, and the second would quietly vanish from the record.
+    for (const add of skeleton.exercises) {
+      const found = existing.exercises.find((e) => e.exerciseId === add.exerciseId)
+      if (found) found.sets.push(...add.sets)
+      else existing.exercises.push(add)
+    }
+
+    // Work added to a day that was already finished re-opens it. The
+    // stale debrief goes with it, the same way reopenSession does it,
+    // because the day it described is no longer the day that happened.
+    if (existing.endedAt) {
+      delete existing.endedAt
+      existing.status = 'partial'
+      d.coach.feed = d.coach.feed.filter((f) => !(f.kind === 'debrief' && f.debrief?.date === date))
+    }
   })
 }

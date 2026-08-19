@@ -3,7 +3,7 @@ import type { DebriefData } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { lifeEventsOn, resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatDayLabel, mondayOf, todayISO } from '../../engine/calendar'
-import { lateNightGraceDate } from '../../engine/rollover'
+import { lateNightGraceDate, stillOpenForLogging } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
 import { enableReminders, notificationSupport } from '../../logic/reminders'
 import { BannerRow, Btn, Card, Chip, DayArrow, EmptyNote, ScreenHeader } from '../../components/ui'
@@ -326,8 +326,8 @@ export function TodayScreen() {
           workouts shelf, and the build-your-own path all live here */}
       <ExtraTraining
         date={date}
-        active={today}
-        hasSession={!!session}
+        open={stillOpenForLogging(date, homeDate, new Date())}
+        sessionState={!session ? 'none' : inProgress ? 'live' : 'done'}
         dayKind={day.kind}
         onRunDay={(d, cns) => {
           setMakeupTarget(d)

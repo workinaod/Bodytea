@@ -254,6 +254,12 @@ export function finishSession(date: ISODate): DebriefData {
   store().update((d) => {
     for (const id of composed.shownIds) d.coach.shownMessageIds = pushShown(d.coach.shownMessageIds, id)
     for (const ruleId of composed.surfacedInsightIds) d.coach.surfacedInsights[ruleId] = todayISO()
+    // One day, one debrief. Finishing can legitimately happen more than
+    // once now: extra work re-opens a finished day, and re-opening was
+    // always possible by hand. Without this the Record grows a second
+    // debrief for the same date describing a smaller day than the one
+    // that ended up happening.
+    d.coach.feed = d.coach.feed.filter((f) => !(f.kind === 'debrief' && f.debrief?.date === date))
     d.coach.feed.unshift({
       id: uid(),
       at: new Date().toISOString(),
@@ -523,70 +529,10 @@ export function chooseCardio(date: ISODate, exerciseId: string): void {
 }
 
 // ---------- Reconcile resolutions ----------
-
-export function resolveMissAsTrained(date: ISODate, templateId: string | null, ownWorkout = false): void {
-  store().update((d) => {
-    d.sessions[date] = {
-      date,
-      templateId: templateId ?? 'unknown',
-      status: 'completed',
-      exercises: [],
-      notes: ownWorkout ? 'Own workout, logged after the fact' : 'Logged after the fact, no set data',
-    }
-  })
-  pushCoachMessage('comeback')
-}
-
-export function resolveMissWithReason(date: ISODate, reason: ExcuseReason, proofPhotoId?: string): void {
-  const accepted = excuseAccepted({
-    reason,
-    proofPhotoId,
-    week: store().data.weeks[mondayOf(date)],
-    prevWeek: store().data.weeks[mondayOf(addDaysISO(date, -1))],
-    date,
-    scope: 'day',
-  })
-  const excuseId = uid()
-  store().update((d) => {
-    d.excuses.push({
-      id: excuseId,
-      at: new Date().toISOString(),
-      date,
-      scope: 'day',
-      action: 'skip',
-      reason,
-      proofPhotoId,
-      accepted,
-      minimumViableTaken: false,
-      escalationLevelAtTime: escalationLevel(d.excuses, todayISO()),
-    })
-    d.sessions[date] = { date, templateId: 'reconciled', status: 'skipped', exercises: [] }
-  })
-}
-
-export function writeOffWeek(monday: ISODate, reason: ExcuseReason, proofPhotoId?: string): void {
-  const accepted = excuseAccepted({
-    reason,
-    proofPhotoId,
-    week: store().data.weeks[monday],
-    date: monday,
-    scope: 'week',
-  })
-  store().update((d) => {
-    d.excuses.push({
-      id: uid(),
-      at: new Date().toISOString(),
-      date: monday,
-      scope: 'week',
-      action: 'skip',
-      reason,
-      proofPhotoId,
-      accepted,
-      minimumViableTaken: false,
-      escalationLevelAtTime: escalationLevel(d.excuses, todayISO()),
-    })
-  })
-}
+// Answering the reconcile gate moved to ./reconcileActions, and the
+// allowance follows the file down. Re-exported so the screens keep
+// one import for every action they call.
+export { resolveMissAsTrained, resolveMissWithReason, writeOffWeek } from './reconcileActions'
 
 // ---------- Meals ----------
 // Food logging lives in ./mealActions. Re-exported here so the

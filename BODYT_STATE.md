@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (J7 nutrition slice 2a: the calorie target can change after signup)
+Last updated: 2026-08-19 (J7 nutrition slice 2a: the calorie target can change after signup; OP5 extra-work data-loss fix)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -276,6 +276,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done + LIVE 2026-08-19** (deploy 65ed650) | OP1 | off-plan training session |
 | OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
 | OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done + LIVE 2026-08-19** (owner said deploy; merge 2817eed carries OP4 plus the W10/W11/W16/W18/W4m wiring wave, deploy.yml untouched) | - | 3D body muscle models session |
+| OP5 | Extra work adds to the day instead of replacing it (owner bug report): append not overwrite, day stays open to 3am, one day one debrief | product | **done 2026-08-19** | OP1 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1348,6 +1349,37 @@ re-offered after a big enough change, that is a one-line change to the same rule
   **84/84 e2e**, **poison 167/167** (7 new).
   NEXT: the rest of R1 (weight-trend calorie steps, bodyweight-scaled carb cycling in place
   of the flat 300, fibre floor, EA guardrail). The recompute path they all needed exists now.
+- **2026-08-19 · OP5 · Off-plan training session (owner bug report).** "If I choose an extra
+  workout it closes my session for the day, it should never close out the session for the
+  day until 3am the following day, people may have other stuff to log." Correct, and the
+  half the report could not see was worse: **`startCustomSession` assigned straight over
+  `d.sessions[date]`.** An athlete who trained their planned session and then logged
+  anything extra lost the first session whole: every ticked set, the readiness answers,
+  the make-up link, the fatigue notes. Silent data loss, shipped in OP1, live for a day.
+  Three fixes:
+  (1) The custom path now APPENDS. A repeated movement merges its sets into the entry
+  already there, because two entries for one exercise render twice in the session view and
+  once in dayRecap (which keys by exercise id), so the second would vanish from the record.
+  A skipped day is still overwritten: the skip was the plan for that day, not the record
+  of it. Adding to a finished day re-opens it and drops the stale debrief, the same way
+  reopenSession always has.
+  (2) `engine/rollover.ts stillOpenForLogging`: the live day always takes work, yesterday
+  takes it until 03:00, older days are history. Same window the rest of the app already
+  uses for late work. `ExtraTraining` now renders after a finished session ("Did something
+  else too? add it") and hides only while a session is actively running, when the session
+  view owns the screen.
+  (3) `finishSession` prunes any prior debrief for the date. Finishing can legitimately
+  happen twice now, and the Record was growing a second debrief describing a smaller day
+  than the one that happened.
+  Found on the way, from the e2e page snapshot rather than from a test: the Week day sheet
+  read "**19 of 9 sets done**" once extra work landed. Now "19 sets done, 10 past the plan".
+  PROOF THE GUARDS BITE (owner rule): restored the overwrite, watched 4 of the 5 new tests
+  fail, restored the fix, watched them pass. Structure: `logic/actions.ts` went over its
+  allowance, so the reconcile-gate answers moved to `logic/reconcileActions.ts` and the
+  allowance came DOWN 663 -> 609. Validation: typecheck clean, **1,289/1,289 unit** (9
+  new), build green, **e2e 82 passed / 0 failed** (1 new spec that drives the real report:
+  log a shelf workout, add a second, check both survive in the Week sheet).
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
 
 ## 10. SOURCES
 

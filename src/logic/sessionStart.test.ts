@@ -154,3 +154,90 @@ describe('starting a custom workout', () => {
     expect(useAppStore.getState().data.sessions[SUNDAY]).toBeUndefined()
   })
 })
+
+// ============================================================
+// Extra work ADDS to the day. The first version of the custom
+// path assigned over d.sessions[date], so an athlete who trained
+// their planned session and then logged anything extra lost the
+// first session whole: every ticked set, the readiness answers,
+// the make-up link. These are the tests that would have caught it.
+// ============================================================
+
+describe('logging extra work on a day that already has a session', () => {
+  it('keeps every set of the session already there', () => {
+    startSession(DATE)
+    const before = useAppStore.getState().data.sessions[DATE]
+    const plannedCount = before.exercises.length
+    const firstId = before.exercises[0].exerciseId
+    // Tick a set, so there is real work that must survive.
+    useAppStore.getState().update((d) => {
+      d.sessions[DATE].exercises[0].sets[0].done = true
+    })
+
+    startCustomSession(DATE, 'Extra abs', [
+      { exerciseId: 'hollow-hold', sets: 3, repText: '30 sec' },
+    ])
+
+    const after = useAppStore.getState().data.sessions[DATE]
+    expect(after.exercises.length).toBe(plannedCount + 1)
+    expect(after.exercises[0].exerciseId).toBe(firstId)
+    expect(after.exercises[0].sets[0].done, 'the logged set was destroyed').toBe(true)
+    expect(after.exercises.some((e) => e.exerciseId === 'hollow-hold')).toBe(true)
+    // The day keeps its own identity; the extra work does not rename it.
+    expect(after.templateId).not.toBe('custom')
+  })
+
+  it('keeps the make-up link and readiness answers intact', () => {
+    startSession(DATE, [true, true, false, false], 'full', '2026-08-10')
+    startCustomSession(DATE, 'Extra', [{ exerciseId: 'push-up', sets: 2, repText: '10', repsNum: 10 }])
+    const after = useAppStore.getState().data.sessions[DATE]
+    expect(after.makeupFor).toBe('2026-08-10')
+    expect(after.readiness?.downgraded).toBe(true)
+  })
+
+  it('merges a repeated movement into the entry already on the day', () => {
+    startCustomSession(DATE, 'Morning', [{ exerciseId: 'push-up', sets: 3, repText: '10', repsNum: 10 }])
+    startCustomSession(DATE, 'Evening', [{ exerciseId: 'push-up', sets: 2, repText: '10', repsNum: 10 }])
+    const after = useAppStore.getState().data.sessions[DATE]
+    // One entry, five sets: two entries for one movement would show twice
+    // in the session and once in the day recap, which keys by exercise id.
+    const pushups = after.exercises.filter((e) => e.exerciseId === 'push-up')
+    expect(pushups).toHaveLength(1)
+    expect(pushups[0].sets).toHaveLength(5)
+  })
+
+  it('re-opens a finished day and drops the debrief that no longer describes it', () => {
+    startCustomSession(DATE, 'First', [{ exerciseId: 'push-up', sets: 2, repText: '10', repsNum: 10 }], {
+      markDone: true,
+    })
+    finishSession(DATE)
+    expect(useAppStore.getState().data.sessions[DATE].endedAt).toBeTruthy()
+    const debriefsAfterFirst = useAppStore
+      .getState()
+      .data.coach.feed.filter((f) => f.kind === 'debrief' && f.debrief?.date === DATE)
+    expect(debriefsAfterFirst).toHaveLength(1)
+
+    startCustomSession(DATE, 'Second', [{ exerciseId: 'hollow-hold', sets: 2, repText: '30 sec' }])
+    const after = useAppStore.getState().data.sessions[DATE]
+    expect(after.endedAt, 'the day stayed closed').toBeUndefined()
+    expect(after.status).toBe('partial')
+    // One day, one debrief: the old one described a day that no longer happened.
+    const debriefs = useAppStore
+      .getState()
+      .data.coach.feed.filter((f) => f.kind === 'debrief' && f.debrief?.date === DATE)
+    expect(debriefs).toHaveLength(0)
+  })
+
+  it('overwrites a skipped day rather than appending to the skip', () => {
+    useAppStore.getState().update((d) => {
+      d.sessions[DATE] = { date: DATE, templateId: 'tuesday', status: 'skipped', exercises: [] }
+    })
+    startCustomSession(DATE, 'Changed my mind', [
+      { exerciseId: 'push-up', sets: 2, repText: '10', repsNum: 10 },
+    ])
+    const after = useAppStore.getState().data.sessions[DATE]
+    expect(after.status).toBe('partial')
+    expect(after.customTitle).toBe('Changed my mind')
+    expect(after.exercises).toHaveLength(1)
+  })
+})
