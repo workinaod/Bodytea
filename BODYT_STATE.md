@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (W16 wiring wave live; OP4 real-anatomy muscle maps merged on top)
+Last updated: 2026-08-19 (OP4 + wiring wave LIVE at deploy 2817eed)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -239,7 +239,8 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
   WorkoutBriefSheet, ExerciseBrief and BreakScreen changed zero lines. Region vocabulary
   unchanged; muscleMap.test.ts re-pinned (every region lights, primary vs assisting
   distinguishable, resting body carries no accent, anatomy pieces bind only known
-  regions). Sits on `claude/3d-body-muscle-models-gvvms9` for owner review, not deployed.
+  regions). LIVE at gh-pages `deploy: 2817eed` (the merge that also carried the wiring
+  wave); bundle `index-D2IMvOlN.js` verified byte-identical to the local build by sha256.
 - Cloud: Supabase project **bodytea-prod** (elnvzitkfwzybkxcjytf, us-west-1). Tables:
   profiles / states / board_stats. NEVER touch the "Forvm Data" project. Supabase use is
   APPROVED by the owner (2026-08-17); the cloud lane is scheduled work.
@@ -274,7 +275,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP1 | Off-plan training (owner request): own-workout builder from the exercise list, general workouts shelf, run-any-previous-day make-ups and reruns | product | **done + LIVE 2026-08-19** (deploy 65ed650, owner approved the merge) | J1 | off-plan training session |
 | OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done + LIVE 2026-08-19** (deploy 65ed650) | OP1 | off-plan training session |
 | OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
-| OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done 2026-08-19** on branch `claude/3d-body-muscle-models-gvvms9` (based on the deploy tip; owner merges when ready, deploy.yml untouched) | - | 3D body muscle models session |
+| OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done + LIVE 2026-08-19** (owner said deploy; merge 2817eed carries OP4 plus the W10/W11/W16/W18/W4m wiring wave, deploy.yml untouched) | - | 3D body muscle models session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1010,6 +1011,22 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   gap shows as a black hole in it. NEXT: nothing owed on OP4. If the owner later wants
   the figure interactive (tap a muscle to filter exercises), the per-region paths are
   already the hit targets; that is post-core work under the visual-overhaul fence.
+
+- **2026-08-19 · OP4 DEPLOY · 3D body muscle models session.** Owner: "Deploy". The
+  deploy branch had moved while OP4 was built (the W10/W11/W16/W18/W4m wiring wave,
+  seven commits, none touching the map), so the deploy tip was merged into the OP4
+  branch first; the only conflict was BODYT_STATE.md itself, resolved by keeping both
+  sides whole (their checkpoints then OP4's, both facts on the last-updated line). Full
+  ritual re-run on the MERGED tree before anything shipped: typecheck clean, **1,453/
+  1,453 unit**, build green, **e2e 82 passed / 0 failed** (2.9m, fresh preview server),
+  390px re-screenshot of the guide sheet off the merged build. Then the OP1-OP3 deploy
+  pattern: fast-forward `claude/app-audit-refinement-sjw2va` to merge `2817eed`, CI run,
+  gh-pages moved to `deploy: 2817eed`, and the live bundle `index-D2IMvOlN.js` confirmed
+  **byte-identical by sha256** (`ec101bd9...c3c3f`) to the local build of the same
+  commit, curl through the agent proxy per the DEPLOY checkpoint's note that sandbox
+  Chromium cannot reach production. deploy.yml untouched: one deploy branch, moved by
+  fast-forward, never added to. NEXT: nothing owed on OP4; J3 (product), J7 (engines),
+  C1 (cloud) remain the open lane heads.
 
 ## 10. SOURCES
 
