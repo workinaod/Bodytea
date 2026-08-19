@@ -67,7 +67,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // FoodLimits moved to foodTypes.ts, beside journeyTypes and prefsTypes,
   // because a shape with a subsystem reading it (plan/foodLimits.ts) is no
   // longer a field. -11 even after PlanConfig gained foodLimits itself.
-  'types.ts': 691,
+  'types.ts': 674,
   // screens/onboarding/Onboarding.tsx came off this list too, which
   // empties the "real splits owed" section entirely. The chip tables and
   // the one goal heuristic went to onboardingData.ts, the goal step, the

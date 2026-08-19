@@ -19,6 +19,7 @@ import { streakDays } from '../../engine/streak'
 import { quitCopy } from '../../engine/quit'
 import { AdaptProposals } from './AdaptProposals'
 import { ExtraTraining } from './ExtraTraining'
+import { ReviewOffer } from './ReviewOffer'
 import { QuitGate } from './QuitGate'
 import { WorkoutBriefSheet } from './WorkoutBriefSheet'
 import { swapCandidatesFor } from '../../plan/subs'
@@ -322,6 +323,10 @@ export function TodayScreen() {
           <p className="text-[13.5px] leading-relaxed text-ink-dim">{restCard}</p>
         </Card>
       )}
+
+      {/* A week, month, quarter or year just closed and has not been
+          looked at yet. Offered, never forced. */}
+      <ReviewOffer today={date} />
 
       {/* Training the plan didn't schedule: make-ups, reruns, the
           workouts shelf, and the build-your-own path all live here */}

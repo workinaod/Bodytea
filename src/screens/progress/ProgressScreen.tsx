@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Measurement } from '../../types'
 import { useAppStore } from '../../store/appStore'
-import { addDaysISO, formatShort, todayISO, weekdayOf } from '../../engine/calendar'
+import { addDaysISO, formatShort, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { streakDays } from '../../engine/streak'
 import {
@@ -11,41 +11,19 @@ import {
   repMaxSeries,
   totalSessions,
 } from '../../engine/stats'
-import { Btn, Card, Chip, ScreenHeader, SectionTitle, Stepper } from '../../components/ui'
-import { Sheet } from '../../components/Sheet'
+import { Btn, Card, Chip, ScreenHeader, SectionTitle } from '../../components/ui'
 import { Heatmap, SimpleLine } from '../../components/charts'
-import { PhotoStore } from '../../store/storage'
-import { saveMeasurement, savePhotoFile } from '../../logic/actions'
 import { buildMilestoneReview, REVIEW_MARKS, reviewReady, unlockedMarks, type MilestoneReview } from '../../engine/review'
 import { daysBetween } from '../../engine/calendar'
 import { MilestoneReviewSheet } from './MilestoneReview'
-import { BodyFatEstimator } from './BodyFatEstimator'
+import { CheckinSheet } from './CheckinSheet'
+import { ReviewShelf } from './ReviewShelf'
 import { WeeklyRecap } from './WeeklyRecap'
 import { TrophyCase } from './TrophyCase'
 import { BoardContent } from '../board/BoardScreen'
 import { ActivityLog } from './ActivityLog'
 import { GoalTimeline } from './GoalTimeline'
-
-function usePhotoUrl(id: string | undefined): string | null {
-  const [url, setUrl] = useState<string | null>(null)
-  useEffect(() => {
-    let revoked: string | null = null
-    if (!id) {
-      setUrl(null)
-      return
-    }
-    void PhotoStore.get(id).then((blob) => {
-      if (blob) {
-        revoked = URL.createObjectURL(blob)
-        setUrl(revoked)
-      }
-    })
-    return () => {
-      if (revoked) URL.revokeObjectURL(revoked)
-    }
-  }, [id])
-  return url
-}
+import { usePhotoUrl } from './usePhotoUrl'
 
 const METRICS = [
   { key: 'weightLb', label: 'Weight', unit: ' lb', caption: 'Will barely move, that\'s the design. Recomp, not a cut.' },
@@ -210,6 +188,10 @@ export function ProgressScreen() {
           resolution. */}
       <GoalTimeline data={data} today={today} onAnchor={() => setCheckinOpen(true)} />
 
+      {/* The same question at four distances, on demand. The closing
+          period comes to them on Today; this is for the other days. */}
+      <ReviewShelf data={data} today={today} onTakePhotos={() => setCheckinOpen(true)} />
+
       {/* Adherence heatmap */}
       <SectionTitle
         right={
@@ -337,136 +319,6 @@ export function ProgressScreen() {
 }
 
 // ---------- Check-in sheet ----------
-
-function CheckinSheet({ open, onClose, onSaved, last }: { open: boolean; onClose: () => void; onSaved?: () => void; last?: Measurement }) {
-  const fresh = (): Measurement => ({
-    date: todayISO(),
-    photoIds: {},
-    weightLb: last?.weightLb,
-    bodyFatPct: last?.bodyFatPct,
-    waistIn: last?.waistIn,
-    chestIn: last?.chestIn,
-    armsIn: last?.armsIn,
-    thighIn: last?.thighIn,
-    vertIn: last?.vertIn,
-  })
-  const [m, setM] = useState<Measurement>(fresh)
-  const [busy, setBusy] = useState<string | null>(null)
-  const [estimating, setEstimating] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
-  const angleRef = useRef<'front' | 'side' | 'back'>('front')
-
-  // Re-seed the form (incl. the DATE) each time the sheet opens, the
-  // component mounts with the screen, not with the sheet.
-  useEffect(() => {
-    if (open) setM(fresh())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
-
-  const fields = [
-    { key: 'weightLb', label: 'Weight', step: 0.5, unit: 'lb' },
-    { key: 'bodyFatPct', label: 'Body fat', step: 0.5, unit: '%' },
-    { key: 'waistIn', label: 'Waist', step: 0.25, unit: 'in' },
-    { key: 'chestIn', label: 'Chest', step: 0.25, unit: 'in' },
-    { key: 'armsIn', label: 'Arms', step: 0.25, unit: 'in' },
-    { key: 'thighIn', label: 'Thigh', step: 0.25, unit: 'in' },
-    { key: 'vertIn', label: 'Vert / rim', step: 0.5, unit: 'in' },
-  ] as const
-
-  return (
-    <Sheet open={open} onClose={onClose} title="Weekly check-in">
-      <div className="space-y-3 pb-6">
-        <p className="text-[12px] text-ink-dim">
-          Same morning each week, same conditions. Prefilled with last week, adjust what changed.
-        </p>
-        {fields.map((f) => (
-          <div key={f.key}>
-            <div className="flex items-center justify-between">
-              <span className="text-[13.5px] font-bold">{f.label}</span>
-              <Stepper
-                value={m[f.key]}
-                onChange={(v) => setM({ ...m, [f.key]: v })}
-                step={f.step}
-                suffix={f.unit}
-                width="w-20"
-              />
-            </div>
-            {f.key === 'bodyFatPct' && (
-              <button
-                onClick={() => setEstimating(true)}
-                className="mt-0.5 text-[11.5px] font-bold text-cyan underline"
-              >
-                Don't know it? Estimate with a tape measure →
-              </button>
-            )}
-          </div>
-        ))}
-        {estimating && (
-          <BodyFatEstimator
-            initialWaist={m.waistIn}
-            onClose={() => setEstimating(false)}
-            onDone={(r) => {
-              setM({ ...m, bodyFatPct: r.bodyFatPct, neckIn: r.neckIn, waistIn: r.waistIn, hipIn: r.hipIn })
-              setEstimating(false)
-            }}
-          />
-        )}
-
-        <div className="pt-1">
-          <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
-            Photos: front, side, back, same lighting
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={async (e) => {
-              const f = e.target.files?.[0]
-              if (!f) return
-              const angle = angleRef.current
-              setBusy(angle)
-              try {
-                const meta = await savePhotoFile(f, 'progress')
-                setM((prev) => ({ ...prev, photoIds: { ...prev.photoIds, [angle]: meta.id } }))
-              } finally {
-                setBusy(null)
-              }
-            }}
-          />
-          <div className="grid grid-cols-3 gap-2">
-            {(['front', 'side', 'back'] as const).map((angle) => (
-              <button
-                key={angle}
-                disabled={busy !== null}
-                onClick={() => {
-                  angleRef.current = angle
-                  fileRef.current?.click()
-                }}
-                className={`rounded-xl border p-3 text-center text-[12px] font-bold ${
-                  m.photoIds[angle] ? 'border-lime/40 bg-lime/8 text-lime' : 'border-edge bg-white/[0.07] text-ink-dim'
-                }`}
-              >
-                {busy === angle ? 'Saving…' : m.photoIds[angle] ? `✓ ${angle}` : `📷 ${angle}`}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <Btn
-          className="w-full"
-          onClick={() => {
-            saveMeasurement(m)
-            onClose()
-            onSaved?.()
-          }}
-        >
-          Save check-in
-        </Btn>
-      </div>
-    </Sheet>
-  )
-}
 
 // ---------- Photo compare ----------
 

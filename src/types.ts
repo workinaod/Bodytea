@@ -405,33 +405,10 @@ export interface MealPlanConfig {
   lateNight: { yes: string[]; no: string[] }
 }
 
-// ---------- Measurements & photos ----------
-
-export interface Measurement {
-  date: ISODate
-  weightLb?: number
-  /** Estimated body fat %, consistency of method beats accuracy. */
-  bodyFatPct?: number
-  /** Tape sites for the Navy estimate (stored so trends stay honest). */
-  neckIn?: number
-  hipIn?: number
-  waistIn?: number
-  chestIn?: number
-  armsIn?: number
-  thighIn?: number
-  /** Vertical reach / rim touch in inches (their choice of metric, tracked consistently). */
-  vertIn?: number
-  photoIds: Partial<Record<'front' | 'side' | 'back', string>>
-}
-
-export interface PhotoMeta {
-  id: string
-  kind: 'progress' | 'proof'
-  takenAt: string
-  w: number
-  h: number
-  bytes: number
-}
+// Moved to measurementTypes.ts, beside store/measurementSchema.ts which
+// already validates these shapes; the allowance here followed it down.
+import type { Measurement, PhotoMeta } from './measurementTypes'
+export * from './measurementTypes'
 
 // ---------- Coach ----------
 
@@ -528,7 +505,13 @@ export interface Settings {
   reminderTimes: string[]
   /** Display units (storage stays imperial internally). */
   units: 'imperial' | 'metric'
-  /** Milestone reviews already opened ('3mo' | '6mo' | '1yr'). */
+  /**
+   * Reviews already put in front of the athlete, by id. Holds the
+   * milestone marks ('3mo', '6mo', '1yr') and the calendar periods
+   * ('w-2026-08-10', 'm-2026-08', 'q-2026-3', 'y-2026') in one list,
+   * because the question both ask is the same one and the id spaces
+   * cannot collide.
+   */
   reviewsSeen?: string[]
   /** Spoken counting + briefings in focus mode (default on). */
   voiceCoach?: boolean

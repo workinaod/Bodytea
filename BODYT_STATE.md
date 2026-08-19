@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (J7 nutrition slice 2a: the calorie target can change after signup; OP5 extra-work data-loss fix; OP6 extra work never ends the day or spends the plan's session)
+Last updated: 2026-08-19 (J7 nutrition slice 2a: the calorie target can change after signup; OP5 extra-work data-loss fix; OP6 extra work never ends the day or spends the plan's session; OP7 period reviews for week, month, quarter and year)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -278,6 +278,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done + LIVE 2026-08-19** (owner said deploy; merge 2817eed carries OP4 plus the W10/W11/W16/W18/W4m wiring wave, deploy.yml untouched) | - | 3D body muscle models session |
 | OP5 | Extra work adds to the day instead of replacing it (owner bug report): append not overwrite, day stays open to 3am, one day one debrief | product | **done + LIVE 2026-08-19** (deploy 1450838) | OP1 | off-plan training session |
 | OP6 | Extra work never ends the day and never spends the plan's session (owner bug report, the same one twice): logExtraWork seeds the scheduled workout and adds inside it, the door stays open mid-session, a debrief only comes from a day that is over | product | **done 2026-08-19** | OP5 | off-plan training session |
+| OP7 | Period reviews (owner request): a Wrapped-style review when a week, month, quarter or year closes, with progression, highlights, goals accomplished and a cohort comparison; the week always asks for front and side photos, the quarter and year show the first photo next to the latest | product | **done 2026-08-19** | OP6 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1456,6 +1457,74 @@ the pre-existing plans that genuinely have no record of what built them.
   a real 21 and a status board that disagrees with its own summary is worse than no summary.
   Validation: tsc -b clean, **1,556/1,556 unit** (4 new), build green, **84/84 e2e**,
   **poison 168/168** (1 new).
+- **2026-08-19 · OP7 · Off-plan training session (owner request).** "At the end of every week,
+  month, quarter and year there should be a review showing progression, highlights, goals
+  accomplished, how they compare in stats to other users just like Spotify wrapped. In the
+  weeks it should always ask to take a pic of front and sides. And in the quarters and years
+  it should show before and after from the first week they submitted a pic to the final."
+  What already existed and was reused rather than rebuilt: progress photos end to end
+  (front/side/back capture in the weekly check-in, blobs in IndexedDB, ids in the
+  measurement), a Wrapped-style WeeklyRecap opened by hand from Progress, and milestone
+  reviews at 3mo/6mo/1yr keyed off days-since-start. What did not exist: calendar periods
+  of any kind, a month or quarter or year review, any offer when a period closed, the
+  standing weekly photo ask, and any comparison at all.
+  Built:
+  - `engine/periods.ts`: the week (Monday start), month, quarter and year containing a date,
+    and `lastClosed`. Boundaries are their own file because the review engine and the surface
+    that offers reviews must agree on them exactly. `lastClosed` steps back ONE DAY from the
+    current period's first day rather than doing month arithmetic, which is how February gets
+    reviewed twice on March 31st. 12 tests; the mutation that swapped in the naive version
+    failed 4 of them.
+  - `engine/periodReview.ts`: one `PeriodReview` for all four scales. Sessions, sets,
+    tonnage, PRs, adherence, protein, body deltas, tracked-lift e1RM deltas, highlights,
+    goals accomplished, the cohort lines, and the photo arc. Rates are per WEEK so a month is
+    not read as superhuman volume. `worthShowing` is false for a period with nothing in it:
+    a story of zeros with a percentile attached is worse than silence.
+  - **The photo arc reaches back to the first photo EVER TAKEN**, not the first one inside
+    the window, because the owner asked for "the first week they submitted a pic to the
+    final" and three months of near-identical September photos is not a before and after.
+  - `engine/cohort.ts`: the comparison. **There is no server aggregating other Bodytea users
+    yet**, so "you beat 84% of Bodytea users" would be a fabricated number wearing a real
+    name. Every band is published population data (CDC NHIS activity guidelines, the
+    decades-replicated ~50% six-month dropout finding, gym-operator visit rates, protein
+    intake surveys), the bands are deliberately coarse, and every line carries an `against`
+    field that is rendered on screen ("vs US adults, CDC survey data"). A test asserts no
+    cohort line can ship without one. **Swap the tables for real aggregates the day C1 can
+    serve them and nothing else changes.** OWNER DECISION OWED: whether that is the framing
+    to keep, or whether this waits for real user data.
+  - `engine/reviewStory.ts`: the review turned into story cards. Separate from the review
+    because the review is facts and this is the telling. Every card declares its own
+    precondition and is dropped rather than shown empty.
+  - `screens/progress/PeriodReviewSheet.tsx`: one story frame for all four periods, so a year
+    cannot drift into looking like a different product from a week. Photo arc with an
+    angle switcher, cohort bars, list cards, and the week's photo ask.
+  - `screens/today/ReviewOffer.tsx`: the offer. Suggest only: a closed period puts ONE card
+    on Today and waits. Longest period first, so New Year's Day leads with the year and
+    queues the rest one per open.
+  - `screens/progress/ReviewShelf.tsx`: any period on demand, for the other 6 days a week.
+  Structure paid for, never borrowed: `Measurement` and `PhotoMeta` moved to
+  `measurementTypes.ts` beside the schema that already validates them (types.ts 690 -> 673,
+  **allowance 691 -> 674**); `usePhotoUrl` had grown an identical copy in two screens and is
+  now one file; `CheckinSheet` came out of ProgressScreen whole (506 -> 374) so the weekly
+  photo ask could open the real camera rather than point at another tab.
+  No schema change and no migration: `settings.reviewsSeen` already existed for the milestone
+  marks and the id spaces cannot collide ('3mo' vs 'w-2026-08-10').
+  PROOF THE GUARDS BITE (owner rule): the naive `lastClosed` failed 4 tests. The photo-arc
+  mutation (start at the second-to-last photo instead of the first) **passed**, because the
+  fixture had only two photos and the two are identical there; the fixture now has three and
+  the mutation fails. The dead-export guard caught three exports written speculatively and
+  they were deleted rather than allowlisted.
+  Validation: typecheck clean, **1,597/1,597 unit** (27 new), build green, **e2e 88
+  passed / 0 failed** (3 new: a week closes overnight and comes back as a review whose photo
+  ask opens the real check-in; the offer is written down as seen and survives a reload; any
+  period opens on demand from Progress), 390px screenshots reviewed on the offer, all four
+  story cards and the shelf.
+  KNOWN LIMITS, said plainly: the comparison is population data and not other users of this
+  app, and the copy says so on every line. Month and year reviews have no photo arc by
+  design (the owner asked for quarters and years). Nothing pushes a notification when a
+  period closes; the offer waits on Today.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads. C1 is now
+  also what unblocks a real cohort.
 
 ## 10. SOURCES
 
