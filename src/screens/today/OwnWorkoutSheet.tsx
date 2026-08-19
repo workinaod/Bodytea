@@ -5,8 +5,7 @@ import { Btn, Stepper } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { ExercisePicker } from '../booklet/ExercisePicker'
 import { coverageOf, GROUP_LABEL, GROUP_ORDER } from '../../engine/pickHelp'
-import { startCustomSession, type CustomWorkoutItem } from '../../logic/sessionStart'
-import { finishSession } from '../../logic/actions'
+import { logExtraWork, startCustomSession, type CustomWorkoutItem } from '../../logic/sessionStart'
 import { prefillFor } from '../../logic/prescription'
 import { equipFor } from '../../plan/equip'
 
@@ -42,8 +41,8 @@ export function OwnWorkoutSheet({
   onClose: () => void
   /** A live session now exists for `date`; close everything above. */
   onLive: () => void
-  /** Logged after the fact and finished; show the debrief. */
-  onLogged: (d: DebriefData) => void
+  /** Logged after the fact; the debrief when there is one to show. */
+  onLogged: (d: DebriefData | null) => void
 }) {
   const [title, setTitle] = useState('')
   const [items, setItems] = useState<DraftItem[]>([])
@@ -210,8 +209,7 @@ export function OwnWorkoutSheet({
               kind="ghost"
               className="flex-[2]"
               onClick={() => {
-                startCustomSession(date, workoutTitle, toCustomItems(), { markDone: true })
-                const d = finishSession(date)
+                const d = logExtraWork(date, workoutTitle, toCustomItems())
                 reset()
                 onLogged(d)
               }}

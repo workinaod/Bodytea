@@ -22,8 +22,11 @@ import { OwnWorkoutSheet } from './OwnWorkoutSheet'
 // used to vanish the moment any session existed, which closed
 // the day out: finish the plan's work, then play ball or
 // remember the abs, and there was nowhere to put it. A day
-// takes more until 3am, and adding to it re-opens it rather
-// than replacing what is already logged.
+// takes more until 3am, and what gets logged is ADDED to it.
+// It never replaces what is already there and never decides
+// the day is over. On a scheduled day nobody has started yet,
+// the plan's session is seeded first and this work lands inside
+// it, so the workout is still sitting there to be done.
 // ============================================================
 
 const GLASS =
@@ -45,8 +48,11 @@ export function ExtraTraining({
   dayKind: DayKind
   /** Start a previous plan day's workout today (readiness gate on CNS days). */
   onRunDay: (date: ISODate, cns: boolean) => void
-  /** An after-the-fact log just finished; show its debrief. */
-  onLogged: (d: DebriefData) => void
+  /**
+   * An after-the-fact log just landed. The debrief comes with it when the
+   * day is over, and is null when the day is still going.
+   */
+  onLogged: (d: DebriefData | null) => void
 }) {
   const data = useAppStore((s) => s.data)
   const [hubOpen, setHubOpen] = useState(false)
@@ -54,15 +60,19 @@ export function ExtraTraining({
   const [workoutsOpen, setWorkoutsOpen] = useState(false)
   const [ownOpen, setOwnOpen] = useState(false)
 
-  // While a session is actually running, the session view owns the
-  // screen and more work belongs inside it, not beside it.
-  if (!dayOpen || sessionState === 'live') return null
+  if (!dayOpen) return null
 
-  const done = sessionState === 'done'
+  // Anything logged against the day at all, running or finished. This
+  // used to hide while a session was live, on the theory that more work
+  // belonged inside the session view. Nothing inside that view can add an
+  // exercise, so an athlete who logged something extra on a day they had
+  // not started was left with nowhere to put the next thing. One quiet
+  // line either way, and in focus mode the workout covers it anyway.
+  const started = sessionState !== 'none'
   const offDay = dayKind === 'rest'
   // A make-up is an offer for a day with nothing on it yet. Once the
   // athlete has trained, the day is not missing its work any more.
-  const makeup = offDay && !done ? makeupCandidate(data, date) : null
+  const makeup = offDay && !started ? makeupCandidate(data, date) : null
 
   const closeAll = () => {
     setHubOpen(false)
@@ -76,7 +86,7 @@ export function ExtraTraining({
     onRunDay(d, cns)
   }
 
-  const logged = (d: DebriefData) => {
+  const logged = (d: DebriefData | null) => {
     closeAll()
     onLogged(d)
   }
@@ -126,7 +136,7 @@ export function ExtraTraining({
         </Card>
       )}
 
-      {done ? (
+      {started ? (
         <button
           onClick={() => setHubOpen(true)}
           className="flex w-full items-center justify-between gap-2 px-1 py-1.5 text-left"
@@ -161,11 +171,11 @@ export function ExtraTraining({
       <Sheet
         open={hubOpen}
         onClose={() => setHubOpen(false)}
-        title={done ? 'Add more work' : 'Train off the plan'}
+        title={started ? 'Add more work' : 'Train off the plan'}
       >
         <div className="pb-8">
           <p className="mb-3 px-0.5 text-[12px] leading-snug text-ink-dim">
-            {done
+            {started
               ? 'This gets added to today, it does not replace what you already logged. The day stays open until 3am.'
               : "Today's scheduled session is still the best call. But done beats perfect, and any of these logs as a real session."}
           </p>

@@ -3,7 +3,8 @@ import type { AppData } from '../types'
 import { defaultWeekState, emptyAppData } from '../types'
 import { useAppStore } from '../store/appStore'
 import { finishSession, trimToday } from './actions'
-import { startCustomSession, startSession } from './sessionStart'
+import { resolveDay } from '../engine/resolveDay'
+import { logExtraWork, startCustomSession, startSession } from './sessionStart'
 
 // ============================================================
 // One cut, never two.
@@ -206,26 +207,20 @@ describe('logging extra work on a day that already has a session', () => {
     expect(pushups[0].sets).toHaveLength(5)
   })
 
-  it('re-opens a finished day and drops the debrief that no longer describes it', () => {
-    startCustomSession(DATE, 'First', [{ exerciseId: 'push-up', sets: 2, repText: '10', repsNum: 10 }], {
-      markDone: true,
-    })
-    finishSession(DATE)
-    expect(useAppStore.getState().data.sessions[DATE].endedAt).toBeTruthy()
-    const debriefsAfterFirst = useAppStore
-      .getState()
-      .data.coach.feed.filter((f) => f.kind === 'debrief' && f.debrief?.date === DATE)
-    expect(debriefsAfterFirst).toHaveLength(1)
+  it('leaves a finished day finished, with one debrief describing the fuller day', () => {
+    logExtraWork(SUNDAY, 'First', [{ exerciseId: 'push-up', sets: 2, repText: '10', repsNum: 10 }])
+    const endedAt = useAppStore.getState().data.sessions[SUNDAY].endedAt
+    expect(endedAt, 'an off day with nothing on it should be closed by the log').toBeTruthy()
 
-    startCustomSession(DATE, 'Second', [{ exerciseId: 'hollow-hold', sets: 2, repText: '30 sec' }])
-    const after = useAppStore.getState().data.sessions[DATE]
-    expect(after.endedAt, 'the day stayed closed').toBeUndefined()
-    expect(after.status).toBe('partial')
-    // One day, one debrief: the old one described a day that no longer happened.
+    logExtraWork(SUNDAY, 'Second', [{ exerciseId: 'hollow-hold', sets: 2, repText: '30 sec' }])
+    const after = useAppStore.getState().data.sessions[SUNDAY]
+    expect(after.endedAt, 'the ending moved').toBe(endedAt)
+    expect(after.exercises).toHaveLength(2)
+    // One day, one debrief, and it describes everything done.
     const debriefs = useAppStore
       .getState()
-      .data.coach.feed.filter((f) => f.kind === 'debrief' && f.debrief?.date === DATE)
-    expect(debriefs).toHaveLength(0)
+      .data.coach.feed.filter((f) => f.kind === 'debrief' && f.debrief?.date === SUNDAY)
+    expect(debriefs).toHaveLength(1)
   })
 
   it('overwrites a skipped day rather than appending to the skip', () => {
@@ -239,5 +234,104 @@ describe('logging extra work on a day that already has a session', () => {
     expect(after.status).toBe('partial')
     expect(after.customTitle).toBe('Changed my mind')
     expect(after.exercises).toHaveLength(1)
+  })
+})
+
+// ============================================================
+// Logging extra work must never end the day, and must never be
+// what the plan's workout gets spent on.
+//
+// Reported from the live app, twice: "i did an extra workout and
+// logged it and todays session is now closed off and logged as
+// done." The add-on path called finishSession, which stamps
+// endedAt and a final grade on the WHOLE day. On a day nobody had
+// started, it was worse: the add-on BECAME that day's session, so
+// the scheduled workout was unreachable (Today offers Start only
+// while the day has no session at all) and the day read as done.
+// ============================================================
+
+describe('logging extra work', () => {
+  it('never spends the plan\'s workout on an extra log', () => {
+    const planned = resolveDay(DATE, useAppStore.getState().data).exercises.map((e) => e.exerciseId)
+    expect(planned.length, 'the fixture needs a day with real work on it').toBeGreaterThan(0)
+    expect(planned).not.toContain('hollow-hold')
+
+    logExtraWork(DATE, 'Pickup game', [{ exerciseId: 'hollow-hold', sets: 3, repText: '30 sec' }])
+
+    const s = useAppStore.getState().data.sessions[DATE]
+    expect(s.endedAt, 'the day was closed out').toBeUndefined()
+    expect(s.status).toBe('partial')
+    expect(s.templateId, 'the extra work stood in for the plan').not.toBe('custom')
+    // Every scheduled movement is still on the day, and still not done.
+    for (const id of planned) {
+      const found = s.exercises.find((e) => e.exerciseId === id)
+      expect(found, `${id} was dropped from the day`).toBeTruthy()
+      expect(found!.sets.every((set) => !set.done), `${id} was ticked off`).toBe(true)
+    }
+    // And the extra work landed, already done.
+    const extra = s.exercises.find((e) => e.exerciseId === 'hollow-hold')
+    expect(extra?.sets).toHaveLength(3)
+    expect(extra!.sets.every((set) => set.done)).toBe(true)
+  })
+
+  it('never finishes a session the athlete has not finished', () => {
+    startSession(DATE) // the plan's day, started, nothing ticked
+    logExtraWork(DATE, 'Quick abs', [{ exerciseId: 'hollow-hold', sets: 3, repText: '30 sec' }])
+
+    const after = useAppStore.getState().data.sessions[DATE]
+    expect(after.endedAt, 'the day was closed out').toBeUndefined()
+    expect(after.status, 'the day was graded as if it were over').toBe('partial')
+    // The planned work is still there, still waiting, still not done.
+    expect(after.exercises.length).toBeGreaterThan(1)
+    expect(after.exercises[0].sets.every((s) => !s.done)).toBe(true)
+    // And the extra work really did land.
+    expect(after.exercises.some((e) => e.exerciseId === 'hollow-hold')).toBe(true)
+  })
+
+  it('does not touch a half-done session either', () => {
+    startSession(DATE)
+    useAppStore.getState().update((d) => {
+      d.sessions[DATE].exercises[0].sets[0].done = true
+    })
+    logExtraWork(DATE, 'Extra', [{ exerciseId: 'push-up', sets: 2, repText: '10', repsNum: 10 }])
+    const after = useAppStore.getState().data.sessions[DATE]
+    expect(after.endedAt).toBeUndefined()
+    expect(after.exercises[0].sets[0].done).toBe(true)
+  })
+
+  it('closes the day only when the extra work IS the day', () => {
+    // Nothing scheduled, nothing started: this log is the whole session,
+    // and something has to be, or the app shows a workout nobody is running.
+    logExtraWork(SUNDAY, 'Sunday circuit', [
+      { exerciseId: 'push-up', sets: 3, repText: '10', repsNum: 10 },
+    ])
+    const s = useAppStore.getState().data.sessions[SUNDAY]
+    expect(s.endedAt).toBeTruthy()
+    expect(s.status).toBe('completed')
+  })
+
+  it('takes over a day that was written off as skipped', () => {
+    useAppStore.getState().update((d) => {
+      d.sessions[DATE] = { date: DATE, templateId: 'tuesday', status: 'skipped', exercises: [] }
+    })
+    logExtraWork(DATE, 'Changed my mind', [
+      { exerciseId: 'push-up', sets: 2, repText: '10', repsNum: 10 },
+    ])
+    const s = useAppStore.getState().data.sessions[DATE]
+    expect(s.status).toBe('completed')
+    expect(s.customTitle).toBe('Changed my mind')
+  })
+
+  it('returns the debrief of a day that is over, and nothing for one that is not', () => {
+    expect(logExtraWork(SUNDAY, 'Nothing', [])).toBeNull()
+    const d = logExtraWork(SUNDAY, 'Something', [
+      { exerciseId: 'push-up', sets: 1, repText: '10', repsNum: 10 },
+    ])
+    expect(d?.date).toBe(SUNDAY)
+    // A scheduled day still has its workout waiting, so there is nothing
+    // to debrief: grading it here would count sets nobody has reached.
+    expect(
+      logExtraWork(DATE, 'Something', [{ exerciseId: 'hollow-hold', sets: 1, repText: '30 sec' }]),
+    ).toBeNull()
   })
 })

@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (J7 nutrition slice 2a: the calorie target can change after signup; OP5 extra-work data-loss fix)
+Last updated: 2026-08-19 (J7 nutrition slice 2a: the calorie target can change after signup; OP5 extra-work data-loss fix; OP6 extra work never ends the day or spends the plan's session)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -277,6 +277,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
 | OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done + LIVE 2026-08-19** (owner said deploy; merge 2817eed carries OP4 plus the W10/W11/W16/W18/W4m wiring wave, deploy.yml untouched) | - | 3D body muscle models session |
 | OP5 | Extra work adds to the day instead of replacing it (owner bug report): append not overwrite, day stays open to 3am, one day one debrief | product | **done + LIVE 2026-08-19** (deploy 1450838) | OP1 | off-plan training session |
+| OP6 | Extra work never ends the day and never spends the plan's session (owner bug report, the same one twice): logExtraWork seeds the scheduled workout and adds inside it, the door stays open mid-session, a debrief only comes from a day that is over | product | **done 2026-08-19** | OP5 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1391,6 +1392,54 @@ the pre-existing plans that genuinely have no record of what built them.
   OP4 -> OP5 because the anatomy-map session had already taken OP4, and re-ran the full
   ritual against the merged tree both times: **1,561 unit, e2e 85 passed / 0 failed**.
   One of my new specs needed the age field another session added to onboarding.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+- **2026-08-19 · OP6 · Off-plan training session (owner bug report, the same one twice).**
+  "Wtf, i did an extra workout and logged it and todays session is now closed off and logged
+  as done." OP5 fixed the data loss and opened the 3am window but left the half the owner
+  had actually reported, and the half underneath it was worse than a wrong label.
+  Both "Already did it" doors ran `startCustomSession(..., markDone)` and then
+  `finishSession(date)` unconditionally. finishSession stamps `endedAt` and a final grade on
+  the WHOLE day, so a twenty minute add-on marked the plan's session complete. And on a day
+  nobody had started, the add-on BECAME that day's session: Today offers Start only while
+  `!session`, so the scheduled workout was not merely mislabelled, it was **unreachable**.
+  Log a lunchtime ab circuit on a push day you had not started and the push day was gone,
+  graded, and congratulated.
+  Two rules now, in `logic/sessionStart.ts logExtraWork`, and the rest follows from them.
+  (1) **Recording work that happened is not a statement about the rest of the day.** A
+  running day stays running, a finished day stays finished.
+  (2) **The plan's workout is never what gets spent.** On a day with scheduled work and
+  nothing logged against it, that workout is seeded first (`startSession`) and the extra
+  work is appended INSIDE it, already ticked: the session is live, the logged work is in
+  it, and every scheduled movement is still sitting there waiting.
+  The day ends here in exactly one case, when the work IS the day: an off day with nothing
+  scheduled and nothing logged, or a day already written off as skipped. A debrief comes
+  back only from a day that is over, because `composeDebrief` opens with "done/total sets,
+  graded X" and grading a day mid-flight counts sets nobody has reached ("3/27, poor" is not
+  what you show someone who just logged a workout).
+  Two consequences had to be handled or the fix would have traded one trap for another:
+  - `ExtraTraining` hid itself while a session was live, on the theory that more work
+    belonged inside the session view. **Nothing inside that view can add an exercise.** So
+    seeding would have left an athlete with nowhere to put the next thing. The door now
+    shows for any day with something logged, running or finished.
+  - The focus runner is the default view, and it is `fixed inset-0`. Seeding would have
+    thrown someone who logged a bird-dog circuit straight into a full-screen set-by-set
+    runner for a workout they never asked to start. `onLogged` now drops Today into list
+    view, where the day, the logged work and the door are all on one screen.
+  PROOF THE GUARD BITES (owner rule): disabled the seed branch, watched 2 tests fail on the
+  exact reported symptom ("the day was closed out: expected '...' to be undefined"),
+  restored it, watched 20 pass.
+  Structure: TodayScreen.tsx went 3 lines over the 600 hard cap, so the quit-confirm modal
+  moved out whole to `screens/today/QuitGate.tsx`. No allowance was added; the file came
+  DOWN from 597 to 580.
+  Validation: typecheck clean, **1,567/1,567 unit**, build green, **e2e 85 passed /
+  0 failed** (addmore.spec.ts rewritten to drive the real report: log a shelf workout on a
+  day never started, assert the day is NOT complete, add a second workout through the door
+  that is still there, then check the Week sheet shows both plus the plan's own sets still
+  outstanding), 390px screenshots reviewed.
+  STILL TRUE, and the honest limit: a date holds ONE `SessionLog`. "The plan's session and a
+  separate extra workout, side by side on the same day" is not representable, so the extra
+  work lives inside the day's session rather than beside it. That is the right trade at this
+  size; a second session per day is a data-model change and belongs to its own job.
   NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
 
 ### 2026-08-19 · owner call · a target you set yourself is re-offered too

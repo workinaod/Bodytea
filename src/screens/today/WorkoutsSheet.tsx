@@ -5,8 +5,7 @@ import { getExercise } from '../../plan/exercises'
 import { FOCUS_LABEL, generalWorkoutsFor, type WorkoutFocus } from '../../plan/generalWorkouts'
 import { Btn, Chip } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
-import { startCustomSession } from '../../logic/sessionStart'
-import { finishSession } from '../../logic/actions'
+import { logExtraWork, startCustomSession } from '../../logic/sessionStart'
 import { briefForItems } from '../../engine/workoutBrief'
 import { WorkoutBriefSheet } from './WorkoutBriefSheet'
 
@@ -29,8 +28,8 @@ export function WorkoutsSheet({
   onClose: () => void
   /** A live session now exists for `date`; close everything above. */
   onLive: () => void
-  /** Logged after the fact and finished; show the debrief. */
-  onLogged: (d: DebriefData) => void
+  /** Logged after the fact; the debrief when there is one to show. */
+  onLogged: (d: DebriefData | null) => void
 }) {
   const equipment = useAppStore((s) => s.data.plan.equipment)
   const [focus, setFocus] = useState<WorkoutFocus | null>(null)
@@ -132,8 +131,7 @@ export function WorkoutsSheet({
                         kind="ghost"
                         className="flex-[2]"
                         onClick={() => {
-                          startCustomSession(date, w.title, w.items, { markDone: true })
-                          onLogged(finishSession(date))
+                          onLogged(logExtraWork(date, w.title, w.items))
                         }}
                       >
                         Already did it
