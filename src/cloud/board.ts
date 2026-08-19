@@ -20,7 +20,16 @@ export interface BoardRow {
   pr_gain90: number
   protein30: number
   sessions_total: number
-  updated_at: string
+  /**
+   * The week they were last active, not the minute.
+   *
+   * The table stamps `updated_at` to the second and every signed-in user
+   * could read it, which is a per-user training timeline nothing in the
+   * app ever displayed. The board reads a view now, and the view rounds
+   * it to the week: both places this column is used are filters rather
+   * than values, so rounding costs nothing and the timeline is gone.
+   */
+  active_week: string
 }
 
 export type BoardCategory = 'streak' | 'consistency30' | 'pr_gain90' | 'protein30' | 'sessions_total'
@@ -67,14 +76,15 @@ export async function fetchBoard(category: BoardCategory): Promise<{ rows: Board
   const cached = memCache.get(category)
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) return { rows: cached.rows, fromCache: false }
   try {
-    const since = new Date(Date.now() - 45 * 86400_000).toISOString()
+    // board_public, not board_stats. The view carries the leaderboard
+    // columns and a week-rounded timestamp; the three-session floor and
+    // the 45-day staleness cut live inside it now, so they are enforced
+    // by the database rather than by whoever writes the next query.
     const { data, error } = await supabase()
-      .from('board_stats')
+      .from('board_public')
       .select('*')
-      .gte('sessions_total', 3)
-      .gte('updated_at', since)
       .order(category, { ascending: false })
-      .order('updated_at', { ascending: false })
+      .order('active_week', { ascending: false })
       .limit(50)
     if (error) throw error
     const rows = (data ?? []) as BoardRow[]
