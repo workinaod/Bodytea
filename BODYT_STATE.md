@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (the deload became a decision: whose plan it is decides who unloads it)
+Last updated: 2026-08-19 (J7 facts layer: the app knows what it knows, and how sure it is)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -261,7 +261,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | J4 | Freeform-first entry (composer primary, chips demote to examples; reuse inferGoal/readStatement) | product | pending | J3 | App audit session |
 | J5 | Booklet regenerates: goal edits -> generatePlan -> diff for approval; history preserved | product | pending | J3 | App audit session |
 | J6 | Limitations lifecycle (short/long-term, what hurts, region routing, expiry+restore) + core coverage guarantee + advisory volume cap for user-authored routines | either | **headline done 2026-08-19 via W7p** (limit-range: a declared joint narrows the plan instead of emptying a whole pattern). Remaining: the lifecycle itself (short vs long term, expiry and restore, editing), the core coverage guarantee, and the advisory volume cap for user-authored routines | J1 (J3 helps) | tbd |
-| J7 | User model (userModel.ts: EWMA weight, lean mass, work capacity, per-muscle recovery, per-exercise progression rate, adherence shape; facts carry source/confidence/recency) + nutrition engine (Katch-McArdle when BF known, activity from logs, carb cycling, fibre floor, self-explaining numbers) + calorie-autoregulation seed | engines | pending | J1, J2 | Algorithm session |
+| J7 | User model (userModel.ts: EWMA weight, lean mass, work capacity, per-muscle recovery, per-exercise progression rate, adherence shape; facts carry source/confidence/recency) + nutrition engine (Katch-McArdle when BF known, activity from logs, carb cycling, fibre floor, self-explaining numbers) + calorie-autoregulation seed | engines | **facts layer done 2026-08-19** (engine/userModel.ts: UserFact<T> carrying value, source, sample count, asOf and a DERIVED confidence; weightTrend as an EWMA that knows when creatine is confounding it, workCapacity, recoveryByRegion, adherenceShape, readUserModel; 12 tests, 5 guards proven to bite, 6 mutations). Every function returns null until it has something to say, which is the calibration.ts pattern and the right answer for a new account. FIRST CONSUMER WIRED THE SAME DAY: kcalBumpSuggestion rests entirely on "the scale is not moving" and read two raw weigh-ins to decide it; it now declines when the trend is confounded, because the dangerous direction is coming OFF creatine, where the water drop reads as under-eating and the app would tell somebody to add calories they do not need. STILL OPEN in J7: the nutrition engine half (Katch-McArdle when body fat is known, activity from logs, carb cycling, fibre floor, self-explaining numbers) and the calorie-autoregulation seed. Four of the five exports are on the dead-export ledger with J8 named as the consumer: volume autoregulation needs hardSetsPerWeek, schedule fit needs trainsOnWeekday, exercise fit needs daysSinceRegion | J1, J2 | Algorithm session |
 | J8 | Learning loop completion: volume autoregulation, schedule fit, exercise fit, intervention follow-up; all suggest-only on the calibration.ts pattern | engines | pending | J7 | Algorithm session |
 | J9 | Meal & chef engine: cost/minutes/effort/batchFriendly axes, fit-remaining-macros, batch chaining, no-repeat guards, sliders | product | pending | J1 (J7 feeds it) | product lane |
 | J10 | Explain expansion + jargon-ban sweep; machine rationale split from user sentence | tbd by Q1 | blocked on Q1 | J1 | tbd |
@@ -1182,6 +1182,42 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   build green, **e2e 84 passed** after that fix, sim 20 personas zero invariant failures,
   poison 145/145 (3 new).
   NEXT: unchanged. J7 is the highest-leverage thing left and nothing blocks it.
+
+- **2026-08-19 · J7 facts layer · audit session.** The owner picked J7 off the four
+  options, and it is the right pick: nine jobs list it as their dependency and nothing
+  lists anything as blocking it.
+  What landed is the facts half. Every engine downstream wanted the same four numbers and
+  each derived its own from raw logs at the point of use, which is how two screens end up
+  disagreeing about how much somebody trains. They come from one place now, and the shape
+  is the point: a fact is never a bare number. It carries where it came from, how many
+  observations sit behind it, how old the newest one is, and a confidence DERIVED from
+  those two, never typed. Same rule plan/knowledge.ts applies to research claims, for the
+  same reason.
+  And it returns null a lot. A new account gets silence on all four, which is the
+  calibration.ts pattern: the alternative is an engine speaking confidently in week one on
+  three data points.
+  THE CONSUMER WAS WIRED THE SAME DAY rather than left as an IOU, and it found a real
+  defect. kcalBumpSuggestion rests entirely on "the scale is not moving" and decided it
+  from two raw weigh-ins with no smoothing. Creatine pulls 1 to 2 kg of water on and lets
+  it go again, and neither is energy balance. The dangerous direction is coming OFF it:
+  the drop reads as under-eating and the app would tell somebody to add calories they do
+  not need. It declines now when the trend carries the caveat W16 made possible.
+  FIVE GUARDS PROVEN TO BITE, and the fifth did not on the first attempt. The test named
+  "counts only sets that were actually ticked" used a single session, so the two-session
+  floor caught the mutation instead of the tick filter, and a test that passes because a
+  DIFFERENT rule fired is not testing the rule it names. Rewritten with three sessions so
+  only the filter can decide.
+  TWO FIXTURE TRAPS, both from the same root. `emptyAppData` falls back to the owner's
+  hand-built booklet, stack and all, so every test using it has an athlete on creatine.
+  That bit twice in one job now that a supplement can change an engine answer. makeData
+  clears it, in the one line of headroom engine.test.ts had left.
+  Also renamed: the aggregate is `readUserModel`, not `userModel`, because the dead-export
+  scan matches names anywhere in a file and every importer writes './userModel' in its
+  import path. A function sharing its module's name can never be reported dead.
+  Validation: typecheck clean, **1,495/1,495 unit** (12 new), build green, poison 151/151
+  (6 new).
+  NEXT: J8 is now unblocked and is the natural continuation, or the nutrition-engine half
+  of J7. Both are the owner's call.
 
 ## 10. SOURCES
 

@@ -1,6 +1,7 @@
 import type { AppData, ISODate, SessionLog } from '../types'
 import { addDaysISO, daysBetween, todayISO } from './calendar'
 import { resolveDay } from './resolveDay'
+import { weightTrend } from './userModel'
 import { getExercise } from '../plan/exercises'
 import { FOODS } from '../plan/foods'
 
@@ -385,6 +386,17 @@ export function kcalBumpSuggestion(data: AppData): KcalBumpSuggestion | null {
   const baseline = threeWeeksAgo[threeWeeksAgo.length - 1]
   const weightChange = (last.weightLb ?? 0) - (baseline.weightLb ?? 0)
   if (weightChange >= 1) return null // scale is creeping up, rule not triggered
+
+  // This whole rule rests on "the scale is not moving", so it is only as
+  // good as the scale. Creatine pulls 1 to 2 kg of water on in the first
+  // weeks and lets it go again on the way out, and neither has anything
+  // to do with energy balance. The dangerous direction is COMING OFF it:
+  // the drop reads as under-eating and this would tell somebody to add
+  // calories they do not need.
+  //
+  // So when the user model says the trend is confounded, the answer is
+  // no answer. It re-evaluates on its own once the water settles.
+  if (weightTrend(data, last.date)?.caveat) return null
 
   // strength climbing? any tracked lift e1RM +3% over the same window
   let bestGain = 0

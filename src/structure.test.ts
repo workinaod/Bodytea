@@ -370,6 +370,17 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'plan/safetyRules.ts:constraintsFor',
   'plan/safetyRules.ts:planningLimits',
 
+  // J7 wave 1, the facts layer. weightTrend has a caller already: the
+  // calorie-bump rule reads its caveat so it stops trusting a scale that
+  // creatine is moving. The other four are what J8 was blocked on, and
+  // J8 is the next job rather than a someday: volume autoregulation
+  // needs hardSetsPerWeek, schedule fit needs trainsOnWeekday, exercise
+  // fit needs daysSinceRegion. Four rows and a named consumer.
+  'engine/userModel.ts:readUserModel',
+  'engine/userModel.ts:workCapacity',
+  'engine/userModel.ts:recoveryByRegion',
+  'engine/userModel.ts:adherenceShape',
+
   // R-ONT wave 1. resolveExercise left this list the same day it joined
   // it: the picker calls it now when a literal search comes back empty.
   // The two below are the parts the notation parser needs and the picker
