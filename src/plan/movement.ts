@@ -196,7 +196,7 @@ export const MOVEMENT: Record<string, MovementMeta> = {
   'shrimp-squat': M('lunge', 'secondary', { laterality: 'unilateral', skill: 3, fatigue: 2, level: 'advanced', loadable: false, stress: ['knee'], regressions: ['split-squat', 'reverse-lunge'], transfer: ['balance-stability', 'athletic-strength'] }),
   'cossack-squat': M('lunge', 'accessory', { laterality: 'alternating', skill: 2, fatigue: 1, level: 'intermediate', loadable: false, stretchLoaded: true, stress: ['knee', 'hip'], regressions: ['split-squat'], transfer: ['lateral-power', 'balance-stability'] }),
   'lateral-lunge': M('lunge', 'accessory', { laterality: 'alternating', skill: 1, fatigue: 1, stretchLoaded: true, stress: ['knee', 'hip'], transfer: ['lateral-power'] }),
-  'single-leg-squat-box': M('lunge', 'accessory', { laterality: 'unilateral', skill: 2, fatigue: 2, level: 'intermediate', loadable: false, stress: ['knee'], regressions: ['split-squat'], transfer: ['balance-stability'] }),
+  'single-leg-squat-box': M('lunge', 'accessory', { laterality: 'unilateral', skill: 2, fatigue: 2, level: 'intermediate', loadable: false, stress: ['knee'], regressions: ['split-squat'], transfer: ['balance-stability'], progressions: ['cossack-squat', 'shrimp-squat'] }),
   'hip-abduction-machine': M('lunge', 'prehab', { skill: 0, fatigue: 0, stress: ['hip'], transfer: ['balance-stability', 'cod'] }),
   'band-lateral-walk': M('lunge', 'prehab', { skill: 0, fatigue: 0, loadable: false, stress: ['hip'], transfer: ['balance-stability', 'cod'] }),
 
@@ -210,7 +210,7 @@ export const MOVEMENT: Record<string, MovementMeta> = {
   'incline-push-up': M('push-horizontal', 'accessory', { skill: 0, fatigue: 1, loadable: false, stress: ['wrist'], progressions: ['push-up'] }),
   'decline-push-up': M('push-horizontal', 'secondary', { skill: 1, fatigue: 2, level: 'intermediate', loadable: false, stress: ['shoulder', 'wrist'], regressions: ['push-up'], progressions: ['archer-push-up'] }),
   'archer-push-up': M('push-horizontal', 'secondary', { laterality: 'alternating', skill: 2, fatigue: 2, level: 'advanced', loadable: false, stress: ['shoulder', 'wrist'], regressions: ['decline-push-up'] }),
-  'diamond-push-up': M('push-horizontal', 'accessory', { skill: 1, fatigue: 1, loadable: false, stress: ['wrist', 'elbow'], regressions: ['push-up'] }),
+  'diamond-push-up': M('push-horizontal', 'accessory', { skill: 1, fatigue: 1, loadable: false, stress: ['wrist', 'elbow'], regressions: ['push-up'], progressions: ['decline-push-up'] }),
   'pec-deck': M('push-horizontal', 'isolation', { skill: 0, fatigue: 1, stretchLoaded: true, stress: ['shoulder'] }),
   'cable-fly': M('push-horizontal', 'isolation', { skill: 1, fatigue: 1, stretchLoaded: true, stress: ['shoulder'] }),
 
@@ -226,7 +226,7 @@ export const MOVEMENT: Record<string, MovementMeta> = {
   'chest-supported-row': M('pull-horizontal', 'secondary', { skill: 0, fatigue: 1, stretchLoaded: true, regressions: ['band-row'] }),
   'chest-supported-row-machine': M('pull-horizontal', 'secondary', { skill: 0, fatigue: 1, stretchLoaded: true, regressions: ['band-row'] }),
   'seated-cable-row': M('pull-horizontal', 'secondary', { skill: 0, fatigue: 1, stretchLoaded: true, regressions: ['band-row'] }),
-  'inverted-row': M('pull-horizontal', 'secondary', { skill: 1, fatigue: 1, loadable: false }),
+  'inverted-row': M('pull-horizontal', 'secondary', { skill: 1, fatigue: 1, loadable: false, progressions: ['underhand-inverted-row'] }),
   'underhand-inverted-row': M('pull-horizontal', 'secondary', { skill: 1, fatigue: 1, loadable: false, stress: ['elbow'] }),
   'band-row': M('pull-horizontal', 'accessory', { skill: 0, fatigue: 1, progressions: ['inverted-row'] }),
   'face-pull': M('pull-horizontal', 'prehab', { skill: 0, fatigue: 0, stress: ['shoulder'] }),
@@ -262,22 +262,22 @@ export const MOVEMENT: Record<string, MovementMeta> = {
   'double-leg-calf-raise': M('calf', 'accessory', { skill: 0, fatigue: 1, stress: ['ankle'], progressions: ['single-leg-calf-raise'], transfer: ['ankle-stiffness'] }),
   'seated-calf-raise': M('calf', 'accessory', { skill: 0, fatigue: 1, stress: ['ankle'], transfer: ['foot-ankle'] }),
   'standing-calf-machine': M('calf', 'accessory', { skill: 0, fatigue: 1, stretchLoaded: true, stress: ['ankle'], transfer: ['ankle-stiffness'] }),
-  'bodyweight-calf-raise': M('calf', 'accessory', { laterality: 'unilateral', skill: 0, fatigue: 1, loadable: false, stretchLoaded: true, stress: ['ankle'], transfer: ['ankle-stiffness'] }),
+  'bodyweight-calf-raise': M('calf', 'accessory', { laterality: 'unilateral', skill: 0, fatigue: 1, loadable: false, stretchLoaded: true, stress: ['ankle'], transfer: ['ankle-stiffness'], progressions: ['single-leg-calf-raise'] }),
   'tibialis-raise': M('calf', 'prehab', { skill: 0, fatigue: 0, loadable: false, stress: ['ankle'], transfer: ['foot-ankle'] }),
 
   // ---------------- Core ----------------
-  'plank-side-plank': M('brace', 'accessory', { skill: 0, fatigue: 1, loadable: false, transfer: ['balance-stability'] }),
+  'plank-side-plank': M('brace', 'accessory', { skill: 0, fatigue: 1, loadable: false, transfer: ['balance-stability'], progressions: ['hollow-hold'] }),
   'hollow-hold': M('brace', 'accessory', { skill: 1, fatigue: 1, loadable: false, transfer: ['balance-stability'] }),
   'dead-bug': M('anti-rotation', 'accessory', { skill: 0, fatigue: 0, loadable: false, transfer: ['coordination'] }),
-  'bird-dog': M('anti-rotation', 'prehab', { skill: 0, fatigue: 0, loadable: false, stress: ['lower-back'], transfer: ['balance-stability'] }),
-  'superman-hold': M('brace', 'prehab', { skill: 0, fatigue: 0, loadable: false, stress: ['lower-back'] }),
+  'bird-dog': M('anti-rotation', 'prehab', { skill: 0, fatigue: 0, loadable: false, stress: ['lower-back'], transfer: ['balance-stability'], progressions: ['dead-bug'] }),
+  'superman-hold': M('brace', 'prehab', { skill: 0, fatigue: 0, loadable: false, stress: ['lower-back'], progressions: ['hollow-hold'] }),
   'hanging-leg-raise': M('flexion', 'accessory', { skill: 2, fatigue: 1, level: 'intermediate', loadable: false, stress: ['shoulder'], regressions: ['weighted-situp'] }),
   'weighted-situp': M('flexion', 'accessory', { skill: 0, fatigue: 1, stress: ['lower-back'] }),
 
   // ---------------- Carry ----------------
   'farmer-carry': M('carry', 'accessory', { skill: 0, fatigue: 2, transfer: ['athletic-strength', 'balance-stability'] }),
   'towel-hang': M('carry', 'accessory', { skill: 0, fatigue: 1, loadable: false, stress: ['shoulder', 'elbow'] }),
-  'dead-hang': M('carry', 'mobility', { skill: 0, fatigue: 0, loadable: false, stress: ['shoulder'] }),
+  'dead-hang': M('carry', 'mobility', { skill: 0, fatigue: 0, loadable: false, stress: ['shoulder'], progressions: ['towel-hang'] }),
 
   // ---------------- Mobility ----------------
   'hip-9090-switch': M('mobility', 'mobility', { skill: 1, fatigue: 0, loadable: false, stress: ['hip'] }),
