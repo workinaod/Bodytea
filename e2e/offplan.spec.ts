@@ -34,7 +34,7 @@ async function onboardGenerated(page: Page) {
 }
 
 const offPlanButton = (page: Page) =>
-  page.getByRole('button', { name: /Different workout today\?/ })
+  page.getByRole('button', { name: /Training something else today/ })
 
 test('build your own workout and run it live', async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) }) // Monday
@@ -48,7 +48,7 @@ test('build your own workout and run it live', async ({ page }) => {
 
   // Pick a movement off the full catalog.
   await page.getByRole('button', { name: '+ Add exercise' }).click()
-  await page.getByPlaceholder(/Search name, muscle/).fill('push-up')
+  await page.getByPlaceholder(/Search a name, a muscle/).fill('push-up')
   await page.getByText('Push-Up', { exact: true }).first().click()
 
   // The row lands with a dose already set; name it and go.

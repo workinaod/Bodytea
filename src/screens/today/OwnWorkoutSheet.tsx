@@ -4,9 +4,11 @@ import { getExercise } from '../../plan/exercises'
 import { Btn, Stepper } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { ExercisePicker } from '../booklet/ExercisePicker'
+import { coverageOf, GROUP_LABEL, GROUP_ORDER } from '../../engine/pickHelp'
 import { startCustomSession, type CustomWorkoutItem } from '../../logic/sessionStart'
 import { finishSession } from '../../logic/actions'
 import { prefillFor } from '../../logic/prescription'
+import { equipFor } from '../../plan/equip'
 
 // ============================================================
 // Build your own workout, right now: pick movements off the full
@@ -24,6 +26,8 @@ import { prefillFor } from '../../logic/prescription'
 interface DraftItem extends CustomWorkoutItem {
   name: string
   loaded: boolean
+  /** Bodyweight movement: any load is weight ADDED, which is what the session screen calls it. */
+  added: boolean
 }
 
 export function OwnWorkoutSheet({
@@ -49,12 +53,16 @@ export function OwnWorkoutSheet({
     const def = getExercise(id)
     const timed = def.kind === 'mobility' || def.kind === 'carry' || def.kind === 'cardio'
     const loaded = def.kind === 'lift' || def.kind === 'carry'
+    // A push-up with a 0 lb stepper beside it reads as an unanswered
+    // question. The session screen already calls this "added weight".
+    const added = loaded && equipFor(id).every((t) => t === 'none')
     setItems((cur) => [
       ...cur,
       {
         exerciseId: id,
         name: def.name,
         loaded,
+        added,
         sets: 3,
         repText: timed ? '30 sec' : '10',
         repsNum: timed ? undefined : 10,
@@ -84,6 +92,8 @@ export function OwnWorkoutSheet({
     }))
 
   const workoutTitle = title.trim() || 'Your own workout'
+  const covered = coverageOf(items)
+  const missing = GROUP_ORDER.filter((g) => !covered.has(g))
 
   return (
     <Sheet open={open} onClose={onClose} title="Your own workout">
@@ -134,17 +144,51 @@ export function OwnWorkoutSheet({
                   placeholder="reps"
                 />
                 {it.loaded && (
-                  <Stepper
-                    value={it.weightLb}
-                    onChange={(v) => patch(i, { weightLb: Math.max(0, v) })}
-                    step={5}
-                    suffix="lb"
-                  />
+                  <span className="flex items-center gap-1.5">
+                    {it.added && (
+                      <span className="text-[10.5px] font-bold uppercase tracking-wide text-ink-faint">
+                        added
+                      </span>
+                    )}
+                    <Stepper
+                      value={it.weightLb}
+                      onChange={(v) => patch(i, { weightLb: Math.max(0, v) })}
+                      step={5}
+                      suffix="lb"
+                    />
+                  </span>
                 )}
               </div>
             </div>
           ))}
         </div>
+
+        {items.length > 0 && (
+          <div className="rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06] px-3.5 py-3">
+            <div className="text-[11px] font-black uppercase tracking-wider text-ink-faint">
+              What this covers
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {GROUP_ORDER.map((g) => (
+                <span
+                  key={g}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    covered.has(g)
+                      ? 'bg-lime/15 text-lime'
+                      : 'bg-white/[0.05] text-ink-faint'
+                  }`}
+                >
+                  {GROUP_LABEL[g]}
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] leading-snug text-ink-faint">
+              {missing.length === 0
+                ? 'Every group, in one workout.'
+                : `Not in this one: ${missing.map((g) => GROUP_LABEL[g].toLowerCase()).join(', ')}. Fine for a session with a job, worth a look if this was meant to be everything.`}
+            </p>
+          </div>
+        )}
 
         <Btn kind="subtle" className="w-full py-3" onClick={() => setPickerOpen(true)}>
           + Add exercise

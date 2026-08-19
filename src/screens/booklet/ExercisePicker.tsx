@@ -1,16 +1,41 @@
 import { useMemo, useState } from 'react'
+import type { EquipTag } from '../../types'
 import { EXERCISES } from '../../plan/exercises'
 import { EXERCISE_MUSCLES } from '../../plan/muscles'
+import { canDo, equipFor } from '../../plan/equip'
 import { athleticFor, QUALITY_LABELS, type AthleticQuality } from '../../plan/athletic'
 import { photosFor } from '../../plan/demoPhotos'
+import {
+  groupCoverage,
+  GROUP_LABEL,
+  GROUP_ORDER,
+  groupsOf,
+  staleGroups,
+  type MuscleGroup,
+} from '../../engine/pickHelp'
+import { useAppStore } from '../../store/appStore'
+import { useToday } from '../../logic/clock'
 import { Chip } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 
 // ============================================================
-// The catalog browser: search, muscle families, athletic-quality
-// filters, a photo per movement. Born inside the booklet editor;
-// its own file since the own-workout builder started picking
-// from the same shelf.
+// Choosing an exercise, with help.
+//
+// This was a catalog: 194 movements, one search box, and chips
+// for athletic qualities. Two things were wrong with it.
+//
+// It offered work nobody could do. On a bare floor, 138 of the
+// 194 need gear the athlete does not own, and the picker was
+// the only part of the app that never asked, so somebody with a
+// mat scrolled past sled pushes and hurdle hops to find the
+// push-up. Now the list is what you can actually do, and the
+// rest is one tap away, labelled with what it would take.
+//
+// And it asked the wrong question. Nobody arrives wanting a
+// movement whose prime mover is the latissimus dorsi. They
+// arrive wanting to train their back, or wanting to be told
+// what they have been neglecting, which the app can answer from
+// their own logged sets.
 // ============================================================
 
 const FAMILY_ORDER: [string, (id: string) => boolean][] = [
@@ -49,21 +74,87 @@ const LEVEL_TONE: Record<string, string> = {
   advanced: 'bg-accent/15 text-accent',
 }
 
+const EQUIP_LABEL: Partial<Record<EquipTag, string>> = {
+  dumbbell: 'dumbbells',
+  barbell: 'a barbell',
+  bench: 'a bench',
+  'incline-bench': 'an incline bench',
+  rack: 'a rack',
+  'pullup-bar': 'a pull-up bar',
+  box: 'a box',
+  plate: 'a plate',
+  machine: 'a machine',
+  'open-space': 'open space',
+  'hill-stairs': 'a hill or stairs',
+  court: 'a court',
+  treadmill: 'a treadmill',
+  cones: 'cones',
+  band: 'a band',
+  hurdle: 'hurdles',
+  'med-ball': 'a med ball',
+  kettlebell: 'a kettlebell',
+  'trap-bar': 'a trap bar',
+  sled: 'a sled',
+  partner: 'a partner',
+  track: 'a track',
+  trail: 'a trail',
+  pool: 'a pool',
+  bike: 'a bike',
+}
+
+/** What this movement would need that the athlete has not got. */
+function missingGear(id: string, owned: Set<EquipTag>): string {
+  const need = equipFor(id).filter((t) => t !== 'none' && !owned.has(t))
+  if (need.length === 0) return ''
+  return need.map((t) => EQUIP_LABEL[t] ?? t).join(' + ')
+}
+
 export function ExercisePicker({
   onPick,
   onClose,
   exclude,
+  equipment,
 }: {
   onPick: (id: string) => void
   onClose: () => void
   exclude: Set<string>
+  /** The gear to filter against. Defaults to the athlete's own plan. */
+  equipment?: EquipTag[]
 }) {
+  const planEquipment = useAppStore((s) => s.data.plan.equipment)
+  const data = useAppStore((s) => s.data)
+  const today = useToday()
+  const owned = useMemo(
+    () => new Set<EquipTag>(equipment ?? planEquipment),
+    [equipment, planEquipment],
+  )
+
   const [q, setQ] = useState('')
+  const [group, setGroup] = useState<MuscleGroup | null>(null)
   const [qualityFilter, setQualityFilter] = useState<number | null>(null)
+  const [showQualities, setShowQualities] = useState(false)
+  // On by default: a list you cannot act on is not a shorter list, it
+  // is a longer one with the useful part buried in it.
+  const [gearOnly, setGearOnly] = useState(true)
+
+  const stale = useMemo(() => staleGroups(data, today).slice(0, 2), [data, today])
+  // Once a group is chosen, say where it stands. Somebody adding a third
+  // chest movement this week is better off knowing it is the third.
+  const groupStatus = useMemo(
+    () => (group ? (groupCoverage(data, today).find((c) => c.group === group) ?? null) : null),
+    [group, data, today],
+  )
+  const hiddenByGear = useMemo(
+    () => Object.keys(EXERCISES).filter((id) => !exclude.has(id) && !canDo(id, owned)).length,
+    [exclude, owned],
+  )
 
   const groups = useMemo(() => {
     const query = q.trim().toLowerCase()
-    const all = Object.keys(EXERCISES).filter((id) => !exclude.has(id))
+    let all = Object.keys(EXERCISES).filter((id) => !exclude.has(id))
+    if (gearOnly) all = all.filter((id) => canDo(id, owned))
+    if (group) all = all.filter((id) => groupsOf(id).includes(group))
+
     let matches = query
       ? all.filter((id) => {
           const def = EXERCISES[id]
@@ -98,7 +189,9 @@ export function ExercisePicker({
       ids.forEach((id) => used.add(id))
       return { label, ids }
     }).filter((g) => g.ids.length > 0)
-  }, [q, exclude, qualityFilter])
+  }, [q, exclude, qualityFilter, group, gearOnly, owned])
+
+  const shown = groups.reduce((n, g) => n + g.ids.length, 0)
 
   return (
     <Sheet open onClose={onClose} title="Pick an exercise">
@@ -106,27 +199,106 @@ export function ExercisePicker({
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search name, muscle, or quality (e.g. acceleration)…"
+          placeholder="Search a name, a muscle, a quality…"
           className="mb-2.5 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-3 text-[14px] font-semibold outline-none focus:ring-accent/45"
         />
-        <div className="no-scrollbar -mx-1 mb-2.5 overflow-x-auto px-1">
+
+        {/* What you have been skipping, from your own logged sets. */}
+        {stale.length > 0 && !group && !q && (
+          <div className="mb-2.5 rounded-xl border border-cyan/25 bg-cyan/[0.06] px-3.5 py-2.5">
+            <div className="text-[11px] font-black uppercase tracking-wider text-cyan">
+              Due some work
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {stale.map((s) => (
+                <Chip key={s.group} tone="cyan" onClick={() => setGroup(s.group)}>
+                  {s.label} · {s.daysSince === null ? 'not yet' : `${s.daysSince}d ago`}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* The question people actually arrive with. */}
+        <div className="no-scrollbar -mx-1 mb-2 overflow-x-auto px-1">
           <div className="flex w-max gap-1.5">
-            {QUALITY_FILTERS.map((f, i) => (
+            {GROUP_ORDER.map((g) => (
               <Chip
-                key={f.label}
-                tone={qualityFilter === i ? 'accent' : 'default'}
-                onClick={() => setQualityFilter(qualityFilter === i ? null : i)}
+                key={g}
+                tone={group === g ? 'accent' : 'default'}
+                pressed={group === g}
+                onClick={() => {
+                  setGroup(group === g ? null : g)
+                  setQualityFilter(null)
+                }}
               >
-                {f.label}
+                {GROUP_LABEL[g]}
               </Chip>
             ))}
           </div>
         </div>
-        <p className="mb-3 text-[11px] leading-snug text-ink-faint">
-          Every exercise ships with a full guide, demo, and muscle map. Athletic drills carry a level:{' '}
-          <b className="text-lime">F</b>oundation · <b className="text-cyan">I</b>ntermediate ·{' '}
-          <b className="text-accent">A</b>dvanced. Progress control → force → elasticity → complexity.
-        </p>
+
+        {groupStatus && (
+          <p className="mb-2 px-1 text-[11.5px] leading-snug text-ink-faint">
+            <b className="text-ink-dim">{groupStatus.label}:</b>{' '}
+            {groupStatus.daysSince === null
+              ? 'nothing logged in the last month.'
+              : `${groupStatus.sets} ${groupStatus.sets === 1 ? 'set' : 'sets'} in the last 7 days, last trained ${
+                  groupStatus.daysSince === 0 ? 'today' : `${groupStatus.daysSince}d ago`
+                }.`}
+          </p>
+        )}
+
+        <div className="mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <button
+            onClick={() => setGearOnly(!gearOnly)}
+            className={`rounded-full px-3 py-1.5 text-[11.5px] font-bold ring-1 ${
+              gearOnly ? 'bg-lime/12 text-lime ring-lime/30' : 'bg-white/[0.06] text-ink-dim ring-white/[0.08]'
+            }`}
+          >
+            {gearOnly ? '✓ Only what I can do' : 'Showing everything'}
+          </button>
+          {gearOnly && hiddenByGear > 0 && (
+            <span className="text-[11px] text-ink-faint">{hiddenByGear} need gear you have not got</span>
+          )}
+          <button
+            onClick={() => {
+              setShowQualities(!showQualities)
+              setQualityFilter(null)
+            }}
+            className="text-[11.5px] font-semibold text-cyan underline"
+          >
+            {showQualities ? 'hide athletic filters' : 'athletic qualities'}
+          </button>
+        </div>
+
+        {showQualities && (
+          <div className="no-scrollbar -mx-1 mb-2.5 overflow-x-auto px-1">
+            <div className="flex w-max gap-1.5">
+              {QUALITY_FILTERS.map((f, i) => (
+                <Chip
+                  key={f.label}
+                  tone={qualityFilter === i ? 'accent' : 'default'}
+                  pressed={qualityFilter === i}
+                  onClick={() => {
+                    setQualityFilter(qualityFilter === i ? null : i)
+                    setGroup(null)
+                  }}
+                >
+                  {f.label}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {shown === 0 && (
+          <p className="py-8 text-center text-[13px] font-semibold leading-snug text-ink-faint">
+            Nothing here matches.
+            {gearOnly && hiddenByGear > 0 && ' Tap "Only what I can do" to see the rest.'}
+          </p>
+        )}
+
         {groups.map((g) => (
           <div key={g.label} className="mb-4">
             <div className="mb-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">{g.label}</div>
@@ -134,6 +306,7 @@ export function ExercisePicker({
               {g.ids.map((id) => {
                 const def = EXERCISES[id]
                 const photo = photosFor(id)
+                const missing = missingGear(id, owned)
                 return (
                   <button
                     key={id}
@@ -157,6 +330,13 @@ export function ExercisePicker({
                           ? athleticFor(id)!.qualities.map((qq) => QUALITY_LABELS[qq]).join(' · ')
                           : (EXERCISE_MUSCLES[id]?.primary ?? []).join(' · ') || def.kind}
                       </span>
+                      {/* Only ever shown when the gear filter is off, which is
+                          the only time an unusable movement is on screen. */}
+                      {missing && (
+                        <span className="mt-0.5 block truncate text-[10.5px] font-semibold text-gold">
+                          needs {missing}
+                        </span>
+                      )}
                     </span>
                     {athleticFor(id) && (
                       <span
@@ -171,6 +351,12 @@ export function ExercisePicker({
             </div>
           </div>
         ))}
+
+        <p className="px-1 pt-1 text-[11px] leading-snug text-ink-faint">
+          Every exercise ships with a full guide, demo and muscle map. Athletic drills carry a
+          level: <b className="text-lime">F</b>oundation · <b className="text-cyan">I</b>ntermediate ·{' '}
+          <b className="text-accent">A</b>dvanced.
+        </p>
       </div>
     </Sheet>
   )

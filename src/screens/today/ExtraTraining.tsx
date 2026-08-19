@@ -122,11 +122,16 @@ export function ExtraTraining({
           {options}
         </Card>
       ) : (
+        /* On a day the plan already has an answer for, this is a door and
+           not an offer: one quiet line that never competes with Start. */
         <button
           onClick={() => setHubOpen(true)}
-          className="w-full rounded-full bg-white/[0.07] px-3.5 py-2.5 text-[12.5px] font-bold text-ink-dim"
+          className="flex w-full items-center justify-between gap-2 px-1 py-1.5 text-left"
         >
-          Different workout today? Make up a day, browse, or build your own
+          <span className="text-[12.5px] font-semibold text-ink-faint">
+            Training something else today?
+          </span>
+          <span className="text-[12px] font-bold text-cyan">browse ›</span>
         </button>
       )}
 

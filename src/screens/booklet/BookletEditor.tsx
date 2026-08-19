@@ -291,6 +291,9 @@ function DayEditorSheet({
 
       {pickerOpen && (
         <ExercisePicker
+          // The DRAFT's gear, not the live plan's: during onboarding the
+          // booklet being built is not the one on disk yet.
+          equipment={plan.equipment}
           exclude={new Set(template.entries.flatMap((e) => (e.entry === 'fixed' ? [e.exerciseId] : [])))}
           onPick={(id) => {
             const def = getExercise(id)

@@ -62,7 +62,7 @@ test('a shelf workout says plainly that it is not from your plan', async ({ page
   await page.goto('./')
   await onboard(page, 'Jump higher', 'by June')
 
-  await page.getByRole('button', { name: /Different workout today\?/ }).click()
+  await page.getByRole('button', { name: /Training something else today/ }).click()
   await page.getByRole('button', { name: /Browse workouts/ }).click()
   await page.getByText('No-Gear Burner').click()
   await page.getByRole('button', { name: /How No-Gear Burner works/ }).click()

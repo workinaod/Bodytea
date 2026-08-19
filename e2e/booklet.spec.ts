@@ -40,7 +40,7 @@ test('bring your own routine: build week → notes → track it', async ({ page 
     ['One-Arm', 'One-Arm DB Row'],
   ] as const) {
     await page.getByRole('button', { name: '+ Add exercise' }).click()
-    await page.getByPlaceholder(/Search name, muscle/).fill(query)
+    await page.getByPlaceholder(/Search a name, a muscle/).fill(query)
     await page.getByRole('button', { name: new RegExp(name) }).first().click()
   }
   await page.getByRole('button', { name: 'Done with this day' }).click()

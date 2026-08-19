@@ -19,20 +19,33 @@ export function Chip({
   children,
   tone = 'default',
   onClick,
+  pressed,
   className = '',
 }: {
   children: ReactNode
   tone?: Tone
   onClick?: () => void
+  /** Filter chips that toggle: announces on/off rather than only colouring it. */
+  pressed?: boolean
   className?: string
 }) {
+  const cls = `inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-micro font-semibold tracking-normal ${TONES[tone]} ${onClick ? 'press cursor-pointer' : ''} ${className}`
+
+  // A chip with a tap handler is a control, and controls are buttons.
+  // These were spans, which is the same defect the onboarding chips were
+  // fixed for: tappable with a finger, invisible to a keyboard and
+  // silent to a screen reader. A label with no handler stays a span,
+  // because it is text.
+  if (!onClick) return <span className={cls}>{children}</span>
   return (
-    <span
+    <button
+      type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-micro font-semibold tracking-normal ${TONES[tone]} ${onClick ? 'press cursor-pointer' : ''} ${className}`}
+      {...(pressed === undefined ? {} : { 'aria-pressed': pressed })}
+      className={cls}
     >
       {children}
-    </span>
+    </button>
   )
 }
 

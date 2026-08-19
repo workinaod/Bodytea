@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (OP1 + OP2 done and LIVE, off-plan training session)
+Last updated: 2026-08-19 (OP1 + OP2 + OP3 done and LIVE, off-plan training session)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -220,6 +220,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
 | OP1 | Off-plan training (owner request): own-workout builder from the exercise list, general workouts shelf, run-any-previous-day make-ups and reruns | product | **done + LIVE 2026-08-19** (deploy 65ed650, owner approved the merge) | J1 | off-plan training session |
 | OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done + LIVE 2026-08-19** (deploy 65ed650) | OP1 | off-plan training session |
+| OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -568,6 +569,39 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   workable substitute is to curl the deployed assets and hash them against dist/, which is
   a stronger check than a screenshot anyway; take the 390px screenshots off a local
   preview server serving the same verified bytes.
+
+- **2026-08-19 · OP3 · Off-plan training session (owner request).** "Can we refine the new
+  UI and help ppl pick their exercises too." The picker was a catalog, not help, and the
+  measurement is the argument: **138 of the 194 movements are impossible for an athlete
+  training on a bare floor, and the picker offered every one of them.** `canDo` and
+  `equipFor` have existed since the generator was written; the picker was the one place
+  that never asked.
+  (1) `engine/pickHelp.ts`: the seven coarse groups people actually think in over the fine
+  body-map regions, grouped by PRIME MOVERS only (counting assisting muscles would put
+  every press in "arms" and make the group meaningless); `groupCoverage` reads completed
+  sets out of the last 30 days, `staleGroups` ranks never-trained above long-neglected and
+  stays silent for an account too young or too new to have anything honest to say.
+  (2) The picker now filters to what the athlete owns by default, says how many it is
+  holding back, and on one tap shows the rest with what each would cost ("needs dumbbells
+  + a bench"). Muscle-group chips lead; the athletic-quality filters moved behind a
+  disclosure for the athletes who want them. Choosing a group reports where it stands
+  ("Back: 6 sets in the last 7 days, last trained 2 days ago"). BookletEditor passes its
+  DRAFT's equipment, not the live plan's, since during onboarding the booklet being built
+  is not the one on disk.
+  (3) The builder shows what the workout covers and names what it misses, and bodyweight
+  movements label their load "added", which is what the session screen already calls it.
+  (4) UI pass: the Today entry line was a two-line grey blob competing with Start; it is
+  now one quiet row.
+  (5) SHARED-COMPONENT FIX: `components/ui/Chip.tsx` rendered `<span onClick>`. That is
+  the exact defect the onboarding chips were fixed for (tappable with a finger, invisible
+  to a keyboard, silent to a screen reader), still live in a component used in 19 places.
+  A chip with a handler is now a real button with `aria-pressed`; a chip without one stays
+  a span, because it is text.
+  Validation: typecheck clean, **1,280/1,280 unit** (10 new), build green, **e2e 81 passed
+  / 0 failed** (3 new picker specs; four of my own earlier specs needed updating for the
+  copy changes, which is the cost of changing copy and was paid). 390px screenshots
+  reviewed on a bare-floor athlete, which is the persona the old picker served worst.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
 
 ## 10. SOURCES
 
