@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildMealPlan, offeredSupplements } from './foods'
-import { SUPPLEMENT_CATALOG } from './supplements'
+import { SUPPLEMENT_CATALOG, offeredSupplements as offeredFromCatalog } from './supplements'
+import type { SuppressionSignal } from '../supplementTypes'
 import type { DietStyle } from '../types'
 
 // ============================================================
@@ -21,6 +22,9 @@ const NUTRITION = { kcalTraining: 2800, kcalRest: 2600 }
  * tests count the shelf, which is what the athlete sees.
  */
 const SHELF = SUPPLEMENT_CATALOG.filter((s) => s.appClass !== 'never').length
+/** The catalog call, with everything defaulted except what is under test. */
+const offeredFor = (ctx: { signals: SuppressionSignal[] }) =>
+  offeredFromCatalog({ dietStyle: 'omnivore', signals: ctx.signals, demands: [] })
 /** What this athlete would be OFFERED. The plan itself ships no stack. */
 const plan = (diet: DietStyle, limits?: { dairyFree?: boolean; allergies?: string }) => ({
   supplements: offeredSupplements(diet, limits),
@@ -147,6 +151,35 @@ describe('doses inside their published limits', () => {
       if (s.dose.upperLimit === undefined) continue
       expect(s.dose.high, `${s.id} sits on its own upper limit`).toBeLessThanOrEqual(s.dose.upperLimit)
     }
+  })
+})
+
+describe('who the app shows nothing to at all', () => {
+  it('offers a minor nothing, rather than a filtered list', () => {
+    // R16 SR-2, and it went live off the age field W8 shipped. This is
+    // a suppress-ALL rather than a filter: an under-18 account sees no
+    // supplement copy on any screen, not a shorter shelf.
+    //
+    // The mutation that removed this line SURVIVED the first poison run,
+    // because nothing here exercised the signal. The guard existed and
+    // the test did not, which is the whole reason the harness runs.
+    expect(offeredFor({ signals: ['minor'] })).toEqual([])
+    expect(offeredFor({ signals: ['pregnancy'] })).toEqual([])
+    expect(offeredFor({ signals: ['kidney'] })).toEqual([])
+    expect(offeredFor({ signals: ['liver'] })).toEqual([])
+  })
+
+  it('still shows an adult with no declared signal the whole shelf', () => {
+    expect(offeredFor({ signals: [] }).length).toBe(SHELF)
+  })
+
+  it('suppresses one item on a signal that is not a whole-person stop', () => {
+    // A signal that is not on the hard-stop list narrows rather than
+    // empties, which is the distinction the two lists exist to make.
+    const s = offeredFor({ signals: ['anticoagulant'] })
+    expect(s.length).toBeLessThan(SHELF)
+    expect(s.length).toBeGreaterThan(0)
+    expect(s.some((x) => /fish/i.test(x.name))).toBe(false)
   })
 })
 

@@ -961,8 +961,13 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   to count a mention in a COMMENT as a caller, which this job tripped by naming an
   unrelated export in a doc block; the caveat is now recorded where the scan is defined,
   and tightening it is its own job because it will unmask more than it fixes.
-  Validation: typecheck clean, **1,448/1,448 unit** (16 new), build green, poison
-  138/138 (6 new).
+  ONE MUTATION SURVIVED the first run and it was mine: removing the whole-person
+  suppression from the shelf changed nothing any test could see, because nothing
+  exercised the minor signal. The guard existed and the test did not. Three tests added
+  and the mutation now bites. That is the harness doing the job it exists for, on the
+  same day the code was written rather than five days later.
+  Validation: typecheck clean, **1,451/1,451 unit** (19 new), build green, e2e 82
+  passed, poison 138/138 (6 new, one of them only after the test that catches it).
   NEXT: W17, the routine import corpus.
 
 ## 10. SOURCES
