@@ -1277,8 +1277,18 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   which was correct twice over. Six were internals that did not need exporting and are now
   private, and two were the tape helpers with no caller at all, which is how I found that
   Katch-McArdle could never actually fire.
+  TWO MUTATIONS SURVIVED THE FIRST RUN and only one of them was a weak test.
+  byor-ignores-sex survived because bookletOps.ts still had its OWN copy of the fallback
+  line: mutating the shared function could not reach it, so the one-definition claim this
+  job makes was not actually true yet. The harness caught a false claim in my own commit
+  message, not a missing assertion. Fixed in the code.
+  bmr-double-counts-a-sitting-day survived because the assertion compared two different
+  movement answers, which moves the activity multiplier as well as the flat 50, so an
+  extra 50 hides inside the difference. It now holds movement fixed and changes only the
+  goal, so the multiplier is identical on both sides and the flat 50 is the only thing
+  that can move the gap. Third time this session that a guard passed for the wrong reason.
   Validation: tsc -b clean, **1,535/1,535 unit** (40 new), build green, sim 20 personas,
-  **84/84 e2e**, poison pending at time of writing.
+  **84/84 e2e**, **poison 160/160** (9 new, 3 anchors re-aimed).
   NEXT: J7 slice 2 is the rest of R1 (weight-trend calorie steps, bodyweight-scaled carb
   cycling in place of the flat 300, fibre floor, self-explaining numbers) and it needs a
   recompute path first, which does not exist. J8 remains unblocked.
