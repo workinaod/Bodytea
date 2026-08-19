@@ -868,6 +868,30 @@ const MUTATIONS = [
     to: 'export const KNOWLEDGE: ModuleRefs[] = [{ ...NUTRITION_REFS, records: [] }]',
     spec: 'src/plan/knowledge.test.ts',
   },
+  {
+    id: 'capability-filter-never-applied',
+    bug: 'a substitution hands somebody who cannot kneel a movement that requires kneeling',
+    file: 'src/plan/movement.ts',
+    find: '    if (blockedByCapability(otherId, m.pattern, q.cannot ?? [])) continue',
+    to: '    if (false) continue',
+    spec: 'src/plan/capability.test.ts',
+  },
+  {
+    id: 'capability-narrows-by-default',
+    bug: 'declaring nothing starts removing movements, so every athlete quietly loses options',
+    file: 'src/plan/capability.ts',
+    find: '  if (cannot.length === 0) return false',
+    to: '  if (cannot.length === 0) return demandsOf(exerciseId, pattern).prone',
+    spec: 'src/plan/capability.test.ts',
+  },
+  {
+    id: 'kneeling-movement-forgets-it-kneels',
+    bug: 'bird-dog stops declaring the knees it puts you on',
+    file: 'src/plan/capability.ts',
+    find: "  'bird-dog': { floorTransfer: true, kneeling: true },",
+    to: "  'bird-dog': { floorTransfer: true },",
+    spec: 'src/plan/capability.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [

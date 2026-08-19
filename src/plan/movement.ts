@@ -1,4 +1,5 @@
 import type { AthleticQuality } from './athletic'
+import { blockedByCapability, type CapabilityBlock } from './capability'
 
 // ============================================================
 // What the app KNOWS about a strength movement, past its name.
@@ -326,6 +327,17 @@ export interface SubstituteQuery {
   /** Joints to route around. A movement stressing any of these is out. */
   avoid?: Joint[]
   /**
+   * Functions the body does not have, which is a different question from
+   * a joint that hurts and needs a different field to ask it.
+   *
+   * `avoid` routes around pain: less load on that knee. `cannot` routes
+   * around absence: somebody who cannot get down to the floor is not in
+   * pain and does not want a lighter plank, they want a movement that
+   * happens standing up. Seven joints used to be the whole vocabulary
+   * here, so "I cannot kneel" reached the planner as nothing at all.
+   */
+  cannot?: CapabilityBlock[]
+  /**
    * Never hand back something harder to execute than this.
    *
    * Defaults to one step above the movement being replaced, floored at 1,
@@ -367,6 +379,7 @@ export function substitutesFor(id: string, q: SubstituteQuery): string[] {
     if (m.skill > maxSkill) continue
     if (q.maxFatigue !== undefined && m.fatigue > q.maxFatigue) continue
     if (m.stress.some((j) => avoid.has(j))) continue
+    if (blockedByCapability(otherId, m.pattern, q.cannot ?? [])) continue
     if (!q.can(otherId)) continue
     let score = 0
     if (m.role === meta.role) score += 4
