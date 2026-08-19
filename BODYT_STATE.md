@@ -276,7 +276,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done + LIVE 2026-08-19** (deploy 65ed650) | OP1 | off-plan training session |
 | OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
 | OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done + LIVE 2026-08-19** (owner said deploy; merge 2817eed carries OP4 plus the W10/W11/W16/W18/W4m wiring wave, deploy.yml untouched) | - | 3D body muscle models session |
-| OP5 | Extra work adds to the day instead of replacing it (owner bug report): append not overwrite, day stays open to 3am, one day one debrief | product | **done 2026-08-19** | OP1 | off-plan training session |
+| OP5 | Extra work adds to the day instead of replacing it (owner bug report): append not overwrite, day stays open to 3am, one day one debrief | product | **done + LIVE 2026-08-19** (deploy 1450838) | OP1 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1379,6 +1379,13 @@ re-offered after a big enough change, that is a one-line change to the same rule
   allowance came DOWN 663 -> 609. Validation: typecheck clean, **1,289/1,289 unit** (9
   new), build green, **e2e 82 passed / 0 failed** (1 new spec that drives the real report:
   log a shelf workout, add a second, check both survive in the Week sheet).
+  Shipped at deploy `1450838`, live bundle verified byte-identical by sha256.
+  NOTE FOR EVERY LANE: this branch is now genuinely concurrent. While this job ran, other
+  sessions pushed ~40 commits to it (J7 slices, the W-waves, R-ONT, the anatomy maps).
+  Rebased onto their tip twice rather than force-pushing over it, renumbered this job
+  OP4 -> OP5 because the anatomy-map session had already taken OP4, and re-ran the full
+  ritual against the merged tree both times: **1,561 unit, e2e 85 passed / 0 failed**.
+  One of my new specs needed the age field another session added to onboarding.
   NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
 
 ## 10. SOURCES
