@@ -844,6 +844,30 @@ const MUTATIONS = [
     to: "  { id: 'collagen', name: 'Collagen + vitamin C', dose: '10-15 g', when: '30-60 min before jumps/sprints' },\n  { id: 'zinc', name: 'Zinc', dose: '15-25 mg', when: 'Evening' },\n]",
     spec: 'src/plan/supplements.test.ts',
   },
+  {
+    id: 'invented-number-passes-as-evidence',
+    bug: 'a record claims a better evidence tier than any source it cites',
+    file: 'src/plan/nutrition.refs.ts',
+    find: "    source_refs: [{ id: 'S10' }, { id: 'S16' }],\n    evidence_tier: 'B',",
+    to: "    source_refs: [{ id: 'S10' }],\n    evidence_tier: 'A',",
+    spec: 'src/plan/knowledge.test.ts',
+  },
+  {
+    id: 'confidence-typed-by-hand',
+    bug: 'confidence stops being derived, so a number can be given whatever certainty suits it',
+    file: 'src/plan/nutrition.refs.ts',
+    find: '  return { ...r, confidence: confidenceOf(r) }',
+    to: '  return { ...r, confidence: 0.95 }',
+    spec: 'src/plan/knowledge.test.ts',
+  },
+  {
+    id: 'knowledge-module-unregistered',
+    bug: 'a refs module exists on disk and no check can see it, which reads as coverage',
+    file: 'src/plan/knowledgeRegistry.ts',
+    find: 'export const KNOWLEDGE: ModuleRefs[] = [NUTRITION_REFS]',
+    to: 'export const KNOWLEDGE: ModuleRefs[] = [{ ...NUTRITION_REFS, records: [] }]',
+    spec: 'src/plan/knowledge.test.ts',
+  },
 ]
 
 const E2E_MUTATIONS = [
