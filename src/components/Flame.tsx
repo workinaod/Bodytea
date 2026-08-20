@@ -246,27 +246,25 @@ const growth = (scale: number, size: number) => 1 + (scale - 1) * Math.min(1, Ma
 /**
  * Embers coming off the fire.
  *
- * Two bugs lived here and the second one is why these read as sparkles
- * parked in the air rather than as anything leaving a fire.
+ * The bug that survived two fixes: these SPAWNED AT A FIXED HEIGHT.
+ * Each one was given a `top` somewhere in the upper half of the frame
+ * and animated from there, so an ember at 46% materialised in mid-air
+ * halfway up and floated. Nothing ever came out of the fire. Varying
+ * that height only spread the problem out.
  *
- * A percentage in `translate` resolves against the ELEMENT'S OWN box,
- * not its parent. These spans are under two pixels tall, so a travel of
- * `-230%` moved them about four pixels: they appeared, sat still, and
- * faded, at every size, for as long as they have existed. Travel is
- * absolute now, and measured against the fire.
+ * An ember leaves the TIP. Every one of these starts there, and the
+ * only thing that differs is WHEN it leaves, how far it gets and which
+ * way it drifts. That is the whole model, and it is the one that reads.
  *
- * And their size was a fixed pixel count, which is proportionate on a
- * 40px chip and microscopic on a 110px hero. Every dimension here now
- * scales with the fire it is coming off.
+ * (Also, earlier: a percentage in `translate` resolves against the
+ * element's own box, so a 2px span told to travel -230% moved four
+ * pixels and sat there. Travel is absolute and measured off the fire.)
  */
 function Embers({ n, color, px, delay }: { n: number; color: string; px: number; delay: number }) {
   if (n === 0) return null
-  // Two scales, because they are two different things. An ember is a
-  // physical speck: it does not get four times bigger because the fire
-  // did, so its SIZE grows far slower than the fire and stops. Where it
-  // starts and how far it travels DO scale with the fire it left.
+  // An ember is a physical speck: its SIZE grows far slower than the
+  // fire and stops. Where it goes scales with the fire it left.
   const dot = Math.min(1.8, Math.max(1, (px / 44) ** 0.38))
-  const unit = Math.max(1, px / 44)
   return (
     <>
       {Array.from({ length: n }, (_, i) => {
@@ -280,15 +278,16 @@ function Embers({ n, color, px, delay }: { n: number; color: string; px: number;
                 width: d,
                 height: d,
                 background: color,
-                // Off the fire, over the whole upper half of it.
-                top: `${18 + ((i * 29) % 28)}%`,
-                marginLeft: `${(((i * 37) % 13) - 6) * unit}px`,
-                animationDelay: `${delay + ((i * 337) % 2100)}ms`,
-                '--sx': `${(((i * 53) % 15) - 7) * unit}px`,
-                // Rises between half and one and a quarter of the fire's
-                // own height, so a bigger fire throws them further.
-                '--sy': `${-(0.55 + ((i * 67) % 70) / 100) * px}px`,
-                '--sd': `${1.5 + ((i * 7) % 12) / 10}s`,
+                // The tip, give or take the wander of the flames under it.
+                top: `${2 + ((i * 17) % 9)}%`,
+                marginLeft: `${(((i * 37) % 11) - 5) * 0.022 * px}px`,
+                animationDelay: `${delay + ((i * 211) % 1500)}ms`,
+                // Drifts as it rises. Travel stays inside about eight
+                // tenths of the fire's own height: further than that and
+                // most of them are out of frame before anybody sees one.
+                '--sx': `${(((i * 53) % 9) - 4) * 0.035 * px}px`,
+                '--sy': `${-(0.32 + ((i * 67) % 50) / 100) * px}px`,
+                '--sd': `${1.1 + ((i * 7) % 9) / 10}s`,
               } as React.CSSProperties
             }
           />

@@ -544,21 +544,29 @@
     transform: translate3d(0, 0, 0) scale(1);
     opacity: 0;
   }
-  16% {
-    opacity: 0.95;
+  /* Up to full in a twelfth of its life. Anything slower and the
+     particle is visibly SITTING at its start, which is what made these
+     read as sparkles hanging in the air waiting for their turn. */
+  6% {
+    opacity: 1;
   }
-  60% {
-    opacity: 0.5;
+  /* Lit for most of the climb. A hard ease-out plus an early fade puts
+     every particle far away, tiny and transparent within a third of its
+     life, so only the newest one is ever visible and the fire looks
+     like it throws one spark at a time. */
+  64% {
+    opacity: 0.8;
   }
   100% {
     /* Per particle. A shared travel distance is a shared trajectory, and
        a row of those reads as a line of dots rather than as embers. */
-    transform: translate3d(var(--sx, 0), var(--sy, -230%), 0) scale(0.2);
+    transform: translate3d(var(--sx, 0), var(--sy, -40px), 0) scale(0.55);
     opacity: 0;
   }
 }
 .spark-bit {
-  animation: flame-spark var(--sd, 1.8s) linear infinite;
+  /* A gentle ease out: an ember slows as it cools, it does not teleport. */
+  animation: flame-spark var(--sd, 1.6s) cubic-bezier(0.3, 0.5, 0.6, 1) infinite;
 }
 
 /* ---- Starting a fire ----

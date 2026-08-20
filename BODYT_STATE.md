@@ -397,29 +397,34 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
      `transform: translate` resolves against THE ELEMENT'S OWN BOX, so a 2px ember told to
      travel -230% moved four pixels and sat there, at every size, for as long as it
      existed. Render the smallest instance and the largest before calling anything done.
-  3. **A drawing that works beats a system that computes one.** The generated-geometry
+  3. **A particle has to come FROM something.** The embers spawned at a fixed height
+     already above the flame, so each one materialised in mid-air and floated. Three
+     rounds of fixes went into their size, travel and glow while the thing that actually
+     looked wrong was the spawn point. Ask where a moving thing STARTS before tuning how
+     it moves; if it is decoration attached to an object, it starts ON the object.
+  4. **A drawing that works beats a system that computes one.** The generated-geometry
      flame was replaced four times (triangles from a floor, a picket of candles, a fan of
      needles) and every version was worse than the hand-authored path already in the repo.
      Growth does not require redrawing: keep the good silhouette and add MORE OF IT.
-  4. **A transform can squash a shape; it can never change one.** The flame read as
+  5. **A transform can squash a shape; it can never change one.** The flame read as
      "constant, not dynamically flickering" through four rounds of timing work because
      every version was one rigid outline being stretched. Real movement needed the PATH to
      morph: seven cubic curves whose points wander, weighted so the tip whips and the base
      holds still. If a surface has to look alive, ask whether its geometry actually moves.
-  5. **The shape changes, not just the size.** A raging fire is not a big small fire, it
+  6. **The shape changes, not just the size.** A raging fire is not a big small fire, it
      is MORE FIRE: more flames, layered, each on its own clock. Whatever the surface is,
      its states must differ in KIND, not in transform.
-  6. **Every step in a progression changes something.** The first version keyed eleven
+  7. **Every step in a progression changes something.** The first version keyed eleven
      rungs to seven levels and three of them rendered identically, which teaches people
      the ladder is decoration. `components/flame.test.ts` is the pattern: assert the
      progression strictly moves on every axis, so a silent duplicate fails a test rather
      than shipping.
-  7. **Nothing on screen shares a clock.** Layers run at unrelated periods with keyframe
+  8. **Nothing on screen shares a clock.** Layers run at unrelated periods with keyframe
      stops at odd percentages, so the combined loop is too long to see repeat. One
      element on a smooth sine curve reads as a logo breathing, every time.
-  8. **Earned only, and honest.** The bar applies to what somebody worked for. It never
+  9. **Earned only, and honest.** The bar applies to what somebody worked for. It never
      buys spectacle for junk volume or a number the engine did not produce.
-  9. **It still has to run on a phone.** Transform and opacity; filter animations gated to
+  10. **It still has to run on a phone.** Transform and opacity; filter animations gated to
      display sizes; particle counts capped; the full show off by default on the chips that
      sit on screen all day. Reduced motion keeps every bit of information and drops every
      bit of movement.
