@@ -100,10 +100,103 @@ export const RUNG: Record<number, RungStyle> = {
 
 const FLAME_W = 24
 const FLAME_H = 32
-const OUTER_D =
-  'M12 0c1.4 5.4-2.2 7.6-4.6 10.6C5 13.6 3 16.6 3 20.4 3 26.2 7.2 32 12 32s9-5.8 9-11.6c0-4.4-2.6-7-5-10.2-1.2 1.6-2.4 2.6-3.4 2.6 1.2-3.6 1.2-8.6-.6-12.8Z'
-const MID_D =
-  'M12 8c1 3.6-1.4 5-3 7-1.6 2-3 4-3 6.6C6 25.6 8.8 29 12 29s6-3.4 6-7.4c0-3-1.8-4.8-3.4-6.8-.8 1-1.6 1.8-2.2 1.8.8-2.4.8-5.8-.4-8.6Z'
+
+/**
+ * The flame outline, as explicit cubic segments.
+ *
+ * It is the exact path the app shipped with, converted from its
+ * shorthand into seven absolute curves so the POINTS can be moved. That
+ * is the whole reason for the conversion: a CSS transform can squash a
+ * path but it can never change its shape, so every version of this
+ * component so far has been a rigid outline being stretched, which is
+ * why it read as constant no matter how the timings were tuned.
+ *
+ * Real fire changes shape. Below, the tip whips and the base holds
+ * still, because that is what a flame anchored in fuel actually does.
+ */
+type Curve = [number, number, number, number, number, number]
+const OUTER: { from: [number, number]; segs: Curve[] } = {
+  from: [12, 0],
+  segs: [
+    [13.4, 5.4, 9.8, 7.6, 7.4, 10.6],
+    [5, 13.6, 3, 16.6, 3, 20.4],
+    [3, 26.2, 7.2, 32, 12, 32],
+    [16.8, 32, 21, 26.2, 21, 20.4],
+    [21, 16, 18.4, 13.4, 16, 10.2],
+    [14.8, 11.8, 13.6, 12.8, 12.6, 12.8],
+    [13.8, 9.2, 13.8, 4.2, 12, 0],
+  ],
+}
+const MID: { from: [number, number]; segs: Curve[] } = {
+  from: [12, 8],
+  segs: [
+    [13, 11.6, 10.6, 13, 9, 15],
+    [7.4, 17, 6, 19, 6, 21.6],
+    [6, 25.6, 8.8, 29, 12, 29],
+    [15.2, 29, 18, 25.6, 18, 21.6],
+    [18, 18.6, 16.2, 16.8, 14.6, 14.8],
+    [13.8, 15.8, 13, 16.6, 12.4, 16.6],
+    [13.2, 14.2, 13.2, 10.8, 12, 8],
+  ],
+}
+
+/** Deterministic 0..1. Same seed, same fire, every render. */
+function rnd(seed: number, k: number): number {
+  const n = Math.sin(seed * 12.9898 + k * 78.233) * 43758.5453
+  return n - Math.floor(n)
+}
+
+/**
+ * One variant of a shape. `amp` is how far the TIP may wander; every
+ * point moves less the closer it sits to the fuel, which is the rule
+ * that keeps the flame rooted instead of wobbling like jelly.
+ */
+function variant(shape: { from: [number, number]; segs: Curve[] }, seed: number, amp: number): string {
+  let k = 0
+  const move = (x: number, y: number): string => {
+    const w = Math.max(0, (FLAME_H - y) / FLAME_H) ** 1.4
+    const dx = (rnd(seed, k++) - 0.5) * amp * 2 * w
+    const dy = (rnd(seed, k++) - 0.5) * amp * 0.8 * w
+    return `${(x + dx).toFixed(2)} ${(y + dy).toFixed(2)}`
+  }
+  const head = seed === 0 ? `${shape.from[0]} ${shape.from[1]}` : move(shape.from[0], shape.from[1])
+  const body = shape.segs
+    .map((c) =>
+      seed === 0
+        ? `C${c[0]} ${c[1]} ${c[2]} ${c[3]} ${c[4]} ${c[5]}`
+        : `C${move(c[0], c[1])} ${move(c[2], c[3])} ${move(c[4], c[5])}`,
+    )
+    .join('')
+  return `M${head}${body}Z`
+}
+
+const OUTER_D = variant(OUTER, 0, 0)
+const MID_D = variant(MID, 0, 0)
+
+/** The loop of shapes one path cycles through. Ends where it began. */
+function morphValues(shape: { from: [number, number]; segs: Curve[] }, offset: number, amp: number): string {
+  const frames = [0, 1, 2, 3, 4].map((i) => variant(shape, offset + i + 1, amp))
+  return [...frames, frames[0]].join(';')
+}
+
+/**
+ * The morph itself. SMIL rather than CSS because `d` is only animatable
+ * in CSS in one engine, and this has to work in a PWA on any phone.
+ * Reduced motion simply does not render it.
+ */
+function Morph({ values, dur }: { values: string; dur: number }) {
+  return (
+    <animate
+      attributeName="d"
+      values={values}
+      dur={`${dur.toFixed(2)}s`}
+      repeatCount="indefinite"
+      calcMode="spline"
+      keyTimes="0;0.2;0.4;0.6;0.8;1"
+      keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1"
+    />
+  )
+}
 
 /** How far the widest flame in this cluster sits from the middle. */
 const reach = (s: RungStyle) => s.spread * 8.5
@@ -176,6 +269,28 @@ function Embers({ n, color, spread }: { n: number; color: string; spread: number
   )
 }
 
+/** How long the fire takes to catch. The streak beat's budget. */
+export const IGNITE_MS = 1500
+
+/**
+ * The coals, lit before there is any flame. Sits at the base, glows,
+ * and is gone by the time the fire has taken. Without it the ignition
+ * reads as a shape fading in rather than as something catching.
+ */
+function EmberBed({ color }: { color: string }) {
+  return (
+    <span
+      className="ember-bed pointer-events-none absolute bottom-0 left-1/2 rounded-full"
+      style={{
+        width: '46%',
+        height: '18%',
+        background: `radial-gradient(ellipse at center, ${color} 0%, ${color}88 38%, transparent 72%)`,
+      }}
+      aria-hidden
+    />
+  )
+}
+
 /**
  * The sparks thrown at the strike. One shot, wider and faster than the
  * embers, and the throw scales with the flame: a hero-sized fire that
@@ -191,7 +306,7 @@ function Strike({ color, reach }: { color: string; reach: number }) {
         return (
           <span
             key={i}
-            className="strike-bit absolute left-1/2 top-1/2 rounded-full"
+            className="strike-bit absolute left-1/2 top-[74%] rounded-full"
             style={
               {
                 width: d,
@@ -246,21 +361,45 @@ export function Flame({
   const vw = FLAME_W + reach(s) * 2 + 6
   // Each flame on its own clock. Nothing in the frame repeats together,
   // which is the entire difference between fire and a logo.
-  const clock = (i: number) => (still ? undefined : `flame-crackle ${secs(s.speed * (0.58 + i * 0.117))} linear infinite`)
+  // A morphing path is a repaint per frame, so only the display sizes get
+  // it; a row chip keeps the cheap squash, which at 16px is all anybody
+  // could see anyway. Where the shape morphs the squash comes OFF: two
+  // flickers on one path fight and read as a wobble.
+  const clock = (i: number) =>
+    still || lit ? undefined : `flame-crackle ${secs(s.speed * (0.58 + i * 0.117))} linear infinite`
+  const morph = lit && !still
   const path = { transformBox: 'fill-box', transformOrigin: '50% 100%' } as const
 
+  // Both of these set `animation`, and an inline style beats a class rule
+  // outright: `.catch-fire` supplying its own animation meant the breathe
+  // below silently won and the ignition never played at all. One
+  // declaration, with the breathe held until the fire has caught.
+  const anim = still
+    ? undefined
+    : ignite
+      ? `flame-ignite ${IGNITE_MS}ms cubic-bezier(0.3, 0.7, 0.4, 1) both, flame-breathe ${s.speed}s ease-in-out ${IGNITE_MS}ms infinite`
+      : `flame-breathe ${s.speed}s ease-in-out infinite`
+
   return (
+    // The outer frame does not move. The coals and the sparks live here,
+    // OUTSIDE the body: the ignition scales the fire from almost nothing,
+    // so anything inside it gets scaled to nothing too, and the coals
+    // that are supposed to be lit before there is a flame vanished.
     <span
-      className={`flame relative inline-block shrink-0 will-change-transform ${ignite && !still ? 'catch-fire' : ''}`}
+      className="flame relative inline-block shrink-0"
       style={{
         width: (px * vw) / FLAME_H,
         height: px,
         filter: `drop-shadow(${s.glow.split(',')[0]})`,
-        animation: still ? undefined : `flame-breathe ${s.speed}s ease-in-out infinite`,
       }}
       aria-hidden
     >
+      {ignite && !still && <EmberBed color={s.core} />}
       {ignite && !still && <Strike color={s.core} reach={px / 46} />}
+      <span
+        className={`block h-full w-full will-change-transform ${ignite && !still ? 'catch-fire' : ''}`}
+        style={{ animation: anim }}
+      >
       <span
         className={`block h-full w-full ${lit ? 'flame-gutter' : ''}`}
         style={{ ['--gutter' as string]: secs(s.speed * 1.71) }}
@@ -278,12 +417,20 @@ export function Flame({
               key={`b${i}`}
               transform={`translate(${(vw / 2 - FLAME_W / 2 + dx).toFixed(2)} ${dy.toFixed(2)}) translate(12 32) scale(${k.toFixed(3)}) translate(-12 -32)`}
             >
-              <path d={OUTER_D} fill={s.outer} opacity={o} style={{ ...path, animation: clock(i) }} />
+              <path d={OUTER_D} fill={s.outer} opacity={o} style={{ ...path, animation: clock(i) }}>
+                {morph && <Morph values={morphValues(OUTER, i * 3, 1.7)} dur={s.speed * (0.58 + i * 0.117) * 2.4} />}
+              </path>
             </g>
           ))}
           <g transform={`translate(${(vw / 2 - FLAME_W / 2).toFixed(2)} 0)`}>
-            <path d={OUTER_D} fill={s.outer} style={{ ...path, animation: clock(0) }} />
-            <path d={MID_D} fill={s.mid} style={{ ...path, animation: clock(4) }} />
+            <path d={OUTER_D} fill={s.outer} style={{ ...path, animation: clock(0) }}>
+              {morph && <Morph values={morphValues(OUTER, 0, 1.9)} dur={s.speed * 1.4} />}
+            </path>
+            <path d={MID_D} fill={s.mid} style={{ ...path, animation: clock(4) }}>
+              {/* Off the body's clock on purpose: the inside of a fire
+                  never moves with its edge. */}
+              {morph && <Morph values={morphValues(MID, 31, 1.5)} dur={s.speed * 0.97} />}
+            </path>
             <ellipse
               cx="12"
               cy="24.5"
@@ -295,6 +442,7 @@ export function Flame({
             />
           </g>
         </svg>
+      </span>
       </span>
       {lit && <Embers n={s.embers} color={s.core} spread={Math.max(1, px / 44)} />}
     </span>

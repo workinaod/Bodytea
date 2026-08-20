@@ -559,43 +559,103 @@
   animation: flame-spark var(--sd, 1.8s) linear infinite;
 }
 
-/* Striking it. Nothing, then a hard white flash and a shape that
-   overshoots, drops back too far as it takes hold, and settles.
-   One shot, on the beat where the day is actually banked. */
-@keyframes flame-catch {
+/* ---- Starting a fire ----
+
+   Not a flash. A fire STARTS, and starting has stages: a spark
+   catches, an ember glows, the first flame takes and almost dies,
+   it takes again, climbs, flares past its size and settles into
+   its burn. The old version scaled up and got bright, which is a
+   logo appearing.
+
+   Grows from the BASE, not the middle, because that is where fuel
+   is. Colour arrives with the heat: it opens desaturated and
+   white-hot and finds its own colour on the way up.
+
+   Roughly 1.5s, which is the streak beat's budget, and it only
+   ever plays on the beat where a day is actually banked. */
+@keyframes flame-ignite {
+  /* the spark, nothing lit */
   0% {
-    transform: scale(0.15) translateY(8px);
+    transform: scale(0.05) translateY(16%);
     opacity: 0;
-    filter: brightness(2.6) saturate(0.4);
+    filter: brightness(3) saturate(0);
   }
-  18% {
-    transform: scale(1.34) translateY(0);
+  5% {
+    transform: scale(0.24) translateY(11%);
     opacity: 1;
-    filter: brightness(2.1) saturate(0.7);
+    filter: brightness(2.7) saturate(0.2);
   }
-  34% {
-    transform: scale(0.82);
-    filter: brightness(1.05);
+  /* it catches, and very nearly goes out */
+  11% {
+    transform: scale(0.13) translateY(12%);
+    opacity: 0.8;
+    filter: brightness(1.3) saturate(0.35);
   }
-  52% {
-    transform: scale(1.14);
-    filter: brightness(1.5);
+  /* takes hold */
+  21% {
+    transform: scale(0.44) translateY(6%);
+    opacity: 1;
+    filter: brightness(1.9) saturate(0.6);
   }
+  29% {
+    transform: scale(0.33) translateY(7%);
+    filter: brightness(1.15) saturate(0.68);
+  }
+  /* climbing now */
+  43% {
+    transform: scale(0.8) translateY(2%);
+    filter: brightness(1.55) saturate(0.88);
+  }
+  53% {
+    transform: scale(0.67) translateY(3%);
+    filter: brightness(1.1) saturate(0.94);
+  }
+  /* flares past its size */
   70% {
-    transform: scale(0.95);
+    transform: scale(1.14) translateY(0);
+    filter: brightness(1.5) saturate(1);
+  }
+  82% {
+    transform: scale(0.93);
     filter: brightness(1.02);
   }
-  86% {
+  92% {
     transform: scale(1.05);
-    filter: brightness(1.2);
+    filter: brightness(1.16);
   }
   100% {
     transform: scale(1);
-    filter: brightness(1);
+    filter: brightness(1) saturate(1);
   }
 }
 .catch-fire {
-  animation: flame-catch 1100ms var(--ease-out) both;
+  /* From the fuel up. A fire does not grow out of its own middle. */
+  transform-origin: 50% 100%;
+}
+
+/* The coals under it, lit before there is any flame and gone once
+   there is. This is the part that makes it read as CAUGHT rather
+   than as faded in. */
+@keyframes flame-bed {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.3);
+  }
+  7% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.2);
+  }
+  34% {
+    opacity: 0.85;
+    transform: translateX(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(1.7);
+  }
+}
+.ember-bed {
+  animation: flame-bed 1250ms var(--ease-out) both;
 }
 
 /* The sparks thrown at the strike: wider and faster than the ambient
@@ -663,15 +723,15 @@
   .flip-x,
   .flip-y,
   .drop,
-  .shockwave {
+  .shockwave,
+  .ember-bed {
     animation: none !important;
   }
   /* Combustion is decoration on top of a number. The number stays,
      the fire holds still, and the loose particles do not render at
      all (Flame returns null for them under reduced motion). */
   .flame-crackle,
-  .flame-gutter,
-  .catch-fire {
+  .flame-gutter {
     animation: none !important;
   }
 }
