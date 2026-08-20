@@ -79,22 +79,31 @@ function Embers({ level, color }: { level: number; color: string }) {
   )
 }
 
-/** The sparks thrown at the strike. One shot, wider and faster than the embers. */
-function Strike({ color }: { color: string }) {
+/**
+ * The sparks thrown at the strike. One shot, wider and faster than the
+ * embers, and the throw scales with the flame: a hero-sized fire that
+ * sprays its sparks inside its own silhouette does not read as a strike.
+ */
+function Strike({ color, size }: { color: string; size: number }) {
+  const reach = size / 46
   return (
     <>
-      {Array.from({ length: 10 }, (_, i) => {
-        const angle = (i / 10) * Math.PI - Math.PI // upper half only: sparks go up
+      {Array.from({ length: 12 }, (_, i) => {
+        const angle = (i / 12) * Math.PI - Math.PI // upper half only: sparks go up
+        const far = 30 + ((i * 13) % 26)
+        const d = i % 4 === 0 ? 4 : 2.5
         return (
           <span
             key={i}
-            className="strike-bit absolute left-1/2 top-1/2 h-[3px] w-[3px] rounded-full"
+            className="strike-bit absolute left-1/2 top-1/2 rounded-full"
             style={
               {
+                width: d,
+                height: d,
                 background: color,
-                animationDelay: `${(i * 23) % 90}ms`,
-                '--sx': `${Math.round(Math.cos(angle) * (26 + ((i * 13) % 18)))}px`,
-                '--sy': `${Math.round(Math.sin(angle) * (24 + ((i * 17) % 20)))}px`,
+                animationDelay: `${(i * 21) % 100}ms`,
+                '--sx': `${Math.round(Math.cos(angle) * far * reach)}px`,
+                '--sy': `${Math.round(Math.sin(angle) * far * reach - 8)}px`,
               } as React.CSSProperties
             }
           />
@@ -137,7 +146,7 @@ export function Flame({
       }}
       aria-hidden
     >
-      {ignite && !still && <Strike color={s.core} />}
+      {ignite && !still && <Strike color={s.core} size={size} />}
       <span
         className={`block h-full w-full ${lit ? 'flame-gutter' : ''}`}
         style={{ ['--gutter' as string]: secs(s.speed, 1.71) }}
