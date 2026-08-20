@@ -1,16 +1,24 @@
 /* ============================================================
    Motion system.
 
-   The brief: subtle enough that nobody notices it, present
-   enough that the app feels alive. Three durations, two
-   easings, and a small set of NAMED BEHAVIORS that screens
-   reuse. Screens should not hand-roll transitions; if a new
-   one is needed it earns a name here first.
+   The brief, in two modes: INVISIBLE AT REST, UNMISTAKABLE
+   WHEN EARNED. Three durations, two easings, and a small set
+   of NAMED BEHAVIORS that screens reuse. Screens should not
+   hand-roll transitions; if a new one is needed it earns a
+   name here first.
 
    Rules that keep it invisible:
      - nothing runs longer than --dur-slow
      - nothing delays a tap response
      - nothing animates on every render
+
+   The one exception, added deliberately: the EARNED MOMENTS
+   (the finish ceremony, a real PR, a flame tier-up, a badge
+   unlock) may exceed --dur-slow, because there they are the
+   product rather than the chrome. They pay for it by being
+   rare, gated in code to a real event, and always skippable
+   by a tap. If an effect would fire every single day it is
+   not one of these; demote it. Rarity is the whole mechanism.
    ============================================================ */
 
 @theme {
@@ -22,6 +30,12 @@
   --ease-out: cubic-bezier(0.22, 0.8, 0.3, 1);
   /* Confirmations only: a slight overshoot reads as "yes, got it". */
   --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+
+  /* Earned moments only. Chrome keeps to fast/base/slow above. */
+  --dur-count: 600ms;
+  --dur-beat: 900ms;
+  /* A harder overshoot than --ease-spring: this one is a hit landing. */
+  --ease-hit: cubic-bezier(0.22, 1.35, 0.4, 1);
 }
 
 /* ---------- press: every tappable thing ---------- */
@@ -288,6 +302,115 @@
   pointer-events: none;
 }
 
+/* ---------- earned moments: the ceremony vocabulary ----------
+
+   Everything below is gated in CODE, not by being on a screen. The
+   gate is the event: a set actually completed, a streak day actually
+   banked, a personal record the detector actually found. A beat with
+   nothing true to say does not render, which is what keeps the ones
+   that do render worth watching. */
+
+/* MICRO. Fires constantly, so it stays small: a set counter ticking
+   over, a week-path node filling. Any bigger and fifteen sets in a
+   session would be exhausting. */
+@keyframes bt-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.pop {
+  animation: bt-pop var(--dur-base) var(--ease-hit);
+}
+
+/* The 3-2-1 before a set. Punched in rather than faded, to match the
+   beeps that play with it. */
+@keyframes bt-punch {
+  from { transform: scale(1.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.punch {
+  animation: bt-punch var(--dur-fast) var(--ease-hit) both;
+}
+
+/* REWARD. Once a session at most. */
+
+/* A number rolling over, odometer style. The column holds the new value
+   above the old one and starts shifted up, so releasing it rolls the
+   count UP into place rather than dealing a new card. */
+@keyframes bt-roll {
+  from { transform: translateY(-50%); }
+  to { transform: translateY(0); }
+}
+.roll {
+  animation: bt-roll var(--dur-slow) var(--ease-hit) both;
+}
+
+/* Anticipation. Shrink and dim BEFORE the win, never after: skipping
+   the wind-up is the difference between a moment landing and a moment
+   looking like a stock template. */
+@keyframes bt-charge {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(0.9); filter: brightness(0.55); }
+}
+.charge {
+  animation: bt-charge 180ms var(--ease-out) both;
+}
+
+/* The card turning over: the tile you started the session from becomes
+   the record of having done it. */
+@keyframes bt-flip-x {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+.flip-x {
+  animation: bt-flip-x 380ms var(--ease-out);
+}
+
+/* SPECTACLE. Earned only: a real PR, a flame tier-up, a badge unlock.
+   Never an ordinary good session. */
+
+/* One ring leaving the flame when the streak grows. One, not three:
+   a single wave reads as impact, a repeat reads as a loading state. */
+@keyframes bt-shock {
+  from { transform: translate(-50%, -50%) scale(0.35); opacity: 0.6; }
+  to { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+}
+.shockwave {
+  animation: bt-shock 700ms var(--ease-out) both;
+}
+
+/* A badge turning face up. The one moment a badge is allowed to shout. */
+@keyframes bt-flip-y {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+.flip-y {
+  animation: bt-flip-y 520ms var(--ease-hit) both;
+}
+
+/* Landing with weight. The squash on touchdown is what sells a trophy
+   as an object rather than an image that appeared. */
+@keyframes bt-drop {
+  0% { transform: translateY(-40px) scaleY(1.1); opacity: 0; }
+  70% { transform: translateY(0) scaleY(0.86); opacity: 1; }
+  100% { transform: translateY(0) scaleY(1); }
+}
+.drop {
+  animation: bt-drop 460ms var(--ease-hit) both;
+}
+
+/* One confetti particle. Each span carries its own --dx/--dy/--rot, the
+   same technique the run reaction card already uses, so a burst is a
+   handful of composited elements and not a canvas. */
+@keyframes bt-burst {
+  from { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.55); opacity: 0; }
+}
+.burst-bit {
+  animation: bt-burst 1.05s var(--ease-out) both;
+}
+
 /* ---------- accessibility ---------- */
 
 /* ---- The streak flame ----
@@ -368,6 +491,21 @@
      information, not decoration. */
   .flame,
   .flame * {
+    animation: none !important;
+  }
+  /* The ceremony still SHOWS every beat; it just stops moving. The
+     numbers, the tier name and the badge all arrive at their final
+     state, so nobody loses information for having asked for calm.
+     The confetti is the one thing that goes away entirely, because
+     it carries nothing a reader needs. */
+  .pop,
+  .punch,
+  .roll,
+  .charge,
+  .flip-x,
+  .flip-y,
+  .drop,
+  .shockwave {
     animation: none !important;
   }
 }

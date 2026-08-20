@@ -1,4 +1,10 @@
 // ============================================================
+// Motion, in both senses the app needs: the device's own
+// movement (step counting, below) and the user's stated
+// tolerance for movement on screen (prefersReducedMotion).
+// Both are platform capabilities, so both live here rather
+// than in a component reaching for a browser API directly.
+//
 // Step counting from the accelerometer.
 //
 // Why this exists: a treadmill run moves the body and not the
@@ -14,6 +20,19 @@
 
 export function motionSupported(): boolean {
   return typeof window !== 'undefined' && 'DeviceMotionEvent' in window
+}
+
+/**
+ * Has the user asked the OS for less movement?
+ *
+ * The stylesheet already honours this for anything driven by CSS. This is
+ * for the handful of effects JavaScript owns (count-ups, confetti, the
+ * ceremony's timing), which have to answer the same question in code:
+ * show the end state, skip the journey. Never treat a true here as
+ * permission to hide INFORMATION, only motion.
+ */
+export function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
 type MotionEventCtor = typeof DeviceMotionEvent & {
