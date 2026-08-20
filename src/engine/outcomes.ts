@@ -1,6 +1,13 @@
 import type { AppData, ISODate } from '../types'
 import type { DecisionRecord, DecisionVerdict } from '../decisionTypes'
-import { STEP_METRIC, STEP_TYPE } from './proposals'
+import {
+  ADAPT_GRADES_THAT_COUNT,
+  ADAPT_METRIC,
+  ADAPT_TYPE,
+  STEP_METRIC,
+  STEP_TYPE,
+} from './proposals'
+import { sessionGrade } from './stats'
 import { daysBetween } from './calendar'
 import { trendIsConfounded, weightTrend } from './userModel'
 
@@ -87,8 +94,9 @@ export interface Judged {
  * what lets a golden test pin the trigger and the verdict together.
  */
 export function judge(data: AppData, row: DecisionRecord, today: ISODate): Judged | null {
-  if (row.metricId !== STEP_METRIC || row.baseline === undefined) return null
+  if (row.type === ADAPT_TYPE) return judgeAdapt(data, row)
   if (row.type !== STEP_TYPE) return null
+  if (row.metricId !== STEP_METRIC || row.baseline === undefined) return null
 
   const trend = weightTrend(data, today)
   if (!trend) {
@@ -110,6 +118,36 @@ export function judge(data: AppData, row: DecisionRecord, today: ISODate): Judge
   }
   const wanted = asked < 0 ? -1 : 1
   return { row, outcome: trend.value, verdict: Math.sign(moved) === wanted ? 'worked' : 'worse' }
+}
+
+/**
+ * Did the sessions inside the window actually get done.
+ *
+ * R3 watches "day completed, and the next comparable session not short"
+ * for a volume cut, and "the held ask is cleared next time" for a load
+ * hold. Both come down to the same readable thing: sessions after the
+ * change got finished at what was asked. Counted rather than averaged,
+ * because one clean session out of three is not a fix.
+ *
+ * Nothing logged inside the window is `abandoned`, which is a different
+ * answer from failure: an intervention nobody trained after tells you
+ * about attendance, not about the intervention.
+ */
+function judgeAdapt(data: AppData, row: DecisionRecord): Judged | null {
+  if (row.metricId !== ADAPT_METRIC || row.windowClosesAt === undefined) return null
+  const counts = (g: string) => (ADAPT_GRADES_THAT_COUNT as readonly string[]).includes(g)
+
+  const inWindow = Object.entries(data.sessions ?? {})
+    .filter(([date, s]) => date >= row.offeredAt && date <= row.windowClosesAt! && s.status !== 'skipped')
+    .sort(([a], [b]) => a.localeCompare(b))
+  if (inWindow.length === 0) return { row, outcome: Number.NaN, verdict: 'abandoned' }
+  if (!isolated(data, row)) return { row, outcome: inWindow.length, verdict: 'unattributable' }
+
+  const done = inWindow.filter(([, s]) => counts(sessionGrade(s))).length
+  const rate = Math.round((done / inWindow.length) * 100) / 100
+  if (done === inWindow.length) return { row, outcome: rate, verdict: 'worked' }
+  if (done === 0) return { row, outcome: rate, verdict: 'worse' }
+  return { row, outcome: rate, verdict: 'no-change' }
 }
 
 /**
@@ -163,11 +201,19 @@ export function lastAttemptBackfired(data: AppData, target: string, today: ISODa
   return last.verdict === 'worse' && age >= 0 && age <= VERDICT_VISIBLE_DAYS
 }
 
-/** The verdict worth showing today, if there is one. */
-export function freshVerdict(data: AppData, today: ISODate): DecisionRecord | null {
+/**
+ * The verdict worth showing today, if there is one.
+ *
+ * `types` scopes it to the screen asking. Without that the food screen
+ * would happily announce that trimming the sets did the job, because
+ * judging is global and the freshest verdict is not always about the
+ * thing the athlete is currently looking at.
+ */
+export function freshVerdict(data: AppData, today: ISODate, types?: readonly string[]): DecisionRecord | null {
   const fresh = (data.decisions ?? []).filter(
     (d) =>
       d.verdict &&
+      (types === undefined || types.includes(d.type)) &&
       d.windowClosesAt !== undefined &&
       daysBetween(d.windowClosesAt, today) >= 0 &&
       daysBetween(d.windowClosesAt, today) <= VERDICT_VISIBLE_DAYS &&
@@ -184,7 +230,9 @@ export function freshVerdict(data: AppData, today: ISODate): DecisionRecord | nu
  * remember an app for.
  */
 export function verdictCopy(row: DecisionRecord): string | null {
-  if (row.type !== STEP_TYPE || !row.verdict) return null
+  if (!row.verdict) return null
+  if (row.type === ADAPT_TYPE) return adaptVerdictCopy(row)
+  if (row.type !== STEP_TYPE) return null
   const step = Math.abs(Number(row.evidence.stepKcal ?? 0))
   switch (row.verdict) {
     case 'worked':
@@ -197,6 +245,23 @@ export function verdictCopy(row: DecisionRecord): string | null {
       return `Too much changed at once to say whether that ${step} kcal move did anything. Not a failure, just not readable.`
     case 'abandoned':
       return null
+    default:
+      return null
+  }
+}
+
+/** The same honesty, about training rather than food. */
+function adaptVerdictCopy(row: DecisionRecord): string | null {
+  const what = row.target === 'reduce-volume' ? 'trimming the sets' : 'holding the weight'
+  switch (row.verdict) {
+    case 'worked':
+      return `${what[0].toUpperCase()}${what.slice(1)} did the job. Every session since went the distance.`
+    case 'no-change':
+      return `${what[0].toUpperCase()}${what.slice(1)} helped some sessions and not others. Worth looking at what else is different on the hard days.`
+    case 'worse':
+      return `${what[0].toUpperCase()}${what.slice(1)} did not fix it. Sessions are still coming up short, so the problem is somewhere other than the size of the day.`
+    case 'unattributable':
+      return `Too much changed at once to say whether ${what} helped.`
     default:
       return null
   }

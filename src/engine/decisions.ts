@@ -1,6 +1,7 @@
 import type { AppData, ISODate } from '../types'
 import type { DecisionRecord } from '../decisionTypes'
 import { daysBetween } from './calendar'
+import { ADAPT_TYPE } from './proposals'
 
 // ============================================================
 // Saying no, and being heard.
@@ -159,4 +160,35 @@ export function returningCopy(p: OfferPolicy): string {
   return p.returningBecauseWorse
     ? 'You said no to this recently. Bringing it back because the evidence got stronger, not because I forgot.'
     : ''
+}
+
+/**
+ * The ledger row for an answer to a training proposal.
+ *
+ * Here rather than in the action that writes it, for the same reason the
+ * calorie step's row builder lives beside its rule: a row composed at the
+ * call site is a row no test can reach, which is how a rule version went
+ * unpinned until a probe found it.
+ */
+export function adaptDecision(a: {
+  choice: string
+  response: DecisionRecord['response']
+  evidence: DecisionRecord['evidence']
+  at: ISODate
+  windowClosesAt: ISODate
+  ruleVersion: number
+  metricId: string
+  seq: number
+}): DecisionRecord {
+  const row = decisionRow({
+    type: ADAPT_TYPE,
+    target: a.choice,
+    ruleVersion: a.ruleVersion,
+    evidence: a.evidence,
+    response: a.response,
+    at: a.at,
+    seq: a.seq,
+  })
+  if (a.response !== 'accepted') return row
+  return { ...row, metricId: a.metricId, windowClosesAt: a.windowClosesAt }
 }

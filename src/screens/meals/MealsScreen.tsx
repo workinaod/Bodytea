@@ -7,7 +7,7 @@ import { kcalTargetFor, nutritionDayType } from '../../engine/dayType'
 import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor, proteinStreak } from '../../engine/stats'
 import { applyRecheck, learnedCopy, nutritionRecheck, recheckDecision } from '../../engine/nutritionRecheck'
 import { energyCheck, energyCopy } from '../../engine/energyAvailability'
-import { calorieStep, stepCopy, stepDecision } from '../../engine/calorieStep'
+import { STEP_TYPE, calorieStep, stepCopy, stepDecision } from '../../engine/calorieStep'
 import { appendDecision, returningCopy } from '../../engine/decisions'
 import { dueForVerdict, freshVerdict, settleDue, verdictCopy } from '../../engine/outcomes'
 import { learnedCopyFor, learnedMaintenance } from '../../engine/maintenanceLearned'
@@ -82,7 +82,8 @@ export function MealsScreen() {
   useEffect(() => {
     if (dueCount > 0) update((d) => { settleDue(d, today) })
   }, [dueCount, today, update])
-  const verdict = useMemo(() => freshVerdict(data, today), [data, today])
+  // Scoped: a training verdict belongs on the training screen.
+  const verdict = useMemo(() => freshVerdict(data, today, [STEP_TYPE]), [data, today])
 
   // ONE calorie-target suggestion at a time.
   //

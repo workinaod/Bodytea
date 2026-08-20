@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData } from '../types'
 import { STEP_METRIC, STEP_TYPE, STEP_WINDOW_DAYS, calorieStep } from './calorieStep'
+import { ADAPT_METRIC, ADAPT_TYPE, ADAPT_WINDOW_DAYS } from './proposals'
 import { addDaysISO } from './calendar'
-import { appendDecision, decisionRow } from './decisions'
+import { adaptDecision, appendDecision, decisionRow } from './decisions'
 import { MEANINGFUL_TREND_DELTA, VERDICT_VISIBLE_DAYS, dueForVerdict, freshVerdict, judge, lastAttemptBackfired, settleDue, verdictCopy } from './outcomes'
 
 // ============================================================
@@ -258,5 +259,105 @@ describe('the app does not argue with itself', () => {
     settleDue(d, TODAY)
     expect(d.decisions[0].verdict).toBe('worked')
     expect(lastAttemptBackfired(d, 'kcalTraining', TODAY)).toBe(false)
+  })
+})
+
+describe('the same machinery, pointed at training', () => {
+  const AT = addDaysISO(TODAY, -ADAPT_WINDOW_DAYS)
+
+  function adapted(d: AppData, choice: string, response: 'accepted' | 'declined' = 'accepted'): AppData {
+    appendDecision(d, adaptDecision({
+      choice,
+      response,
+      evidence: { signals: 2 },
+      at: AT,
+      windowClosesAt: addDaysISO(AT, ADAPT_WINDOW_DAYS),
+      ruleVersion: 1,
+      metricId: ADAPT_METRIC,
+      seq: d.decisions.length,
+    }))
+    return d
+  }
+
+  function trained(d: AppData, daysAfter: number, grade: 'full' | 'short'): AppData {
+    const date = addDaysISO(AT, daysAfter)
+    const sets = grade === 'full'
+      ? [{ targetReps: '8', done: true, reps: 8 }, { targetReps: '8', done: true, reps: 8 }]
+      : [{ targetReps: '8', done: true, reps: 8 }, { targetReps: '8', done: false }]
+    d.sessions[date] = {
+      date, templateId: 't', status: 'done',
+      exercises: [{ exerciseId: 'back-squat', sets }],
+    } as unknown as AppData['sessions'][string]
+    return d
+  }
+
+  it('calls trimming the sets a success when the sessions since got done', () => {
+    const d = trained(trained(adapted(account(), 'reduce-volume'), 2, 'full'), 9, 'full')
+    settleDue(d, TODAY)
+    expect(d.decisions[0].verdict).toBe('worked')
+    expect(verdictCopy(d.decisions[0])).toContain('went the distance')
+  })
+
+  it('says plainly when it did not fix it', () => {
+    const d = trained(trained(adapted(account(), 'reduce-volume'), 2, 'short'), 9, 'short')
+    settleDue(d, TODAY)
+    expect(d.decisions[0].verdict).toBe('worse')
+    expect(verdictCopy(d.decisions[0])).toContain('somewhere other than the size of the day')
+  })
+
+  it('will not call a half fix a fix', () => {
+    const d = trained(trained(adapted(account(), 'hold-load'), 2, 'full'), 9, 'short')
+    settleDue(d, TODAY)
+    expect(d.decisions[0].verdict).toBe('no-change')
+  })
+
+  it('is abandoned rather than failed when nobody trained', () => {
+    const d = adapted(account(), 'hold-load')
+    settleDue(d, TODAY)
+    expect(d.decisions[0].verdict).toBe('abandoned')
+    expect(verdictCopy(d.decisions[0])).toBeNull()
+  })
+
+  it('never judges a proposal that was waved away', () => {
+    const d = trained(adapted(account(), 'reduce-volume', 'declined'), 2, 'full')
+    expect(dueForVerdict(d, TODAY)).toHaveLength(0)
+  })
+
+  it('closes as unattributable when something else touched the same thing', () => {
+    const d = trained(trained(adapted(account(), 'reduce-volume'), 2, 'full'), 9, 'full')
+    appendDecision(d, adaptDecision({
+      choice: 'reduce-volume', response: 'accepted', evidence: { signals: 3 },
+      at: addDaysISO(AT, 4), windowClosesAt: addDaysISO(AT, 18),
+      ruleVersion: 1, metricId: ADAPT_METRIC, seq: 9,
+    }))
+    settleDue(d, TODAY)
+    expect(d.decisions[0].verdict).toBe('unattributable')
+  })
+})
+
+describe('a verdict shows up where it belongs', () => {
+  it('does not announce a training result on the food screen', () => {
+    const d = account()
+    appendDecision(d, adaptDecision({
+      choice: 'reduce-volume', response: 'accepted', evidence: { signals: 2 },
+      at: addDaysISO(TODAY, -ADAPT_WINDOW_DAYS),
+      windowClosesAt: TODAY, ruleVersion: 1, metricId: ADAPT_METRIC, seq: 0,
+    }))
+    const date = addDaysISO(TODAY, -ADAPT_WINDOW_DAYS + 2)
+    d.sessions[date] = {
+      date, templateId: 't', status: 'done',
+      exercises: [{ exerciseId: 'back-squat', sets: [{ targetReps: '8', done: true, reps: 8 }] }],
+    } as unknown as AppData['sessions'][string]
+    settleDue(d, TODAY)
+    expect(d.decisions[0].verdict).toBe('worked')
+    expect(freshVerdict(d, TODAY, [ADAPT_TYPE])).not.toBeNull()
+    expect(freshVerdict(d, TODAY, [STEP_TYPE])).toBeNull()
+  })
+
+  it('and does not announce a food result on the training screen', () => {
+    const d = accepted(scale(account(), 190, -1), -0.3)
+    settleDue(d, TODAY)
+    expect(freshVerdict(d, TODAY, [STEP_TYPE])).not.toBeNull()
+    expect(freshVerdict(d, TODAY, [ADAPT_TYPE])).toBeNull()
   })
 })

@@ -33,3 +33,33 @@ export const STEP_RULE_VERSION = 1
  * a story, not a result.
  */
 export const STEP_WINDOW_DAYS = 21
+
+// ---------------- Training adaptations ----------------
+//
+// The two proposals the coach already makes off the last fortnight's
+// evidence, and which the athlete already accepts or waves away. Neither
+// the choice nor whether it helped was recorded anywhere: acceptance went
+// into a per-date list, and a dismissal wiped the card for that one day
+// and was back tomorrow.
+
+export const ADAPT_TYPE = 'adapt'
+export const ADAPT_RULE_VERSION = 1
+
+/** The metric both are judged on: did the session actually get done. */
+export const ADAPT_METRIC = 'sessionGrade'
+
+/**
+ * How long each is given, in DAYS, standing in for R3's "comparable
+ * exposures".
+ *
+ * R3 asks for one exposure for hold-load and two for reduce-volume. Days
+ * are the honest approximation until section 4.2's comparable-exposure
+ * definition ships: a fortnight covers one to two sessions for almost
+ * every week this app builds, and judging on a calendar the athlete
+ * cannot game is better than judging on a count that a skipped week
+ * stretches indefinitely.
+ */
+export const ADAPT_WINDOW_DAYS = 14
+
+/** A session at or above this grade is one that got done. */
+export const ADAPT_GRADES_THAT_COUNT = ['full', 'overtime'] as const
