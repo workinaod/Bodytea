@@ -8,7 +8,7 @@ import { blockedIds, limitedJoints } from '../prefsTypes'
 // The reading half. Re-exported because "what happened" and "so what" are
 // one subject to everybody outside this pair, and moving a function should
 // not move every import in the app.
-import { readSignals, twoConsecutiveBadNightsBefore, type Signal } from './signals'
+import { persistentPainJoints, readSignals, twoConsecutiveBadNightsBefore, type Signal } from './signals'
 export * from './signals'
 
 // ============================================================
@@ -111,6 +111,15 @@ export interface AdaptContext {
    * typed in stays until they take it out.
    */
   limited?: Joint[]
+  /**
+   * Joints still complaining after the two weeks the app promised them.
+   *
+   * These stop being routed around. A substitute is chosen to spare the
+   * joint, so when the joint hurts anyway the swap was not the fix, and
+   * swapping again is the app repeating an answer that has already been
+   * tried. R3 s9.2 sends this to the reduce-load path and to a human.
+   */
+  persistentPain?: Joint[]
 }
 
 const can = (owned: Set<EquipTag>) => (id: string) => canDo(id, owned)
@@ -144,6 +153,7 @@ export function adaptContext(data: AppData, dateISO: ISODate, equipment: EquipTa
     alreadyCutForSleep: twoConsecutiveBadNightsBefore(data, dateISO),
     blocked: blockedIds(data.prefs),
     limited: limitedJoints(data.prefs) as Joint[],
+    persistentPain: persistentPainJoints(data, dateISO),
   }
 }
 
@@ -154,6 +164,8 @@ export function planAdjustments(
   const out: Adjustment[] = []
   const painJoints = ctx.signals.filter((s) => s.kind === 'joint-pain').flatMap((s) => s.joints ?? [])
   const avoid = [...new Set([...painJoints, ...(ctx.limited ?? [])])]
+  /** Joints that have outlasted the two weeks, so swapping is done. */
+  const stuck = new Set(ctx.persistentPain ?? [])
   /** Flagged joints that no substitute can spare, gathered so the athlete hears it once. */
   const unroutable = new Map<Joint, string[]>()
 
@@ -199,7 +211,15 @@ export function planAdjustments(
     //    is not a suggestion this app is willing to make.
     if (avoid.length && meta && meta.stress.some((j) => avoid.includes(j))) {
       const joint = meta.stress.find((j) => avoid.includes(j))!
-      const sub = substitutesFor(ex.exerciseId, { can: can(ctx.owned), avoid })[0]
+      // A joint that has kept complaining through two weeks of being
+      // routed around is not a routing problem. Every substitute here
+      // was already picked to spare it, so offering another one is the
+      // app trying the same answer a third time. Send it down the
+      // unroutable path instead, which drops the load and says the thing
+      // this app has been promising to say.
+      const sub = stuck.has(joint)
+        ? undefined
+        : substitutesFor(ex.exerciseId, { can: can(ctx.owned), avoid })[0]
       if (sub) {
         out.push({
           kind: 'substitute',
@@ -251,6 +271,20 @@ export function planAdjustments(
         exerciseId: ids[0],
         allIds: ids,
         because: `You told me about your ${j}, and every version of ${ids.length > 1 ? 'these movements' : 'this movement'} loads it. There is no swap that trains the pattern and spares the joint, so ${ids.length > 1 ? 'they are' : 'it is'} in at a lighter weight rather than out. Stop the set at the first sharp one rather than at the rep count.`,
+      })
+      continue
+    }
+    // The two weeks are up, and this app said what it would do about
+    // that. Repeating "if it is still there in two weeks" to somebody in
+    // week three is the app failing to notice its own deadline, and it
+    // is the sentence people would most reasonably expect it to keep.
+    if (stuck.has(joint)) {
+      out.push({
+        kind: 'reduce-load',
+        automatic: false,
+        exerciseId: ids[0],
+        allIds: ids,
+        because: `Your ${j} has been complaining for over two weeks now. I said that is where an app runs out of road, and it is: swapping the movement did not settle it and swapping it again will not either. Keep ${ids.length > 1 ? 'them' : 'it'} in at a lighter weight and stop at the first sharp rep. Two weeks of this is a physio question, not an app one.`,
       })
       continue
     }
