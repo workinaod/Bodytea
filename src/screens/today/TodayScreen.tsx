@@ -1,26 +1,25 @@
 import { useMemo, useState } from 'react'
 import type { DebriefData } from '../../types'
 import { useAppStore } from '../../store/appStore'
-import { lifeEventsOn, resolveDay } from '../../engine/resolveDay'
-import { addDaysISO, formatDayLabel, mondayOf, todayISO } from '../../engine/calendar'
+import { resolveDay } from '../../engine/resolveDay'
+import { addDaysISO, formatDayLabel, todayISO } from '../../engine/calendar'
 import { lateNightGraceDate } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
 import { enableReminders, notificationSupport } from '../../logic/reminders'
-import { BannerRow, Btn, Card, Chip, DayArrow, EmptyNote, ScreenHeader } from '../../components/ui'
-import { getExercise } from '../../plan/exercises'
-import { CARDIO_GROUP_INFO } from '../../plan/templates'
+import { BannerRow, Btn, Card, Chip, DayArrow, ScreenHeader } from '../../components/ui'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
-import { chooseCardio, finishSession, reopenSession, restoreToday, swapExercise, toggleCnsSwap } from '../../logic/actions'
+import { finishSession, restoreToday } from '../../logic/actions'
 import { startSession } from '../../logic/sessionStart'
-import { sessionGrade } from '../../engine/stats'
 import { briefForDay, briefForSession } from '../../engine/workoutBrief'
 import { streakDays } from '../../engine/streak'
 import { quitCopy } from '../../engine/quit'
 import { AdaptProposals } from './AdaptProposals'
+import { TodayCardio, CardioBackupChooser } from './TodayCardio'
+import { TodayCompletion } from './TodayCompletion'
+import { TodayPreviewList } from './TodayPreviewList'
 import { ExtraTraining } from './ExtraTraining'
 import { WorkoutBriefSheet } from './WorkoutBriefSheet'
-import { swapCandidatesFor } from '../../plan/subs'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
 import { ReadinessSheet } from './ReadinessSheet'
@@ -29,9 +28,6 @@ import { SkipFlow } from './SkipFlow'
 import { DebriefSheet } from './DebriefSheet'
 import { ExerciseGuideSheet } from './ExerciseGuideSheet'
 import { CardioSheet } from './CardioSheet'
-import { dayActivities, shortDuration } from '../../engine/activityStats'
-import { intensityLabel } from '../../engine/intensity'
-import { cardioActivity } from '../../plan/cardio'
 
 export function TodayScreen() {
   const data = useAppStore((s) => s.data)
@@ -80,13 +76,6 @@ export function TodayScreen() {
     () => (makeupTarget ? resolveDay(makeupTarget, data) : null),
     [makeupTarget, data],
   )
-  const week = data.weeks[mondayOf(date)]
-  const yesterday = addDaysISO(date, -1)
-  const ballYesterday = data.weeks[mondayOf(yesterday)]?.ballDates.includes(yesterday) ?? false
-  const cnsSwapped = week?.cnsSwapDates.includes(date) ?? false
-  const cardioEntries = data.cardio[date] ?? []
-  const canSwapCns =
-    day.cns && (ballYesterday || lifeEventsOn(data, date, 'late-night').length > 0)
   const inProgress = session && session.status === 'partial' && !session.endedAt
   const finished = session && (session.endedAt || session.status === 'completed' || session.status === 'downgraded-completed')
   const skipped = session?.status === 'skipped'
@@ -102,17 +91,6 @@ export function TodayScreen() {
     return data.coach.feed.find((f) => f.kind === 'debrief' && f.debrief?.date === date)?.debrief ?? null
   }, [finished, data.coach.feed, date])
 
-  // Day-aware cardio coaching: the chip stays every day, the line under
-  // it says whether cardio is smart today and WHEN to put it.
-  const cardioTip = useMemo(() => {
-    if (day.kind === 'cardio-backup') return null // the day IS the cardio
-    const tomorrowCns = resolveDay(addDaysISO(date, 1), data).cns
-    if (day.cns) return "Cardio only AFTER today's session. Speed work needs fresh legs."
-    if (tomorrowCns) return 'Keep cardio easy (zone 2). Tomorrow is a max-effort day.'
-    if (day.kind === 'rest') return 'Rest from lifting. Easy cardio still counts.'
-    if (day.kind === 'mobility') return 'Good day for conditioning. Pair it with the mobility work.'
-    return 'Cardio welcome. After the lifts beats before.'
-  }, [day, date, data])
 
   function handleStart() {
     if (day.cns) setReadinessOpen(true)
@@ -275,45 +253,16 @@ export function TodayScreen() {
           </Card>
         )}
 
-      {/* Same-day reality: ball is a day-of decision, not a weekly plan */}
-      {date <= realToday && !finished && (
-        <>
-          <div className="flex flex-wrap gap-1.5">
-            <Chip tone={cardioEntries.length > 0 ? 'lime' : 'default'} onClick={() => setCardioOpen(true)}>
-              {cardioEntries.length > 0
-                ? `${cardioActivity(cardioEntries[0].activityId).emoji} Cardio logged ✓ (${cardioEntries.length})`
-                : 'Cardio today?'}
-            </Chip>
-            {canSwapCns && !session && (
-              <Chip tone={cnsSwapped ? 'gold' : 'cyan'} onClick={() => toggleCnsSwap(date)}>
-                {cnsSwapped ? '↩ undo speed-work swap' : '⇄ swap speed work out (sanctioned)'}
-              </Chip>
-            )}
-          </div>
-          {today && cardioEntries.length === 0 && cardioTip && (
-            <p className="px-1 text-[11px] leading-snug text-ink-faint">{cardioTip}</p>
-          )}
-          {/* Once something is logged the tip is gone and this took its
-              place. The chip counts entries; it never said what they
-              were, so an hour of tracked ball read the same as a walk. */}
-          {dayActivities(data, date).map((a, i) => (
-            <p key={i} className="px-1 text-[11px] leading-snug text-ink-faint">
-              <span className="font-bold text-ink-dim">
-                {a.emoji} {a.label}
-              </span>
-              {[
-                shortDuration(a.minutes),
-                a.steps ? `${a.steps.toLocaleString()} steps` : null,
-                a.miles ? `${a.miles} mi` : null,
-                a.kcal ? `~${a.kcal} cal` : null,
-                a.tier ? intensityLabel(a.tier).toLowerCase() : null,
-              ]
-                .filter(Boolean)
-                .map((bit) => ` · ${bit}`)}
-            </p>
-          ))}
-        </>
-      )}
+      <TodayCardio
+        data={data}
+        date={date}
+        day={day}
+        today={today}
+        realToday={realToday}
+        finished={!!finished}
+        hasSession={!!session}
+        onOpenCardio={() => setCardioOpen(true)}
+      />
 
       {/* Body states */}
       {day.kind === 'rest' && !session && (
@@ -337,59 +286,15 @@ export function TodayScreen() {
         onLogged={(d) => setDebrief({ data: d })}
       />
 
-      {skipped && (
-        <Card className="border-danger/30">
-          <p className="text-[13.5px] font-bold text-danger">Day skipped.</p>
-          <p className="mt-1 text-[12.5px] text-ink-dim">
-            It's on the record. The comeback is tomorrow's job. Protein is still today's.
-          </p>
-        </Card>
-      )}
-
-      {finished && !skipped && (() => {
-        const grade = sessionGrade(session!)
-        const strong = grade === 'full' || grade === 'overtime'
-        const line =
-          grade === 'overtime'
-            ? 'Overtime. More than the plan asked. Logged.'
-            : grade === 'full'
-              ? session!.status === 'downgraded-completed'
-                ? 'Full session on a downgraded day. Honestly logged.'
-                : 'Session complete.'
-              : grade === 'half'
-                ? 'Half session logged.'
-                : grade === 'light'
-                  ? 'Light day logged.'
-                  : 'Extremely light. Barely on the board, but on it.'
-        return (
-          <Card className={strong ? 'border-lime/30' : 'border-gold/30'}>
-            <p className={`text-[14px] font-bold ${strong ? 'text-lime' : 'text-gold'}`}>{line}</p>
-            {session!.makeupFor && (
-              <p className="mt-0.5 text-[11.5px] text-ink-faint">
-                Make-up for {formatDayLabel(session!.makeupFor)}. The week stays whole.
-              </p>
-            )}
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-              {session!.status === 'partial' && today && (
-                <button
-                  className="text-[12.5px] font-semibold text-cyan underline"
-                  onClick={() => reopenSession(date)}
-                >
-                  ↩ Re-open the session
-                </button>
-              )}
-              {pastDebrief && (
-                <button
-                  className="text-[12.5px] font-semibold text-cyan underline"
-                  onClick={() => setDebrief({ data: pastDebrief })}
-                >
-                  Re-open the debrief
-                </button>
-              )}
-            </div>
-          </Card>
-        )
-      })()}
+      <TodayCompletion
+        session={session}
+        date={date}
+        today={today}
+        skipped={skipped}
+        finished={!!finished}
+        pastDebrief={pastDebrief}
+        onOpenDebrief={(d) => setDebrief({ data: d })}
+      />
 
       {inProgress && viewMode === 'focus' && (
         <FocusView
@@ -443,109 +348,18 @@ export function TodayScreen() {
         </div>
       )}
 
-      {/* Required cardio: the chooser IS the day until an option is picked */}
       {!session && day.kind === 'cardio-backup' && day.exercises.length === 0 && (
-        <div className="space-y-3">
-          {(['A', 'B', 'circuit'] as const).map((g) => (
-            <Card key={g} className="space-y-2">
-              <div>
-                <div className="text-[12px] font-black uppercase tracking-wider text-accent">
-                  {CARDIO_GROUP_INFO[g].title}
-                </div>
-                <div className="mt-0.5 text-[11px] leading-snug text-ink-faint">{CARDIO_GROUP_INFO[g].when}</div>
-              </div>
-              {data.plan.cardioOptions.filter((c) => c.group === g).map((c) => {
-                const def = getExercise(c.exerciseId)
-                return (
-                  <button
-                    key={c.exerciseId}
-                    onClick={() => chooseCardio(date, c.exerciseId)}
-                    className="flex w-full items-center justify-between rounded-xl bg-white/[0.07] px-3.5 py-3 text-left active:bg-white/[0.09]"
-                  >
-                    <span className="text-[13.5px] font-bold">{def.name}</span>
-                    <span className="font-mono text-[11.5px] text-ink-dim">{c.repText}</span>
-                  </button>
-                )
-              })}
-            </Card>
-          ))}
-          <p className="px-1 text-[11.5px] leading-snug text-ink-faint">
-            Pick one and it becomes today's session. Already logged a run? Tap the cardio chip above and
-            this clears itself.
-          </p>
-        </div>
+        <CardioBackupChooser data={data} date={date} />
       )}
 
-      {/* Preview (not started yet) */}
-      {!session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
-        <>
-          <div className="mt-1">
-            {day.exercises.map((r, i) => {
-              const def = getExercise(r.exerciseId)
-              const swapBase = r.swappedFrom ?? r.exerciseId
-              const canSwap = swapCandidatesFor(swapBase, data.plan).length > 0
-              return (
-                <div
-                  key={swapBase}
-                  className={`flex items-center justify-between gap-3 px-1 py-3.5 ${i > 0 ? 'border-t border-edge/40' : ''}`}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <span className="truncate text-[14.5px] font-bold">{def.name}</span>
-                      {r.swappedFrom && (
-                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-gold">swapped</span>
-                      )}
-                      {r.fromSlot && !r.swappedFrom && (
-                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-cyan">rotates</span>
-                      )}
-                      {r.lightMode && (
-                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-gold">light</span>
-                      )}
-                    </div>
-                    <div className="mt-0.5 text-[12px] font-semibold text-ink-dim">
-                      {r.sets > 1 ? `${r.sets} × ${r.repText}` : `${r.repText}${r.repsNum ? ' reps' : ''}`}
-                      <span className="font-normal text-ink-faint"> · {def.equipment}</span>
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center">
-                    {canSwap && (
-                      <button
-                        aria-label={`Swap ${def.name}`}
-                        onClick={() => swapExercise(date, swapBase)}
-                        className="p-2 text-ink-faint active:text-accent"
-                      >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 2v6h-6" />
-                          <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-                          <path d="M3 22v-6h6" />
-                          <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-                        </svg>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setGuideId(r.exerciseId)}
-                      className="p-2 text-[14px] font-black text-ink-faint active:text-cyan"
-                    >
-                      ?
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-            {day.exercises.length === 0 && <EmptyNote>Nothing scheduled.</EmptyNote>}
-          </div>
-
-          {day.note && (
-            <p className="px-2 text-center text-[12px] leading-relaxed text-ink-faint">{day.note}</p>
-          )}
-
-          {!today && (
-            <p className="px-1 text-center text-[11.5px] text-ink-faint">
-              Preview only. Sessions start on their day.
-            </p>
-          )}
-        </>
-      )}
+      <TodayPreviewList
+        data={data}
+        date={date}
+        day={day}
+        today={today}
+        hasSession={!!session}
+        onOpenGuide={setGuideId}
+      />
 
       {/* Sheets */}
       <ReadinessSheet
