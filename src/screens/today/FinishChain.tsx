@@ -248,9 +248,7 @@ export function FinishChain({ chain, onDone }: { chain: ChainData; onDone: () =>
             {burstAt === 'streak' && <ConfettiBurst />}
             <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
               <span className="shockwave absolute inset-2 rounded-full ring-2 ring-accent/55" aria-hidden />
-              <span className="ignite inline-flex">
-                <Flame streak={chain.streak.days} size={52} />
-              </span>
+              <Flame streak={chain.streak.days} size={52} ignite alive />
             </div>
             <div className="eyebrow mt-3 text-ink-faint">Day</div>
             <div className="num mt-0.5 text-[56px] font-black leading-none">
