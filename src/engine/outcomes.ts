@@ -4,10 +4,12 @@ import {
   ADAPT_GRADES_THAT_COUNT,
   ADAPT_METRIC,
   ADAPT_TYPE,
+  DELOAD_TYPE,
   STEP_METRIC,
   STEP_TYPE,
 } from './proposals'
 import { sessionGrade } from './stats'
+import { deloadVerdictCopy } from './deloadOutcome'
 import { daysBetween } from './calendar'
 import { trendIsConfounded, weightTrend } from './userModel'
 
@@ -231,6 +233,7 @@ export function freshVerdict(data: AppData, today: ISODate, types?: readonly str
  */
 export function verdictCopy(row: DecisionRecord): string | null {
   if (!row.verdict) return null
+  if (row.type === DELOAD_TYPE) return deloadVerdictCopy(row)
   if (row.type === ADAPT_TYPE) return adaptVerdictCopy(row)
   if (row.type !== STEP_TYPE) return null
   const step = Math.abs(Number(row.evidence.stepKcal ?? 0))

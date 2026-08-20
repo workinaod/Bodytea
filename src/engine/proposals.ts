@@ -63,3 +63,27 @@ export const ADAPT_WINDOW_DAYS = 14
 
 /** A session at or above this grade is one that got done. */
 export const ADAPT_GRADES_THAT_COUNT = ['full', 'overtime'] as const
+
+// ---------------- The deload week ----------------
+//
+// The only intervention here that nobody agrees to. A deload is week four
+// of every block, derived from the calendar rather than offered, so there
+// is no accept event to hang a row on. Its row is manufactured after the
+// fact by the same block math that scheduled it, which is what lets a
+// golden test pin the trigger and the verdict together.
+//
+// It is also the most expensive thing this app does: a whole week of
+// reduced training, taken on faith, and until now nothing could say
+// whether it bought anything.
+
+export const DELOAD_TYPE = 'deload'
+export const DELOAD_RULE_VERSION = 1
+
+/** Rebound is read off the best estimated one-rep max either side. */
+export const DELOAD_METRIC = 'bestE1RM'
+
+/**
+ * R3 asks for two to three comparable exposures either side. Days again,
+ * for the same reason the training adaptations use them.
+ */
+export const DELOAD_WINDOW_DAYS = 21

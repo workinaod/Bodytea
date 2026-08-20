@@ -6,7 +6,8 @@ import { adaptContext, planAdjustments } from '../../engine/adapt'
 import { acceptAdaptation, undoAdaptation } from '../../logic/fatigueActions'
 import { useAppStore as useStore } from '../../store/appStore'
 import { dueForVerdict, freshVerdict, settleDue, verdictCopy } from '../../engine/outcomes'
-import { ADAPT_TYPE } from '../../engine/proposals'
+import { ADAPT_TYPE, DELOAD_TYPE } from '../../engine/proposals'
+import { settleDeloads } from '../../engine/deloadOutcome'
 
 /**
  * What the coach has noticed, and what it is offering to do about it.
@@ -39,10 +40,19 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // session has no business on the food screen.
   const update = useStore((st) => st.update)
   const dueCount = useMemo(() => dueForVerdict(data, date).length, [data, date])
+  // Deloads are judged here too. Nobody accepts one, so there is no
+  // moment to hang the work off except the screen that shows what the
+  // coach noticed.
+  const deloadsDue = useMemo(() => {
+    const probe = { ...data, decisions: [...(data.decisions ?? [])] }
+    return settleDeloads(probe, date)
+  }, [data, date])
   useEffect(() => {
-    if (dueCount > 0) update((d) => { settleDue(d, date) })
-  }, [dueCount, date, update])
-  const verdict = useMemo(() => freshVerdict(data, date, [ADAPT_TYPE]), [data, date])
+    if (dueCount > 0 || deloadsDue > 0) {
+      update((d) => { settleDue(d, date); settleDeloads(d, date) })
+    }
+  }, [dueCount, deloadsDue, date, update])
+  const verdict = useMemo(() => freshVerdict(data, date, [ADAPT_TYPE, DELOAD_TYPE]), [data, date])
 
   const proposals = useMemo(() => {
     const resolved = resolveDay(date, data)

@@ -306,7 +306,6 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'engine/reactions.ts:greatRunPaceSec',
   'engine/reactions.ts:greatBikeMph',
   'engine/reps.ts:repTargetFor',
-  'engine/resolveDay.ts:blockMathFor',
   'engine/resolveDay.ts:cardioRequiredForWeek',
   'engine/runs.ts:estKcalFromMet',
   'engine/runs.ts:mileSplits',
