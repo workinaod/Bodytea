@@ -265,3 +265,53 @@ describe('the tape reading, which the calorie model has never seen', () => {
     expect(readUserModel(three, TODAY).bodyFatPct!.samples).toBe(3)
   })
 })
+
+describe('the weight trend is a trend, not a pair of endpoints', () => {
+  // This block exists because it did not. weightTrend computed an
+  // exponentially weighted average, never read it, and returned the slope
+  // between the first and last weigh-in. Swapping that for a real
+  // regression broke NO test, which is the proof that nothing was
+  // watching the number a calorie suggestion now rides on.
+  const series = (lbs: number[]): AppData => {
+    const d = blank()
+    lbs.forEach((lb, i) => weighIn(d, (lbs.length - 1 - i) * 3, lb))
+    return d
+  }
+
+  it('reads a steady loss at the rate it is actually happening', () => {
+    // 1 lb every 3 days is 2.33 lb/wk.
+    const f = weightTrend(series([200, 199, 198, 197, 196, 195]), TODAY)!
+    expect(f.value).toBeCloseTo(-2.33, 1)
+  })
+
+  it('is swayed less by one heavy morning than the endpoints were', () => {
+    // Same six weigh-ins, last one 4 lb high. The old endpoint slope went
+    // from -2.33 to -0.47, a swing of 1.87 lb/wk on a single reading. The
+    // regression goes to -1.0, a swing of 1.33. Less, and still clearly a
+    // loss rather than a stall.
+    const clean = weightTrend(series([200, 199, 198, 197, 196, 195]), TODAY)!.value
+    const spiked = weightTrend(series([200, 199, 198, 197, 196, 199]), TODAY)!.value
+    const endpointSwing = Math.abs((199 - 200) / 15 - (195 - 200) / 15) * 7
+    expect(Math.abs(spiked - clean)).toBeLessThan(endpointSwing)
+    expect(spiked).toBeLessThan(0)
+  })
+
+  it('gets steadier the more weigh-ins there are, which endpoints never do', () => {
+    // The same 4 lb bad reading at the end of a longer series barely
+    // registers. An endpoint slope is exactly as wrong either way.
+    const short = series([200, 199, 198, 197, 196, 199])
+    const long = series([204, 203, 202, 201, 200, 199, 198, 197, 196, 199])
+    const trueRate = -2.33
+    const shortErr = Math.abs(weightTrend(short, TODAY)!.value - trueRate)
+    const longErr = Math.abs(weightTrend(long, TODAY)!.value - trueRate)
+    expect(longErr).toBeLessThan(shortErr)
+  })
+
+  it('has nothing to say when every reading is the same day', () => {
+    const d = blank()
+    weighIn(d, 2, 200)
+    weighIn(d, 2, 201)
+    weighIn(d, 2, 199)
+    expect(weightTrend(d, TODAY)).toBeNull()
+  })
+})

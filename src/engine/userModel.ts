@@ -138,14 +138,31 @@ export function weightTrend(data: AppData, today: ISODate): UserFact<number> | n
     .sort((a, b) => a.date.localeCompare(b.date))
   if (points.length < 3) return null
 
-  const ALPHA = 0.3
-  let ewma = points[0].weightLb as number
-  for (const p of points.slice(1)) ewma = ALPHA * (p.weightLb as number) + (1 - ALPHA) * ewma
-
+  // A least-squares slope through every weigh-in, not the line between
+  // the first and the last.
+  //
+  // This function used to compute an exponentially weighted average and
+  // then never read it, returning an endpoint-to-endpoint slope instead.
+  // The mistake underneath that is worth naming: an EWMA smooths a LEVEL,
+  // and what a coach needs here is a RATE, so the smoothed number had
+  // nowhere to go and the endpoints got used. Nothing failed, because two
+  // points do describe a direction. It just meant one heavy Sunday at
+  // either end of the window swung the answer, and a calorie suggestion
+  // now rides on this.
+  //
+  // A regression uses all of them. A single bad reading in a series of
+  // eight moves it by a fraction of what it moves an endpoint.
   const first = points[0]
   const last = points[points.length - 1]
-  const span = Math.max(1, daysBetween(first.date, last.date))
-  const perWeek = Math.round((((last.weightLb as number) - (first.weightLb as number)) / span) * 7 * 100) / 100
+  const xs = points.map((p) => daysBetween(first.date, p.date))
+  const ys = points.map((p) => p.weightLb as number)
+  const mx = xs.reduce((a, b) => a + b, 0) / xs.length
+  const my = ys.reduce((a, b) => a + b, 0) / ys.length
+  const varX = xs.reduce((acc, x) => acc + (x - mx) ** 2, 0)
+  // Every weigh-in on one day has no slope to find, only a level.
+  if (varX === 0) return null
+  const cov = xs.reduce((acc, x, i) => acc + (x - mx) * (ys[i] - my), 0)
+  const perWeek = Math.round((cov / varX) * 7 * 100) / 100
 
   const confounder = (data.plan.mealPlan.supplements ?? []).find(
     (s) => s.source === 'app' && supplementRecord(s.id)?.confoundsWeightTrend,
