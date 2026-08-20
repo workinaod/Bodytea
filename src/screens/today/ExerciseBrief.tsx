@@ -2,7 +2,6 @@ import type { ExerciseDef } from '../../types'
 import { ExerciseDemo } from '../../components/ExerciseDemo'
 import { MuscleMap } from '../../components/MuscleMap'
 import { demoFor } from '../../plan/demos'
-import { photosFor } from '../../plan/demoPhotos'
 import { musclesFor } from '../../plan/muscles'
 
 // ============================================================
@@ -128,11 +127,17 @@ export function ExerciseBrief({
             </div>
           )}
 
+          {/* The clip above IS the movement on the 141 exercises that have
+              one, so a second demo under it would be the same answer
+              twice. Without a clip the drawn figure takes that job, and
+              the muscle map moves over to make room for it. */}
           <div className={`${vid || def.cue ? 'mt-3' : ''} flex items-center gap-2`}>
-            <div className="min-w-0 flex-1">
-              <ExerciseDemo compact spec={demoFor(def.id)} photos={photosFor(def.id)} />
-            </div>
-            <div className="w-[36%] shrink-0">
+            {!vid && (
+              <div className="min-w-0 flex-1">
+                <ExerciseDemo compact spec={demoFor(def.id)} />
+              </div>
+            )}
+            <div className={vid ? 'mx-auto w-[52%]' : 'w-[36%] shrink-0'}>
               <MuscleMap
                 compact
                 primary={musclesFor(def.id).primary}

@@ -1,13 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { DemoPhotoSeq } from '../plan/demoPhotos'
-import type { DemoEase, DemoPose, DemoSpec } from '../plan/demoTypes'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import type { DemoPose, DemoSpec } from '../plan/demoTypes'
+import { YouTubeEmbed } from './YouTubeEmbed'
+import { HEAD_R, PARTS, body, joints } from './demoFigure'
+import type { PartKey, Pt } from './demoFigure'
+import { cursorAt, cycleOf, poseAt } from './demoMotion'
 export type { DemoEase, DemoFrame, DemoHeld, DemoPose, DemoSpec, SceneItem } from '../plan/demoTypes'
 
 // ============================================================
-// Animated exercise demo: a stick figure performing the actual
-// movement, drawn with forward kinematics from keyframe poses
-// and tweened on requestAnimationFrame. Everything is inline
-// SVG, works offline, no external assets.
+// The movement demo. A verified clip where one exists, and
+// otherwise a figure performing the movement, tweened from
+// keyframe poses on requestAnimationFrame: inline SVG, works
+// offline, no external assets.
+//
+// The poses are plan/demos.ts and the body is demoFigure.ts. This
+// file owns only the clock: which frame, how far between two of
+// them, and painting the result. That split is why the drawing
+// could be replaced without touching 148 hand-tuned movements.
 //
 // Angle conventions (all degrees, world frame, figure faces +x):
 //   legs/arms  0 = straight down · +90 = horizontal forward ·
@@ -16,178 +24,86 @@ export type { DemoEase, DemoFrame, DemoHeld, DemoPose, DemoSpec, SceneItem } fro
 //   feet       0 = toe flat forward · + = toe pressing down
 // ============================================================
 
-// ---- Skeleton proportions (viewBox units) ----
-const TH = 16 // thigh
-const SH = 15 // shin
-const FT = 6 // foot
-const TOR = 19 // hip → shoulder
-const ARM = 11 // shoulder → elbow
-const FORE = 10 // elbow → wrist
-const NECK = 6.8 // shoulder → head center
-const HEAD_R = 4.6
-
-const D2R = Math.PI / 180
-const down = (deg: number) => ({ x: Math.sin(deg * D2R), y: Math.cos(deg * D2R) })
-const up = (deg: number) => ({ x: Math.sin(deg * D2R), y: -Math.cos(deg * D2R) })
-
-interface Pt {
-  x: number
-  y: number
-}
-
-function joints(p: DemoPose) {
-  const hip: Pt = { x: p.hx, y: p.hy }
-  const at = (o: Pt, l: number, d: { x: number; y: number }): Pt => ({ x: o.x + l * d.x, y: o.y + l * d.y })
-
-  const kneeF = at(hip, TH, down(p.thighF))
-  const ankleF = at(kneeF, SH, down(p.shinF))
-  const toeF = at(ankleF, FT, { x: Math.cos(p.footF * D2R), y: Math.sin(p.footF * D2R) })
-  const kneeB = at(hip, TH, down(p.thighB))
-  const ankleB = at(kneeB, SH, down(p.shinB))
-  const toeB = at(ankleB, FT, { x: Math.cos(p.footB * D2R), y: Math.sin(p.footB * D2R) })
-
-  const shoulder = at(hip, TOR, up(p.torso))
-  const headC = at(shoulder, NECK, up(p.torso + p.head))
-  const elbowF = at(shoulder, ARM, down(p.armF))
-  const wristF = at(elbowF, FORE, down(p.foreF))
-  const elbowB = at(shoulder, ARM, down(p.armB))
-  const wristB = at(elbowB, FORE, down(p.foreB))
-
-  // anchor points for held equipment
-  const front = { x: Math.cos(p.torso * D2R), y: Math.sin(p.torso * D2R) }
-  const chest: Pt = {
-    x: hip.x + 0.62 * TOR * Math.sin(p.torso * D2R) + 3.2 * front.x,
-    y: hip.y - 0.62 * TOR * Math.cos(p.torso * D2R) + 3.2 * front.y,
-  }
-  const backNeck: Pt = { x: shoulder.x - 2.8 * front.x, y: shoulder.y - 2.8 * front.y }
-  const hipsAnchor: Pt = { x: hip.x + 2.5 * front.x, y: hip.y + 2.5 * front.y }
-  const wristMid: Pt = { x: (wristF.x + wristB.x) / 2, y: (wristF.y + wristB.y) / 2 }
-
-  return { hip, kneeF, ankleF, toeF, kneeB, ankleB, toeB, shoulder, headC, elbowF, wristF, elbowB, wristB, chest, backNeck, hipsAnchor, wristMid }
-}
-
-function lerpPose(a: DemoPose, b: DemoPose, t: number): DemoPose {
-  const out = {} as Record<keyof DemoPose, number>
-  for (const k of Object.keys(a) as (keyof DemoPose)[]) out[k] = a[k] + (b[k] - a[k]) * t
-  return out as DemoPose
-}
-
-function ease(t: number, kind: DemoEase): number {
-  switch (kind) {
-    case 'out':
-      return 1 - Math.pow(1 - t, 3)
-    case 'in':
-      return t * t * t
-    case 'linear':
-      return t
-    default:
-      return 0.5 - 0.5 * Math.cos(Math.PI * t)
-  }
-}
-
-const poly = (pts: Pt[]) => pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')
-
 /**
- * Animated movement demo. When a real photo sequence exists (see
- * plan/demoPhotos.ts) it plays the ordered stage photos with each caption
- * bound to the frame it describes; otherwise it falls back to the drawn
- * figure animation.
+ * The movement, shown the best way there is for this exercise.
+ *
+ * A verified clip of a real person beats anything drawn, so it takes
+ * the slot wherever one exists, which is 141 of the 194 exercises in
+ * the library. The rest get the drawn figure.
+ *
+ * What used to sit here was a sequence of two to four stage photos
+ * cross-fading on a timer. Stills cannot show a movement: they show
+ * its endpoints and leave the athlete to imagine the part that
+ * matters. 53 of the 55 exercises that had them also have a clip, so
+ * the stills were the worst option on almost every screen that
+ * offered them.
  */
 export function ExerciseDemo({
   spec,
-  photos = null,
+  videoId,
+  query,
   compact = false,
   className = '',
 }: {
   spec: DemoSpec
-  photos?: DemoPhotoSeq | null
+  /** A verified clip id, when the exercise has one. */
+  videoId?: string
+  /** The fallback search, so an exercise without a clip still has a door. */
+  query?: string
   compact?: boolean
   className?: string
 }) {
-  const [photoBroken, setPhotoBroken] = useState(false)
-  if (photos && photos.frames.length >= 2 && !photoBroken) {
-    return <PhotoDemo photos={photos} compact={compact} className={className} onBroken={() => setPhotoBroken(true)} />
+  // A clip needs the network. In a basement gym on no signal the
+  // thumbnail is the first thing to fail, and it fails BEFORE anyone
+  // taps, so it is a reliable signal that the iframe would fail too.
+  // The drawn figure is the thing that always works, so that is what
+  // a dead clip falls back to rather than an empty box.
+  const [clipDead, setClipDead] = useState(false)
+  if (videoId && !clipDead) {
+    return (
+      <div className={className}>
+        <YouTubeEmbed videoId={videoId} query={query ?? ''} onPosterError={() => setClipDead(true)} />
+      </div>
+    )
   }
   return <FigureDemo spec={spec} compact={compact} className={className} />
 }
 
-/** Real-photo demo: ordered stage frames, caption locked to the visible frame. */
-function PhotoDemo({
-  photos,
-  compact,
-  className,
-  onBroken,
-}: {
-  photos: DemoPhotoSeq
-  compact: boolean
-  className: string
-  onBroken: () => void
-}) {
-  const frames = photos.frames
-  const [idx, setIdx] = useState(0)
-
-  useEffect(() => {
-    setIdx(0)
-    const reduced =
-      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const base = reduced ? 2400 : 1600
-    let i = 0
-    let timer: ReturnType<typeof setTimeout>
-    const next = () => {
-      // dwell longer on the final stage of a 3+ frame sequence before looping
-      const dwell = frames.length > 2 && i === frames.length - 1 ? base * 1.6 : base
-      timer = setTimeout(() => {
-        i = (i + 1) % frames.length
-        setIdx(i)
-        next()
-      }, dwell)
-    }
-    next()
-    return () => clearTimeout(timer)
-  }, [photos, frames.length])
-
-  const base = `${import.meta.env.BASE_URL}demo/`
-
-  return (
-    <div className={className}>
-      <div className="mx-auto w-full" style={{ maxWidth: compact ? undefined : 330 }}>
-        <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-surface-2">
-          {frames.map((f, i) => (
-            <img
-              key={f.file + i}
-              src={base + f.file}
-              alt={f.caption}
-              draggable={false}
-              onError={onBroken}
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
-                idx === i ? 'opacity-100' : 'opacity-0'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-      <div className={compact ? 'mt-1' : 'mt-1.5'}>
-        <div className="flex items-center justify-center gap-1">
-          {frames.map((_, i) => (
-            <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i === idx ? 'w-4 bg-accent' : 'w-1 bg-surface-2'}`} />
-          ))}
-        </div>
-        <div className={`mx-auto mt-1 max-w-[280px] text-center font-bold leading-snug text-accent-soft ${compact ? 'text-[10.5px]' : 'text-[12px]'}`}>
-          {frames[idx]?.caption}
-        </div>
-      </div>
-    </div>
-  )
+// Three ramps, one light. The body reads as form rather than a
+// cut-out, the near arm sits one step back so it separates from the
+// chest it hangs over without a line drawn there, and the far side of
+// the body is darker again so a lunge reads as one leg in front of
+// the other. The dark line underneath is the silhouette.
+const RAMPS = {
+  body: ['#FDFEFE', '#DCE6EC', '#9DACB7', '#4E5B66'],
+  near: ['#EDF2F5', '#C3D0D9', '#8493A0', '#414D57'],
+  far: ['#7E8B96', '#5C6873', '#414B54', '#2B333A'],
+} as const
+/** Which ramp each part is painted with. */
+const RAMP_OF: Record<PartKey, keyof typeof RAMPS> = {
+  legB: 'far',
+  armB: 'far',
+  neck: 'body',
+  trunk: 'body',
+  head: 'body',
+  legF: 'body',
+  armF: 'near',
 }
+const LINE = '#0E161C'
+/** The far hand's weight, one step back like the far limbs. */
+const DEEP_ACCENT = '#8f3a1e'
 
-/** Drawn stick-figure demo (fallback for movements with no photo pair). */
+/** Drawn figure demo (fallback for movements with no photo pair). */
 function FigureDemo({ spec, compact = false, className = '' }: { spec: DemoSpec; compact?: boolean; className?: string }) {
-  const legFRef = useRef<SVGPolylineElement>(null)
-  const legBRef = useRef<SVGPolylineElement>(null)
-  const armFRef = useRef<SVGPolylineElement>(null)
-  const armBRef = useRef<SVGPolylineElement>(null)
-  const torsoRef = useRef<SVGLineElement>(null)
-  const headRef = useRef<SVGCircleElement>(null)
+  // One path and one gradient per part, plus the silhouette underneath.
+  // Poses are written straight onto the elements: at 60fps a React
+  // render per frame would be the most expensive thing on the rest
+  // screen. The gradient axes move with the parts, which is what keeps
+  // one light source pointing the same way in every pose.
+  const outRef = useRef<SVGPathElement>(null)
+  const partRefs = useRef<Record<string, SVGPathElement | null>>({})
+  const gradRefs = useRef<Record<string, SVGLinearGradientElement | null>>({})
+  const uid = useId().replace(/:/g, '')
   const heldARef = useRef<SVGGElement>(null)
   const heldBRef = useRef<SVGGElement>(null)
   const heldPathRef = useRef<SVGPathElement>(null)
@@ -201,30 +117,35 @@ function FigureDemo({ spec, compact = false, className = '' }: { spec: DemoSpec;
     const reduced =
       typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const durs = frames.map((f) => (reduced ? Math.max(f.d + f.hold, 1200) : f.d + f.hold))
-    const cycle = durs.reduce((s, d) => s + d, 0)
+    const cycle = reduced ? durs.reduce((sum, d) => sum + d, 0) : cycleOf(frames)
 
     // Start at the beginning of segment 1 so the loop opens with real motion.
-    let t = durs[0]
+    let t = frames[0].d
     let last = performance.now()
     let raf = 0
     let lastLabel: string | null = null
 
     const apply = (p: DemoPose) => {
       const j = joints(p)
-      legFRef.current?.setAttribute('points', poly([j.hip, j.kneeF, j.ankleF, j.toeF]))
-      legBRef.current?.setAttribute('points', poly([j.hip, j.kneeB, j.ankleB, j.toeB]))
-      armFRef.current?.setAttribute('points', poly([j.shoulder, j.elbowF, j.wristF]))
-      armBRef.current?.setAttribute('points', poly([j.shoulder, j.elbowB, j.wristB]))
-      if (torsoRef.current) {
-        torsoRef.current.setAttribute('x1', j.hip.x.toFixed(2))
-        torsoRef.current.setAttribute('y1', j.hip.y.toFixed(2))
-        torsoRef.current.setAttribute('x2', j.shoulder.x.toFixed(2))
-        torsoRef.current.setAttribute('y2', j.shoulder.y.toFixed(2))
+      const b = body(j)
+      let all = ''
+      for (const k of PARTS) {
+        const part = b[k]
+        partRefs.current[k]?.setAttribute('d', part.d)
+        const g = gradRefs.current[k]
+        if (g) {
+          g.setAttribute('x1', part.g[0].toFixed(2))
+          g.setAttribute('y1', part.g[1].toFixed(2))
+          g.setAttribute('x2', part.g[2].toFixed(2))
+          g.setAttribute('y2', part.g[3].toFixed(2))
+        }
+        all += part.d
       }
-      if (headRef.current) {
-        headRef.current.setAttribute('cx', j.headC.x.toFixed(2))
-        headRef.current.setAttribute('cy', j.headC.y.toFixed(2))
-      }
+      // The silhouette is every part at once, stroked. The fills on top
+      // cover the half of that stroke which falls inside the body, so
+      // what survives is one outline around the whole figure and no
+      // seams between the parts.
+      outRef.current?.setAttribute('d', all)
       const held = spec.held
       const place = (el: SVGGElement | null, pt: Pt) => el?.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`)
       if (held.kind === 'db') {
@@ -253,25 +174,15 @@ function FigureDemo({ spec, compact = false, className = '' }: { spec: DemoSpec;
       const dt = Math.min(100, now - last)
       last = now
       t = (t + dt) % cycle
-      // locate the active segment
-      let acc = 0
-      let idx = 0
-      for (let i = 0; i < durs.length; i++) {
-        if (t < acc + durs[i]) {
-          idx = i
-          break
-        }
-        acc += durs[i]
-      }
-      const f = frames[idx]
-      const from = frames[(idx - 1 + frames.length) % frames.length].p
-      const local = t - acc
-      const travel = reduced ? 0 : Math.min(f.d, durs[idx])
-      const prog = reduced ? 1 : local >= travel ? 1 : ease(local / Math.max(1, travel), f.ease)
-      apply(prog >= 1 ? f.p : lerpPose(from, f.p, prog))
+      const cur = cursorAt(frames, t)
+      // Reduced motion gets the keyframes and nothing in between: the
+      // information is the poses, and the travel is the part that moves.
+      apply(reduced ? frames[cur.idx].p : poseAt(frames, cur))
+      const idx = cur.idx
       if (idx !== segIdxRef.current) {
         segIdxRef.current = idx
         setSegIdx(idx)
+        const f = frames[idx]
         const l = f.label ?? lastLabel
         if (l !== lastLabel) {
           lastLabel = l
@@ -342,42 +253,61 @@ function FigureDemo({ spec, compact = false, className = '' }: { spec: DemoSpec;
             ),
           )}
 
-          {/* far-side limbs */}
-          <g stroke="currentColor" strokeOpacity={0.28} strokeWidth={4.4} strokeLinecap="round" strokeLinejoin="round" fill="none">
-            <polyline ref={legBRef} />
-            <polyline ref={armBRef} />
-          </g>
-          {/* torso + head */}
-          <line ref={torsoRef} stroke="currentColor" strokeWidth={5.2} strokeLinecap="round" />
-          <circle ref={headRef} r={HEAD_R} fill="currentColor" />
-          {/* near-side limbs */}
-          <g stroke="currentColor" strokeWidth={4.4} strokeLinecap="round" strokeLinejoin="round" fill="none">
-            <polyline ref={legFRef} />
-            <polyline ref={armFRef} />
-          </g>
-
-          {/* held equipment */}
+          {/* One gradient per part. The axes are written per frame in
+              `apply`, so the light keeps pointing the same way however
+              the limb it lights is turned. */}
+          <defs>
+            {PARTS.map((k) => (
+              <linearGradient
+                key={k}
+                id={`${uid}-${k}`}
+                gradientUnits="userSpaceOnUse"
+                ref={(el) => {
+                  gradRefs.current[k] = el
+                }}
+              >
+                {RAMPS[RAMP_OF[k]].map((c, i, all) => (
+                  <stop key={c} offset={i / (all.length - 1)} stopColor={c} />
+                ))}
+              </linearGradient>
+            ))}
+          </defs>
+          {/* The silhouette: every part, stroked, under everything. */}
+          <path ref={outRef} fill={LINE} stroke={LINE} strokeWidth={1.8} strokeLinejoin="round" />
+          {PARTS.map((k) => (
+            <path
+              key={k}
+              fill={`url(#${uid}-${k})`}
+              ref={(el) => {
+                partRefs.current[k] = el
+              }}
+            />
+          ))}
+          {/* Held equipment, on top of the hands that hold it. It keeps
+              the same dark rim the body has, so it reads as an object in
+              the same world rather than a highlight painted on one. */}
           {held.kind === 'db' && (
             <>
-              <g ref={heldARef} className="text-accent">
-                <circle r={held.at === 'wrists' ? 2.4 : 2.9} fill="currentColor" />
+              <g ref={heldARef}>
+                <circle r={held.at === 'wrists' ? 2.4 : 2.9} fill="var(--color-accent)" stroke={LINE} strokeWidth={0.9} />
               </g>
               {held.at === 'wrists' && (
-                <g ref={heldBRef} className="text-accent" opacity={0.5}>
-                  <circle r={2.4} fill="currentColor" />
+                <g ref={heldBRef}>
+                  <circle r={2.4} fill={DEEP_ACCENT} stroke={LINE} strokeWidth={0.9} />
                 </g>
               )}
             </>
           )}
           {held.kind === 'barbell' && (
-            <g ref={heldARef} className="text-accent">
-              <line x1={-11} y1={0} x2={11} y2={0} stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
-              <circle r={4.1} fill="none" stroke="currentColor" strokeWidth={2.1} />
+            <g ref={heldARef}>
+              <line x1={-11} y1={0} x2={11} y2={0} stroke={LINE} strokeWidth={2.6} strokeLinecap="round" />
+              <line x1={-11} y1={0} x2={11} y2={0} stroke="var(--color-accent)" strokeWidth={1.4} strokeLinecap="round" />
+              <circle r={4.1} fill="var(--color-accent)" stroke={LINE} strokeWidth={0.9} />
             </g>
           )}
           {held.kind === 'plate' && (
-            <g ref={heldARef} className="text-accent">
-              <circle r={3.1} fill="none" stroke="currentColor" strokeWidth={2} />
+            <g ref={heldARef}>
+              <circle r={3.1} fill="var(--color-accent)" stroke={LINE} strokeWidth={0.9} />
             </g>
           )}
           {held.kind === 'towel' && <path ref={heldPathRef} className="stroke-accent" strokeWidth={2.2} fill="none" strokeLinecap="round" />}

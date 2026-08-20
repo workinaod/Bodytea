@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ExerciseDef } from '../../types'
 import { ExerciseDemo } from '../../components/ExerciseDemo'
 import { demoFor } from '../../plan/demos'
-import { photosFor } from '../../plan/demoPhotos'
+import { videoForId, videoQueryForId } from '../../plan/videos'
 
 // ============================================================
 // "How do I do this?": one step per screen, swipe-simple.
@@ -39,7 +39,7 @@ export function HowToSlides({ def, onClose }: { def: ExerciseDef; onClose: () =>
       </div>
 
       <div className="mt-2">
-        <ExerciseDemo spec={demoFor(def.id)} photos={photosFor(def.id)} />
+        <ExerciseDemo spec={demoFor(def.id)} videoId={videoForId(def.id)} query={videoQueryForId(def.id)} />
       </div>
 
       {/* the slide: one idea at a time, big enough to read mid-set */}

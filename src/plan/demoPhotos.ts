@@ -12,6 +12,15 @@
 // faithful photo match keep the animated figure from demos.ts.
 // ============================================================
 
+// RETIRED AS A MOVEMENT DEMO (OP12). These sequences used to cross-fade
+// two to four stage photos where the demo goes. Stills cannot show a
+// movement, only its endpoints, and 53 of the 55 exercises that have
+// them also have a verified clip, which shows the whole thing. The
+// clip took the slot. What still earns its keep here is FRAME 0, which
+// ExercisePicker uses as the thumbnail on a list row: one still is
+// exactly the right thing for a row icon.
+
+
 export interface DemoPhotoFrame {
   file: string
   caption: string

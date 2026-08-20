@@ -3,7 +3,7 @@ import type { DemoEase, DemoFrame, DemoHeld, DemoPose, DemoSpec, SceneItem } fro
 // ============================================================
 // Animated movement demos, one hand-tuned keyframe sequence
 // per exercise. Poses use the world-frame angle conventions in
-// ExerciseDemo.tsx (0 = limb straight down, +forward; torso 0
+// demoTypes.ts (0 = limb straight down, +forward; torso 0
 // upright; ground line at y=90, standing hip ≈ y58).
 // Each frame's label is the visual step-by-step caption shown
 // while the figure travels INTO that frame.
@@ -891,7 +891,7 @@ Object.assign(EXERCISE_DEMOS, {
 
 // ---- Full-gym and no-gym libraries ----
 //
-// A demo is a hand-tuned stick figure, and a movement that is genuinely
+// A demo is a hand-tuned pose sequence, and a movement that is genuinely
 // the same SHAPE deserves the same one rather than a worse copy of it.
 // A machine chest press and a dumbbell bench press trace an identical
 // path; what differs is the equipment holding the load, which the demo

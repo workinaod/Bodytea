@@ -1,4 +1,5 @@
 import type { ExerciseDef } from '../types'
+import { EXERCISES } from './exercises'
 import { VIDEO_MAP } from './videoMap'
 
 /**
@@ -12,4 +13,21 @@ import { VIDEO_MAP } from './videoMap'
  */
 export function videoFor(def: ExerciseDef): string | undefined {
   return VIDEO_MAP[def.id] ?? def.videoId
+}
+
+/**
+ * The same lookup from an id alone.
+ *
+ * The clip is now the movement demo rather than a link under it, so the
+ * surfaces that only carry an id (the rest screen previews the next
+ * exercise, not a def) need to reach it too.
+ */
+export function videoForId(id: string): string | undefined {
+  const def = EXERCISES[id]
+  return VIDEO_MAP[id] ?? def?.videoId
+}
+
+/** What to search for when there is no verified clip. */
+export function videoQueryForId(id: string): string {
+  return EXERCISES[id]?.videoQuery ?? id.replace(/-/g, ' ')
 }

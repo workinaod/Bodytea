@@ -1,8 +1,10 @@
 // ============================================================
-// The shape of a stick-figure demo. This is data, not drawing:
-// plan/demos.ts authors 148 of these and ExerciseDemo renders
-// them, so the type lives with the data rather than with the
-// component that happens to consume it.
+// The shape of a movement demo. This is data, not drawing:
+// plan/demos.ts authors 148 of these, components/demoFigure.ts
+// turns a pose into a body and ExerciseDemo animates between
+// them. The type lives with the data rather than with either of
+// the things that consume it, which is what let the drawing be
+// replaced without reopening 148 hand-tuned movements.
 //
 // Angle conventions (all degrees, world frame, figure faces +x):
 //   legs/arms  0 = straight down · +90 = horizontal forward ·

@@ -6,7 +6,7 @@ import { Stepper } from '../../components/ui'
 import { ExerciseDemo } from '../../components/ExerciseDemo'
 import { MuscleMap } from '../../components/MuscleMap'
 import { demoFor } from '../../plan/demos'
-import { photosFor } from '../../plan/demoPhotos'
+import { videoForId, videoQueryForId } from '../../plan/videos'
 import { musclesFor } from '../../plan/muscles'
 import { buzzRestOver } from '../../platform/haptics'
 import { sfxRestOver } from '../../logic/sfx'
@@ -238,7 +238,8 @@ export function BreakScreen({
                 <ExerciseDemo
                   compact
                   spec={demoFor(brk.nextExerciseId)}
-                  photos={photosFor(brk.nextExerciseId)}
+                  videoId={videoForId(brk.nextExerciseId)}
+                  query={videoQueryForId(brk.nextExerciseId)}
                 />
               </div>
               <div className="w-[34%] shrink-0">

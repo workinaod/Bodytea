@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 /**
  * Video help: verified ids embed on tap (privacy-friendly nocookie host,
@@ -15,8 +15,31 @@ import { useState } from 'react'
  */
 const VIDEO_BOX = { width: 'min(100%, calc(22vh * 16 / 9))' } as const
 
-export function YouTubeEmbed({ videoId, query }: { videoId?: string; query: string }) {
+export function YouTubeEmbed({
+  videoId,
+  query,
+  onPosterError,
+}: {
+  videoId?: string
+  query: string
+  /** The thumbnail did not arrive, so the clip will not either. Callers
+   *  that have something to show instead use this to go and show it. */
+  onPosterError?: () => void
+}) {
   const [loaded, setLoaded] = useState(false)
+
+  // Three ways a thumbnail fails, and only one of them is an error.
+  // A captive portal or a filtering proxy answers 200 with something
+  // that is not an image, which fires `load` with no pixels in it, and
+  // a dead network never answers at all. An empty black box with a play
+  // button on it is the worst of the three outcomes, so all three are
+  // treated the same: tell the caller, and let it show the drawing.
+  const dead = onPosterError
+  useEffect(() => {
+    if (!videoId || !dead || loaded) return
+    const timer = setTimeout(dead, 4000)
+    return () => clearTimeout(timer)
+  }, [videoId, dead, loaded])
   const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
 
   return (
@@ -43,6 +66,10 @@ export function YouTubeEmbed({ videoId, query }: { videoId?: string; query: stri
               alt="Video tutorial thumbnail"
               className="aspect-video w-full object-cover opacity-80"
               loading="lazy"
+              onError={onPosterError}
+              onLoad={(e) => {
+                if (e.currentTarget.naturalWidth === 0) onPosterError?.()
+              }}
             />
             <span className="absolute inset-0 flex items-center justify-center">
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent shadow-[0_4px_0_var(--lip-accent)]">

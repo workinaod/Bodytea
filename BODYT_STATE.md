@@ -2441,6 +2441,71 @@ the pre-existing plans that genuinely have no record of what built them.
   390px screenshots of all five tabs reviewed, plus mid-flight captures of the arrival and the
   muscle reveal.
 
+### 2026-08-20 · OP12 · the demos stop being drawings
+
+The owner: *"we need to redo the stick figure visuals we have they are awful looking now. No
+more stick figures"*, then, on the redraw: *"Chest looks like boobs. Upper body shape is
+awkward. Also i want the motion to be fluid shouldnt notice frames. Also instead of showing
+frames of photos we need to be showing gifs... that is not enough and doesnt make the app seem
+premium. The figure also does not look good in various positions it needs to look very
+lifelike a 3d model is ideal"*, and then *"Dude the body looks bad"* and *"The position looks
+awkward and its not even holding the weights"*.
+
+THE THING I SHOULD HAVE CHECKED FIRST. `plan/videoMap.ts` holds **141 verified instructional
+clips for 194 exercises**, generated and length-checked, and every one of them was parked
+behind a play button at the BOTTOM of the guide sheet while a stick figure and two to four
+cross-fading stage photos took the slot labelled "The movement". The premium asset was already
+bought and paid for and the app was hiding it. Four rounds of redrawing a 2D figure went into
+answering a complaint that the repo could already answer.
+
+Owner's call, asked as a real fork with the numbers on it: **promote the video AND scope a 3D
+model** ("1 and 2").
+
+SHIPPED (video promotion, the half that ships today):
+- `ExerciseDemo` is now a router: a verified clip where one exists, the drawn figure otherwise.
+  141 exercises get real footage of a real human doing the whole movement; 53 get the drawing.
+- **The photo sequences are retired as demos.** Stills cannot show a movement, only its
+  endpoints, and **53 of the 55 exercises that had them also have a clip**, so the stills were
+  the worst available option on almost every screen that offered them. `demoPhotos.ts` stays
+  alive for one honest job: frame 0 is the thumbnail on an `ExercisePicker` row, which is
+  exactly what a single still is good for.
+- The duplicate video blocks are gone. The guide sheet had "Watch it done" buried under five
+  sections; the in-session brief had a thumbnail up top AND a second demo below it. One demo
+  per surface now, in the slot that says "The movement".
+- **A clip needs the network and a gym basement does not have one.** Three failure modes, only
+  one of which is an `error` event: a filtering proxy answers 200 with something that is not an
+  image (`load` with `naturalWidth === 0`), and a dead network never answers (4s timeout). All
+  three fall back to the drawn figure, which always works offline. Verified by DOM inspection
+  rather than by screenshot: thumbnail pending at 1.2s, gone and replaced by the figure at 8s.
+
+ALSO SHIPPED (the figure itself, now the offline and no-clip path):
+- `components/demoFigure.ts` (new): the joints get a body. One tapered outline per limb rather
+  than stacked capsules, because a hairline drawn around every subpath draws the subpaths and
+  reads as a string of beads. Trunk with a chest, waist, lumbar curve and glute; a head with a
+  brow, a chin and a nape. Per-part form shading on one light. **The pose data is untouched.**
+- `components/demoMotion.ts` (new): **29% of every loop was the figure standing perfectly
+  still.** The old playback eased each segment separately, so velocity hit zero at BOTH ends of
+  every segment: a squat stopped dead four times a rep, which is exactly what "you can see the
+  frames" is. It is a spline through the keyframes now, and dwell is a playback policy: an
+  ordinary pause becomes a 110ms beat, a 600ms+ one is a real isometric and is left alone.
+  29% → 17%, and the stops that remain are the ones the athlete is actually holding.
+- `demoFigure.test.ts` (new): every movement, sampled through the real clock, asserting no
+  NaN reaches a path (an SVG path with NaN in it does not warn, it VANISHES) and nothing flies
+  off the canvas. **Proven by mutation** twice: a NaN radius and a 1000x hand length both turn
+  it red, naming the exercise and the frame.
+
+LEARNED, and it is the expensive one: **audit the assets before you build the asset.** I spent
+four rounds drawing because I took "the poses were never the problem" as given and never asked
+what else was in the box. The owner's *"not even holding the weights"* was a preview harness
+that never drew `spec.held` at all, which is the same failure in miniature: I judged the work
+by a picture I made instead of by the thing that ships.
+
+STILL OPEN, owner-approved as its own lane: **the 3D model.** The 2D figure is now a fallback
+on 53 exercises, and the owner has said twice that a drawing is not what they want. Scoping
+notes are in the next entry.
+
+Gates: typecheck clean, **1,757/1,757 unit**, build green, **93/93 e2e** on a fresh server.
+
 ## 10. SOURCES
 
 - OP12 round 6, "Make It Move" (reminder pop-up, Progress as a scoreboard, the flame from zero):
