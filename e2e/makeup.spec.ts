@@ -88,6 +88,11 @@ test("a make-up leaves today's own session on the table", async ({ page }) => {
   await expect(start).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Mobility + Active Recovery' })).toBeVisible()
 
+  // And the workout itself is listed again, not just promised by a button.
+  // The list used to vanish the moment any session existed, which left a
+  // Start button over an empty screen.
+  await expect(page.getByRole('button', { name: /^Swap / }).first()).toBeVisible()
+
   // And the button does what it says: the day is running again, on today's
   // own workout, with the make-up's work still on the record beside it.
   await start.click()

@@ -458,7 +458,11 @@ export function TodayScreen() {
       )}
 
       {/* Preview (not started yet) */}
-      {!session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
+      {/* The day's workout, listed. Gated on the plan still OWING work
+          rather than on the day holding no session: a finished make-up
+          took the list away and left the athlete a Start button over an
+          empty screen, with no way to see what they were starting. */}
+      {planOwed.length > 0 && !inProgress && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
         <>
           <div className="mt-1">
             {day.exercises.map((r, i) => {

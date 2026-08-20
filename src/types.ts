@@ -333,8 +333,8 @@ export * from './prefsTypes'
 
 export type MealEntrySource = 'chip' | 'mealTemplate' | 'custom' | 'recent'
 
-/** An adaptation the athlete tapped to accept. */
-export type AdaptChoice = 'hold-load' | 'reduce-volume'
+/** An adaptation the athlete tapped to accept, or 'dismissed' for the whole offer. */
+export type AdaptChoice = 'hold-load' | 'reduce-volume' | 'dismissed'
 
 export interface MealEntry {
   id: string

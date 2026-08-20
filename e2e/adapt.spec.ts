@@ -150,3 +150,26 @@ test('two nights running is cut once, not twice', async ({ page }) => {
   await expect(page.getByText(/volume cut by a third/)).toBeVisible()
   await expect(page.getByText('A set off each lift', { exact: true })).toHaveCount(0)
 })
+
+test("the coach's offer can be closed, and stays closed", async ({ page }) => {
+  // Ignoring an offer was always free, but free is not the same as gone: a
+  // card that cannot be closed sits on the screen all day arguing with a
+  // decision the athlete already made.
+  const state = seed((d) => {
+    d.weeks['2026-08-10'].badSleepDates = ['2026-08-08', '2026-08-10']
+  })
+  await boot(page, state)
+  await expect(page.getByText('A set off each lift', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Dismiss what the coach noticed' }).click()
+  await expect(page.getByText('A set off each lift', { exact: true })).toHaveCount(0)
+
+  // And it is written down rather than merely hidden, so it survives the
+  // screen unmounting. (A reload cannot be asserted here: boot() re-seeds
+  // localStorage through addInitScript on every navigation.)
+  await expect
+    .poll(async () => await page.evaluate(() => localStorage.getItem('naod.state') ?? ''), {
+      message: 'the dismissal never reached the saved state',
+    })
+    .toContain('dismissed')
+})

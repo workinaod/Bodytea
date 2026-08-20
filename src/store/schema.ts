@@ -195,7 +195,7 @@ const appDataSchema = z.object({
   cardio: z.record(z.string(), z.array(cardioEntrySchema)),
   swaps: z.record(z.string(), z.record(z.string(), z.string())),
   dayLoad: z.record(z.string(), z.literal('trimmed')),
-  adapt: z.record(z.string(), z.array(z.enum(['hold-load', 'reduce-volume']))).default({}),
+  adapt: z.record(z.string(), z.array(z.enum(['hold-load', 'reduce-volume', 'dismissed']))).default({}),
   runs: z.array(runLogSchema),
   // Defaulted for the same reason `adapt` is: an envelope written before
   // this key existed parses cleanly and starts with an empty ladder, so
