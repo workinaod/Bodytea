@@ -4,6 +4,7 @@ import { MAX_DEFICIT, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
 import { addDaysISO } from './calendar'
 import { decisionRow, offerPolicy } from './decisions'
 import { lastAttemptBackfired } from './outcomes'
+import { STEP_METRIC, STEP_RULE_VERSION, STEP_TARGET, STEP_TYPE, STEP_WINDOW_DAYS } from './proposals'
 import { KCAL_PER_LB_TISSUE, weeklyGainRangeLb, weeklyLossRangeLb } from '../plan/sportsNutrition'
 import { learnedMaintenance } from './maintenanceLearned'
 import { nutritionInputsNow } from './nutritionRecheck'
@@ -52,25 +53,9 @@ export const STEP_MAX = 250
 const MIN_DAYS_OF_TREND = 14
 const MIN_WEIGH_INS = 3
 
-/** Bumped when the rule changes, so old ledger rows stay readable. */
-export const STEP_RULE_VERSION = 1
 
-/**
- * How long an accepted step is given before it is judged.
- *
- * R1's own cadence: re-evaluate after another two to three weeks, never
- * on single weigh-ins. Registered when the offer is ACCEPTED rather than
- * chosen when the answer is wanted, because an outcome picked after the
- * fact is a story, not a result.
- */
-export const STEP_WINDOW_DAYS = 21
 
-/** The one number this intervention is judged on. Fixed in advance. */
-export const STEP_METRIC = 'trendLbPerWeek'
-
-/** What this proposal is called in the decision ledger. */
-export const STEP_TYPE = 'calorie-step'
-export const STEP_TARGET = 'kcalTraining'
+export { STEP_METRIC, STEP_RULE_VERSION, STEP_TARGET, STEP_TYPE, STEP_WINDOW_DAYS } from './proposals'
 
 export interface CalorieStep {
   /** Signed kcal/day, rounded to 50. Negative means eat less. */

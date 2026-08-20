@@ -1,6 +1,6 @@
 import type { AppData, ISODate } from '../types'
 import type { DecisionRecord, DecisionVerdict } from '../decisionTypes'
-import { STEP_METRIC, STEP_TYPE } from './calorieStep'
+import { STEP_METRIC, STEP_TYPE } from './proposals'
 import { daysBetween } from './calendar'
 import { trendIsConfounded, weightTrend } from './userModel'
 
