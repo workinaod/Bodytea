@@ -277,8 +277,8 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
 | OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done + LIVE 2026-08-19** (owner said deploy; merge 2817eed carries OP4 plus the W10/W11/W16/W18/W4m wiring wave, deploy.yml untouched) | - | 3D body muscle models session |
 | OP5 | Extra work adds to the day instead of replacing it (owner bug report): append not overwrite, day stays open to 3am, one day one debrief | product | **done + LIVE 2026-08-19** (deploy 1450838) | OP1 | off-plan training session |
-| OP6 | Extra work never ends the day and never spends the plan's session (owner bug report, the same one twice): logExtraWork seeds the scheduled workout and adds inside it, the door stays open mid-session, a debrief only comes from a day that is over | product | **done 2026-08-19** | OP5 | off-plan training session |
-| OP7 | Period reviews (owner request): a Wrapped-style review when a week, month, quarter or year closes, with progression, highlights, goals accomplished and a cohort comparison; the week always asks for front and side photos, the quarter and year show the first photo next to the latest | product | **done 2026-08-19** | OP6 | off-plan training session |
+| OP6 | Extra work never ends the day and never spends the plan's session (owner bug report, the same one twice): logExtraWork seeds the scheduled workout and adds inside it, the door stays open mid-session, a debrief only comes from a day that is over | product | **done + LIVE 2026-08-19** (deploy 316976c, live bundle verified byte-identical by sha256) | OP5 | off-plan training session |
+| OP7 | Period reviews (owner request): a Wrapped-style review when a week, month, quarter or year closes, with progression, highlights, goals accomplished and a cohort comparison; the week always asks for front and side photos, the quarter and year show the first photo next to the latest | product | **done + LIVE 2026-08-20** (deploy 9a70b5d, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1432,6 +1432,7 @@ the pre-existing plans that genuinely have no record of what built them.
   Structure: TodayScreen.tsx went 3 lines over the 600 hard cap, so the quit-confirm modal
   moved out whole to `screens/today/QuitGate.tsx`. No allowance was added; the file came
   DOWN from 597 to 580.
+  Shipped at deploy `316976c`, live bundle verified byte-identical by sha256.
   Validation: typecheck clean, **1,567/1,567 unit**, build green, **e2e 85 passed /
   0 failed** (addmore.spec.ts rewritten to drive the real report: log a shelf workout on a
   day never started, assert the day is NOT complete, add a second workout through the door
@@ -1523,6 +1524,7 @@ the pre-existing plans that genuinely have no record of what built them.
   app, and the copy says so on every line. Month and year reviews have no photo arc by
   design (the owner asked for quarters and years). Nothing pushes a notification when a
   period closes; the offer waits on Today.
+  Shipped at deploy `9a70b5d`, live bundle verified byte-identical by sha256.
   NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads. C1 is now
   also what unblocks a real cohort.
 
