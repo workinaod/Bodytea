@@ -1847,8 +1847,8 @@ const E2E_MUTATIONS = [
     id: 'proposals-never-render',
     bug: 'the proposal card is computed and never shown',
     file: 'src/screens/today/AdaptProposals.tsx',
-    find: '  if (proposals.length === 0 || (session?.startedAt && !session.endedAt)) return null',
-    to: '  if (proposals.length >= 0 || (session?.startedAt && !session.endedAt)) return null',
+    find: '  const offering = !waved && proposals.length > 0 && !(session?.startedAt && !session.endedAt)',
+    to: '  const offering = !waved && proposals.length < 0 && !(session?.startedAt && !session.endedAt)',
     spec: 'e2e/adapt.spec.ts',
   },
   {
@@ -2017,7 +2017,15 @@ assertClean(list.map((m) => m.file))
 // arriving far too late to be the thing you act on. Three anchors went
 // stale in one commit when the reading half of adapt.ts moved to
 // signals.ts; this is the check that would have said so in a second.
-const stale = list.filter((m) => !readFileSync(resolve(ROOT, m.file), 'utf8').includes(m.find))
+//
+// Checked across BOTH lists, never just the one being run. The e2e
+// anchors are exercised far less often than the unit ones, so scoping
+// this to `list` gave exactly the rot it was written to prevent: an
+// AdaptProposals anchor went stale when the dismiss button landed and
+// nothing said so until a review pass happened to run the e2e half.
+const stale = [...MUTATIONS, ...E2E_MUTATIONS].filter(
+  (m) => !readFileSync(resolve(ROOT, m.file), 'utf8').includes(m.find),
+)
 if (stale.length) {
   console.log('[poison] refusing to run: these anchors no longer match their file.')
   console.log('         The mutation cannot fire, so the test behind it is unguarded.')

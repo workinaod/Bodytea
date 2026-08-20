@@ -282,6 +282,14 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
   dropped; `secondaryGoal` is a dead field.
 - Measured explain ceiling: 1,742 coaching lines shown over a simulated 8 weeks, only 181
   distinct. Bodyweight-only athletes: 41 of 80 phase verdicts "untested" (fix = J2).
+- The decision ledger is live and is the app's memory of what it tried (B1, J8). Append-only
+  rows in `data.decisions`, no SCHEMA_VERSION bump. Four rules write to it: the calorie step,
+  the nutrition recheck, the two training adaptations, and the deload. Three of those four are
+  judged after a pre-registered window and say the answer out loud, including when it is no.
+  THE `type` AND `metricId` STRINGS ARE A WIRE FORMAT: they are stored as free strings, so
+  renaming one orphans every row a real athlete already has. engine/proposals.test.ts pins
+  every one of them as a literal, and builds its fixtures from literals rather than from the
+  constants it checks.
 
 ## STATUS BOARD (the roadmap; statuses: pending / in-progress / done / blocked)
 
@@ -340,7 +348,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | W15 | Wire R15: age bands into loading ceilings, calorie baseline, plyometric gating. Age is collected (W8) and read by nothing | wiring | pending | J7 partial | |
 | W10 | Wire R10: cue corpus coverage (65 of 194 movements carry no cue) + selection and outcome tracking | wiring | **coverage done 2026-08-19** (plan/cues.ts: all 65 written in the house style, merged at catalog assembly; 16 guards, 6 proven to bite, 4 mutations). R10 calls the corpus the long pole and a CONTENT job, and this is that job done: coverage 129/194 to 194/194. The reason it hid is in data.test.ts, which asserts steps, muscles, qualities, why, mistakes, a video query and a rest time and never once asked for a cue, so a silent field was not a crash. It asks now. The guards are the ones R10 s10.4 names: fits the box, fits a breath, survives speakable, makes no claim about a body the app cannot see, promises nobody an injury prevented, no em dashes. Also fixed: one shipped cue was over the voice budget at 13 words. STILL OPEN in W10: selection (engine/cueing.ts, the trigger ladder, one cue ever, silence as the common output), outcome tracking (the CueIssue ledger, which R10 says belongs inside B1 rather than a private array), the TECHNIQUE table proper, and familiarity | W-ONT | feeds J10 |
 | W8e | Wire R8: EndurancePlan shape, session-vs-30-day-max load rule (the 10 percent rule fails) | wiring | pending | J7 partial | future endurance planner |
-| B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | **ledger + declines done 2026-08-20** (src/decisionTypes.ts + store/decisionSchema.ts + engine/decisions.ts: append-only rows carrying type, target, ruleVersion, evidence AS VALUES, offeredAt, response, plus the outcome half of the shape ready for slice 2. Three rungs: one no buys 14 days, worsening evidence may return early and must say so, three noes stop it for 56 days and nothing gets past that. Declines feed the OFFERING POLICY only, never a load, volume, calorie target or safety rule. Wired into the calorie-step and nutrition-recheck cards; the step card finally has the second button it shipped without. No SCHEMA_VERSION bump: a defaulted array parses old envelopes clean, as `adapt` and `journey` did. OUTCOMES DONE 2026-08-20 (engine/outcomes.ts): pre-registered metric/window/baseline fixed at accept time, ISOLATE closes a row as unattributable when anything else touches the same target inside its window, verdicts worked/no-change/worse/unattributable/abandoned, said out loud including the bad ones, card self-expires after 7 days. STILL OPEN: the R3 s9.2 table for the TRAINING interventions, which is the same machinery pointed at drop-load, hold-load, reduce-volume, the two substitutions and the deload) | J7 | engines lane, inside J7/J8 |
+| B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | **ledger + declines done 2026-08-20** (src/decisionTypes.ts + store/decisionSchema.ts + engine/decisions.ts: append-only rows carrying type, target, ruleVersion, evidence AS VALUES, offeredAt, response, plus the outcome half of the shape ready for slice 2. Three rungs: one no buys 14 days, worsening evidence may return early and must say so, three noes stop it for 56 days and nothing gets past that. Declines feed the OFFERING POLICY only, never a load, volume, calorie target or safety rule. Wired into the calorie-step and nutrition-recheck cards; the step card finally has the second button it shipped without. No SCHEMA_VERSION bump: a defaulted array parses old envelopes clean, as `adapt` and `journey` did. OUTCOMES DONE 2026-08-20 (engine/outcomes.ts): pre-registered metric/window/baseline fixed at accept time, ISOLATE closes a row as unattributable when anything else touches the same target inside its window, verdicts worked/no-change/worse/unattributable/abandoned, said out loud including the bad ones, card self-expires after 7 days. TRAINING INTERVENTIONS DONE 2026-08-20 (engine/proposals.ts as the neutral vocabulary, engine/outcomes.ts judging hold-load and reduce-volume on whether sessions after the change actually got done, COUNTED not averaged). DELOAD DONE 2026-08-20 (engine/deloadOutcome.ts): the one intervention nobody agrees to, so its row is manufactured after the fact by the same block math that scheduled the week; judged on rebound in best e1RM over 21 days either side, 2.5 lb minimum so the same lift twice is not a win, athlete-authored plans skipped. LEDGER VOCABULARY IS PINNED AS A WIRE FORMAT (engine/proposals.test.ts) after three type and metric identifiers were found guarding nothing: renaming one orphans every row a real athlete already has. STILL OPEN: the two substitution kinds (equipment, joint pain), drop-load, and the failing-flag softening) | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | **done 2026-08-19** (plan/knowledge.ts 136 lines: SourceRef, KnowledgeRecord, EvidenceTier A-D, confidenceOf; plan/knowledgeRegistry.ts as the list, separate file because a refs module needs confidenceOf and the registry needs the refs module; plan/nutrition.refs.ts as the first, annotating R1's constants IN PLACE by importing the live values so a number cannot drift from its citation; plan/knowledge.test.ts 14 checks + 3 poison mutations). Guards: a sourced tier without a source, a dangling source id, a tier better than its best source, a source nothing cites, hand-typed confidence, a duplicate or malformed id, and a refs module on disk that the registry does not name. Written down in the test: nothing here can catch a number we invented, cited to real papers that do not name it, and labelled A. That is a review problem and the record shape makes it legible, which a bare `= 1500` never did | starts with R1 | done in the audit session |
 | R10 | Technique, cueing and motor learning (no camera) | research | **synthesized 2026-08-18** (research/R10-technique-cueing.md; 24 sources, cue corpus measured, selection and outcome-tracking design) | J1 | feeds J10 |
 | R7 | Populations and adaptive training (function-first) | research | **synthesized 2026-08-18** (research/R7-populations.md; 24 tier-A sources, 11 functional dimensions, 10 population packs, 30 paired fixtures, ME/CFS pacing policy) | J1 | J6 |
@@ -1970,6 +1978,75 @@ the pre-existing plans that genuinely have no record of what built them.
   **90/90 e2e**, **poison 207/207** (4 new, 3 anchors re-aimed).
   NEXT: R3 s9.2 still has the deload, the two substitution kinds, drop-load and the
   failing-flag softening. Same machinery, more metrics.
+
+### 2026-08-20 · J8 slice 4 · does the deload actually buy anything
+  The most expensive thing this app does. A whole week of reduced training, every fourth
+  week, taken entirely on faith, and nothing could say whether it helped. "Programs do this"
+  is not an answer a coach should be satisfied with, and it is the last R3 s9.2 intervention
+  that had no evaluation at all.
+  R3's test is REBOUND: best estimated one-rep max in the three weeks after beats the best in
+  the three weeks before, by more than 2.5 lb so the same lift twice does not count as a win.
+  No rebound with attendance fine is a real and useful answer, not a null: it says scheduled
+  deloads are not this athlete's bottleneck, which is what sends R3 to the volume rung
+  instead of to another deload.
+  NOBODY AGREES TO A DELOAD, so there is no accept event and no row to hang a verdict on. The
+  row is manufactured afterwards by the same block math that scheduled the week, which is what
+  keeps the trigger and the verdict pinnable by one test. Athlete-authored plans are skipped
+  entirely, consistent with the deload-ownership decision: BodyT does not deload a routine
+  somebody brought, so nothing there is its to grade.
+  THE BOUNDARY IS WHERE THIS RULE IS HONEST OR NOT, and it has its own test with pinned
+  numbers. A lift inside the deload week belongs to NEITHER window. Counted as "before" it
+  drops the baseline and flatters every deload; counted as "after" it takes credit for a
+  rebound it is. Both directions have a mutation.
+  Validation: tsc -b clean, **1,720/1,720 unit** (11 new), build green, **90/90 e2e**,
+  **poison 215/215** (8 new).
+
+### 2026-08-20 · review pass over the whole J8 ledger surface (rule 8)
+  Four slices deep, so the pass ran over the surface rather than the diff. THREE REAL
+  DEFECTS, none of which any slice could have caught, each proved before it was fixed.
+  (1) THE LEDGER VOCABULARY IS A WIRE FORMAT AND THREE WORDS OF IT GUARDED NOTHING. `type`
+  and `metricId` are stored as free strings, so every row an athlete already has was written
+  under whatever spelling shipped that day. Rename one and today's build stops recognising
+  yesterday's rows: never graded, never shown, and for the deload the dedupe stops seeing the
+  row that says a week was already judged, so it is judged again. ADAPT_TYPE, DELOAD_TYPE and
+  ADAPT_METRIC all survived being set to 'zzz'. The header of proposals.ts had claimed since
+  the day it landed that tests pinned these literals; it was untrue of three of them, which is
+  the same shape as the weightTrend comment that said EWMA while the code did endpoints.
+  engine/proposals.test.ts builds EVERY fixture from literal strings rather than from the
+  constants it checks, because a test that writes its rows through the same constant it
+  asserts passes at any value. FIFTH time that shape has been found this session.
+  (2) THE ✕ SILENTLY DIED FOR A WEEK AFTER EVERY VERDICT. Slice 3 put the follow-up line
+  inside the block the dismiss button owns, and the guard read "waved AND no verdict". So with
+  a verdict on screen, tapping ✕ did nothing at all: the offers just waved away stayed exactly
+  where they were, under a button that looked broken. The existing dismiss test passed because
+  it had no verdict on screen. A verdict is FEEDBACK, not an offer, and now renders outside
+  the block the ✕ owns. This is the slice-2 insight (feedback is not a suggestion) showing up
+  again in the DOM rather than in the advice ladder.
+  (3) THE APP PRESCRIBED A DELOAD AND REPORTED IT HAD FAILED, IN ONE VIEW. Proved by
+  screenshot, not by reading. A verdict is visible 27 to 34 days after its deload starts and
+  the next deload starts on day 28, so the card lands inside the FOLLOWING deload week almost
+  every time. The screen showed "DELOAD WEEK: sets halved, keep the weights" in lime with
+  "your lifts have not come back up since the deload week" directly beneath it, about a week a
+  month earlier, and nothing said which week was meant. Every line now anchors itself three
+  weeks after the week it judged, because nobody is three weeks after a week they are
+  standing in.
+  ALSO: recheck rows are recorded and never judged, and the comment claimed the opposite. That
+  is the right design rather than a gap, so the comment now says why: a step is an experiment
+  with a counterfactual, a recheck replaces a guessed body composition with a measured one,
+  and "did using your real numbers help" is not a question with an answer. The row still earns
+  its place by telling isolated() the target moved inside some step's window.
+  HARNESS FIX: the anchor pre-flight only checked the list being run, so an AdaptProposals e2e
+  anchor had been stale since OP11 and nothing said so. It checks both lists now, which is
+  what the comment above it always argued for.
+  Probed and clean: both deload windows are 21 days and symmetric about the week; every
+  freshVerdict call site is type-scoped so no training answer can reach the food screen;
+  dueForVerdict excludes already-judged rows; deload targets are ISO dates and cannot collide
+  with 'kcalTraining'; allowances only shrank across all four slices (types.ts 674 to 604,
+  store/schema.ts 578 to 554, blockMathFor off the dead-export ledger, nothing added).
+  Validation: tsc -b clean, **1,729/1,729 unit** (9 new), build green, sim 20 personas,
+  **91/91 e2e** (1 new), **poison 219/219 unit + 11/11 e2e** (5 new, 1 anchor re-aimed).
+  NEXT: R3 s9.2 still has the two substitution kinds (equipment, joint pain), drop-load and
+  the failing-flag softening. Same machinery, more metrics.
 
 ## 10. SOURCES
 
