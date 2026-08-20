@@ -5,7 +5,12 @@ import { useToday } from '../../logic/clock'
 import { lateNightGraceDate } from '../../engine/rollover'
 import { resolveDay } from '../../engine/resolveDay'
 import { briefForDay } from '../../engine/workoutBrief'
-import { Btn, Card, ScreenHeader } from '../../components/ui'
+import { EXERCISES } from '../../plan/exercises'
+import { GENERAL_WORKOUTS } from '../../plan/generalWorkouts'
+import { Btn, Coin, ScreenHeader, SectionTitle, Tile, type TileTone } from '../../components/ui'
+import { Sticker, type StickerName } from '../../components/stickers'
+import { ExercisePicker } from '../booklet/ExercisePicker'
+import { ExerciseGuideSheet } from '../today/ExerciseGuideSheet'
 import { MakeupSheet } from '../today/MakeupSheet'
 import { WorkoutsSheet } from '../today/WorkoutsSheet'
 import { OwnWorkoutSheet } from '../today/OwnWorkoutSheet'
@@ -16,28 +21,56 @@ import { DebriefSheet } from '../today/DebriefSheet'
 // The gym door.
 //
 // All of this already existed: the fitted workouts shelf, the
-// build-your-own picker, rerunning any previous day, cardio.
-// It was reachable through one grey line at the bottom of
-// Today that read "Training something else today? browse ›",
-// which is where features go to be undiscovered.
+// build-your-own picker, rerunning any previous day, cardio,
+// the 194-movement library. It was reachable through one grey
+// line at the bottom of Today that read "Training something
+// else today? browse ›", which is where features go to be
+// undiscovered.
 //
 // Today answers ONE question, and its answer is the plan's.
 // This tab is everything else you might do with a barbell, and
 // it opens by pointing back at the plan, because on most days
 // the plan's session is still the right call.
+//
+// Contents per research/OP5-screen-law.md §4.
 // ============================================================
 
-// A tile, per research/OP5-visual-law.md: flat panel, 2px outline, and
-// a lip. The translucent glass this used to be is the one thing the
-// approved concept has no room for anywhere.
-const TILE = 'border-2 border-edge bg-surface shadow-[0_3px_0_var(--color-edge)]'
+// Nothing here hardcodes a catalog size. The preview said 194 and 14 and
+// both happen to be right today, but a number typed into a sentence is a
+// number that goes stale the first time somebody adds a movement.
+const MOVEMENTS = Object.keys(EXERCISES).length
+const SHELF = GENERAL_WORKOUTS.length
 
-function Launcher({ title, sub, onClick }: { title: string; sub: string; onClick: () => void }) {
+// One frozen empty set rather than a new one every render: the picker
+// memoizes its list on it, and a fresh Set each time would rebuild all
+// 194 rows on every keystroke.
+const EMPTY: Set<string> = new Set()
+
+function Launcher({
+  icon,
+  title,
+  sub,
+  tone = 'plain',
+  onClick,
+}: {
+  icon: StickerName
+  title: string
+  sub: string
+  tone?: TileTone
+  onClick: () => void
+}) {
   return (
-    <button onClick={onClick} className={`press-down block w-full rounded-2xl px-4 py-3.5 text-left [--lip:var(--lip-quiet)] ${TILE}`}>
-      <span className="block text-[14px] font-extrabold leading-tight">{title}</span>
-      <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-faint">{sub}</span>
-    </button>
+    <Tile tone={tone} onClick={onClick} ariaLabel={title} className="!py-3">
+      <div className="flex items-center gap-3">
+        <Coin size={44}>
+          <Sticker name={icon} size={24} />
+        </Coin>
+        <div className="min-w-0">
+          <div className="text-[14px] font-black leading-tight">{title}</div>
+          <div className="mt-0.5 text-[11.5px] font-bold leading-snug text-ink-faint">{sub}</div>
+        </div>
+      </div>
+    </Tile>
   )
 }
 
@@ -58,6 +91,8 @@ export function TrainScreen({
   const [workoutsOpen, setWorkoutsOpen] = useState(false)
   const [ownOpen, setOwnOpen] = useState(false)
   const [cardioOpen, setCardioOpen] = useState(false)
+  const [libraryOpen, setLibraryOpen] = useState(false)
+  const [guideId, setGuideId] = useState<string | null>(null)
   const [debrief, setDebrief] = useState<DebriefData | null>(null)
 
   const day = useMemo(() => resolveDay(date, data), [date, data])
@@ -79,22 +114,24 @@ export function TrainScreen({
       <ScreenHeader title="Train" />
 
       {/* The plan first, always. This tab is the alternative, not the default. */}
-      <Card className={banked ? '' : 'border-accent/35'}>
-        <div className="eyebrow text-ink-faint">{banked ? 'Today is banked' : "Today's session"}</div>
+      <Tile tone={banked || day.kind === 'rest' ? 'plain' : 'heat'}>
+        <div className={`eyebrow ${banked || day.kind === 'rest' ? 'text-ink-faint' : 'text-accent-soft'}`}>
+          {banked ? 'Today is banked' : "Today's mission"}
+        </div>
         {banked ? (
-          <p className="mt-1 text-[13px] leading-snug text-ink-dim">
+          <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
             The work is in. Anything below is extra, and extra is optional.
           </p>
         ) : day.kind === 'rest' ? (
-          <p className="mt-1 text-[13px] leading-snug text-ink-dim">
+          <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
             Rest day. Recovery is part of the program, so nothing here is owed. If you train anyway,
             train something real.
           </p>
         ) : (
           <>
-            <div className="mt-1 text-[19px] font-black leading-tight">{day.title}</div>
-            <div className="mt-1 text-[12px] font-semibold text-ink-faint">
-              {day.exercises.length} moves · ~{brief?.minutes ?? 0} min · {brief?.totalSets ?? 0} sets
+            <div className="mt-0.5 text-[20px] font-black leading-tight">{day.title}</div>
+            <div className="mt-0.5 text-[11.5px] font-bold text-ink-faint">
+              {brief?.totalSets ?? 0} sets · ~{brief?.minutes ?? 0} min
             </div>
             {onOpenToday && (
               <Btn className="mt-2.5 w-full" onClick={onOpenToday}>
@@ -103,32 +140,46 @@ export function TrainScreen({
             )}
           </>
         )}
-      </Card>
+      </Tile>
 
+      <SectionTitle>Off the plan</SectionTitle>
       <div className="space-y-2">
         <Launcher
+          icon="redo"
           title="Run a previous day"
           sub="Make up a missed day, or rerun one you liked."
           onClick={() => setMakeupOpen(true)}
         />
         <Launcher
+          icon="book"
           title="Browse workouts"
-          sub="Ready-made sessions, fitted to your gear."
+          sub={`${SHELF} ready-made sessions, fitted to your gear.`}
           onClick={() => setWorkoutsOpen(true)}
         />
         <Launcher
+          icon="wrench"
           title="Your own workout"
           sub="Pick exercises, run it now or log it after."
           onClick={() => setOwnOpen(true)}
         />
         <Launcher
-          title="Log cardio"
-          sub="A run, a ride, a walk, a class. Anything with a clock."
-          onClick={() => setCardioOpen(true)}
+          icon="dumbbell"
+          title="Exercise library"
+          sub={`${MOVEMENTS} movements, guides and muscle maps.`}
+          onClick={() => setLibraryOpen(true)}
         />
       </div>
 
-      <p className="px-1 pt-1 text-[11.5px] leading-snug text-ink-faint">
+      <SectionTitle>Conditioning</SectionTitle>
+      <Launcher
+        icon="runner"
+        title="Log cardio"
+        sub="Runs, rides, sport, classes."
+        tone="ice"
+        onClick={() => setCardioOpen(true)}
+      />
+
+      <p className="px-1 pt-1 text-[11.5px] font-bold leading-snug text-ink-faint">
         Everything here logs as a real session and counts toward the record. Off the plan is still on
         the record.
       </p>
@@ -168,6 +219,18 @@ export function TrainScreen({
           setDebrief(d)
         }}
       />
+      {/* The library is the picker in reading mode: the same 194 movements
+          with the same filters, where a tap opens the guide rather than
+          adding the movement to something. */}
+      {libraryOpen && (
+        <ExercisePicker
+          browse
+          exclude={EMPTY}
+          onPick={setGuideId}
+          onClose={() => setLibraryOpen(false)}
+        />
+      )}
+      <ExerciseGuideSheet exerciseId={guideId} onClose={() => setGuideId(null)} />
       <CardioSheet
         date={date}
         hasSession={day.kind === 'session'}

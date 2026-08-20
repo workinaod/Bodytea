@@ -114,12 +114,20 @@ export function ExercisePicker({
   onClose,
   exclude,
   equipment,
+  browse = false,
 }: {
   onPick: (id: string) => void
   onClose: () => void
   exclude: Set<string>
   /** The gear to filter against. Defaults to the athlete's own plan. */
   equipment?: EquipTag[]
+  /**
+   * Reading the library rather than building a workout. Same list, same
+   * filters, two differences: a tap opens the movement's guide instead
+   * of adding it, and the gear filter starts OFF, because somebody
+   * browsing what exists wants what exists.
+   */
+  browse?: boolean
 }) {
   const planEquipment = useAppStore((s) => s.data.plan.equipment)
   const data = useAppStore((s) => s.data)
@@ -135,7 +143,7 @@ export function ExercisePicker({
   const [showQualities, setShowQualities] = useState(false)
   // On by default: a list you cannot act on is not a shorter list, it
   // is a longer one with the useful part buried in it.
-  const [gearOnly, setGearOnly] = useState(true)
+  const [gearOnly, setGearOnly] = useState(!browse)
 
   const stale = useMemo(() => staleGroups(data, today).slice(0, 2), [data, today])
   // Once a group is chosen, say where it stands. Somebody adding a third
@@ -194,7 +202,7 @@ export function ExercisePicker({
   const shown = groups.reduce((n, g) => n + g.ids.length, 0)
 
   return (
-    <Sheet open onClose={onClose} title="Pick an exercise">
+    <Sheet open onClose={onClose} title={browse ? 'Exercise library' : 'Pick an exercise'}>
       <div className="pb-8">
         <input
           value={q}

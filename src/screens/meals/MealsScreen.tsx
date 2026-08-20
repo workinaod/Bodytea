@@ -6,7 +6,7 @@ import { useToday } from '../../logic/clock'
 import { kcalTargetFor, nutritionDayType } from '../../engine/dayType'
 import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor, proteinStreak } from '../../engine/stats'
 import { macroTargets } from '../../plan/sportsNutrition'
-import { Btn, Card, Chip, DayArrow, Ring, ScreenHeader, SectionTitle } from '../../components/ui'
+import { Btn, Card, Chip, DayArrow, Ring, ScreenHeader, SectionTitle, SetCoin, Tile } from '../../components/ui'
 import { cycleDayTypeOverride, removeMealEntry, setMealServings, toggleSupplement } from '../../logic/actions'
 import { LogSheet } from './LogSheet'
 import { PlanView } from './PlanView'
@@ -71,8 +71,11 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
         right={<DayArrow dir="next" onClick={() => setSelected(addDaysISO(date, 1))} />}
       />
 
-      {/* The three jobs, one switch */}
-      <div className="flex rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-1">
+      {/* The three jobs. Chips rather than a second segmented switch: this
+          screen is embedded under My Plan's Training/Nutrition switch, and
+          two identical controls stacked makes neither one read as the
+          primary choice. One heat segment per screen. */}
+      <div className="flex gap-1.5">
         {(
           [
             { id: 'today', label: 'Log' },
@@ -80,24 +83,26 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
             { id: 'grocery', label: 'Grocery' },
           ] as const
         ).map((v) => (
-          <button
+          <Chip
             key={v.id}
+            tone={view === v.id ? 'accent' : 'default'}
+            pressed={view === v.id}
             onClick={() => setView(v.id)}
-            className={`flex-1 rounded-lg py-2 text-[12.5px] font-bold transition-colors ${
-              view === v.id ? 'bg-white/[0.07] text-ink' : 'text-ink-faint'
-            }`}
+            className="!px-3 !py-1.5 !text-[12px]"
           >
             {v.label}
-          </button>
+          </Chip>
         ))}
       </div>
 
       {view === 'today' && (
         <>
-          <Card className="flex items-center justify-around !py-5">
-            <Ring value={protein} target={data.settings.proteinTargetG} label="Protein" unit="g" color="var(--color-accent)" size={140} />
-            <Ring value={kcal} target={kcalTarget} label="Calories" unit="kcal" color="var(--color-cyan)" size={112} />
-          </Card>
+          {/* items-end, so two rings of different sizes still put their
+              labels on one line instead of two. */}
+          <Tile className="flex items-end justify-around !py-4">
+            <Ring value={protein} target={data.settings.proteinTargetG} label="Protein" unit="g" color="var(--color-accent)" size={132} />
+            <Ring value={kcal} target={kcalTarget} label="Calories" unit="kcal" color="var(--color-cyan)" size={104} />
+          </Tile>
 
           {/* Carbs and fat.
               Protein and calories are the two numbers the plan is built
@@ -110,8 +115,8 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
               at zero would read as "you ate no carbs" when what it means
               is "the app has no idea", and those are different sentences. */}
           {macros.coveredKcal > 0 && bodyweight !== null && (
-            <Card className="!py-4">
-              <div className="flex items-center justify-around">
+            <Tile className="!py-3.5">
+              <div className="flex items-end justify-around">
                 <Ring value={macros.carbsG} target={macroTarget.carbsG} label="Carbs" unit="g" color="var(--color-lime)" size={96} />
                 <Ring value={macros.fatG} target={macroTarget.fatG} label="Fat" unit="g" color="var(--color-gold)" size={96} />
               </div>
@@ -120,7 +125,7 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
                   ? 'Carbs flex with the work in the day. Fat is a floor, not a target.'
                   : `Based on the ${Math.round(macros.coverage * 100)}% of today's calories logged with full macros. Custom entries only carry protein and calories.`}
               </p>
-            </Card>
+            </Tile>
           )}
 
           <div className="flex flex-wrap items-center gap-1.5">
@@ -172,28 +177,32 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
           </Btn>
 
           <SectionTitle>Eaten {day?.entries.length ? `(${day.entries.length})` : ''}</SectionTitle>
-          <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+          {/* The same row every list in the app uses: a coin holding the one
+              number that matters, then the name, then its controls. Protein
+              is that number here, because it is the one the plan defends. */}
+          <div>
             {(day?.entries ?? []).map((e, i) => (
               <div
                 key={e.id}
-                className={`flex items-center justify-between gap-2 px-4 py-2.5 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
+                className={`flex items-center gap-3 px-0.5 py-2.5 ${i > 0 ? 'border-t-2 border-edge-soft' : ''}`}
               >
+                <SetCoin>{`${Math.round(e.proteinG * e.servings)}P`}</SetCoin>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-bold">{e.label}</div>
-                  <div className="text-[11px] font-semibold text-ink-faint">
-                    {Math.round(e.proteinG * e.servings)}g P · {Math.round(e.kcal * e.servings)} kcal
+                  <div className="truncate text-[14px] font-extrabold">{e.label}</div>
+                  <div className="text-[11.5px] font-bold text-ink-faint">
+                    {Math.round(e.kcal * e.servings)} kcal
                     {e.servings !== 1 && ` · ${e.servings}×`}
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button className="h-8 w-8 rounded-lg bg-white/[0.07] text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings - 0.5)}>−</button>
-                  <button className="h-8 w-8 rounded-lg bg-white/[0.07] text-sm font-bold text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings + 0.5)}>+</button>
-                  <button className="h-8 w-8 rounded-lg text-sm font-bold text-danger" onClick={() => removeMealEntry(date, e.id)}>✕</button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button aria-label={`One less serving of ${e.label}`} className="h-8 w-8 rounded-lg border-2 border-edge bg-surface-2 text-sm font-black text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings - 0.5)}>−</button>
+                  <button aria-label={`One more serving of ${e.label}`} className="h-8 w-8 rounded-lg border-2 border-edge bg-surface-2 text-sm font-black text-ink-dim" onClick={() => setMealServings(date, e.id, e.servings + 0.5)}>+</button>
+                  <button aria-label={`Remove ${e.label}`} className="h-8 w-8 rounded-lg text-sm font-black text-danger" onClick={() => removeMealEntry(date, e.id)}>✕</button>
                 </div>
               </div>
             ))}
             {!day?.entries.length && (
-              <p className="px-4 py-4 text-center text-[12.5px] text-ink-faint">
+              <p className="px-4 py-4 text-center text-[12.5px] font-bold text-ink-faint">
                 Nothing logged yet. The button above covers the whole day in a few taps.
               </p>
             )}

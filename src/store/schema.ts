@@ -226,6 +226,7 @@ const appDataSchema = z.object({
   // either way — an unstamped stage the athlete has genuinely reached
   // gets re-derived from the history on the next render and re-stamped.
   journey: z.object({ hits: z.record(z.string(), z.string()) }).default({ hits: {} }),
+  achievements: z.object({ earnedAt: z.record(z.string(), z.string()), trackingFrom: isoDate.optional() }).default({ earnedAt: {} }), // defaulted like journey: older envelopes parse and get stamped on the next sweep
   prefs: prefsSchema,
 })
 

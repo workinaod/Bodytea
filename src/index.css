@@ -101,7 +101,9 @@
   line-height: var(--text-micro--line-height);
   letter-spacing: var(--text-micro--letter-spacing);
   text-transform: uppercase;
-  font-weight: 700;
+  /* 900, per research/OP5-visual-law.md: at 11px a 700 eyebrow reads as
+     small text rather than as a label cut into the surface. */
+  font-weight: 900;
 }
 
 /* Bundled, never fetched: this is an offline PWA and a webfont over
@@ -153,21 +155,16 @@ h3 {
 }
 
 /* Screen titles.
-   Set at default weight with a nudge of negative tracking, any UI font
-   is just a UI font with the corners filed off, which is why the old
-   headlines read as generic. At display sizes they want to be set HEAVY:
-   weight 800 closes the counters and 0.98 leading stops two-line titles
-   drifting apart.
-
-   The tracking stays gentle because Inter Tight is ALREADY the narrow
-   cut of the family. Stacking -0.04em on top of it closed "Full Body"
-   into one word. The face supplies the tightness; the tracking only
-   takes the last of the air out. */
+   The approved concept sets h1-h3 at 900 with -0.01em: Nunito's heaviest
+   cut is what makes a title read as a sticker rather than as a heading,
+   and at 27px anything lighter goes soft. The old note here argued for
+   800 on the grounds that Inter Tight already supplied the narrowness.
+   That face is gone; the weight now has to do the work by itself. */
 .headline {
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 0.98;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
   /* Optical sizing where the face offers it, so big text is not just
      small text scaled up. */
   font-optical-sizing: auto;
@@ -176,9 +173,9 @@ h3 {
 /* The same voice one step down: card titles and sheet headers. */
 .headline-sm {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.012em;
-  line-height: 1.12;
+  line-height: 1.15;
 }
 
 ::selection {

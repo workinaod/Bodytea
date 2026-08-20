@@ -8,7 +8,7 @@ import { TodayScreen } from './screens/today/TodayScreen'
 import { TrainScreen } from './screens/train/TrainScreen'
 import { MyPlanScreen } from './screens/plan/MyPlanScreen'
 import { ProgressScreen } from './screens/progress/ProgressScreen'
-import { CoachScreen } from './screens/coach/CoachScreen'
+import { ProfileScreen } from './screens/profile/ProfileScreen'
 import { RunTrackerSheet } from './screens/today/RunTrackerSheet'
 import { TrackSheet } from './screens/today/TrackSheet'
 import { CardioTimerSheet } from './screens/today/CardioTimerSheet'
@@ -119,7 +119,7 @@ export default function App() {
         )}
         {tab === 'plan' && <MyPlanScreen />}
         {tab === 'progress' && <ProgressScreen />}
-        {tab === 'me' && <CoachScreen />}
+        {tab === 'me' && <ProfileScreen onOpenProgress={() => setTab('progress')} />}
       </div>
       <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} session={sessionLive && tab === 'today'} />
       <TrackSheet

@@ -43,21 +43,24 @@ test('the push day arrives already trimmed, and says why', async ({ page }) => {
   await expect(banner).toBeVisible()
   await expect(banner).toContainText('Overhead Tricep Extension')
 
+  // The prescription lives in the row's leading coin now (sets x reps, no
+  // spaces, so it fits a 40px square), so the row is two levels further
+  // up than it used to be.
   const row = (name: string) =>
-    page.getByText(name, { exact: true }).locator('xpath=ancestor::div[2]')
+    page.getByText(name, { exact: true }).locator('xpath=ancestor::div[3]')
 
   // The collateral arm work is gone and the OHP lost a set...
   await expect(page.getByText('Overhead Tricep Extension', { exact: true })).toHaveCount(0)
-  await expect(row('Standing Barbell OHP')).toContainText('3 × 6')
-  await expect(row('Close-Grip Bench / Floor Press')).toContainText('2 × 8')
+  await expect(row('Standing Barbell OHP')).toContainText('3×6')
+  await expect(row('Close-Grip Bench / Floor Press')).toContainText('2×8')
 
   // Never a range. Users do not pick reps, so they are never shown a
   // menu: every prescription on the page is one number.
   await expect(page.getByText(/\d+\s*[-–]\s*\d+\s*(reps)?$/)).toHaveCount(0)
 
   // ...but the day is still the day: both presses survive untouched.
-  await expect(row('Incline DB Press')).toContainText('4 × 8')
-  await expect(row('Flat DB Press')).toContainText('3 × 8')
+  await expect(row('Incline DB Press')).toContainText('4×8')
+  await expect(row('Flat DB Press')).toContainText('3×8')
 })
 
 test('a day that needed no trimming says nothing about it', async ({ page }) => {

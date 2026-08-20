@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { AppData, ISODate } from '../../types'
-import { Card } from '../../components/ui'
+import { QBar, Tile } from '../../components/ui'
+import { Sticker, stickerForCategory } from '../../components/stickers'
 import { athleteFacts } from '../../engine/achievementFacts'
 import { evaluateAchievements, nextUp } from '../../engine/achievements'
 
@@ -13,6 +14,9 @@ import { evaluateAchievements, nextUp } from '../../engine/achievements'
 // screen can answer "what am I nearly at" without anybody
 // opening a trophy case to find out.
 //
+// This is the PULL. You should never leave a session without
+// seeing the next thing you are close to.
+//
 // Silent when there is nothing honest to show, which is most
 // of week one.
 // ============================================================
@@ -20,11 +24,11 @@ import { evaluateAchievements, nextUp } from '../../engine/achievements'
 export function TodayNextUp({
   data,
   today,
-  onOpenProgress,
+  onOpenBadges,
 }: {
   data: AppData
   today: ISODate
-  onOpenProgress?: () => void
+  onOpenBadges?: () => void
 }) {
   const next = useMemo(
     () => nextUp(evaluateAchievements(data, today, athleteFacts(data, today)), 2),
@@ -33,33 +37,31 @@ export function TodayNextUp({
   if (next.length === 0) return null
 
   return (
-    <Card className="!py-3.5">
+    <Tile className="!py-3">
       <div className="flex items-baseline justify-between">
         <span className="eyebrow text-ink-faint">Next up</span>
-        {onOpenProgress && (
-          <button onClick={onOpenProgress} className="text-[11.5px] font-bold text-cyan">
+        {onOpenBadges && (
+          <button onClick={onOpenBadges} className="press text-[11.5px] font-black text-cyan">
             All badges ›
           </button>
         )}
       </div>
       <div className="mt-2.5 space-y-2.5">
         {next.map((s) => (
-          <div key={s.def.id}>
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="truncate text-[12.5px] font-bold">{s.def.name}</span>
-              <span className="num shrink-0 text-[11px] text-ink-faint">
-                {Math.floor(s.progress)}/{s.target}
-              </span>
-            </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
-              <div
-                className="grow h-full rounded-full bg-accent"
-                style={{ width: `${Math.min(100, (s.progress / s.target) * 100)}%` }}
-              />
+          <div key={s.def.id} className="flex items-center gap-2.5">
+            <Sticker name={stickerForCategory(s.def.category)} size={22} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="truncate text-[12.5px] font-extrabold">{s.def.name}</span>
+                <span className="num shrink-0 text-[11.5px] font-bold text-ink-faint">
+                  {Math.floor(s.progress)}/{s.target}
+                </span>
+              </div>
+              <QBar className="mt-1" pct={(s.progress / s.target) * 100} />
             </div>
           </div>
         ))}
       </div>
-    </Card>
+    </Tile>
   )
 }

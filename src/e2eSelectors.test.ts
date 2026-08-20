@@ -62,7 +62,12 @@ const BUTTON_NAME = /getByRole\(\s*['"]button['"]\s*,\s*\{\s*name:\s*(['"])([^'"
 
 describe('e2e selectors point at buttons that exist', () => {
   const asked = new Map<string, string[]>()
-  for (const file of walk(E2E, /\.spec\.ts$/)) {
+  // Every .ts under e2e/, not only the specs. The shared helpers in
+  // util.ts click buttons too, and they were the one part of the suite
+  // this guard could not see: a label renamed out from under
+  // finishToDebrief would have failed in Playwright, half an hour later,
+  // which is exactly the delay this file exists to remove.
+  for (const file of walk(E2E, /\.ts$/)) {
     const text = readFileSync(file, 'utf8')
     for (const m of text.matchAll(BUTTON_NAME)) {
       const name = m[2]

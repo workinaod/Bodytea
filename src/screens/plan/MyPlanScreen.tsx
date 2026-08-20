@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ScreenHeader } from '../../components/ui'
+import { ScreenHeader, Segmented } from '../../components/ui'
 import { WeekScreen } from '../week/WeekScreen'
 import { MealsScreen } from '../meals/MealsScreen'
 
@@ -28,24 +28,14 @@ export function MyPlanScreen() {
     <div className="space-y-3 pb-6">
       <ScreenHeader title="My Plan" />
 
-      <div className="flex rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-1">
-        {(
-          [
-            { id: 'training', label: 'Training' },
-            { id: 'nutrition', label: 'Nutrition' },
-          ] as const
-        ).map((v) => (
-          <button
-            key={v.id}
-            onClick={() => setView(v.id)}
-            className={`flex-1 rounded-lg py-2 text-[12.5px] font-bold transition-colors ${
-              view === v.id ? 'bg-white/[0.07] text-ink' : 'text-ink-faint'
-            }`}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        value={view}
+        onChange={setView}
+        options={[
+          { id: 'training', label: 'Training' },
+          { id: 'nutrition', label: 'Nutrition' },
+        ]}
+      />
 
       {view === 'training' ? <WeekScreen embedded /> : <MealsScreen embedded />}
     </div>

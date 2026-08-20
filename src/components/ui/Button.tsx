@@ -27,14 +27,14 @@ const KINDS: Record<Kind, string> = {
   // Matching the outline to the lip is what makes the two read as one
   // moulded object; an outline only a shade off the fill reads as
   // nothing at all, which is what accent-deep on accent was doing.
-  primary: 'bg-accent text-black font-extrabold border-[var(--lip-accent)] [--lip:var(--lip-accent)]',
-  lime: 'bg-lime text-black font-extrabold border-[var(--lip-lime)] [--lip:var(--lip-lime)]',
+  primary: 'bg-accent text-white font-extrabold border-[var(--lip-accent)] [--lip:var(--lip-accent)]',
+  lime: 'bg-lime text-[var(--ink-on-lime)] font-extrabold border-[var(--lip-lime)] [--lip:var(--lip-lime)]',
   // Quiet kinds are SOLID surfaces now, not translucent white, and they
   // sit a step above the ground so their lip has something to be darker
   // than.
   ghost: 'bg-surface text-ink-dim font-extrabold border-edge [--lip:var(--lip-quiet)]',
   subtle: 'bg-surface-2 text-ink font-extrabold border-edge [--lip:var(--lip-quiet)]',
-  danger: 'bg-danger text-black font-extrabold border-[var(--lip-danger)] [--lip:var(--lip-danger)]',
+  danger: 'bg-danger text-white font-extrabold border-[var(--lip-danger)] [--lip:var(--lip-danger)]',
 }
 
 // The concept sets button labels UPPERCASE at 0.08em. It is the single

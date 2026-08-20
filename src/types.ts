@@ -327,11 +327,11 @@ import type { CardioEntry, RunLog } from './activityTypes'
 export * from './activityTypes'
 
 // Moved to journeyTypes.ts, same reason as the three above.
-import { emptyJourney, type JourneyState } from './journeyTypes'
+import type { JourneyState } from './journeyTypes'
 export * from './journeyTypes'
 
 // Moved to prefsTypes.ts, same reason again.
-import { emptyPrefs, type Prefs } from './prefsTypes'
+import type { Prefs } from './prefsTypes'
 export * from './prefsTypes'
 
 // ---------- Meals ----------
@@ -529,6 +529,12 @@ export interface Settings {
   onboarded: boolean
   /** Train-today reminder notifications. */
   remindersEnabled: boolean
+  /**
+   * "Tell me when wearable sync lands." A web app cannot read Apple
+   * Health at any version, so the only honest thing the sync screen can
+   * collect today is the intent. Optional and defaulted: no migration.
+   */
+  healthSyncInterest?: boolean
   /** Local times "HH:MM" (up to 3) when reminders may fire on unfinished training days. */
   reminderTimes: string[]
   /** Display units (storage stays imperial internally). */
@@ -603,8 +609,24 @@ export interface AppData {
    * it renders is derived. See journeyTypes.ts for why this one is not.
    */
   journey: JourneyState
+  /**
+   * When each badge was first seen earned, and the day the app started
+   * watching. Badges cleared before that day are stamped `before-tracking`
+   * rather than given a date the app does not actually know.
+   */
+  achievements: AchievementLog
   /** What the athlete has said about themselves, and expects remembered. */
   prefs: Prefs
+}
+
+/** The sentinel for a badge that was already earned when stamping began. */
+export const BEFORE_TRACKING = 'before-tracking'
+
+export interface AchievementLog {
+  /** achievement id -> ISO date, or BEFORE_TRACKING. */
+  earnedAt: Record<string, string>
+  /** The day stamping started. Absent until the first sweep runs. */
+  trackingFrom?: ISODate
 }
 
 export const SCHEMA_VERSION = 21
@@ -627,59 +649,10 @@ export const DEFAULT_SUPPLEMENTS: Record<SupplementId, boolean> = {
   electrolytes: false,
 }
 
-export function defaultSettings(phaseStartDate: ISODate, installedAt: ISODate = phaseStartDate): Settings {
-  return {
-    phaseStartDate,
-    installedAt,
-    checkinWeekday: 0,
-    trainingDayKcalBonus: 0,
-    proteinTargetG: 200,
-    restTimerEnabled: true,
-    lastExportAt: null,
-    onboarded: false,
-    remindersEnabled: false,
-    reminderTimes: ['05:00', '17:00'], // max two nudges a day
-    units: 'imperial',
-  }
-}
-
-export function defaultWeekState(mondayISO: ISODate): WeekState {
-  return {
-    mondayISO,
-    tier: 1,
-    tierPickedAt: null,
-    tierChanges: [],
-    ballThisWeek: null,
-    ballDates: [],
-    cnsSwapDates: [],
-    cardio: null,
-    events: {},
-    badSleepDates: [],
-  }
-}
-
-export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, plan?: PlanConfig): AppData {
-  return {
-    settings: defaultSettings(phaseStartDate, installedAt),
-    plan: plan ?? buildNaodPreset(),
-    profile: {},
-    weeks: {},
-    sessions: {},
-    excuses: [],
-    meals: {},
-    measurements: [],
-    photos: [],
-    coach: { feed: [], shownMessageIds: [], surfacedInsights: {} },
-    grocery: [],
-    cardio: {},
-    swaps: {},
-    dayLoad: {},
-    adapt: {},
-    runs: [],
-    journey: emptyJourney(),
-    prefs: emptyPrefs(),
-  }
-}
+// The factories that build empty state live in emptyData.ts and are
+// re-exported here, so every caller keeps importing them from types.ts.
+// They are code, not types, and this file is type-capped.
+export { defaultSettings, defaultWeekState, emptyAppData } from './emptyData'
 
 // Nutrition constants (PDF "THE NUMBERS"). NAOD preset values; the live
 // targets an account trains against come from data.plan.nutrition.
@@ -688,8 +661,3 @@ export const KCAL_REST = 2500
 export const CARBS_TRAINING = 300
 export const CARBS_REST = 225
 export const FAT_RANGE = '70–80 g'
-
-// The preset import makes emptyAppData self-sufficient. There is no runtime
-// cycle: every plan/ module imports THIS module type-only (erased), so the
-// runtime edge types → presets → templates/exercises is one-directional.
-import { buildNaodPreset } from './plan/presets/naod'

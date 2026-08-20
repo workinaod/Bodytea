@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { trainTab } from './util'
+import { trainTab, planTab } from './util'
 
 // ============================================================
 // "What am I actually doing, and why?"
@@ -81,7 +81,7 @@ test('the plan reader describes YOUR plan, not the owner\'s booklet', async ({ p
   await page.goto('./')
   await onboard(page, 'Lose weight', 'lose 30 lb by summer')
 
-  await page.locator('button').filter({ hasText: /^Profile$/ }).last().click()
+  await planTab(page)
   await page.getByText('The Plan', { exact: true }).click()
   const sheet = page.getByRole('dialog', { name: 'The Plan' })
 

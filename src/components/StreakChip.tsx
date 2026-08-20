@@ -27,7 +27,7 @@ export function StreakChip({
   const inner = (
     <>
       <Flame streak={streak} size={size} />
-      <span className="num text-[15px] font-extrabold leading-none">{streak}</span>
+      <span className="num text-[16px] font-black leading-none text-accent-soft">{streak}</span>
     </>
   )
   if (!onTap) return <span className="inline-flex items-center gap-1.5">{inner}</span>

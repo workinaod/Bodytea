@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { DayKind, ISODate } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { makeupCandidate } from '../../engine/reconcile'
-import { Btn, Card } from '../../components/ui'
+import { Btn, Tile } from '../../components/ui'
 import { MakeupSheet } from './MakeupSheet'
 
 // ============================================================
@@ -51,8 +51,8 @@ export function MakeupCard({
   return (
     <>
       {makeup && (
-        <Card className="border-accent/40">
-          <div className="text-[11px] font-black uppercase tracking-wider text-accent">Make-up day</div>
+        <Tile tone="heat">
+          <div className="eyebrow text-accent-soft">Make-up day</div>
           <p className="mt-1 text-[13px] leading-snug text-ink-dim">
             You missed <span className="font-bold text-ink">{makeup.title}</span> this week. Off day, open
             window. Run it now and the week stays whole.
@@ -66,7 +66,7 @@ export function MakeupCard({
           >
             or pick a different day
           </button>
-        </Card>
+        </Tile>
       )}
 
       {/* One quiet door, pointing at the room that holds the rest. */}
@@ -75,10 +75,10 @@ export function MakeupCard({
           onClick={onOpenTrain}
           className="flex w-full items-center justify-between gap-2 px-1 py-1.5 text-left"
         >
-          <span className="text-[12.5px] font-semibold text-ink-faint">
+          <span className="text-[12px] font-extrabold text-ink-faint underline underline-offset-[3px]">
             {offDay ? 'Off day. Want to move anyway?' : 'Training something else today?'}
           </span>
-          <span className="text-[12px] font-bold text-cyan">Train ›</span>
+          <span className="text-[12px] font-black text-cyan">Train ›</span>
         </button>
       )}
 

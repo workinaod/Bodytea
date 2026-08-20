@@ -6,7 +6,7 @@ import { addDaysISO, formatDayLabel, todayISO } from '../../engine/calendar'
 import { lateNightGraceDate } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
 import { enableReminders, notificationSupport } from '../../logic/reminders'
-import { BannerRow, Btn, Card, DayArrow, ScreenHeader } from '../../components/ui'
+import { BannerRow, Btn, DayArrow, ScreenHeader, Tile } from '../../components/ui'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
 import { finishSession, restoreToday } from '../../logic/actions'
@@ -19,6 +19,7 @@ import { TodayHero } from './TodayHero'
 import { TodayIdentityRow } from './TodayIdentityRow'
 import { TodayNextUp } from './TodayNextUp'
 import { TodayCardio, CardioBackupChooser } from './TodayCardio'
+import { TodayCoachLine } from './TodayCoachLine'
 import { TodayCompletion } from './TodayCompletion'
 import { TodayPreviewList } from './TodayPreviewList'
 import { MakeupCard } from './MakeupCard'
@@ -104,6 +105,14 @@ export function TodayScreen({
   const finished = session && (session.endedAt || session.status === 'completed' || session.status === 'downgraded-completed')
   const skipped = session?.status === 'skipped'
   const today = date === homeDate
+  // The one day that can be started: the live one, unstarted, with real
+  // work on it. A required-cardio day with nothing picked yet is not a
+  // session, it is a question, and the chooser below is the answer.
+  const canStart =
+    today &&
+    !session &&
+    day.kind !== 'rest' &&
+    !(day.kind === 'cardio-backup' && day.exercises.length === 0)
 
   const restCard = useMemo(() => {
     if (day.kind !== 'rest') return null
@@ -201,24 +210,21 @@ export function TodayScreen({
         </div>
       )}
 
-      <TodayHero data={data} day={viewDay} session={session} onOpenBrief={() => setBriefOpen(true)} />
-
-      {/* One action, full width. "Can't train" is a real door and stays,
-          but it was sharing a row with Start at half its size, which made
-          the screen ask a question instead of giving an instruction. */}
-      {today && !session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
-        <div className="pt-0.5">
-          <Btn size="lg" className="w-full" onClick={handleStart}>
-            {day.cns ? 'Readiness check → start' : 'Start session'}
-          </Btn>
-          <button
-            onClick={() => setSkipOpen(true)}
-            className="press mt-2 w-full py-1 text-center text-[12.5px] font-semibold text-ink-faint underline underline-offset-2"
-          >
-            Can't train
-          </button>
-        </div>
-      )}
+      {/* The mission carries its own button now. A CTA that lives outside
+          the tile it belongs to is a second object, and the concept's whole
+          move here is that there is one object and it has a handle. */}
+      <TodayHero
+        data={data}
+        day={viewDay}
+        session={session}
+        onOpenBrief={() => setBriefOpen(true)}
+        cta={
+          canStart
+            ? { label: day.cns ? 'Readiness check → start' : 'Start session', onStart: handleStart }
+            : undefined
+        }
+        onCantTrain={canStart ? () => setSkipOpen(true) : undefined}
+      />
 
       {day.banners.map((b) => (
         <BannerRow key={b.id} banner={b} />
@@ -230,7 +236,7 @@ export function TodayScreen({
       {!session && data.dayLoad[date] === 'trimmed' && (
         <button
           onClick={() => restoreToday(date)}
-          className="w-full rounded-full bg-white/[0.07] px-3.5 py-2.5 text-[12.5px] font-bold text-ink-dim"
+          className="press-down w-full rounded-[14px] border-2 border-edge bg-surface px-3.5 py-2.5 text-[12.5px] font-black text-ink-dim [--lip:var(--lip-quiet)]"
         >
           Day freed up? Restore the full session
         </button>
@@ -241,8 +247,9 @@ export function TodayScreen({
         !data.settings.remindersEnabled &&
         !remindNudgeGone &&
         !['unsupported', 'denied'].includes(notificationSupport()) && (
-          <Card className="border-cyan/25 !py-3.5">
-            <div className="text-[13.5px] font-extrabold">Want workout reminders?</div>
+          <Tile tone="ice" className="!py-3">
+            <div className="eyebrow text-cyan">Reminders</div>
+            <div className="mt-0.5 text-[13.5px] font-black">Want workout reminders?</div>
             <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
               Two a day max, only while a session is unfinished. Free, on this phone.
             </p>
@@ -282,7 +289,7 @@ export function TodayScreen({
                 No thanks
               </Btn>
             </div>
-          </Card>
+          </Tile>
         )}
 
       <TodayCardio
@@ -298,9 +305,9 @@ export function TodayScreen({
 
       {/* Body states */}
       {day.kind === 'rest' && !session && (
-        <Card>
-          <p className="text-[13.5px] leading-relaxed text-ink-dim">{restCard}</p>
-        </Card>
+        <Tile>
+          <p className="text-[13px] leading-relaxed text-ink-dim">{restCard}</p>
+        </Tile>
       )}
 
       {/* A miss with an open window is coaching about THIS week, so it
@@ -314,16 +321,22 @@ export function TodayScreen({
         onOpenTrain={onOpenTrain}
       />
 
-      {today && <TodayNextUp data={data} today={homeDate} onOpenProgress={onOpenProgress} />}
+      {today && <TodayNextUp data={data} today={homeDate} onOpenBadges={onOpenProfile} />}
+
+      {/* Coaching goes where the decision is. This used to be a whole tab. */}
+      {today && !session && <TodayCoachLine />}
 
       <TodayCompletion
+        data={data}
         session={session}
+        title={viewDay.title}
         date={date}
         today={today}
         skipped={skipped}
         finished={!!finished}
         pastDebrief={pastDebrief}
         onOpenDebrief={(d) => setDebrief({ data: d })}
+        onPreviewTomorrow={setSelected}
       />
 
       {inProgress && viewMode === 'focus' && (
@@ -338,7 +351,7 @@ export function TodayScreen({
         <>
           <button
             onClick={() => setViewMode('focus')}
-            className="w-full rounded-full bg-accent/12 px-4 py-3 text-[13px] font-bold text-accent-soft"
+            className="press-down w-full rounded-[14px] border-2 border-accent-deep bg-surface px-4 py-3 text-[13px] font-black text-accent-soft [--lip:var(--lip-accent)]"
           >
             Back to focus mode
           </button>

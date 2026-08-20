@@ -1,3 +1,4 @@
+import { openRecord, planTab } from './util'
 import { expect, test, type Page } from '@playwright/test'
 
 // Booklet flows: bring-your-own-routine and fine-tune-the-generated-booklet.
@@ -83,10 +84,13 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await page.reload()
   await expect(page.getByText('Split Squat')).toBeVisible()
 
-  // Notes + their on-record claim landed in the coach feed
-  await page.getByRole('button', { name: 'Profile', exact: true }).click()
+  // Notes + their on-record claim landed in the coach feed, which is the
+  // Record segment of Progress now that the Coach tab is gone.
+  await openRecord(page)
   await expect(page.getByText(/Routine notes:/).first()).toBeVisible()
   await expect(page.getByText(/On record, why your routine works/)).toBeVisible()
+  // The booklet is edited from the plan it describes.
+  await planTab(page)
   await page.getByText(/My Booklet · My Routine/).click()
   await expect(page.getByRole('heading', { name: 'My Booklet' })).toBeVisible()
   await expect(page.getByRole('button', { name: /Full Body A/ })).toBeVisible()
@@ -119,7 +123,7 @@ test('generated booklet: fine-tune before starting', async ({ page }) => {
   await page.getByRole('button', { name: 'Lock it in, start Week 1' }).click()
 
   await expect(page.getByText(/Week 1/).first()).toBeVisible()
-  await page.getByRole('button', { name: 'Profile', exact: true }).click()
+  await planTab(page)
   await expect(page.getByText(/My Booklet · My Dunk Plan/)).toBeVisible()
 })
 

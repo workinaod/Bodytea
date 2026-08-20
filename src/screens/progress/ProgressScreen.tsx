@@ -11,7 +11,7 @@ import {
   repMaxSeries,
   totalSessions,
 } from '../../engine/stats'
-import { Btn, Card, Chip, ScreenHeader, SectionTitle, Stepper } from '../../components/ui'
+import { Btn, Card, Chip, ScreenHeader, SectionTitle, Segmented, Stepper, Tile } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { Heatmap, SimpleLine } from '../../components/charts'
 import { PhotoStore } from '../../store/storage'
@@ -21,7 +21,9 @@ import { daysBetween } from '../../engine/calendar'
 import { MilestoneReviewSheet } from './MilestoneReview'
 import { BodyFatEstimator } from './BodyFatEstimator'
 import { WeeklyRecap } from './WeeklyRecap'
-import { TrophyCase } from './TrophyCase'
+import { RecordView } from './RecordView'
+import { ProgressBody } from './ProgressBody'
+import { Flame } from '../../components/Flame'
 import { BoardContent } from '../board/BoardScreen'
 import { ActivityLog } from './ActivityLog'
 import { GoalTimeline } from './GoalTimeline'
@@ -63,7 +65,7 @@ export function ProgressScreen() {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [review, setReview] = useState<MilestoneReview | null>(null)
   const [recapOpen, setRecapOpen] = useState(false)
-  const [view, setView] = useState<'me' | 'case' | 'board'>('me')
+  const [view, setView] = useState<'me' | 'record' | 'board'>('me')
   const [metric, setMetric] = useState<(typeof METRICS)[number]['key']>('waistIn')
   const [lift, setLift] = useState(data.plan.trackedLifts[0]?.exerciseId ?? 'front-squat')
 
@@ -123,29 +125,21 @@ export function ProgressScreen() {
     <div className="space-y-3 pb-6">
       <ScreenHeader title="Progress" />
 
-      {/* You vs everyone: the Board lives here as a second lens */}
-      <div className="flex rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-1">
-        {(
-          [
-            { id: 'me', label: 'Progress' },
-            { id: 'case', label: 'Trophy case' },
-            { id: 'board', label: 'The Board' },
-          ] as const
-        ).map((v) => (
-          <button
-            key={v.id}
-            onClick={() => setView(v.id)}
-            className={`flex-1 rounded-lg py-2 text-[12.5px] font-bold transition-colors ${
-              view === v.id ? 'bg-white/[0.07] text-ink' : 'text-ink-faint'
-            }`}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
+      {/* Three lenses on the same history: your numbers, what actually
+          happened, and where you stand against everyone else. The trophy
+          case moved to Profile, because badges are identity. */}
+      <Segmented
+        value={view}
+        onChange={setView}
+        options={[
+          { id: 'me', label: 'Progress' },
+          { id: 'record', label: 'Record' },
+          { id: 'board', label: 'The Board' },
+        ]}
+      />
 
       {view === 'board' && <BoardContent />}
-      {view === 'case' && <TrophyCase />}
+      {view === 'record' && <RecordView />}
 
       {view === 'me' && checkinDue && (
         <Card className="border-accent/40">
@@ -186,20 +180,27 @@ export function ProgressScreen() {
         )
       })()}
 
+      {/* The body leads. What changed because you showed up, drawn on the
+          thing that changed, before any chart gets a word in. */}
+      <ProgressBody data={data} today={today} />
+
       {/* Records strip */}
       <div className="grid grid-cols-3 gap-2">
-        <Card className="!p-3 text-center">
-          <div className="text-[22px] font-black text-accent">{streak}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">streak</div>
-        </Card>
-        <Card className="!p-3 text-center">
-          <div className="text-[22px] font-black text-lime">{sessions}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">sessions</div>
-        </Card>
-        <Card className="!p-3 text-center">
-          <div className="text-[22px] font-black text-cyan">{data.measurements.length}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">check-ins</div>
-        </Card>
+        <Tile className="!px-2 !py-2.5 text-center">
+          <div className="flex items-center justify-center gap-1">
+            {streak > 0 && <Flame streak={streak} size={13} />}
+            <span className="num text-[23px] font-black leading-none text-accent-soft">{streak}</span>
+          </div>
+          <div className="eyebrow mt-1 text-[9px] text-ink-faint">streak</div>
+        </Tile>
+        <Tile className="!px-2 !py-2.5 text-center">
+          <div className="num text-[23px] font-black leading-none text-lime">{sessions}</div>
+          <div className="eyebrow mt-1 text-[9px] text-ink-faint">sessions</div>
+        </Tile>
+        <Tile className="!px-2 !py-2.5 text-center">
+          <div className="num text-[23px] font-black leading-none text-cyan">{data.measurements.length}</div>
+          <div className="eyebrow mt-1 text-[9px] text-ink-faint">check-ins</div>
+        </Tile>
       </div>
 
       {/* The climb.

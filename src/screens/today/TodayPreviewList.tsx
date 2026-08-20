@@ -1,15 +1,22 @@
 import type { AppData, ISODate, ResolvedDay } from '../../types'
-import { EmptyNote } from '../../components/ui'
+import { EmptyNote, SectionTitle, SetCoin } from '../../components/ui'
 import { getExercise } from '../../plan/exercises'
 import { swapCandidatesFor } from '../../plan/subs'
 import { swapExercise } from '../../logic/actions'
+import { prefillFor } from '../../logic/prescription'
 
 // ============================================================
 // What today is asking for, before anybody starts it.
 //
-// Hairline-divided rows rather than a stack of cards: this is a
-// glance, not a screen. Extracted from TodayScreen unchanged,
-// swap and guide buttons included.
+// Rows, not cards: this is a glance, not a screen. Each one
+// leads with the same 40px coin the plan days and the meal rows
+// use, holding the one number that decides whether you have
+// time for this: 4×6.
+//
+// The sub-line is the load the first set will actually open
+// with, read back out of your own history by the same function
+// the logger uses. Not a guess, and not a different number from
+// the one that appears on the bar thirty seconds later.
 // ============================================================
 
 export function TodayPreviewList({
@@ -36,19 +43,27 @@ export function TodayPreviewList({
 
   return (
     <>
-      <div className="mt-1">
+      <SectionTitle>The work</SectionTitle>
+      <div>
         {day.exercises.map((r, i) => {
           const def = getExercise(r.exerciseId)
           const swapBase = r.swappedFrom ?? r.exerciseId
           const canSwap = swapCandidatesFor(swapBase, data.plan).length > 0
+          const opening = prefillFor(date, r.exerciseId, {
+            repRange: r.repRange,
+            lightMode: r.lightMode,
+          }).weightLb
           return (
             <div
               key={swapBase}
-              className={`flex items-center justify-between gap-3 px-1 py-3.5 ${i > 0 ? 'border-t border-edge/40' : ''}`}
+              className={`flex items-center gap-3 px-0.5 py-2.5 ${i > 0 ? 'border-t-2 border-edge-soft' : ''}`}
             >
-              <div className="min-w-0">
+              <SetCoin>
+                {r.sets > 1 ? `${r.sets}×${r.repText}` : r.repText}
+              </SetCoin>
+              <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
-                  <span className="truncate text-[14.5px] font-bold">{def.name}</span>
+                  <span className="truncate text-[14px] font-extrabold">{def.name}</span>
                   {r.swappedFrom && (
                     <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-gold">swapped</span>
                   )}
@@ -59,9 +74,9 @@ export function TodayPreviewList({
                     <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-gold">light</span>
                   )}
                 </div>
-                <div className="mt-0.5 text-[12px] font-semibold text-ink-dim">
-                  {r.sets > 1 ? `${r.sets} × ${r.repText}` : `${r.repText}${r.repsNum ? ' reps' : ''}`}
-                  <span className="font-normal text-ink-faint"> · {def.equipment}</span>
+                <div className="mt-0.5 text-[11.5px] font-bold text-ink-faint">
+                  {def.equipment}
+                  {opening ? ` · ${opening} lb` : ''}
                 </div>
               </div>
               <div className="flex shrink-0 items-center">

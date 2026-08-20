@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AppData, ISODate } from '../../types'
 import { buildJourney, type Stage } from '../../engine/journey'
+import { Sticker } from '../../components/stickers'
 import { formatShort } from '../../engine/calendar'
 import { SectionTitle } from '../../components/ui'
 import { StageSheet } from './StageSheet'
@@ -202,25 +203,29 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
                 className="press absolute flex flex-col items-center"
                 style={{ left: p.x - 46, top: p.y - size / 2 - 2, width: 92 }}
               >
+                {/* Flat, edged, lipped: the same node the week path uses, one
+                    size up. It used to be a translucent disc with a 22px glow
+                    behind HERE, which is the exact look the concept replaced
+                    (see research/OP5-visual-law.md: zero glow, anywhere). */}
                 <span
-                  className={`flex items-center justify-center rounded-full font-black ${isHere ? 'breathe-in' : ''}`}
+                  className="flex items-center justify-center rounded-full font-black"
                   style={{
                     width: size,
                     height: size,
-                    background: done ? colour : 'rgba(255,255,255,0.06)',
+                    background: isHere || done ? colour : 'var(--color-surface-2)',
                     border: isHere
-                      ? `3px solid ${colour}`
+                      ? '2px solid #fff'
                       : done
-                        ? 'none'
+                        ? `2px solid ${colour}`
                         : isTrackHead || r.isGoal
                           ? `2px solid ${colour}`
-                          : '2px dashed rgba(255,255,255,0.16)',
-                    color: done ? '#0a0a0a' : isHere || isTrackHead || r.isGoal ? colour : 'var(--color-ink-faint)',
+                          : '2px dashed var(--color-edge)',
+                    color: isHere || done ? 'var(--color-bg)' : isTrackHead || r.isGoal ? colour : 'var(--color-ink-faint)',
                     fontSize: isHere ? 12.5 : 15,
-                    boxShadow: isHere ? `0 0 22px -4px ${colour}` : 'none',
+                    boxShadow: `0 3px 0 ${isHere || done ? 'rgba(0,0,0,0.35)' : 'var(--color-edge)'}`,
                   }}
                 >
-                  {done ? '✓' : isHere ? 'HERE' : r.blocker ? '🔒' : r.isGoal ? '★' : ''}
+                  {done ? '✓' : isHere ? 'HERE' : r.isGoal ? <Sticker name="trophy" size={16} /> : ''}
                 </span>
                 <span
                   className={`mt-1.5 w-full truncate text-center text-[11px] font-bold leading-tight ${

@@ -1,19 +1,25 @@
 import { useMemo } from 'react'
 import type { AppData, Goal, ResolvedDay, SessionLog } from '../../types'
-import { Chip } from '../../components/ui'
+import { Btn, Chip, Coin, Tile } from '../../components/ui'
+import { Sticker, type StickerName } from '../../components/stickers'
 import { briefForDay, briefForSession } from '../../engine/workoutBrief'
 
 // ============================================================
-// What today IS, with its price and its point.
+// The mission: one tile, one verb.
+//
+// This used to be four loose blocks stacked down the screen
+// (eyebrow, headline, chips, then a button somewhere below a
+// banner). Loose blocks make a screen look like a document.
+// The concept puts the whole ask inside ONE heat-edged tile
+// with the button in it, so the eye lands on a single object
+// and the object has a handle.
 //
 // The size numbers and the muscles were already computed for
 // the "?" sheet; they were just hidden behind a tap. A person
 // deciding whether to train right now wants the cost before
 // they commit, not after.
 //
-// The why line is the other half: the engine knows why this
-// day looks like this, and saying it in six words is the
-// difference between a chore and a step in something.
+// Contents and order per research/OP5-screen-law.md §1.
 // ============================================================
 
 const BY_GOAL: Record<Goal, string> = {
@@ -34,17 +40,31 @@ function whyLine(day: ResolvedDay, goal: Goal): string {
   return BY_GOAL[goal]
 }
 
+// One icon per kind of day, and no more precision than that. A
+// separate sticker for every day type would be inventing distinctions
+// the plan does not make.
+function coinFor(day: ResolvedDay): StickerName {
+  if (day.kind === 'rest') return 'calendar'
+  if (day.kind === 'cardio-backup') return 'runner'
+  return 'dumbbell-lit'
+}
+
 export function TodayHero({
   data,
   day,
   session,
   onOpenBrief,
+  cta,
+  onCantTrain,
 }: {
   data: AppData
   /** The day being SHOWN, which on a make-up is not the day on the calendar. */
   day: ResolvedDay
   session: SessionLog | undefined
   onOpenBrief: () => void
+  /** The one action, when there is one to offer. Lives INSIDE the tile. */
+  cta?: { label: string; onStart: () => void }
+  onCantTrain?: () => void
 }) {
   const brief = useMemo(
     () => (session ? briefForSession(session, data) : briefForDay(day, data)),
@@ -52,44 +72,78 @@ export function TodayHero({
   )
   const muscles = brief.focus.slice(0, 2).map((f) => f.label).join(' + ')
   const custom = !!session?.customTitle
+  const rest = day.kind === 'rest'
 
   return (
-    <div className="pt-1">
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-          Week {day.weekIndex} · Block {day.blockIndex} · {day.abWeek}
-          {day.tier !== 1 && ` · Tier ${day.tier}`}
-        </span>
-        {day.isDeload && <Chip tone="lime">deload</Chip>}
-        {day.cns && <Chip tone="accent">CNS day</Chip>}
-      </div>
-      {/* A make-up or an off-plan workout IS the day once it exists;
-          the hero says what is actually being done, not the schedule */}
-      <div className="mt-1.5 flex items-start justify-between gap-3">
-        <h1 className="headline min-w-0 text-[31px]">{session?.customTitle ?? day.title}</h1>
-        {/* The session-level "?", the twin of the one on every exercise row:
-            what this workout does, why it runs in this order, and where it
-            sits in the plan. */}
-        <button
-          aria-label="How this workout works"
-          onClick={onOpenBrief}
-          className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[15px] font-black text-cyan active:bg-white/[0.11]"
-        >
-          ?
-        </button>
-      </div>
-      {day.kind !== 'rest' && brief.totalSets > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <Chip>{`~${brief.minutes} min`}</Chip>
-          <Chip>{`${brief.totalSets} sets`}</Chip>
-          {muscles && <Chip>{muscles}</Chip>}
+    <div className="pt-0.5">
+      <Tile tone={rest ? 'plain' : 'heat'} className="!px-4 !py-4">
+        <div className="flex items-start gap-3">
+          <Coin size={52} tone={rest ? 'panel' : 'heat'}>
+            <Sticker name={coinFor(day)} size={30} />
+          </Coin>
+          <div className="min-w-0 flex-1">
+            <div className={`eyebrow ${rest ? 'text-ink-faint' : 'text-accent-soft'}`}>
+              Week {day.weekIndex} · Block {day.blockIndex} · {day.abWeek}
+              {day.tier !== 1 && ` · Tier ${day.tier}`}
+            </div>
+            {/* A make-up or an off-plan workout IS the day once it exists;
+                the tile says what is actually being done, not the schedule */}
+            <h1 className="headline mt-0.5 text-[27px]">{session?.customTitle ?? day.title}</h1>
+          </div>
+          {/* The session-level "?", the twin of the one on every exercise row:
+              what this workout does, why it runs in this order, and where it
+              sits in the plan. */}
+          <button
+            aria-label="How this workout works"
+            onClick={onOpenBrief}
+            className="press -mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 border-edge bg-surface-2 text-[14px] font-black text-cyan"
+          >
+            ?
+          </button>
         </div>
-      )}
-      <p className="mt-2 text-[13px] leading-snug text-ink-dim">
-        {custom ? 'Off the plan, on the record.' : day.tagline}
-      </p>
-      {!custom && (
-        <p className="mt-1 text-[12.5px] leading-snug text-accent-soft">{whyLine(day, data.plan.goal)}</p>
+
+        <p className="mt-2.5 text-[12.5px] leading-snug text-ink-dim">
+          {custom ? 'Off the plan, on the record.' : day.tagline}
+        </p>
+        {!custom && (
+          <p className="mt-1 text-[12.5px] leading-snug text-accent-soft">{whyLine(day, data.plan.goal)}</p>
+        )}
+
+        {(day.isDeload || day.cns || (day.kind !== 'rest' && brief.totalSets > 0)) && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {day.isDeload && <Chip tone="lime">deload</Chip>}
+            {day.cns && <Chip tone="accent">CNS day</Chip>}
+            {day.kind !== 'rest' && brief.totalSets > 0 && (
+              <>
+                <Chip>
+                  <b className="num font-black text-ink">{brief.minutes}</b> min
+                </Chip>
+                <Chip>
+                  <b className="num font-black text-ink">{brief.totalSets}</b> sets
+                </Chip>
+                {muscles && <Chip>{muscles}</Chip>}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* One action, full width, inside the tile it belongs to. It used
+            to share a row with "Can't train" at half this size, which made
+            the screen ask a question instead of giving an instruction. */}
+        {cta && (
+          <Btn size="lg" className="mt-3.5 w-full" onClick={cta.onStart}>
+            {cta.label}
+          </Btn>
+        )}
+      </Tile>
+
+      {onCantTrain && (
+        <button
+          onClick={onCantTrain}
+          className="press mt-1.5 w-full py-1 text-center text-[12px] font-extrabold text-ink-faint underline underline-offset-[3px]"
+        >
+          Can't train today
+        </button>
       )}
     </div>
   )

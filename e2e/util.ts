@@ -34,3 +34,17 @@ export async function openNutrition(page: Page): Promise<void> {
 export function trainTab(page: Page) {
   return page.getByRole('button', { name: 'Train', exact: true })
 }
+
+/** The whole program lives behind one tab; Training is the half it opens on. */
+export async function planTab(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
+}
+
+/**
+ * The coach feed, the runs and every session: the Record segment of
+ * Progress. It used to be the bottom two thirds of a Coach tab.
+ */
+export async function openRecord(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Progress', exact: true }).click()
+  await page.getByRole('button', { name: 'Record', exact: true }).click()
+}

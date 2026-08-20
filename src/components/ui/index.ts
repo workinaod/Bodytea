@@ -5,10 +5,12 @@
 // ============================================================
 
 export { Btn, IconBtn, XIcon } from './Button'
-export { Card, SectionTitle, BannerRow, EmptyNote } from './Surface'
+export { Card, Tile, Coin, SetCoin, SectionTitle, BannerRow, EmptyNote } from './Surface'
+export type { TileTone } from './Surface'
 export { ScreenHeader, DayArrow } from './ScreenHeader'
 export { Chip, ChoiceChip } from './Chip'
-export { Ring, Stat } from './Data'
-export { Stepper, Toggle } from './Input'
+export { Ring, Stat, QBar, WeekNode, PathLink } from './Data'
+export type { NodeState } from './Data'
+export { Stepper, Toggle, Segmented } from './Input'
 export { Reveal } from './Reveal'
 export { HeightField, WeightField, formatHeight, parseHeightDigits } from './MeasureField'

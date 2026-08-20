@@ -44,7 +44,7 @@ test('build your own workout and run it live', async ({ page }) => {
 
   // Train opens by pointing back at the plan: this tab is the alternative.
   await offPlanButton(page).click()
-  await expect(page.getByText("Today's session")).toBeVisible()
+  await expect(page.getByText("Today's mission")).toBeVisible()
   await page.getByRole('button', { name: /Your own workout/ }).click()
 
   // Pick a movement off the full catalog.

@@ -276,7 +276,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done + LIVE 2026-08-19** (deploy 65ed650) | OP1 | off-plan training session |
 | OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
 | OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done + LIVE 2026-08-19** (owner said deploy; merge 2817eed carries OP4 plus the W10/W11/W16/W18/W4m wiring wave, deploy.yml untouched) | - | 3D body muscle models session |
-| OP5 | UI/UX overhaul phase 1 (owner request, "Master Prompt v3"): the owner lifted the post-core visual-overhaul fence for this lane. Daily-loop experience work: motion system (3 juice tiers with habituation guards), flame ladder visible from day 1 (11 stages), Today as a mission hub (identity HUD, week path, one dominant CTA, real-badge Next up), the finish-chain ceremony (count-up, PR, flame ignition, badge delta, tomorrow), set-done haptic, Train tab (off-plan surfaces promoted from Today), My Plan tab (Week + Meals as segments, owner decision), Progress Body coverage card, and Profile replacing Coach as the identity hub (badges move in, My Room socket, honest Connected apps) with coaching redistributed into Today / My Plan / Progress. **ONBOARDING IS OUT OF SCOPE: the owner is building it elsewhere** (see the checkpoint for the multi-goal defect they caught and the engine facts that lane needs). Zero engine or generator changes; golden lock untouched | product | **in-progress 2026-08-20** (branch `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip 12e110b, 7 commits, unpushed; C0-C6 landed: motion, flame ladder, Today split, Today mission hub, finish chain, navigation, plus the fire rebuild. Owner added a visual-law commit before C7 Profile. Owner merges when ready, deploy.yml untouched) | - | UI/UX overhaul session |
+| OP5 | UI/UX overhaul phase 1 (owner request, "Master Prompt v3"): the owner lifted the post-core visual-overhaul fence for this lane. Daily-loop experience work: motion system (3 juice tiers with habituation guards), flame ladder visible from day 1 (11 stages), Today as a mission hub (identity HUD, week path, one dominant CTA, real-badge Next up), the finish-chain ceremony (count-up, PR, flame ignition, badge delta, tomorrow), set-done haptic, Train tab (off-plan surfaces promoted from Today), My Plan tab (Week + Meals as segments, owner decision), Progress Body coverage card, and Profile replacing Coach as the identity hub (badges move in, My Room socket, honest Connected apps) with coaching redistributed into Today / My Plan / Progress. **ONBOARDING IS OUT OF SCOPE: the owner is building it elsewhere** (see the checkpoint for the multi-goal defect they caught and the engine facts that lane needs). Zero engine or generator changes; golden lock untouched | product | **in-progress 2026-08-20** (branch `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip 12e110b, 17 commits, unpushed; C0-C8 landed: motion, flame ladder, Today split, Today mission hub, finish chain, navigation, the approved visual law with a guard, the approved SCREEN law with a guard, Profile + badges with earned dates, Progress Body. C9 ship is what remains. Owner merges when ready, deploy.yml untouched) | - | UI/UX overhaul session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1171,6 +1171,58 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   Gates run at C5 and C6: typecheck clean, **1,454/1,454 unit**, build green,
   **e2e 83 passed / 0 failed** (2.8m, fresh preview server).
   NEXT: the visual-law commit, then C7 Profile + badges, C8 Progress Body, C9 ship.
+
+- **2026-08-20 · OP5 · the screens, not just the paint.** The owner caught the failure that
+  matters most in this whole job, in one question: *"The preview showed a whole different plan
+  for this page, is that later in the roadmap and we are just adjusting colors rn?"* No. The
+  palette was right and the screens were still the old screens wearing it. The pattern behind
+  it, said plainly because it has now cost this project four separate corrections: **I start
+  work before I finish reading the source of truth.** It happened with the flame, with the
+  palette, and with Train.
+  THE FIX IS STRUCTURAL, not a promise. `research/OP5-screen-law.md` transcribes the approved
+  preview frame by frame, every screen, in order, and `src/screenLaw.test.ts` asserts those
+  landmarks are actually in `src/`. It was written FIRST and watched fail 8/8 against the tree
+  before a line was built, then driven to green. Same mechanism as `visualLaw.test.ts`: an
+  approved decision that lives outside the repo is a rumour.
+  SHIPPED: a shared surface vocabulary (`Tile` with heat/volt/ice/gold tones, `Coin`,
+  `SetCoin`, `SectionTitle`, `QBar`, `WeekNode`, `PathLink`, `Segmented`) plus
+  `components/stickers.tsx`, the flat two-tone icon set the concept's coins need · Today's
+  mission is now ONE heat tile with the coin, the chips and the Start button inside it, the HUD
+  is flame + badge count + avatar, the week is a real node path, exercise rows lead with a
+  40px coin, and the Sergeant's quote and Push me landed on Today · the exit state floods volt
+  with the real haul, names the streak tier and hands over tomorrow · Train got its 44px icon
+  launchers, its two section titles, an ice cardio tile and the **Exercise library** the
+  preview asked for (the picker in a new `browse` mode: same 194 movements, a tap opens the
+  guide) · My Plan got the approved segmented switch, tier TILES with path nodes, weekday
+  coins and status chips on the days, and both plan doors (`The Plan`, `My Booklet`) which used
+  to live a tab away · Nutrition got 12px flat rings, protein coins on food rows and one loud
+  log action · Progress leads with `ProgressBody` and its segments are now
+  **Progress | Record | The Board** · **Coach is gone**: `ProfileScreen` replaces it with the
+  stats header, the training path, the body glance, the pact socket, My Room and the BadgeGrid,
+  and `RecordView` carries the timeline to Progress.
+  NEW PERSISTED KEY: `data.achievements = { earnedAt, trackingFrom }`, defaulted like `journey`
+  so no SCHEMA_VERSION bump. Badges standing on the day this shipped are stamped
+  `before-tracking` rather than handed a date nobody recorded. `stampProgress()` writes both
+  ladders from the session-finish and daily-sweep paths.
+  LEARNED: (1) **structure.test counts lines as `wc -l` + 1** — three files broke their
+  allowance by exactly one, which cost a round of confusion. (2) Allowances shrink only, so
+  types.ts paid for its new key by moving `defaultSettings`/`defaultWeekState`/`emptyAppData`
+  into `emptyData.ts` and re-exporting them, which no caller notices. (3) The dead-export scan
+  is a text scan: a LOCAL `const isToday` in WeekScreen made it think
+  `engine/calendar.ts:isToday` had found a caller. (4) `e2eSelectors.test.ts` now walks every
+  `.ts` under `e2e/`, not only `.spec.ts`, closing the hole flagged in the last checkpoint;
+  proven by feeding it a helper that clicks a button which does not exist.
+  DELIBERATE SPEC CHANGES, each because the behaviour moved: `offplan` reads "Today's mission"
+  (was "Today's session"), `volume` reads `3×6` from the row's coin, `brief` and `booklet` reach
+  The Plan and My Booklet through the Plan tab, `booklet` reads the coach feed through
+  Progress → Record. `settings.spec` needed no change and caught a real regression: Profile has
+  to close Settings before opening Account, the way Coach did, or two aria-modal dialogs stack.
+  Gates: typecheck clean, **1,491/1,491 unit**, build green, full e2e green on a fresh preview
+  server, 390px screenshots reviewed and iterated (the HUD collapsing to a left-hung avatar on
+  day one, `60 sec / side` bursting a 40px coin, three days painted red for a Thursday signup,
+  and the ring labels landing on two different baselines were all caught that way and fixed).
+  NEXT: C9 ship — `research/OP5-ux-overhaul.md`, republish the dashboard, push, and the owner's
+  screenshot review.
 
 ## 10. SOURCES
 

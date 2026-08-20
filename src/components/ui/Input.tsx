@@ -91,3 +91,47 @@ export function Toggle({
     </button>
   )
 }
+
+// ============================================================
+// The segmented switch.
+//
+// Two screens carry one: My Plan (Training / Nutrition) and
+// Progress (Progress / Record / The Board). Both had their own
+// translucent pill, which is the same defect the buttons had:
+// a control drawn with opacity instead of with edges.
+//
+// Geometry per research/OP5-visual-law.md: 2px line, radius 14,
+// panel fill, 3px pad, a lip; the active half is a heat fill at
+// radius 10 with its own lip.
+// ============================================================
+
+export function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T
+  options: { id: T; label: string }[]
+  onChange: (id: T) => void
+}) {
+  return (
+    <div className="flex gap-[3px] rounded-[14px] border-2 border-edge bg-surface p-[3px] shadow-[0_3px_0_var(--color-edge)]">
+      {options.map((o) => {
+        const on = o.id === value
+        return (
+          <button
+            key={o.id}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(o.id)}
+            className={`flex-1 rounded-[10px] px-1 py-2 text-[12px] font-black transition-colors duration-150 ${
+              on ? 'bg-accent text-white shadow-[0_2px_0_var(--lip-accent)]' : 'text-ink-faint'
+            }`}
+          >
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}

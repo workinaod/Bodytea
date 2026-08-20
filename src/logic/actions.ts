@@ -25,7 +25,7 @@ import {
   pushShown,
 } from '../engine/coach'
 import { composeDebrief } from '../engine/debrief'
-import { stampReachedStages } from './journeyActions'
+import { stampProgress } from './achievementActions'
 import { finalStatus } from '../engine/quit'
 import { currentStreak, detectPRs, proteinFor } from '../engine/stats'
 import { addDaysISO, daysBetween, mondayOf, todayISO, weekdayOf } from '../engine/calendar'
@@ -268,8 +268,8 @@ export function finishSession(date: ISODate): DebriefData {
   // The stage stamp goes first, so a session that carried somebody past
   // a stage has it recorded before anything reads the journey. A top set
   // at 225 is a stage crossed the moment it is logged, and the deload
-  // that follows must not be able to take it back.
-  stampReachedStages(todayISO())
+  // that follows must not be able to take it back. Badges ride along.
+  stampProgress(todayISO())
   for (const pr of prs) pushCoachMessage('pr', { exercise: pr.name })
   const streak = currentStreak(store().data, todayISO())
   if ([3, 7, 14, 30, 50, 100].includes(streak)) pushCoachMessage('streak', { streak })
@@ -612,7 +612,7 @@ export function saveMeasurement(m: Measurement): void {
   // A check-in is the only way a body stage ever gets crossed, so this is
   // where one gets stamped. After the write, not inside it: the stamp is
   // decided by reading the state the measurement just created.
-  stampReachedStages(todayISO())
+  stampProgress(todayISO())
 }
 
 // ---------- Daily sweep (on app open) ----------

@@ -4,12 +4,13 @@ import { uid, useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatShort, mondayOf, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
-import { Card, Chip, DayArrow, ScreenHeader, SectionTitle, Toggle } from '../../components/ui'
+import { Card, Chip, DayArrow, ScreenHeader, SectionTitle, SetCoin, Tile, Toggle, WeekNode } from '../../components/ui'
 import { dayActivities, shortDuration } from '../../engine/activityStats'
 import { intensityLabel } from '../../engine/intensity'
 import { Sheet } from '../../components/Sheet'
 import { changeTier } from '../../logic/actions'
 import { TierDropSheet } from './TierDropSheet'
+import { PlanDoors } from '../plan/PlanDoors'
 import { actualLine, dayRecap } from '../../engine/sessionRecap'
 import { briefForDay } from '../../engine/workoutBrief'
 import { WorkoutBriefSheet } from '../today/WorkoutBriefSheet'
@@ -50,27 +51,28 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
   const needsPick = thisWeek && !week?.tierPickedAt
   const ball = data.plan.sportMode === 'ball'
 
-  function statusFor(d: ResolvedDay): { dot: string; label: string } {
+  function statusFor(d: ResolvedDay): { dot: string; label: string; tone?: 'lime' | 'accent' | 'gold' | 'danger' } {
     const s = data.sessions[d.date]
     const scheduled = d.kind !== 'rest'
     if (!scheduled) {
       // An off day somebody trained anyway (a make-up, an off-plan
       // workout) is work on the record, not "rest".
       if (s && s.status !== 'skipped') {
-        if (!s.endedAt && s.status === 'partial') return { dot: 'bg-gold', label: 'in progress' }
-        return { dot: 'bg-lime', label: s.makeupFor ? `made up ${formatShort(s.makeupFor)}` : 'trained anyway' }
+        if (!s.endedAt && s.status === 'partial') return { dot: 'bg-gold', label: 'in progress', tone: 'gold' }
+        return { dot: 'bg-lime', label: s.makeupFor ? `made up ${formatShort(s.makeupFor)}` : 'trained anyway', tone: 'lime' }
       }
       return { dot: 'bg-edge', label: 'rest' }
     }
     if (s) {
-      if (s.status === 'skipped') return { dot: 'bg-danger', label: 'skipped' }
-      if (s.status === 'completed') return { dot: 'bg-lime', label: 'done' }
-      if (s.status === 'downgraded-completed') return { dot: 'bg-lime', label: 'done (light)' }
-      return { dot: 'bg-gold', label: s.endedAt ? 'partial' : 'in progress' }
+      if (s.status === 'skipped') return { dot: 'bg-danger', label: 'skipped', tone: 'danger' }
+      if (s.status === 'completed') return { dot: 'bg-lime', label: 'done', tone: 'lime' }
+      if (s.status === 'downgraded-completed') return { dot: 'bg-lime', label: 'done (light)', tone: 'lime' }
+      return { dot: 'bg-gold', label: s.endedAt ? 'partial' : 'in progress', tone: 'gold' }
     }
     if (d.date < data.settings.installedAt) return { dot: 'bg-edge', label: 'before the app' }
-    if (d.date < today) return { dot: 'bg-danger/50', label: 'unaccounted' }
-    return { dot: 'bg-white/[0.07] border border-edge', label: 'upcoming' }
+    if (d.date < today) return { dot: 'bg-danger/50', label: 'unaccounted', tone: 'danger' }
+    if (d.date === today) return { dot: 'bg-accent', label: 'today', tone: 'accent' }
+    return { dot: 'bg-white/[0.07] border border-edge', label: 'up next' }
   }
 
   function markersFor(d: ResolvedDay): string[] {
@@ -132,29 +134,40 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
           Pick once, at the start of the week. Go with what you honestly have.
         </p>
       )}
-      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
-        {( [1, 2, 3] as Tier[]).map((t, i) => (
-          <button
+      {/* Three tiles, not three rows in a box. The tier IS the week's
+          contract, and the one you signed should look chosen rather than
+          ticked. */}
+      <div className="space-y-2">
+        {([1, 2, 3] as Tier[]).map((t) => (
+          <Tile
             key={t}
+            tone={tier === t ? 'heat' : 'plain'}
             onClick={() => handleTierTap(t)}
-            className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
-              i > 0 ? 'border-t border-white/[0.05]' : ''
-            } ${tier === t ? 'bg-accent/8' : ''}`}
+            ariaLabel={TIER_INFO[t].name}
+            className="!py-3"
           >
-            <span
-              className={`h-4 w-4 shrink-0 rounded-full border-2 ${
-                tier === t ? 'border-accent bg-accent' : 'border-edge'
-              }`}
-            />
-            <span className="min-w-0 flex-1">
-              <span className={`block text-[14px] font-extrabold ${tier === t ? 'text-accent-soft' : 'text-ink'}`}>
-                {TIER_INFO[t].name}
+            <div className="flex items-center gap-3">
+              {tier === t ? (
+                <span className="h-[17px] w-[17px] shrink-0 rounded-full border-2 border-accent-deep bg-accent shadow-[0_2px_0_var(--lip-accent)]" />
+              ) : (
+                <WeekNode state="future" />
+              )}
+              <span className="min-w-0 flex-1">
+                <span className={`block text-[13.5px] font-black ${tier === t ? 'text-accent-soft' : ''}`}>
+                  {TIER_INFO[t].name}
+                </span>
+                <span className="mt-px block text-[11px] font-bold leading-snug text-ink-faint">
+                  {TIER_INFO[t].blurb}
+                </span>
               </span>
-              <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-faint">{TIER_INFO[t].blurb}</span>
-            </span>
-          </button>
+            </div>
+          </Tile>
         ))}
       </div>
+
+      {/* Both doors into the plan itself. They used to live on a Coach tab,
+          two taps from the week they describe. */}
+      <PlanDoors />
 
       {/* Tier 2/3 day placement */}
       {tier > 1 && (
@@ -196,36 +209,44 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
 
       {/* 7-day strip */}
       <SectionTitle>The days</SectionTitle>
-      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+      <div>
         {days.map((d, i) => {
           const st = statusFor(d)
+          const isNow = d.date === today
+          const done = st.tone === 'lime'
           return (
             <div
               key={d.date}
               onClick={() => setPreview(d)}
-              className={`flex cursor-pointer items-center gap-3 px-4 py-3 active:bg-white/[0.07] ${
-                i > 0 ? 'border-t border-white/[0.05]' : ''
+              className={`flex cursor-pointer items-center gap-3 px-0.5 py-2.5 ${
+                i > 0 ? 'border-t-2 border-edge-soft' : ''
               }`}
             >
-              <div className="w-9 text-center">
-                <div className={`text-[11px] font-black ${d.date === today ? 'text-accent' : 'text-ink-faint'}`}>
-                  {WD_LABEL[weekdayOf(d.date)]}
-                </div>
-                <div className="text-[10px] text-ink-faint">{formatShort(d.date).split(' ')[1]}</div>
-              </div>
-              <span className={`h-2 w-2 shrink-0 rounded-full ${st.dot}`} />
+              <SetCoin
+                className={
+                  done
+                    ? '!border-[var(--lip-lime)] !text-lime'
+                    : isNow
+                      ? '!border-accent-deep !text-accent-soft'
+                      : ''
+                }
+              >
+                {WD_LABEL[weekdayOf(d.date)].toUpperCase()}
+              </SetCoin>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[13.5px] font-bold">
+                <div className="truncate text-[14px] font-extrabold">
                   {data.sessions[d.date]?.customTitle ?? d.title}
                 </div>
-                <div className="text-[11px] font-medium text-ink-faint">
-                  {st.label}
+                <div className="text-[11px] font-bold text-ink-faint">
+                  {formatShort(d.date)}
                   {markersFor(d).map((m) => (
                     <span key={m} className="text-gold"> · {m}</span>
                   ))}
                 </div>
               </div>
-              <span className="text-[13px] text-ink-faint">›</span>
+              <Chip tone={st.tone ?? 'default'} className="shrink-0">
+                {st.label}
+              </Chip>
             </div>
           )
         })}

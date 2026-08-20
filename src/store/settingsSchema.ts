@@ -20,6 +20,7 @@ export const settingsSchema = z.object({
   lastExportAt: z.string().nullable(),
   onboarded: z.boolean(),
   remindersEnabled: z.boolean(),
+  healthSyncInterest: z.boolean().optional(),
   reminderTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/)).max(3),
   units: z.enum(['imperial', 'metric']),
   reviewsSeen: z.array(z.string()).optional(),
