@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData, type SessionLog } from '../types'
 import { addDaysISO } from './calendar'
-import { STEP_MAX, STEP_MIN, STEP_RULE_VERSION, STEP_TARGET, STEP_TYPE, calorieStep, stepCopy, stepDecision } from './calorieStep'
+import { STEP_MAX, STEP_METRIC, STEP_MIN, STEP_RULE_VERSION, STEP_TARGET, STEP_TYPE, STEP_WINDOW_DAYS, calorieStep, stepCopy, stepDecision } from './calorieStep'
 import { appendDecision, decisionRow } from './decisions'
 import { kcalBumpSuggestion } from './stats'
 
@@ -229,5 +229,30 @@ describe('what the answer looks like written down', () => {
     const s = calorieStep(d, TODAY)!
     appendDecision(d, stepDecision(s, 'accepted', TODAY, 0))
     expect(calorieStep(d, TODAY)).not.toBeNull()
+  })
+})
+
+describe('accepting pre-registers what it will be judged on', () => {
+  it('fixes the metric, the window and the number to beat, at accept time', () => {
+    // The survivor that made this test exist: a mutation set the
+    // registered baseline to 0 and every outcome test stayed green,
+    // because they all built their accepted rows by hand and never went
+    // through the offer site. An outcome chosen after the fact is a
+    // story, and nothing was checking that it was not one.
+    const s = calorieStep(trending(cutting(), 190, -0.4), TODAY)!
+    const row = stepDecision(s, 'accepted', TODAY, 0)
+    expect(row.baseline).toBe(s.trendLbPerWeek)
+    expect(row.baseline).not.toBe(0)
+    expect(row.metricId).toBe(STEP_METRIC)
+    expect(row.windowDays).toBe(STEP_WINDOW_DAYS)
+    expect(row.windowClosesAt).toBe(addDaysISO(TODAY, STEP_WINDOW_DAYS))
+  })
+
+  it('registers nothing on a decline, because nothing is being judged', () => {
+    const s = calorieStep(trending(cutting(), 190, -0.4), TODAY)!
+    const row = stepDecision(s, 'declined', TODAY, 0)
+    expect(row.baseline).toBeUndefined()
+    expect(row.windowClosesAt).toBeUndefined()
+    expect(row.metricId).toBeUndefined()
   })
 })

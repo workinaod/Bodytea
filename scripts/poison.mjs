@@ -1319,6 +1319,49 @@ const MUTATIONS = [
     spec: "src/plan/nutritionPlan.test.ts",
   },
   {
+    id: "verdict-cannot-say-no",
+    bug: "every accepted change is recorded as having worked, which turns the ledger into a compliment generator and teaches the learning loop nothing",
+    file: "src/engine/outcomes.ts",
+    find: "  return { row, outcome: trend.value, verdict: Math.sign(moved) === wanted ? 'worked' : 'worse' }",
+    to: "  return { row, outcome: trend.value, verdict: 'worked' }",
+    spec: "src/engine/outcomes.test.ts",
+  },
+  {
+    id: "verdict-credits-two-changes-at-once",
+    bug: "one intervention takes the credit for a window in which something else also changed, so the ledger learns a false lesson",
+    file: "src/engine/outcomes.ts",
+    find: "  if (!isolated(data, row) || trendIsConfounded(data)) {",
+    to: "  if (false) {",
+    spec: "src/engine/outcomes.test.ts",
+  },
+  {
+    id: "verdict-judged-before-its-window",
+    bug: "a change is graded days after it was made, on a trend that cannot have responded yet",
+    file: "src/engine/outcomes.ts",
+    find: "      daysBetween(d.windowClosesAt, today) >= 0,",
+    to: "      true,",
+    spec: "src/engine/outcomes.test.ts",
+  },
+  {
+    id: "verdict-outcome-chosen-after-the-fact",
+    bug: "the baseline is read at judging time instead of the one registered when the offer was accepted, which is how a result becomes a story",
+    file: "src/engine/calorieStep.ts",
+    find: "    baseline: s.trendLbPerWeek,",
+    to: "    baseline: 0,",
+    // Aimed at where stepDecision LIVES. Pointed at the outcome spec it
+    // survived: every test there builds its accepted rows by hand and
+    // never goes through the offer site.
+    spec: "src/engine/calorieStep.test.ts",
+  },
+  {
+    id: "verdict-card-never-leaves",
+    bug: "feedback about something that finished a month ago stays on screen as though it were news",
+    file: "src/engine/outcomes.ts",
+    find: "      daysBetween(d.windowClosesAt, today) <= VERDICT_VISIBLE_DAYS &&",
+    to: "",
+    spec: "src/engine/outcomes.test.ts",
+  },
+  {
     id: "ledger-row-lies-about-its-rule",
     bug: "a row records the wrong rule version, so a decision made by an old rule is read as though a new one made it",
     file: "src/engine/calorieStep.ts",
