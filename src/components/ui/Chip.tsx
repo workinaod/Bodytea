@@ -6,13 +6,15 @@ import type { ReactNode } from 'react'
 
 type Tone = 'default' | 'accent' | 'lime' | 'cyan' | 'gold' | 'danger'
 
+// Flat fills with a visible outline: a chip is a small sticker, and at
+// 1px its border was a suggestion rather than an edge.
 const TONES: Record<Tone, string> = {
-  default: 'bg-white/[0.07] text-ink-dim border-white/[0.05]',
-  accent: 'bg-accent/15 text-accent-soft border-accent/30',
-  lime: 'bg-lime/10 text-lime border-lime/25',
-  cyan: 'bg-cyan/10 text-cyan border-cyan/25',
-  gold: 'bg-gold/10 text-gold border-gold/25',
-  danger: 'bg-danger/10 text-danger border-danger/25',
+  default: 'bg-surface text-ink-dim border-edge',
+  accent: 'bg-accent/20 text-accent-soft border-accent/55',
+  lime: 'bg-lime/15 text-lime border-lime/50',
+  cyan: 'bg-cyan/15 text-cyan border-cyan/50',
+  gold: 'bg-gold/15 text-gold border-gold/50',
+  danger: 'bg-danger/15 text-danger border-danger/50',
 }
 
 export function Chip({
@@ -29,7 +31,7 @@ export function Chip({
   pressed?: boolean
   className?: string
 }) {
-  const cls = `inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-micro font-semibold tracking-normal ${TONES[tone]} ${onClick ? 'press cursor-pointer' : ''} ${className}`
+  const cls = `inline-flex items-center gap-1 whitespace-nowrap rounded-[11px] border-2 px-2.5 py-1 text-[11px] font-semibold tracking-normal ${TONES[tone]} ${onClick ? 'press cursor-pointer' : ''} ${className}`
 
   // A chip with a tap handler is a control, and controls are buttons.
   // These were spans, which is the same defect the onboarding chips were
@@ -70,10 +72,10 @@ export function ChoiceChip({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`press rounded-full px-4 py-2.5 text-[13.5px] font-semibold ring-1 ${
+      className={`press-down rounded-[14px] border-2 px-4 py-2.5 text-[13.5px] font-bold [--lip:var(--lip-quiet)] ${
         selected
-          ? 'bg-accent/18 text-accent-soft ring-accent/40 shadow-[0_1px_0_rgba(255,255,255,0.08)_inset]'
-          : 'bg-white/[0.06] text-ink ring-white/[0.08] shadow-[0_1px_0_rgba(255,255,255,0.06)_inset]'
+          ? 'border-accent/60 bg-accent/20 text-accent-soft'
+          : 'border-edge bg-surface-2 text-ink'
       } ${className}`}
     >
       {children}

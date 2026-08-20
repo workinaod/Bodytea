@@ -27,12 +27,14 @@ import { DebriefSheet } from '../today/DebriefSheet'
 // the plan's session is still the right call.
 // ============================================================
 
-const GLASS =
-  'bg-white/[0.055] ring-1 ring-white/[0.06] shadow-[0_1px_0_rgba(255,255,255,0.06)_inset] active:bg-white/[0.11]'
+// A tile, per research/OP5-visual-law.md: flat panel, 2px outline, and
+// a lip. The translucent glass this used to be is the one thing the
+// approved concept has no room for anywhere.
+const TILE = 'border-2 border-edge bg-surface shadow-[0_3px_0_var(--color-edge)]'
 
 function Launcher({ title, sub, onClick }: { title: string; sub: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className={`press block w-full rounded-2xl px-4 py-3.5 text-left ${GLASS}`}>
+    <button onClick={onClick} className={`press-down block w-full rounded-2xl px-4 py-3.5 text-left [--lip:var(--lip-quiet)] ${TILE}`}>
       <span className="block text-[14px] font-extrabold leading-tight">{title}</span>
       <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-faint">{sub}</span>
     </button>

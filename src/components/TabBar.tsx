@@ -20,8 +20,8 @@ function TabButton({ id, label, active, onClick }: { id: TabId; label: string; a
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-1 flex-col items-center gap-px rounded-2xl py-1.5 transition-colors duration-200 ${
-        active ? 'bg-accent/12 text-accent' : 'text-ink-faint active:text-ink-dim'
+      className={`relative flex flex-1 flex-col items-center gap-px rounded-2xl border-2 py-1.5 transition-colors duration-200 ${
+        active ? 'border-accent/45 bg-accent/15 text-accent' : 'border-transparent text-ink-faint active:text-ink-dim'
       }`}
     >
       <Glyph name={id} active={active} />
@@ -101,7 +101,7 @@ export function TabBar({
         className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-32 bg-gradient-to-t from-bg via-bg/90 to-transparent"
       />
       <nav
-      className={`fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),10px)] z-40 mx-auto max-w-lg ${session ? 'animate-rise' : ''}`}
+      className={`fixed inset-x-0 bottom-0 z-40 mx-auto max-w-lg ${session ? 'animate-rise' : ''}`}
       onTouchStart={(e) => {
         if (session) touchY.current = e.touches[0]?.clientY ?? null
       }}
@@ -116,7 +116,10 @@ export function TabBar({
         touchY.current = null
       }}
     >
-      <div className="relative flex items-stretch rounded-[22px] bg-[#131315]/90 ring-1 ring-white/[0.06] px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_16px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+      {/* Docked, not floating. A bar that hovers over the page reads as
+          an overlay; the concept sits it ON the bottom edge with a rule
+          across the top, so it is part of the app rather than above it. */}
+      <div className="relative flex items-stretch border-t-2 border-edge bg-surface px-2 pb-[max(env(safe-area-inset-bottom),12px)] pt-2">
         <div className="flex flex-1 items-stretch">
           {LEFT.map((t) => (
             <TabButton key={t.id} id={t.id} label={t.label} active={tab === t.id} onClick={() => pick(t.id)} />
@@ -129,7 +132,7 @@ export function TabBar({
           onClick={onTrack}
           className="flex w-14 shrink-0 flex-col items-center justify-center gap-px py-0.5 active:scale-95"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-accent/60 bg-gradient-to-b from-accent to-accent-deep shadow-[0_4px_16px_-4px_rgba(255,79,48,0.6),inset_0_1px_0_rgba(255,255,255,0.25)]">
+          <span className="press-down flex h-9 w-9 items-center justify-center rounded-full border-2 border-accent-deep bg-accent [--lip:var(--lip-accent)]">
             <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="black" stroke="black" strokeWidth="1" strokeLinejoin="round">
               <path d="M12 2.5 18.5 20 12 16.6 5.5 20Z" />
             </svg>

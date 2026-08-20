@@ -1,28 +1,62 @@
 @import 'tailwindcss';
 @import './styles/motion.css';
 
-/* Bodytea look: pure neutral blacks — zero color cast on any
-   surface — with two hot accents used sparingly: heat orange-red
-   for brand/action, volt for commit CTAs. Nike-on-asphalt, not a
-   theme. One superfamily, bundled and offline: Inter Tight carries
-   the headings, Inter carries every word and every number. */
+/* ============================================================
+   THE APPROVED LOOK. The spec is research/OP5-visual-law.md and
+   src/visualLaw.test.ts fails if this drifts from it.
+
+   Flat sticker surfaces on a SLATE ground, never pure black: a
+   sticker needs something to sit on, and #0a0a0a gives a 2px
+   border nothing to be an edge against. The old "pure neutral
+   black, zero colour cast" note that stood here predates the
+   owner's sign-off and is superseded by it.
+
+   Every fill has an EDGE one step darker. That edge is both the
+   2px outline and the 4px lip the control sinks onto, and using
+   one colour for both is what makes a button read as a moulded
+   object rather than a rectangle with a shadow.
+   ============================================================ */
 @theme {
-  --color-bg: #0a0a0a;
-  --color-surface: #151515;
-  --color-surface-2: #202020;
-  --color-edge: #262626;
-  --color-ink: #f6f6f4;
-  --color-ink-dim: #a6a6a2;
-  --color-ink-faint: #6e6e6a;
+  --color-bg: #131f24;
+  --color-surface: #1a2730;
+  --color-surface-2: #22333e;
+  /* THE border. 2px, on everything. */
+  --color-edge: #37464f;
+  /* Dividers and rules: the quieter cut, still 2px. */
+  --color-edge-soft: #2a3944;
+
+  --color-ink: #f1f7fb;
+  --color-ink-dim: #93a8b4;
+  --color-ink-faint: #5d7280;
+
   --color-accent: #ff4f30;
-  --color-accent-soft: #ff8261;
-  --color-accent-deep: #e03a1c;
-  --color-lime: #c6f24e;
-  --color-cyan: #6fb2e8;
-  --color-gold: #f2c14e;
-  --color-danger: #ff4d5e;
+  --color-accent-deep: #c33714;
+  /* Heat as TEXT. Never full heat on a dark ground. */
+  --color-accent-soft: #ff8a66;
+  --color-lime: #b9ec3e;
+  --color-cyan: #1cb0f6;
+  --color-gold: #ffc800;
+
+  /* The lip under a solid control, and its outline: the same value,
+     which is the whole reason the two read as one object. */
+  --lip-accent: #c33714;
+  --lip-lime: #8cbc1e;
+  --lip-ice: #1489c4;
+  --lip-gold: #cfa100;
+  --lip-danger: #c93a3a;
+  --lip-quiet: #37464f;
+
+  /* Text ON a filled surface. A fill carries dark type, not pale. */
+  --ink-on-lime: #1b2a08;
+  --ink-on-ice: #062736;
+  --ink-on-gold: #2e2200;
+
+  --color-danger: #ff4b4b;
   --color-good: #62d97e;
-  --font-display: 'Inter Tight', system-ui, sans-serif;
+  /* Nunito, bundled. Rounded-heavy is half of why the concept reads
+     as friendly rather than as a dashboard, and one face carries both
+     roles: the weights do the work the second family used to. */
+  --font-display: 'Nunito', system-ui, sans-serif;
 
   /* ---- Type scale ----
      Six named sizes, so screens stop inventing text-[13.5px] and the
@@ -70,17 +104,22 @@
   font-weight: 700;
 }
 
+/* Bundled, never fetched: this is an offline PWA and a webfont over
+   the network is a blank screen on a gym floor. */
 @font-face {
-  font-family: 'Inter';
-  src: url('/Bodytea/fonts/inter-400-900.woff2') format('woff2');
-  font-weight: 100 900;
+  font-family: 'Nunito';
+  src: url('/Bodytea/fonts/nunito-500-900.woff2') format('woff2');
+  font-weight: 500 900;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'Inter Tight';
-  src: url('/Bodytea/fonts/inter-tight-400-900.woff2') format('woff2');
-  font-weight: 100 900;
+  font-family: 'Nunito';
+  src: url('/Bodytea/fonts/nunito-500-900-ext.woff2') format('woff2');
+  font-weight: 500 900;
   font-style: normal;
   font-display: swap;
 }
@@ -92,12 +131,14 @@ html {
 
 body {
   /* Pure black field, one neutral floodlight up top — no color cast */
-  background:
-    radial-gradient(1100px 480px at 50% -12%, rgba(255, 255, 255, 0.045), transparent 62%),
-    var(--color-bg);
-  background-attachment: fixed;
+  /* Flat. The floodlight was the app faking depth with light, and the
+     law is that depth comes from edges and lips instead. */
+  background: var(--color-bg);
   color: var(--color-ink);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  /* The concept sets body at 600. Nunito at 400 is too light to hold a
+     dark surface, which is exactly the weight the old face wanted. */
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   overscroll-behavior-y: none;
 }

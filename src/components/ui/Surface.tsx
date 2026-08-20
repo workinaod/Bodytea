@@ -16,13 +16,15 @@ export function Card({
   className?: string
   onClick?: () => void
 }) {
-  // Layered glass, not a gray box: a faint top-lit gradient plus a
-  // hairline ring. Borders stay opt-in (pass a border color and the
-  // transparent base width picks it up).
+  // A sticker, not glass: one flat fill and a visible 2px outline. The
+  // gradient and the hairline ring were the app faking depth with light,
+  // which on a phone reads as a smudge rather than as an edge. Screens
+  // that want a coloured card pass a border colour; the width is already
+  // here so it lands at 2px like everything else.
   return (
     <div
       onClick={onClick}
-      className={`rounded-3xl border border-transparent bg-gradient-to-b from-white/[0.06] to-white/[0.025] p-5 ring-1 ring-white/[0.045] ${onClick ? 'press-soft cursor-pointer' : ''} ${className}`}
+      className={`rounded-2xl border-2 border-edge bg-surface p-4 shadow-[0_3px_0_var(--color-edge)] ${onClick ? 'press-soft cursor-pointer' : ''} ${className}`}
     >
       {children}
     </div>
@@ -34,7 +36,7 @@ export function SectionTitle({ children, right }: { children: ReactNode; right?:
     <div className="mb-3 mt-9 flex items-baseline gap-3 px-1">
       <h2 className="eyebrow whitespace-nowrap text-ink-faint">{children}</h2>
       {/* hairline rule: headers read as dividers, not floating labels */}
-      <span aria-hidden className="h-px min-w-4 flex-1 self-center bg-edge/70" />
+      <span aria-hidden className="h-0.5 min-w-4 flex-1 self-center rounded-sm bg-edge-soft" />
       {right}
     </div>
   )

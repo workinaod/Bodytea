@@ -48,6 +48,22 @@
 .press:active {
   transform: scale(0.97);
 }
+/* A solid control does not shrink, it SINKS.
+   The physical read of a sticker button comes from one detail: it has a
+   lip under it, and pressing drives the sticker down onto the lip. A
+   scale is a screen effect; this is an object. The lip colour is
+   per-kind and arrives as --lip. */
+.press-down {
+  box-shadow: 0 4px 0 var(--lip, #000);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.press-down:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--lip, #000);
+}
+
 /* Large surfaces need a smaller dip or it reads as a bug. */
 .press-soft {
   transition: transform var(--dur-fast) var(--ease-out);
@@ -738,7 +754,8 @@
     animation: none !important;
   }
   .press:active,
-  .press-soft:active {
+  .press-soft:active,
+  .press-down:active {
     transform: none !important;
   }
   .nav-glow {
