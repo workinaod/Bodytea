@@ -2275,6 +2275,37 @@ the pre-existing plans that genuinely have no record of what built them.
   ceiling rows need the INTERVENTION built first, because `ceilingFor` is a house constant
   with no per-athlete raise or lower, so they are not outcome work like the rest of J8.
 
+### 2026-08-20 · J8 slice 8 · readiness flags that keep crying wolf
+  R3 s9.2's readiness row, and the last one that was outcome work rather than a new
+  intervention. Two of four flags dials the day back: a set off every lift, lighter weights, a
+  third less jumping. Right for most people. For somebody who sleeps badly and has sore legs
+  most Mondays it fires on an ordinary week, cuts a session that would have been fine, and
+  does it again next Monday forever, because nothing was watching what happened afterwards.
+  Pattern-level and nothing else, exactly as the pack asks. A single downgrade says nothing;
+  people have bad days. A downgrade FOLLOWED by a completed day AND a normal next session is
+  one nobody needed, and four of those is a fact about the flags rather than about the weeks.
+  Both halves have their own test: a dialled-back day that was abandoned is the flags being
+  RIGHT, and a downgrade followed by another downgrade is a rough patch, which is what they
+  are for. The offer moves the bar by ONE flag and only on a tap; picking "Normal" at the door
+  still dials the day back whatever the threshold, so nobody loses the manual route.
+  CAUGHT WHILE WIRING RATHER THAN IN REVIEW, which is the better end of the same lesson.
+  ReadinessSheet carried its own hardcoded `count >= 2`: a THIRD copy of the threshold, so an
+  athlete who took the offer would read "the day downgrades" on the sheet and then be handed
+  the full session. A screen that disagrees with the engine in front of the athlete is worse
+  than either being wrong alone. It reads downgradeThreshold now, and the "under the line"
+  copy stopped assuming the bar is two. Fourth two-definitions bug this session, and the first
+  one found before it shipped.
+  e2e/readiness.spec.ts proves the answer reaches the DOOR and not just the ledger. Two
+  mutations needed rewriting to compile at all: replacing a call with a literal orphans the
+  import, and the harness reports that as BUILD FAILED rather than CAUGHT, which is correct.
+  Math.min(2, downgradeThreshold(...)) keeps the reference alive and still expresses the bug.
+  Validation: tsc -b clean, **1,787/1,787 unit** (8 new), build green, sim 20 personas,
+  **96/96 e2e** (3 new), **poison 252/252 unit + 15/15 e2e** (6 new).
+  NEXT: R3 s9.2's remaining rows all need the INTERVENTION built before there is an outcome to
+  judge, which is a different kind of work from the rest of J8: volume ceiling raise and lower
+  (`ceilingFor` is a house constant with no per-athlete adjustment), rest change, schedule
+  change, exercise variation for plateau, phase promotion.
+
 ## 10. SOURCES
 
 - Living dashboard (this plan, rendered, republishable via url):

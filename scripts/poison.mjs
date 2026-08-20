@@ -2073,8 +2073,8 @@ const E2E_MUTATIONS = [
     id: 'readiness-sheet-keeps-its-own-threshold',
     bug: 'the sheet says "the day downgrades" while sessionStart runs the full session, so the screen and the engine disagree in front of the athlete',
     file: 'src/screens/today/ReadinessSheet.tsx',
-    find: '  const downgrade = count >= bar',
-    to: '  const downgrade = count >= 2',
+    find: '  const bar = downgradeThreshold(useAppStore((st) => st.data))',
+    to: '  const bar = Math.min(2, downgradeThreshold(useAppStore((st) => st.data)))',
     spec: 'e2e/readiness.spec.ts',
   },
   {
@@ -2082,7 +2082,7 @@ const E2E_MUTATIONS = [
     bug: 'the athlete says only dial back when it is really bad and the session start ignores it, so the answer is recorded and changes nothing',
     file: 'src/logic/sessionStart.ts',
     find: '    (readinessFlags?.filter(Boolean).length ?? 0) >= downgradeThreshold(data) ||',
-    to: '    (readinessFlags?.filter(Boolean).length ?? 0) >= 2 ||',
+    to: '    (readinessFlags?.filter(Boolean).length ?? 0) >= Math.min(2, downgradeThreshold(data)) ||',
     spec: 'e2e/readiness.spec.ts',
   },
   {
