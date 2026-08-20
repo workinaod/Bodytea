@@ -478,6 +478,19 @@ the pre-existing plans that genuinely have no record of what built them.
   in code and something consumes it, not when the markdown is written. The W rows below
   track that gap and are the only place it is visible. As of 2026-08-18 the packs propose
   roughly 141 typed shapes and 1,200 corpus rows, and ZERO of the shapes exist in src.
+- **THE SERGEANT AND THE TRAINEE ARE OUT OF SCOPE (owner, 2026-08-20): "Do not develop the
+  Sergeant character or the trainee character. We already have a plan for this whole system."**
+  The character system, the avatar and everything they imply (poses, moods, idles, the art, the
+  event vocabulary they react to) belong to a lane this session does not own, exactly like
+  onboarding. **Do not design them, do not draw them, do not spec their socket, and do not
+  offer directions for them.** A round-7 preview that proposed three character directions was
+  withdrawn before it was published for exactly this reason. What this lane DOES own next to
+  them: the motion system, the sound palette, the screens, and the graphics backlog MINUS the
+  character (badge marks, cardio marks, muscle-group marks). One rule was widened to leave room
+  for whatever that lane ships: the old motion law said *nothing on a settled screen moves*,
+  which bans an idle; it now reads **one object may idle, chrome may not**, and today that
+  object is the flame.
+
 - **A REDESIGN IS AN EDIT (owner, 2026-08-20): "the whole app needs a refresh every screen
   not you just changing the fuckifn color and shape."** A screen wearing the approved palette
   is not redesigned, it is painted, and a screen that got LONGER is not redesigned either.
@@ -2277,8 +2290,56 @@ the pre-existing plans that genuinely have no record of what built them.
   NEXT: the owner's review of these screens. The finish chain, the logger and the sheets are
   the surfaces the concept does not frame, so they have no cap yet.
 
+- **2026-08-20 · OP12 · rounds 6 and 7, and a lane boundary.** Two previews published for
+  review, no app code written for either. **Round 6, "Make It Move"**
+  (https://claude.ai/code/artifact/939781e6-0c32-403b-8185-67f17b6a2b85): the reminder becomes a
+  dismissible pop-up (owner directive) that fires after the first session is banked rather than
+  greeting a stranger; Progress becomes a scoreboard, with a hero that is true on day one, empty
+  states rewritten as countdowns ("2 more sessions and this fills in" instead of "Assessing"),
+  and the bottom half as a grid of tappable cards rather than five mostly-empty full-width
+  containers; four small Today fixes; and the flame's zero state drawn as its own silhouette
+  unlit, so the first session is an ignition rather than an appearance.
+  **Round 7, "Answer Back"** (https://claude.ai/code/artifact/adde6280-ca65-4880-b145-a6afd69349da):
+  the owner, correctly: *"I told you look at duolingo for comparison they have animations and
+  little graphics and sounds everywhere."* The audit that produced is the useful part and it is
+  ugly: **twenty motion classes and five used** (`.draw`, `.flicker`, `.pop`, `.charge` are
+  written and called from nowhere; `.enter-stagger` is used by onboarding only), **`beep()` is a
+  real Web Audio oscillator called from exactly one line** (the 3-2-1 countdown), `settings.
+  soundMode` already carries four values and is read by the timer alone, and `MuscleMap.tsx` has
+  **zero animation of any kind**. None of the proposal needs new infrastructure. It needs the
+  dead classes wired, an envelope on `beep()` (it fires a bare sine with no attack, which is why
+  the countdown clicks), and six sounds that are deliberately low, short and physical rather
+  than chimes.
+  **THE BOUNDARY, and it is now a standing constraint in §6:** round 7 was drafted with three
+  character directions in it and the owner cut them before publication. *"Do not develop the
+  Sergeant character or the trainee character. We already have a plan for this whole system."*
+  That lane is theirs, like onboarding. The plate was removed, its code deleted, and the
+  published page says so in its own lede so nobody re-opens it from the artifact either.
+  LEARNED:
+  (1) **A law inherited without re-reading its brief will quietly aim at the wrong product.**
+  `motion.css` opens with "subtle enough that nobody notices it", written for a quiet coaching
+  app. The owner had since set the goal as a loop people get addicted to and the flame as the
+  bar. I kept extending the old brief. The rule that survives is narrower and correct: *one
+  object may idle, chrome may not.* The rule that was wrong was *nothing moves at rest*, which
+  would ban Duo from Duolingo.
+  (2) **A preview that draws its own alternatives badly is not a fair choice.** Two of the three
+  character directions came out as a floating head and a grey blob on first render, which would
+  have made the third win for the wrong reason. They were redrawn before review. The lesson
+  outlives the plate: if a preview offers options, every option has to be drawn to the same
+  standard or it is not an option, it is a prop.
+  (3) **Sound is a channel this app has and does not use, and in a gym it may be the strongest
+  one**, because the user is looking at the bar rather than the phone. That is the opposite of
+  Duolingo, where the screen has your eyes for free.
+  NEXT: owner's call on the sound palette. The motion wiring, the four-channel set response and
+  the anatomy figure's BEHAVIOUR need nothing from anybody and can start immediately; the
+  figure's ART is checked against the character lane first.
+
 ## 10. SOURCES
 
+- OP12 round 6, "Make It Move" (reminder pop-up, Progress as a scoreboard, the flame from zero):
+  https://claude.ai/code/artifact/939781e6-0c32-403b-8185-67f17b6a2b85
+- OP12 round 7, "Answer Back" (the unused-motion audit, four-channel set response, the sound
+  palette): https://claude.ai/code/artifact/adde6280-ca65-4880-b145-a6afd69349da
 - Living dashboard (this plan, rendered, republishable via url):
   https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 - BodyT Build Line (the whole board on a timeline, counts derived from this file's rows):
