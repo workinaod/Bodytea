@@ -2137,6 +2137,15 @@ the pre-existing plans that genuinely have no record of what built them.
   anywhere in the app, which is why the equipment-substitute default is in section 5 waiting
   on the owner rather than shipped. Building it would have been the app's first write to a
   store with no screen to see or undo it.
+  (4) AN ANCHOR THAT MATCHED TWICE, which is worse than one that matches never. Collapsing
+  the pain cards put a second `automatic: false` above the one `pain-advice-claims-to-have-acted`
+  was aimed at. The mutation still FIRED, so nothing looked broken, but it poisoned the new
+  block instead of the one adapt.test.ts guards, and a mutation that had worked for months
+  reported SURVIVED with nothing actually wrong. The pre-flight checked that anchors still
+  match and never that they match ONCE. It refuses on ambiguity now, and that check
+  immediately turned up a second one nobody had noticed: `w4m-vegan-cliff-goes-unmeasured`
+  matched both vegan breakfasts and has been poisoning whichever came first. Both re-aimed.
+  Third harness fix this session, all the same shape: a guard that could go quiet.
   Probed and clean: PAIN_PERSISTS_DAYS, COMPLAINT_GAP_DAYS both directions, PAIN_PATTERN_COUNT,
   SHORT_SESSIONS_TO_ACT, SHORTFALL_TO_ACT; no new file near its allowance; every new export
   has a non-test caller; the stated-limitation branch still outranks the escalation, so

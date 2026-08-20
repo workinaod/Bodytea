@@ -426,8 +426,8 @@ const MUTATIONS = [
     id: 'pain-advice-claims-to-have-acted',
     bug: 'advice the engine cannot carry out is marked as already applied',
     file: 'src/engine/adapt.ts',
-    find: "      kind: 'reduce-load',\n      automatic: false,",
-    to: "      kind: 'reduce-load',\n      automatic: true,",
+    find: "      automatic: false,\n      exerciseId: ids[0],\n      because: `Your ${j} keeps getting flagged",
+    to: "      automatic: true,\n      exerciseId: ids[0],\n      because: `Your ${j} keeps getting flagged",
     spec: 'src/engine/adapt.test.ts',
   },
   {
@@ -1088,8 +1088,10 @@ const MUTATIONS = [
     id: "w4m-vegan-cliff-goes-unmeasured",
     bug: "the thin-pool count drifts and the corpus gap stops being a number anybody can see",
     file: "src/plan/mealAlts.ts",
-    find: "slots: ['breakfast'], diet: 'vegan' }",
-    to: "slots: ['breakfast', 'lunch'], diet: 'vegan' }",
+    // Anchored on the tofu scramble's calories, because there are two
+    // vegan breakfasts and this used to match both.
+    find: "kcal: 400, slots: ['breakfast'], diet: 'vegan' }",
+    to: "kcal: 400, slots: ['breakfast', 'lunch'], diet: 'vegan' }",
     spec: "src/plan/mealCoverage.test.ts",
   },
   {
@@ -2122,6 +2124,25 @@ assertClean(list.map((m) => m.file))
 const stale = [...MUTATIONS, ...E2E_MUTATIONS].filter(
   (m) => !readFileSync(resolve(ROOT, m.file), 'utf8').includes(m.find),
 )
+// A find string that matches TWICE is worse than one that matches never.
+// It fires, so nothing looks wrong, but it poisons whichever site comes
+// first in the file, which need not be the one the spec guards. Found the
+// hard way: collapsing the persistent-pain cards added a second
+// `automatic: false` above the one pain-advice-claims-to-have-acted was
+// aimed at, the harness mutated the new block, adapt.test.ts had no
+// opinion about it, and a guard that had worked for months reported
+// SURVIVED with nothing actually broken.
+const ambiguous = [...MUTATIONS, ...E2E_MUTATIONS].filter(
+  (m) => readFileSync(resolve(ROOT, m.file), 'utf8').split(m.find).length > 2,
+)
+if (ambiguous.length) {
+  console.log('[poison] refusing to run: these anchors match more than one place.')
+  console.log('         The mutation would poison whichever comes first, which is')
+  console.log('         not necessarily the code the spec is guarding.')
+  for (const m of ambiguous) console.log(`           ${m.id}  (${m.file})`)
+  process.exit(1)
+}
+
 if (stale.length) {
   console.log('[poison] refusing to run: these anchors no longer match their file.')
   console.log('         The mutation cannot fire, so the test behind it is unguarded.')
