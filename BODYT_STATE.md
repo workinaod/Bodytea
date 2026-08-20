@@ -340,7 +340,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | W15 | Wire R15: age bands into loading ceilings, calorie baseline, plyometric gating. Age is collected (W8) and read by nothing | wiring | pending | J7 partial | |
 | W10 | Wire R10: cue corpus coverage (65 of 194 movements carry no cue) + selection and outcome tracking | wiring | **coverage done 2026-08-19** (plan/cues.ts: all 65 written in the house style, merged at catalog assembly; 16 guards, 6 proven to bite, 4 mutations). R10 calls the corpus the long pole and a CONTENT job, and this is that job done: coverage 129/194 to 194/194. The reason it hid is in data.test.ts, which asserts steps, muscles, qualities, why, mistakes, a video query and a rest time and never once asked for a cue, so a silent field was not a crash. It asks now. The guards are the ones R10 s10.4 names: fits the box, fits a breath, survives speakable, makes no claim about a body the app cannot see, promises nobody an injury prevented, no em dashes. Also fixed: one shipped cue was over the voice budget at 13 words. STILL OPEN in W10: selection (engine/cueing.ts, the trigger ladder, one cue ever, silence as the common output), outcome tracking (the CueIssue ledger, which R10 says belongs inside B1 rather than a private array), the TECHNIQUE table proper, and familiarity | W-ONT | feeds J10 |
 | W8e | Wire R8: EndurancePlan shape, session-vs-30-day-max load rule (the 10 percent rule fails) | wiring | pending | J7 partial | future endurance planner |
-| B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | **ledger + declines done 2026-08-20** (src/decisionTypes.ts + store/decisionSchema.ts + engine/decisions.ts: append-only rows carrying type, target, ruleVersion, evidence AS VALUES, offeredAt, response, plus the outcome half of the shape ready for slice 2. Three rungs: one no buys 14 days, worsening evidence may return early and must say so, three noes stop it for 56 days and nothing gets past that. Declines feed the OFFERING POLICY only, never a load, volume, calorie target or safety rule. Wired into the calorie-step and nutrition-recheck cards; the step card finally has the second button it shipped without. No SCHEMA_VERSION bump: a defaulted array parses old envelopes clean, as `adapt` and `journey` did. STILL OPEN: outcome evaluation and verdicts, which is R3 ship-order step 3) | J7 | engines lane, inside J7/J8 |
+| B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | **ledger + declines done 2026-08-20** (src/decisionTypes.ts + store/decisionSchema.ts + engine/decisions.ts: append-only rows carrying type, target, ruleVersion, evidence AS VALUES, offeredAt, response, plus the outcome half of the shape ready for slice 2. Three rungs: one no buys 14 days, worsening evidence may return early and must say so, three noes stop it for 56 days and nothing gets past that. Declines feed the OFFERING POLICY only, never a load, volume, calorie target or safety rule. Wired into the calorie-step and nutrition-recheck cards; the step card finally has the second button it shipped without. No SCHEMA_VERSION bump: a defaulted array parses old envelopes clean, as `adapt` and `journey` did. OUTCOMES DONE 2026-08-20 (engine/outcomes.ts): pre-registered metric/window/baseline fixed at accept time, ISOLATE closes a row as unattributable when anything else touches the same target inside its window, verdicts worked/no-change/worse/unattributable/abandoned, said out loud including the bad ones, card self-expires after 7 days. STILL OPEN: the R3 s9.2 table for the TRAINING interventions, which is the same machinery pointed at drop-load, hold-load, reduce-volume, the two substitutions and the deload) | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | **done 2026-08-19** (plan/knowledge.ts 136 lines: SourceRef, KnowledgeRecord, EvidenceTier A-D, confidenceOf; plan/knowledgeRegistry.ts as the list, separate file because a refs module needs confidenceOf and the registry needs the refs module; plan/nutrition.refs.ts as the first, annotating R1's constants IN PLACE by importing the live values so a number cannot drift from its citation; plan/knowledge.test.ts 14 checks + 3 poison mutations). Guards: a sourced tier without a source, a dangling source id, a tier better than its best source, a source nothing cites, hand-typed confidence, a duplicate or malformed id, and a refs module on disk that the registry does not name. Written down in the test: nothing here can catch a number we invented, cited to real papers that do not name it, and labelled A. That is a review problem and the record shape makes it legible, which a bare `= 1500` never did | starts with R1 | done in the audit session |
 | R10 | Technique, cueing and motor learning (no camera) | research | **synthesized 2026-08-18** (research/R10-technique-cueing.md; 24 sources, cue corpus measured, selection and outcome-tracking design) | J1 | feeds J10 |
 | R7 | Populations and adaptive training (function-first) | research | **synthesized 2026-08-18** (research/R7-populations.md; 24 tier-A sources, 11 functional dimensions, 10 population packs, 30 paired fixtures, ME/CFS pacing policy) | J1 | J6 |
@@ -1898,6 +1898,42 @@ the pre-existing plans that genuinely have no record of what built them.
   **90/90 e2e**, **poison 196/196** (8 new).
   NEXT: R3 ship-order step 3, outcome evaluation for the interventions that ALREADY exist, so
   the ledger is proven against shipped behaviour before anything new is built on it.
+
+### 2026-08-20 · J8 slice 2 · outcome evaluation, and an app that stopped arguing with itself
+  The ledger recorded what was offered and answered, which on its own is a diary. This is the
+  half that makes it evidence.
+  R3's five rules, and the fourth is the one that matters: if no observation could mark an
+  intervention "did not work", it does not ship. So `worse` and `no-change` are ordinary
+  answers here rather than edge cases, and most of the tests are about the ways a change fails.
+  PRE-REGISTERED at accept time: metric, window and the number to beat. An outcome chosen
+  afterwards is a story. ISOLATE: any later decision on the same target inside the window
+  closes the first as unattributable, and a scale creatine is moving is not evidence either.
+  Somebody who stopped weighing in is `abandoned` rather than failed and is told nothing.
+  Verdicts are said out loud including the bad ones, and the card self-expires after a week
+  rather than carrying a seen-flag.
+  THE HARNESS FOUND THE FIRST GAP: a mutation set the pre-registered baseline to 0 and all
+  sixteen outcome tests stayed green, because each built its accepted rows BY HAND and none
+  went through stepDecision, the only place pre-registration happens. Tested at the offer site
+  now, and the mutation re-aimed there.
+  REVIEW PASS (rule 8) FOUND THREE MORE:
+  (1) TWO CARDS CONTRADICTED EACH OTHER, proved by probe not reasoning. The screen rendered
+  "that 150 kcal change did not help, back to where you were is a fair call" directly beside
+  "about 250 kcal a day less would put you back in it". The stand-down rule lives in the
+  ENGINE so it is testable: a target whose last judged change came back `worse` stops being
+  proposed more of the same while that feedback is on screen, and resumes once it is old news.
+  Worth noting WHY the J7 advice ladder did not catch this: the ladder ranks simultaneous
+  SUGGESTIONS, and a verdict is not one. Feedback versus suggestion was a category it did not
+  have.
+  (2) VERDICT_VISIBLE_DAYS survived being set to 999, because the expiry test was written
+  against the constant itself and passes at any value. FOURTH guard of that exact shape this
+  session. Day counts are literals now.
+  (3) STEP_METRIC survived being set to 'zzz'. A metric id that changes silently orphans every
+  row written under the old one: judge() looks for its own metric, finds nothing, and the
+  intervention is never graded and never says why. Pinned.
+  Validation: tsc -b clean, **1,698/1,698 unit** (25 new), build green, sim 20 personas,
+  **90/90 e2e**, **poison 203/203** (7 new).
+  NEXT: R3 s9.2's table for the TRAINING interventions, which is this same machinery pointed
+  at drop-load, hold-load, reduce-volume, the two substitution kinds and the deload.
 
 ## 10. SOURCES
 

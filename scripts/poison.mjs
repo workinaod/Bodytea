@@ -1319,6 +1319,22 @@ const MUTATIONS = [
     spec: "src/plan/nutritionPlan.test.ts",
   },
   {
+    id: "app-argues-with-itself",
+    bug: "one card says that change made things worse and go back, while the next proposes more of the same, on the same screen about the same number",
+    file: "src/engine/calorieStep.ts",
+    find: "  if (lastAttemptBackfired(data, STEP_TARGET, today)) return null",
+    to: "",
+    spec: "src/engine/outcomes.test.ts",
+  },
+  {
+    id: "verdict-metric-id-drifts",
+    bug: "a metric id changes and orphans every row written under the old one, so those interventions are never graded and never say why",
+    file: "src/engine/calorieStep.ts",
+    find: "export const STEP_METRIC = 'trendLbPerWeek'",
+    to: "export const STEP_METRIC = 'trend'",
+    spec: "src/engine/outcomes.test.ts",
+  },
+  {
     id: "verdict-cannot-say-no",
     bug: "every accepted change is recorded as having worked, which turns the ledger into a compliment generator and teaches the learning loop nothing",
     file: "src/engine/outcomes.ts",
