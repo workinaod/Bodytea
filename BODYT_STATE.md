@@ -1935,6 +1935,42 @@ the pre-existing plans that genuinely have no record of what built them.
   NEXT: R3 s9.2's table for the TRAINING interventions, which is this same machinery pointed
   at drop-load, hold-load, reduce-volume, the two substitution kinds and the deload.
 
+### 2026-08-20 · J8 slice 3 · the same machinery, pointed at training
+  R3 step 3 wants outcome evaluation on interventions that ALREADY ship, so the ledger is
+  proven against real behaviour before anything new is built on it. hold-load and
+  reduce-volume are exactly that: offers the coach already makes, which the athlete already
+  accepts or waves away, and which NOTHING recorded either way.
+  The comment on acceptAdaptation argued that a proposal leaving no trace is what stops a
+  declined suggestion shaping next week. Right about the PLAN, wrong about the CONVERSATION,
+  and the same defence already overturned for the calorie cards. The prescription still reads
+  only `adapt`; the ledger is read by the offering policy and the outcome engine and by
+  nothing that prescribes.
+  Judged on whether sessions after the change got done, COUNTED not averaged, because one
+  clean session out of three is not a fix. All done is worked, none is worse, some is
+  no-change, nobody training at all is abandoned (a fact about attendance, not the
+  intervention). Windows in DAYS standing in for R3 s4.2's comparable exposures, and the file
+  says so: a fortnight covers one to two sessions for almost every week this app builds, and a
+  calendar cannot be stretched by a skipped week the way an exposure count can.
+  AN IMPORT CYCLE I INTRODUCED IN THE LAST REVIEW, found before it could bite. The outcome
+  engine needs to know which rows belong to which rule, and each rule asks the outcome engine
+  whether its last attempt backfired, so engine/outcomes.ts and engine/calorieStep.ts imported
+  each other. It compiled only because both read the values inside functions; the first
+  module-level use would have been a TDZ crash. engine/proposals.ts is the neutral vocabulary
+  now, which is also where the new training identifiers went.
+  A VERDICT ON THE WRONG SCREEN: freshVerdict was type-agnostic, so the food screen would have
+  announced that trimming the sets did the job. Scoped by type; training answers appear where
+  the offer was taken, and that card outlives the offers because it answers a question asked a
+  fortnight ago.
+  THE SAME TEST GAP, TWICE IN TWO SLICES. The harness deleted the ledger write from
+  acceptAdaptation and every outcome test stayed green, because they all build rows by calling
+  adaptDecision directly. Identical in shape to the pre-registration gap in slice 2: **a test
+  that constructs the artefact it wants to check will never notice that nothing in the app
+  constructs it.** Both are now tested at the write path, with the mutations re-aimed there.
+  Validation: tsc -b clean, **1,709/1,709 unit** (17 new), build green, sim 20 personas,
+  **90/90 e2e**, **poison 207/207** (4 new, 3 anchors re-aimed).
+  NEXT: R3 s9.2 still has the deload, the two substitution kinds, drop-load and the
+  failing-flag softening. Same machinery, more metrics.
+
 ## 10. SOURCES
 
 - Living dashboard (this plan, rendered, republishable via url):
