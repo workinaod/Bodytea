@@ -5,10 +5,10 @@ import { addDaysISO, formatDayLabel } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { kcalTargetFor, nutritionDayType } from '../../engine/dayType'
 import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor, proteinStreak } from '../../engine/stats'
-import { applyRecheck, learnedCopy, nutritionRecheck } from '../../engine/nutritionRecheck'
+import { applyRecheck, learnedCopy, nutritionRecheck, recheckDecision } from '../../engine/nutritionRecheck'
 import { energyCheck, energyCopy } from '../../engine/energyAvailability'
-import { STEP_RULE_VERSION, STEP_TARGET, STEP_TYPE, calorieStep, stepCopy } from '../../engine/calorieStep'
-import { appendDecision, decisionRow, returningCopy } from '../../engine/decisions'
+import { calorieStep, stepCopy, stepDecision } from '../../engine/calorieStep'
+import { appendDecision, returningCopy } from '../../engine/decisions'
 import { learnedCopyFor, learnedMaintenance } from '../../engine/maintenanceLearned'
 import { MIN_KCAL_REST } from '../../plan/kcalFloor'
 import { macroTargets } from '../../plan/sportsNutrition'
@@ -198,21 +198,13 @@ export function MealsScreen() {
                     const gap = d.plan.nutrition.kcalTraining - d.plan.nutrition.kcalRest
                     d.plan.nutrition.kcalTraining = step.toKcal
                     d.plan.nutrition.kcalRest = Math.max(MIN_KCAL_REST, step.toKcal - gap)
-                    appendDecision(d, decisionRow({
-                      type: STEP_TYPE, target: STEP_TARGET, ruleVersion: STEP_RULE_VERSION,
-                      evidence: step.evidence, response: 'accepted', at: today,
-                      seq: d.decisions.length,
-                    }))
+                    appendDecision(d, stepDecision(step, 'accepted', today, d.decisions.length))
                   })}>
                   Move to {step.toKcal}
                 </Btn>
                 <Btn kind="subtle" className="flex-1 !py-2"
                   onClick={() => update((d) => {
-                    appendDecision(d, decisionRow({
-                      type: STEP_TYPE, target: STEP_TARGET, ruleVersion: STEP_RULE_VERSION,
-                      evidence: step.evidence, response: 'declined', at: today,
-                      seq: d.decisions.length,
-                    }))
+                    appendDecision(d, stepDecision(step, 'declined', today, d.decisions.length))
                   })}>
                   Not now
                 </Btn>
@@ -237,11 +229,15 @@ export function MealsScreen() {
                     if (!next) return
                     d.plan.nutrition = next.nutrition
                     d.plan.nutritionBasis = next.nutritionBasis
+                    appendDecision(d, recheckDecision(recheck, 'accepted', today, d.decisions.length))
                   })}>
                   Use {recheck.suggested.kcalTraining}
                 </Btn>
                 <Btn kind="subtle" className="flex-1 !py-2"
-                  onClick={() => update((d) => { d.plan.nutritionBasis = recheck.basis })}>
+                  onClick={() => update((d) => {
+                    d.plan.nutritionBasis = recheck.basis
+                    appendDecision(d, recheckDecision(recheck, 'declined', today, d.decisions.length))
+                  })}>
                   Keep {recheck.current.kcalTraining}
                 </Btn>
               </div>

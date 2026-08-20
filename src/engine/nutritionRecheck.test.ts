@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData, type SessionLog } from '../types'
 import { buildNutrition } from '../plan/nutritionPlan'
 import { addDaysISO } from './calendar'
-import { applyRecheck, learnedCopy, nutritionRecheck } from './nutritionRecheck'
+import { RECHECK_RULE_VERSION, RECHECK_TARGET, RECHECK_TYPE, applyRecheck, learnedCopy, nutritionRecheck, recheckDecision } from './nutritionRecheck'
 
 // ============================================================
 // Most of this file is about staying quiet.
@@ -272,5 +272,29 @@ describe('saying why', () => {
     weighIn(d, 2, 200)
     taped(d, 1, 12)
     expect(learnedCopy(nutritionRecheck(d, TODAY)!.learned)).not.toBe('')
+  })
+})
+
+describe('the offer reaches the ledger', () => {
+  it('writes a readable row for either answer', () => {
+    const d = built()
+    weighIn(d, 1, 170)
+    const r = nutritionRecheck(d, TODAY)!
+    for (const response of ['accepted', 'declined'] as const) {
+      const row = recheckDecision(r, response, TODAY, 0)
+      expect(row.ruleVersion).toBe(1)
+      expect(row.type).toBe('nutrition-recheck')
+      expect(row.response).toBe(response)
+      // values, not prose: a sentence cannot be compared to next month's
+      expect(row.evidence.deltaTraining).toBe(r.deltaTraining)
+      expect(row.evidence.fromKcal).toBe(r.current.kcalTraining)
+      expect(row.evidence.toKcal).toBe(r.suggested.kcalTraining)
+    }
+  })
+
+  it('keeps the identifiers stable, because old rows are read by them', () => {
+    expect(RECHECK_RULE_VERSION).toBe(1)
+    expect(RECHECK_TYPE).toBe('nutrition-recheck')
+    expect(RECHECK_TARGET).toBe('kcalTraining')
   })
 })

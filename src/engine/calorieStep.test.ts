@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData, type SessionLog } from '../types'
 import { addDaysISO } from './calendar'
-import { STEP_MAX, STEP_MIN, STEP_RULE_VERSION, STEP_TARGET, STEP_TYPE, calorieStep, stepCopy } from './calorieStep'
+import { STEP_MAX, STEP_MIN, STEP_RULE_VERSION, STEP_TARGET, STEP_TYPE, calorieStep, stepCopy, stepDecision } from './calorieStep'
 import { appendDecision, decisionRow } from './decisions'
 import { kcalBumpSuggestion } from './stats'
 
@@ -191,5 +191,43 @@ describe('it does not ask twice', () => {
     const s = calorieStep(trending(cutting(), 190, -0.4), TODAY)!
     expect(s.evidence.stepKcal).toBe(s.stepKcal)
     expect(s.evidence.trendLbPerWeek).toBe(s.trendLbPerWeek)
+  })
+})
+
+describe('what the answer looks like written down', () => {
+  it('stamps the rule version, so a row from an old rule stays readable', () => {
+    // Pinned because a review probe set STEP_RULE_VERSION to 7 and
+    // nothing went red: the screen was composing the row inline, where
+    // no test could reach it.
+    const s = calorieStep(trending(cutting(), 190, -0.4), TODAY)!
+    const row = stepDecision(s, 'declined', TODAY, 0)
+    // Literals, not the constants. Asserting row.ruleVersion against
+    // STEP_RULE_VERSION compares a value to itself and passes at any
+    // value, which is how the first version of this test survived the
+    // probe it was written to answer. A rule version is a stable
+    // identifier: bumping it has to be a deliberate act with a red test.
+    expect(row.ruleVersion).toBe(1)
+    expect(row.type).toBe('calorie-step')
+    expect(row.target).toBe('kcalTraining')
+    expect(STEP_RULE_VERSION).toBe(1)
+    expect(STEP_TYPE).toBe('calorie-step')
+    expect(STEP_TARGET).toBe('kcalTraining')
+    expect(row.response).toBe('declined')
+    expect(row.evidence).toEqual(s.evidence)
+    expect(row.offeredAt).toBe(TODAY)
+  })
+
+  it('round trips: the row it writes is the row that mutes the card', () => {
+    const d = trending(cutting(), 190, -0.4)
+    const s = calorieStep(d, TODAY)!
+    appendDecision(d, stepDecision(s, 'declined', TODAY, 0))
+    expect(calorieStep(d, TODAY)).toBeNull()
+  })
+
+  it('an acceptance does not mute anything, because it is not a refusal', () => {
+    const d = trending(cutting(), 190, -0.4)
+    const s = calorieStep(d, TODAY)!
+    appendDecision(d, stepDecision(s, 'accepted', TODAY, 0))
+    expect(calorieStep(d, TODAY)).not.toBeNull()
   })
 })

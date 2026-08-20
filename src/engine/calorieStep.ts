@@ -2,7 +2,7 @@ import type { AppData, ISODate } from '../types'
 import { bodyweightHeuristicKcal, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal } from '../plan/bmr'
 import { MAX_DEFICIT, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
 import { addDaysISO } from './calendar'
-import { offerPolicy } from './decisions'
+import { decisionRow, offerPolicy } from './decisions'
 import { KCAL_PER_LB_TISSUE, weeklyGainRangeLb, weeklyLossRangeLb } from '../plan/sportsNutrition'
 import { learnedMaintenance } from './maintenanceLearned'
 import { nutritionInputsNow } from './nutritionRecheck'
@@ -189,4 +189,29 @@ export function stepCopy(s: CalorieStep): string {
     `About ${Math.abs(s.stepKcal)} kcal a day ${move} would put you back in it. ` +
     `Small on purpose: a step this size is a nudge between weigh-ins, not a prediction.`
   )
+}
+
+/**
+ * The ledger row for an answer to this card.
+ *
+ * Here rather than in the screen because a screen composing a ledger row
+ * inline is a row no test can reach: the rule version went unpinned until
+ * a review probe set it to 7 and nothing went red. One place knows what
+ * this proposal looks like written down.
+ */
+export function stepDecision(
+  s: CalorieStep,
+  response: 'accepted' | 'declined',
+  at: ISODate,
+  seq: number,
+) {
+  return decisionRow({
+    type: STEP_TYPE,
+    target: STEP_TARGET,
+    ruleVersion: STEP_RULE_VERSION,
+    evidence: s.evidence,
+    response,
+    at,
+    seq,
+  })
 }

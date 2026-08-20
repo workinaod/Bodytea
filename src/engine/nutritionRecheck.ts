@@ -3,6 +3,7 @@ import type { CalorieTargets, NutritionBasis } from '../nutritionTypes'
 import { buildNutrition } from '../plan/nutritionPlan'
 import { latestBodyweightLb } from './stats'
 import { adherenceShape, readUserModel } from './userModel'
+import { decisionRow } from './decisions'
 
 // ============================================================
 // The calorie target was computed once, at signup, and never again.
@@ -211,4 +212,40 @@ export function learnedCopy(learned: LearnedSince[], athleteSet = false): string
   // Telling somebody their own deliberate target is out of date reads
   // very differently from telling them mine is.
   return athleteSet ? `You set this one. Since then ${list}.` : `Since then ${list}.`
+}
+
+/** Bumped when the rule changes, so old ledger rows stay readable. */
+export const RECHECK_RULE_VERSION = 1
+export const RECHECK_TYPE = 'nutrition-recheck'
+export const RECHECK_TARGET = 'kcalTraining'
+
+/**
+ * The ledger row for an answer to this card.
+ *
+ * The recheck mutes itself by stamping the basis, which is a statement
+ * about KNOWLEDGE and does that job well. This is the other half: a
+ * record that the offer was made and answered, so the learning loop can
+ * later ask whether it helped. A ledger populated by one card out of two
+ * teaches half a lesson.
+ */
+export function recheckDecision(
+  r: NutritionRecheck,
+  response: 'accepted' | 'declined',
+  at: ISODate,
+  seq: number,
+) {
+  return decisionRow({
+    type: RECHECK_TYPE,
+    target: RECHECK_TARGET,
+    ruleVersion: RECHECK_RULE_VERSION,
+    evidence: {
+      deltaTraining: r.deltaTraining,
+      fromKcal: r.current.kcalTraining,
+      toKcal: r.suggested.kcalTraining,
+      learned: r.learned.join('+'),
+    },
+    response,
+    at,
+    seq,
+  })
 }
