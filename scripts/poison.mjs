@@ -1319,6 +1319,41 @@ const MUTATIONS = [
     spec: "src/plan/nutritionPlan.test.ts",
   },
   {
+    id: "adapt-choice-leaves-no-trace",
+    bug: "an accepted volume cut is never followed up and a waved-away one returns tomorrow, because neither reaches the ledger",
+    file: "src/logic/fatigueActions.ts",
+    find: "    appendDecision(\n      d,\n      adaptDecision({",
+    to: "    if (false) appendDecision(\n      d,\n      adaptDecision({",
+    // Aimed at the WRITE PATH's own spec. It survived pointed at the
+    // outcome spec, where every row is built by calling adaptDecision
+    // directly and the action that writes them is never exercised.
+    spec: "src/logic/fatigueActions.test.ts",
+  },
+  {
+    id: "adapt-calls-a-half-fix-a-fix",
+    bug: "one clean session out of three is recorded as the intervention working, which teaches the learning loop the opposite of what happened",
+    file: "src/engine/outcomes.ts",
+    find: "  if (done === inWindow.length) return { row, outcome: rate, verdict: 'worked' }",
+    to: "  if (done > 0) return { row, outcome: rate, verdict: 'worked' }",
+    spec: "src/engine/outcomes.test.ts",
+  },
+  {
+    id: "verdict-shows-on-the-wrong-screen",
+    bug: "the food screen announces that trimming the sets did the job, because judging is global and nothing scopes what each screen may say",
+    file: "src/engine/outcomes.ts",
+    find: "      (types === undefined || types.includes(d.type)) &&",
+    to: "",
+    spec: "src/engine/outcomes.test.ts",
+  },
+  {
+    id: "adapt-judged-with-nobody-training",
+    bug: "an intervention nobody trained after is graded on an empty window instead of being recorded as abandoned",
+    file: "src/engine/outcomes.ts",
+    find: "  if (inWindow.length === 0) return { row, outcome: Number.NaN, verdict: 'abandoned' }",
+    to: "",
+    spec: "src/engine/outcomes.test.ts",
+  },
+  {
     id: "app-argues-with-itself",
     bug: "one card says that change made things worse and go back, while the next proposes more of the same, on the same screen about the same number",
     file: "src/engine/calorieStep.ts",
@@ -1329,7 +1364,9 @@ const MUTATIONS = [
   {
     id: "verdict-metric-id-drifts",
     bug: "a metric id changes and orphans every row written under the old one, so those interventions are never graded and never say why",
-    file: "src/engine/calorieStep.ts",
+    // Moved to engine/proposals.ts when the outcomes/calorieStep cycle
+    // was broken; the vocabulary now has one neutral home.
+    file: "src/engine/proposals.ts",
     find: "export const STEP_METRIC = 'trendLbPerWeek'",
     to: "export const STEP_METRIC = 'trend'",
     spec: "src/engine/outcomes.test.ts",
@@ -1380,7 +1417,7 @@ const MUTATIONS = [
   {
     id: "ledger-row-lies-about-its-rule",
     bug: "a row records the wrong rule version, so a decision made by an old rule is read as though a new one made it",
-    file: "src/engine/calorieStep.ts",
+    file: "src/engine/proposals.ts",
     find: "export const STEP_RULE_VERSION = 1",
     to: "export const STEP_RULE_VERSION = 7",
     spec: "src/engine/calorieStep.test.ts",
