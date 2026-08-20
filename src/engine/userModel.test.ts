@@ -285,15 +285,19 @@ describe('the weight trend is a trend, not a pair of endpoints', () => {
   })
 
   it('is swayed less by one heavy morning than the endpoints were', () => {
-    // Same six weigh-ins, last one 4 lb high. The old endpoint slope went
-    // from -2.33 to -0.47, a swing of 1.87 lb/wk on a single reading. The
-    // regression goes to -1.0, a swing of 1.33. Less, and still clearly a
-    // loss rather than a stall.
+    // Same six weigh-ins, last one 4 lb high.
+    //
+    // Pinned as a VALUE, not as a relationship. The first version of this
+    // test asserted only that the regression swung less than the
+    // endpoints would have, and a mutation that put the endpoint slope
+    // back survived it: the two differed by 0.007 after rounding, which
+    // is inside "less than". Both algorithms satisfy almost every
+    // relationship you can write about them. Only the number separates.
     const clean = weightTrend(series([200, 199, 198, 197, 196, 195]), TODAY)!.value
     const spiked = weightTrend(series([200, 199, 198, 197, 196, 199]), TODAY)!.value
-    const endpointSwing = Math.abs((199 - 200) / 15 - (195 - 200) / 15) * 7
-    expect(Math.abs(spiked - clean)).toBeLessThan(endpointSwing)
-    expect(spiked).toBeLessThan(0)
+    expect(clean).toBe(-2.33)
+    expect(spiked).toBe(-1) // an endpoint slope would say -0.47, a near stall
+    expect(Math.abs(spiked - clean)).toBeLessThan(Math.abs(-0.47 - clean))
   })
 
   it('gets steadier the more weigh-ins there are, which endpoints never do', () => {
