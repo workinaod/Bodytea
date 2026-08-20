@@ -2,6 +2,7 @@ import type { DebriefData, ExerciseKind, ISODate, SessionIntensity, SessionLog, 
 import { planTemplate, resolveDay } from '../engine/resolveDay'
 import { applyReadinessDowngrade, minimumViableFor } from '../engine/transforms'
 import { parseRepRange, repLabel, type RepRange } from '../engine/reps'
+import { downgradeThreshold } from '../engine/readiness'
 import { getExercise } from '../plan/exercises'
 import { composeDebrief } from '../engine/debrief'
 import { pushShown } from '../engine/coach'
@@ -140,7 +141,15 @@ export function startSession(
   const data = store().data
   // A make-up runs the MISSED day's workout, logged under today
   const resolved = resolveDay(makeupFor ?? date, data)
-  const downgraded = (readinessFlags?.filter(Boolean).length ?? 0) >= 2 || intensity === 'lighter'
+  // Two flags of four, unless this athlete has taken the offer to ease
+  // it. R3 s9.2: downgrades that keep being followed by a completed day
+  // AND a normal next session are downgrades nobody needed, and enough
+  // of those is a fact about the flags rather than about the weeks.
+  // Picking 'lighter' still dials the day back whatever the threshold,
+  // so the athlete never loses the manual route.
+  const downgraded =
+    (readinessFlags?.filter(Boolean).length ?? 0) >= downgradeThreshold(data) ||
+    intensity === 'lighter'
   // resolveDay ALREADY applied the downgrade if the day was marked trimmed,
   // so doing it again here cuts a second set off every lift and floors the
   // whole day at 2. resolveDay guards against stacking its own two paths

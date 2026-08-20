@@ -10,6 +10,7 @@ import { ADAPT_TYPE, DELOAD_TYPE } from '../../engine/proposals'
 import { settleDeloads } from '../../engine/deloadOutcome'
 import { limitStepCopy, limitStepDecision, limitStepOffer } from '../../engine/limitLoad'
 import { MOVEMENT } from '../../plan/movement'
+import { earlyFlagCopy, earlyFlagOffer, readinessDecision } from '../../engine/readiness'
 import { appendDecision } from '../../engine/decisions'
 
 /**
@@ -68,6 +69,11 @@ export function AdaptProposals({ date }: { date: ISODate }) {
     return limitStepOffer(data, date, joints)
   }, [data, date])
 
+  // The readiness flags themselves, once enough dialled-back days have
+  // turned out fine. Pattern-level and offered only: turning down the
+  // weight the app gives somebody's own answers is not its call.
+  const early = useMemo(() => earlyFlagOffer(data, date), [data, date])
+
   const proposals = useMemo(() => {
     const resolved = resolveDay(date, data)
     if (resolved.kind !== 'session') return []
@@ -90,7 +96,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // after every verdict: the guard said "waved AND no follow-up", so a
   // follow-up on screen meant waving the offers away did nothing.
   const offering = !waved && proposals.length > 0 && !(session?.startedAt && !session.endedAt)
-  if (!offering && !verdictLine && !limit) return null
+  if (!offering && !verdictLine && !limit && !early) return null
 
   // reduce-load is the one proposal with no switch behind it. "Take a
   // third off the pressing" is not a shape the plan can hold — there is
@@ -132,6 +138,30 @@ export function AdaptProposals({ date }: { date: ISODate }) {
               className="press rounded-full bg-white/[0.07] px-3.5 py-2 text-[12px] font-bold text-ink-dim"
             >
               Not yet
+            </button>
+          </div>
+        </div>
+      )}
+      {early && (
+        <div className="rounded-2xl bg-white/[0.05] px-4 py-3 ring-1 ring-white/[0.08]">
+          <p className="text-[12.5px] font-black tracking-tight text-ink">Are these flags early?</p>
+          <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{earlyFlagCopy(early)}</p>
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() =>
+                update((d) => appendDecision(d, readinessDecision(early, 'accepted', date, d.decisions.length)))
+              }
+              className="press rounded-full bg-accent px-3.5 py-2 text-[12px] font-bold text-black"
+            >
+              Only when it is bad
+            </button>
+            <button
+              onClick={() =>
+                update((d) => appendDecision(d, readinessDecision(early, 'declined', date, d.decisions.length)))
+              }
+              className="press rounded-full bg-white/[0.07] px-3.5 py-2 text-[12px] font-bold text-ink-dim"
+            >
+              Leave it
             </button>
           </div>
         </div>

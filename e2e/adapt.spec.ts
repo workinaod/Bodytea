@@ -283,3 +283,36 @@ test('a quiet joint earns some weight back, and it is offered not taken', async 
     })
     .toContain('limit-load-back')
 })
+
+test('flags that keep crying wolf get questioned, not silently ignored', async ({ page }) => {
+  // Two of four readiness flags dials the day back. For somebody who
+  // sleeps badly and has sore legs most Mondays that fires on an ordinary
+  // week, and nothing was watching what happened after.
+  const days = [
+    '2026-07-06', '2026-07-08', '2026-07-10', '2026-07-13',
+    '2026-07-15', '2026-07-17', '2026-07-20', '2026-07-22',
+  ]
+  const state = seed((d) => {
+    days.forEach((date, i) => {
+      const down = i % 2 === 0
+      d.sessions[date] = {
+        date,
+        templateId: 'tuesday',
+        status: down ? 'downgraded-completed' : 'completed',
+        exercises: [],
+        readiness: { flags: down ? [true, true, false, false] : [false, false, false, false], downgraded: down },
+      } as never
+    })
+  })
+  await boot(page, state)
+  await expect(page.getByText('Are these flags early?')).toBeVisible()
+  await expect(page.getByText(/4 dialled-back days went fine/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Only when it is bad' }).click()
+  await expect(page.getByText('Are these flags early?')).toHaveCount(0)
+  await expect
+    .poll(async () => await page.evaluate(() => localStorage.getItem('naod.state') ?? ''), {
+      message: 'the answer never reached the ledger',
+    })
+    .toContain('readiness-threshold')
+})

@@ -109,3 +109,32 @@ export const LIMIT_METRIC = 'painNotes'
 
 /** R3 asks for three exposures either side, not a calendar window. */
 export const LIMIT_WINDOW_DAYS = 21
+
+// ---------------- The readiness flags themselves ----------------
+//
+// Two of four flags dials the day back. For most people that is right;
+// for some it fires on a normal Tuesday. R3 s9.2 makes it pattern-level
+// learning rather than a per-session judgement: a downgrade that is
+// followed by a completed day AND a normal next session was a downgrade
+// nobody needed, and enough of those says the flags are early for this
+// athlete rather than that this athlete keeps having bad weeks.
+//
+// Proposed, never imposed. Dialling somebody's own readiness answers
+// down to informational is not a call an app makes on its own.
+
+export const READY_TYPE = 'readiness-threshold'
+export const READY_RULE_VERSION = 1
+
+/**
+ * One athlete, one threshold, so every row shares a target.
+ *
+ * Deliberately NOT pre-registered for a verdict. R3 calls this
+ * pattern-level learning, and "did easing the flags help" has no
+ * counterfactual: the athlete is not running the other version of the
+ * month alongside it. The row records that it was offered and answered,
+ * same as the nutrition recheck.
+ */
+export const READY_TARGET = 'flags'
+
+/** Flags out of four before the day is dialled back, before any easing. */
+export const READY_FLAGS_TO_DOWNGRADE = 2

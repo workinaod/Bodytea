@@ -1417,6 +1417,46 @@ const MUTATIONS = [
     spec: "src/engine/outcomes.test.ts",
   },
   {
+    id: "readiness-flags-never-questioned",
+    bug: "a readiness downgrade that keeps being followed by a fine day never gets questioned, so somebody who sleeps badly most Mondays has an ordinary session cut every week forever",
+    file: "src/engine/readiness.ts",
+    find: "  return eased(data) ? EASED_FLAGS_TO_DOWNGRADE : READY_FLAGS_TO_DOWNGRADE",
+    to: "  return READY_FLAGS_TO_DOWNGRADE",
+    spec: "src/engine/readiness.test.ts",
+  },
+  {
+    id: "readiness-easing-goes-too-far",
+    bug: "the offer moves the bar two flags instead of one, so three of four real flags stops dialling anybody back",
+    file: "src/engine/readiness.ts",
+    find: "export const EASED_FLAGS_TO_DOWNGRADE = READY_FLAGS_TO_DOWNGRADE + 1",
+    to: "export const EASED_FLAGS_TO_DOWNGRADE = READY_FLAGS_TO_DOWNGRADE + 2",
+    spec: "src/engine/readiness.test.ts",
+  },
+  {
+    id: "readiness-counts-a-rough-patch",
+    bug: "a downgrade followed by another downgrade counts as a false alarm, so a genuinely bad fortnight is read as proof the flags are wrong",
+    file: "src/engine/readiness.ts",
+    find: "    if (!next || next.readiness?.downgraded) continue",
+    to: "    if (!next) continue",
+    spec: "src/engine/readiness.test.ts",
+  },
+  {
+    id: "readiness-counts-an-abandoned-day",
+    bug: "a dialled-back session nobody finished counts as evidence the dialling back was unnecessary, which is backwards",
+    file: "src/engine/readiness.ts",
+    find: "    if (!s.readiness?.downgraded || !done(s)) continue",
+    to: "    if (!s.readiness?.downgraded) continue",
+    spec: "src/engine/readiness.test.ts",
+  },
+  {
+    id: "readiness-asks-after-one-good-day",
+    bug: "one dialled-back day that went fine is enough to offer turning the flags down, which is a pattern rule reading a single session",
+    file: "src/engine/readiness.ts",
+    find: "export const DOWNGRADES_BEFORE_EASING = 4",
+    to: "export const DOWNGRADES_BEFORE_EASING = 1",
+    spec: "src/engine/readiness.test.ts",
+  },
+  {
     id: "limit-load-asks-on-the-wrong-day",
     bug: "the app offers knee weight back on a pressing day, so tapping it changes nothing on screen and reads as broken",
     file: "src/engine/limitLoad.ts",
@@ -2029,6 +2069,22 @@ const MUTATIONS = [
 ]
 
 const E2E_MUTATIONS = [
+  {
+    id: 'readiness-sheet-keeps-its-own-threshold',
+    bug: 'the sheet says "the day downgrades" while sessionStart runs the full session, so the screen and the engine disagree in front of the athlete',
+    file: 'src/screens/today/ReadinessSheet.tsx',
+    find: '  const downgrade = count >= bar',
+    to: '  const downgrade = count >= 2',
+    spec: 'e2e/readiness.spec.ts',
+  },
+  {
+    id: 'readiness-threshold-ignored-at-the-door',
+    bug: 'the athlete says only dial back when it is really bad and the session start ignores it, so the answer is recorded and changes nothing',
+    file: 'src/logic/sessionStart.ts',
+    find: '    (readinessFlags?.filter(Boolean).length ?? 0) >= downgradeThreshold(data) ||',
+    to: '    (readinessFlags?.filter(Boolean).length ?? 0) >= 2 ||',
+    spec: 'e2e/readiness.spec.ts',
+  },
   {
     id: 'limit-load-offer-never-renders',
     bug: 'the offer is computed and the component bails before rendering it, so a joint that earned its weight back is never asked and the engine talks to nobody',

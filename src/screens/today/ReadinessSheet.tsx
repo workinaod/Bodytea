@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { SessionIntensity } from '../../types'
 import { Sheet } from '../../components/Sheet'
 import { Btn, Toggle } from '../../components/ui'
+import { useAppStore } from '../../store/appStore'
+import { downgradeThreshold } from '../../engine/readiness'
 
 const FLAGS: { label: string; sub: string }[] = [
   { label: 'Slept under 6 hours', sub: 'The red line for CNS work.' },
@@ -28,8 +30,14 @@ export function ReadinessSheet({
 }) {
   const [flags, setFlags] = useState<[boolean, boolean, boolean, boolean]>([false, false, false, false])
   const [intensity, setIntensity] = useState<SessionIntensity>('full')
+  // The SAME threshold sessionStart uses, not a second copy of it. This
+  // read 2 while sessionStart had learned to read 3, so an athlete who
+  // had taken the ease-off offer would be told "the day downgrades" and
+  // then handed the full session. A screen that disagrees with the
+  // engine is worse than either being wrong on its own.
+  const bar = downgradeThreshold(useAppStore((st) => st.data))
   const count = flags.filter(Boolean).length
-  const downgrade = count >= 2
+  const downgrade = count >= bar
 
   return (
     <Sheet open={open} onClose={onClose} title="10-second readiness check">
@@ -60,8 +68,8 @@ export function ReadinessSheet({
       >
         {downgrade
           ? `${count} flags → the day downgrades: sprint/jump volume −1/3, lifts light with 3 in the tank. Backing off a tired day is how pros stay healthy.`
-          : count === 1
-            ? '1 flag, under the line. Full session as written, just keep an ear on it.'
+          : count > 0
+            ? `${count} under the line. Full session as written, just keep an ear on it.`
             : 'All clear. Full send.'}
       </div>
 
