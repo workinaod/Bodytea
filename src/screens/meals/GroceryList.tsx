@@ -38,7 +38,7 @@ export function GroceryList() {
                 >
                   <span
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] font-black ${
-                      checked[item] ? 'border-lime/50 bg-lime text-black' : 'border-edge bg-white/[0.07]'
+                      checked[item] ? 'border-lime/50 bg-lime text-black' : 'border-edge bg-surface-2'
                     }`}
                   >
                     {checked[item] ? '✓' : ''}
@@ -64,13 +64,13 @@ export function GroceryList() {
             {editing && (
               <div className="flex gap-1.5 pt-1">
                 <input
-                  className="flex-1 rounded-lg bg-white/[0.07] px-2.5 py-1.5 text-[12.5px] outline-none placeholder:text-ink-faint"
+                  className="flex-1 rounded-lg bg-surface-2 px-2.5 py-1.5 text-[12.5px] outline-none placeholder:text-ink-faint"
                   placeholder={`Add to ${g.category.toLowerCase()}…`}
                   value={drafts[g.category] ?? ''}
                   onChange={(e) => setDrafts((p) => ({ ...p, [g.category]: e.target.value }))}
                 />
                 <button
-                  className="rounded-lg bg-white/[0.07] px-3 text-[12px] font-bold text-ink-dim"
+                  className="rounded-lg bg-surface-2 px-3 text-[12px] font-bold text-ink-dim"
                   onClick={() => {
                     const item = (drafts[g.category] ?? '').trim()
                     if (!item) return

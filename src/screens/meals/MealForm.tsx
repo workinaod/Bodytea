@@ -15,7 +15,7 @@ export function MealForm({
   onClose: () => void
 }) {
   const [t, setT] = useState(value)
-  const field = 'w-full rounded-xl bg-white/[0.07] px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint'
+  const field = 'w-full rounded-xl bg-surface-2 px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint'
   return (
     <Sheet open onClose={onClose} title={value.name ? 'Edit meal' : 'New meal'}>
       <div className="space-y-3 pb-6">

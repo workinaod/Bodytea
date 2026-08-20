@@ -35,7 +35,7 @@ export function MealPlanSetupSheet({ onClose }: { onClose: () => void }) {
                 key={n}
                 onClick={() => setCount(n)}
                 className={`rounded-xl border px-3 py-2.5 text-[12.5px] font-bold ${
-                  count === n ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-white/[0.07] text-ink-dim'
+                  count === n ? 'border-accent/60 bg-accent/12 text-accent-soft' : 'border-edge bg-surface-2 text-ink-dim'
                 }`}
               >
                 {label}

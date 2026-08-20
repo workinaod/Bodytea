@@ -22,8 +22,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
         </div>
 
         {/* The verdict is the headline */}
-        <div className="relative overflow-hidden rounded-3xl border border-accent/25 bg-gradient-to-b from-surface-2 to-surface px-5 pb-5 pt-6">
-          <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-accent/14 blur-3xl" />
+        <div className="rounded-2xl border-2 border-accent-deep bg-surface px-5 pb-5 pt-6 shadow-[0_3px_0_var(--lip-accent)]">
           <div className="text-[10px] font-black uppercase tracking-[0.22em] text-accent">The verdict</div>
           <p className="mt-2.5 font-display text-[19px] font-bold leading-[1.3] tracking-tight text-ink">
             {review.verdict}
@@ -37,7 +36,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
               { url: before, label: `Before · ${formatShort(review.from)}` },
               { url: after, label: `After · ${formatShort(review.to)}` },
             ].map((p) => (
-              <div key={p.label} className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+              <div key={p.label} className="overflow-hidden rounded-2xl bg-surface border-2 border-edge">
                 {p.url ? (
                   <img src={p.url} alt={p.label} className="aspect-[3/4] w-full object-cover" />
                 ) : (
@@ -55,7 +54,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
 
         {/* Effort */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05] px-4 py-3 text-center">
+          <div className="rounded-2xl bg-surface border-2 border-edge px-4 py-3 text-center">
             <div className="font-display text-[26px] font-bold leading-none">
               {review.adherencePct !== null ? `${review.adherencePct}%` : ', '}
             </div>
@@ -63,7 +62,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
               attendance · {review.done + review.partial}/{review.scheduled} sessions
             </div>
           </div>
-          <div className="rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05] px-4 py-3 text-center">
+          <div className="rounded-2xl bg-surface border-2 border-edge px-4 py-3 text-center">
             <div className="font-display text-[26px] font-bold leading-none">
               {review.proteinPct !== null ? `${review.proteinPct}%` : ', '}
             </div>
@@ -74,7 +73,7 @@ export function MilestoneReviewSheet({ review, onClose }: { review: MilestoneRev
         </div>
 
         {/* The numbers */}
-        <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+        <div className="overflow-hidden rounded-2xl bg-surface border-2 border-edge">
           {review.deltas.map((d, i) => {
             const has = d.delta !== undefined
             const good = has && (d.better === 'down' ? d.delta! < 0 : d.delta! > 0)

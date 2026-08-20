@@ -369,7 +369,7 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
                     <button
                       key={s.id}
                       onClick={() => toggleSupplement(date, s.id)}
-                      className={`rounded-xl border p-3 text-left ${on ? 'border-lime/40 bg-lime/8' : 'border-edge bg-white/[0.05]'}`}
+                      className={`rounded-xl border p-3 text-left ${on ? 'border-lime/40 bg-lime/8' : 'border-edge bg-surface-2'}`}
                     >
                       <div className={`text-[12.5px] font-bold ${on ? 'text-lime' : 'text-ink'}`}>
                         {on ? '✓ ' : ''}{name}

@@ -86,14 +86,14 @@ export function BodyFatEstimator({
             <ol className="space-y-2">
               {guidance.how.map((h, i) => (
                 <li key={i} className="flex gap-2.5 text-[13px] leading-snug text-ink-dim">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[11px] font-black text-accent">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-2 text-[11px] font-black text-accent">
                     {i + 1}
                   </span>
                   {h}
                 </li>
               ))}
             </ol>
-            <div className="flex items-center justify-between rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05] px-4 py-3">
+            <div className="flex items-center justify-between rounded-2xl bg-surface-2 border-2 border-edge px-4 py-3">
               <span className="text-[13.5px] font-bold">{guidance.title} measurement</span>
               <Stepper
                 value={valueFor[step as 'neck' | 'waist' | 'hip']}
@@ -120,7 +120,7 @@ export function BodyFatEstimator({
           <>
             {pct !== null ? (
               <>
-                <div className="rounded-3xl border border-accent/25 bg-gradient-to-b from-surface-2 to-surface px-5 py-6 text-center">
+                <div className="rounded-3xl border border-accent/25 bg-surface px-5 py-6 text-center">
                   <div className="text-[11px] font-black uppercase tracking-[0.2em] text-ink-faint">
                     Estimated body fat
                   </div>

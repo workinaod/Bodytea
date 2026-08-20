@@ -74,8 +74,8 @@ export function WorkoutsSheet({
             return (
               <div
                 key={w.id}
-                className={`rounded-2xl ring-1 transition-colors ${
-                  expanded ? 'bg-white/[0.06] ring-accent/30' : 'bg-white/[0.045] ring-white/[0.05]'
+                className={`rounded-2xl border-2 transition-colors ${
+                  expanded ? 'bg-surface-2 border-accent-deep' : 'bg-surface border-edge'
                 }`}
               >
                 <button
@@ -97,7 +97,7 @@ export function WorkoutsSheet({
                       <button
                         aria-label={`How ${w.title} works`}
                         onClick={() => setBriefId(w.id)}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[13px] font-black text-cyan active:bg-white/[0.11]"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-[13px] font-black text-cyan active:bg-surface-2"
                       >
                         ?
                       </button>

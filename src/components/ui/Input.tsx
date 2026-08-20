@@ -73,8 +73,8 @@ export function Toggle({
       role="switch"
       aria-checked={on}
       onClick={() => onChange(!on)}
-      className={`press-soft flex w-full items-center justify-between rounded-2xl border p-3.5 text-left ${
-        on ? 'border-accent/35 bg-accent/10' : 'border-transparent bg-white/[0.06]'
+      className={`press-soft flex w-full items-center justify-between rounded-2xl border-2 p-3.5 text-left ${
+        on ? 'border-accent-deep bg-surface-2' : 'border-edge bg-surface-2'
       }`}
     >
       <div className="pr-3">

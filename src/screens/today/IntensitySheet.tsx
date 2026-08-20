@@ -53,7 +53,7 @@ export function IntensitySheet({
             key={o.id}
             onClick={() => onStart(o.id)}
             className={`w-full rounded-2xl border px-4 py-3.5 text-left active:scale-[0.99] ${
-              o.hero ? 'border-accent/50 bg-accent/10' : 'border-edge bg-white/[0.07]'
+              o.hero ? 'border-accent/50 bg-accent/10' : 'border-edge bg-surface-2'
             }`}
           >
             <span className={`block text-[15px] font-extrabold ${o.hero ? 'text-accent-soft' : 'text-ink'}`}>

@@ -39,7 +39,7 @@ export function LogSheet({ date, dayType, onClose }: { date: string; dayType: 't
     return FOODS.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 12)
   }, [foodQuery])
 
-  const field = 'rounded-xl bg-white/[0.07] px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint'
+  const field = 'rounded-xl bg-surface-2 px-3.5 py-3 text-[14px] outline-none placeholder:text-ink-faint'
 
   return (
     <Sheet open onClose={onClose} title="Log food">
@@ -56,7 +56,7 @@ export function LogSheet({ date, dayType, onClose }: { date: string; dayType: 't
             <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">
               {borrowed ? `From my ${dayType === 'training' ? 'rest' : 'training'}-day plan` : 'From my plan, one tap'}
             </div>
-            <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+            <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
               {templates.map((t, i) => (
                 <button
                   key={t.id}
@@ -64,7 +64,7 @@ export function LogSheet({ date, dayType, onClose }: { date: string; dayType: 't
                     addMealEntry(date, { label: `${t.slot} · ${t.name}`, proteinG: t.proteinG, kcal: t.kcal, source: 'mealTemplate' })
                     onClose()
                   }}
-                  className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-white/[0.07] ${
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-surface-2 ${
                     i > 0 ? 'border-t border-white/[0.05]' : ''
                   }`}
                 >
@@ -109,7 +109,7 @@ export function LogSheet({ date, dayType, onClose }: { date: string; dayType: 't
         <div>
           <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-ink-faint">Single foods</div>
           <input
-            className="w-full rounded-xl bg-white/[0.07] px-3.5 py-2.5 text-[13px] outline-none placeholder:text-ink-faint"
+            className="w-full rounded-xl bg-surface-2 px-3.5 py-2.5 text-[13px] outline-none placeholder:text-ink-faint"
             placeholder={`Search ${FOODS.length} foods…`}
             value={foodQuery}
             onChange={(e) => setFoodQuery(e.target.value)}
@@ -123,7 +123,7 @@ export function LogSheet({ date, dayType, onClose }: { date: string; dayType: 't
                     addMealEntry(date, { label: `${f.name} (${f.serving})`, proteinG: f.proteinG, kcal: f.kcal, source: 'chip', foodId: f.id })
                     setAdded((n) => n + 1)
                   }}
-                  className="rounded-xl bg-white/[0.07] px-3 py-2 text-left active:bg-white/[0.09]"
+                  className="rounded-xl bg-surface-2 px-3 py-2 text-left active:bg-surface-2"
                 >
                   <div className="text-[12px] font-bold leading-tight">{f.name}</div>
                   <div className="text-[10px] font-semibold text-ink-faint">
@@ -152,7 +152,7 @@ export function LogSheet({ date, dayType, onClose }: { date: string; dayType: 't
                           addMealEntry(date, { label: `${f.name} (${f.serving})`, proteinG: f.proteinG, kcal: f.kcal, source: 'chip', foodId: f.id })
                           setAdded((n) => n + 1)
                         }}
-                        className="shrink-0 rounded-xl bg-white/[0.07] px-3 py-2 text-left active:bg-white/[0.09]"
+                        className="shrink-0 rounded-xl bg-surface-2 px-3 py-2 text-left active:bg-surface-2"
                       >
                         <div className="text-[12px] font-bold leading-tight">{f.name}</div>
                         <div className="text-[10px] font-semibold text-ink-faint">

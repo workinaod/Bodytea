@@ -126,7 +126,7 @@ export function SkipFlow({
           <div className="space-y-2">
             <button
               onClick={() => setMode('trim')}
-              className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'trim' ? 'border-lime/40 bg-lime/10' : 'border-edge bg-white/[0.07]'}`}
+              className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'trim' ? 'border-lime/40 bg-lime/10' : 'border-edge bg-surface-2'}`}
             >
               <div className="text-[14px] font-bold">Trim today's load</div>
               <div className="mt-0.5 text-[11.5px] text-ink-faint">
@@ -135,14 +135,14 @@ export function SkipFlow({
             </button>
             <button
               onClick={() => setMode('lighten')}
-              className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'lighten' ? 'border-gold/40 bg-gold/10' : 'border-edge bg-white/[0.07]'}`}
+              className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'lighten' ? 'border-gold/40 bg-gold/10' : 'border-edge bg-surface-2'}`}
             >
               <div className="text-[14px] font-bold">Bare minimum</div>
               <div className="mt-0.5 text-[11.5px] text-ink-faint">About 10 minutes. Keeps the habit alive.</div>
             </button>
             <button
               onClick={() => setMode('skip')}
-              className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'skip' ? 'border-danger/40 bg-danger/10' : 'border-edge bg-white/[0.07]'}`}
+              className={`block w-full rounded-xl border p-3.5 text-left ${mode === 'skip' ? 'border-danger/40 bg-danger/10' : 'border-edge bg-surface-2'}`}
             >
               <div className="text-[14px] font-bold">Skip the day</div>
               <div className="mt-0.5 text-[11.5px] text-ink-faint">Zero. Nothing. Goes on the record.</div>
@@ -159,7 +159,7 @@ export function SkipFlow({
                   key={r.id}
                   onClick={() => setReason(r.id)}
                   className={`rounded-xl border px-2 py-2.5 text-[12px] font-bold ${
-                    reason === r.id ? 'border-accent/50 bg-accent/15 text-accent-soft' : 'border-edge bg-white/[0.07] text-ink-dim'
+                    reason === r.id ? 'border-accent/50 bg-accent/15 text-accent-soft' : 'border-edge bg-surface-2 text-ink-dim'
                   }`}
                 >
                   {r.label}
@@ -168,7 +168,7 @@ export function SkipFlow({
             </div>
             <textarea
               rows={3}
-              className="mt-2 w-full resize-none rounded-xl bg-white/[0.07] px-3.5 py-3 text-[13px] leading-snug outline-none placeholder:text-ink-faint"
+              className="mt-2 w-full resize-none rounded-xl bg-surface-2 px-3.5 py-3 text-[13px] leading-snug outline-none placeholder:text-ink-faint"
               placeholder="Something else? Type it here."
               value={claimText}
               onChange={(e) => setClaimText(e.target.value)}
@@ -292,7 +292,7 @@ export function SkipFlow({
                 <span className="font-black">SKIP</span> to confirm.
               </div>
               <input
-                className="w-full rounded-xl border border-danger/40 bg-white/[0.07] px-3.5 py-3 text-center text-[15px] font-black tracking-[0.3em] outline-none"
+                className="w-full rounded-xl border border-danger/40 bg-surface-2 px-3.5 py-3 text-center text-[15px] font-black tracking-[0.3em] outline-none"
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
                 placeholder="SKIP"

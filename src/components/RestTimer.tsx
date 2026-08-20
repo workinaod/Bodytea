@@ -38,8 +38,10 @@ export function RestTimer({ seconds, onDismiss }: { seconds: number; onDismiss: 
   return (
     <button
       onClick={onDismiss}
-      className={`fixed bottom-[86px] left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full border px-5 py-2.5 shadow-2xl backdrop-blur transition-colors ${
-        done ? 'border-lime/40 bg-lime/15 text-lime' : 'border-accent/40 bg-bg/90 text-accent-soft'
+      className={`fixed bottom-[86px] left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full border-2 px-5 py-2.5 transition-colors ${
+        done
+          ? 'border-[var(--lip-lime)] bg-surface text-lime shadow-[0_3px_0_var(--lip-lime)]'
+          : 'border-accent-deep bg-surface text-accent-soft shadow-[0_3px_0_var(--lip-accent)]'
       }`}
     >
       <span className="text-[13px] font-bold uppercase tracking-wider">{done ? 'GO' : 'Rest'}</span>

@@ -35,10 +35,12 @@ function TabButton({ id, label, active, onClick }: { id: TabId; label: string; a
  * gets the Strava treatment, one thumb, straight into recording.
  *
  * While a session is live on the Today tab the whole bar folds into a
- * thin glowing strip at the screen's bottom edge, the session buttons
- * take its place. Tap or swipe the strip up and the real bar slides
- * back over the session row (and tucks away again after a tab pick or
- * a few seconds of quiet).
+ * short heat handle at the screen's bottom edge and the session buttons
+ * take its place. Tap or swipe it up and the real bar slides back over
+ * the session row (and tucks away again after a tab pick or a few
+ * seconds of quiet). It used to be a sliding rainbow under a pulsing
+ * glow, which is a light show on the screen somebody stares at for an
+ * hour, and against the law twice over.
  */
 export function TabBar({
   tab,
@@ -79,7 +81,7 @@ export function TabBar({
         onTouchEnd={() => {
           touchY.current = null
         }}
-        className="nav-glow fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),8px)] z-20 mx-auto h-[20px] max-w-lg rounded-full opacity-90 active:scale-x-[0.98]"
+        className="nav-grip fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),8px)] z-20 mx-auto h-[14px] max-w-[120px] rounded-full active:translate-y-[3px] active:shadow-none"
       >
         <span className="sr-only">Show navigation</span>
       </button>
@@ -133,7 +135,7 @@ export function TabBar({
           className="flex w-14 shrink-0 flex-col items-center justify-center gap-px py-0.5 active:scale-95"
         >
           <span className="press-down flex h-9 w-9 items-center justify-center rounded-full border-2 border-accent-deep bg-accent [--lip:var(--lip-accent)]">
-            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="black" stroke="black" strokeWidth="1" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="#fff" stroke="#fff" strokeWidth="1" strokeLinejoin="round">
               <path d="M12 2.5 18.5 20 12 16.6 5.5 20Z" />
             </svg>
           </span>

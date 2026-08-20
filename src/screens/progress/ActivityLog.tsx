@@ -96,7 +96,7 @@ export function ActivityLog({ data, today }: { data: AppData; today: ISODate }) 
             <SimpleLine points={weeklyMiles(data, today)} unit=" mi" color="var(--color-accent)" />
             <p className="mt-1 text-[11px] font-semibold text-ink-faint">Weekly miles, GPS-tracked.</p>
           </Card>
-          <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+          <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
             {[...data.runs]
               .reverse()
               .slice(0, 8)
@@ -104,7 +104,7 @@ export function ActivityLog({ data, today }: { data: AppData; today: ISODate }) 
                 <div
                   key={r.id}
                   onClick={() => setOpenRun(r)}
-                  className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 active:bg-white/[0.07] ${
+                  className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 active:bg-surface-2 ${
                     i > 0 ? 'border-t border-white/[0.05]' : ''
                   }`}
                 >
@@ -141,7 +141,7 @@ export function ActivityLog({ data, today }: { data: AppData; today: ISODate }) 
             </div>
             {openRun.points.length > 1 && <RunReplay log={openRun} height={240} />}
             {openRun.splits.length > 0 && (
-              <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+              <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
                 {openRun.splits.map((s, i) => (
                   <div
                     key={i}

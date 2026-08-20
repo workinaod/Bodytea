@@ -161,7 +161,7 @@ export function WeeklyRecap({ data, today, onClose }: { data: AppData; today: st
 
       <div className="relative flex flex-1 flex-col items-center justify-center px-8 text-center">
         <div
-          className="pointer-events-none absolute h-72 w-72 rounded-full opacity-20 blur-3xl"
+          className="pointer-events-none absolute h-72 w-72 rounded-full opacity-[0.09]"
           style={{ background: card.glow }}
         />
         <div className="text-[12px] font-black uppercase tracking-[0.3em] text-ink-dim">{card.eyebrow}</div>

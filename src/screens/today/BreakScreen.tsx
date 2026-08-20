@@ -161,7 +161,7 @@ export function BreakScreen({
           bells. Making people wait for the gate to do it means walking
           back to the rack after the countdown has already finished. */}
       {onWeight && (
-        <div className="mt-7 flex items-center gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.05] px-4 py-2.5">
+        <div className="mt-7 flex items-center gap-3 rounded-2xl border border-white/[0.09] bg-surface-2 px-4 py-2.5">
           <span className="text-[11px] font-black uppercase tracking-wider text-ink-dim">
             {loadLabel ?? 'weight'}
           </span>
@@ -207,7 +207,7 @@ export function BreakScreen({
                   onSessionFeel(id)
                   setFeelDone(true)
                 }}
-                className="rounded-full bg-white/[0.07] px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-white/[0.14]"
+                className="rounded-full bg-surface-2 px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-surface-2"
               >
                 {label}
               </button>
@@ -224,7 +224,7 @@ export function BreakScreen({
         onRir={onRir}
       />
 
-      <button onClick={onDone} className="mt-8 rounded-full bg-white/[0.07] px-5 py-2.5 text-[12.5px] font-bold text-ink-dim">
+      <button onClick={onDone} className="mt-8 rounded-full bg-surface-2 px-5 py-2.5 text-[12.5px] font-bold text-ink-dim">
         skip the rest, I'm ready
       </button>
       <p className="mt-3 max-w-[260px] text-center text-[11px] leading-snug text-ink-faint">
@@ -236,7 +236,7 @@ export function BreakScreen({
           quiet ring as the rest of this screen, nothing shouting. */}
       {brk.nextExerciseId && (
         <div className="mt-7 w-full max-w-sm px-5">
-          <div className="rounded-2xl bg-white/[0.04] p-3 ring-1 ring-white/[0.06]">
+          <div className="rounded-2xl bg-surface-2 p-3 border-2 border-edge">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">
                 <ExerciseDemo

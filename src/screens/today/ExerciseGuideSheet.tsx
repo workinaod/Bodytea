@@ -54,14 +54,14 @@ export function ExerciseGuideSheet({
           ))}
         </div>
 
-        <section className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
+        <section className="rounded-2xl bg-surface-2 border-2 border-edge p-4">
           <h4 className="mb-1 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
             The movement
           </h4>
           <ExerciseDemo spec={demoFor(id)} photos={photosFor(id)} />
         </section>
 
-        <section className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
+        <section className="rounded-2xl bg-surface-2 border-2 border-edge p-4">
           <h4 className="mb-2 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
             Muscles activated
           </h4>
@@ -75,7 +75,7 @@ export function ExerciseGuideSheet({
         )}
 
         {meta && (
-          <div className="rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-3">
+          <div className="rounded-xl bg-surface-2 border-2 border-edge px-3.5 py-3">
             <div className="text-[10px] font-black uppercase tracking-[0.14em] text-ink-faint">
               How to program it (defaults, not law)
             </div>
@@ -134,7 +134,7 @@ export function ExerciseGuideSheet({
                   key={cid}
                   onClick={() => cid !== id && setViewId(cid)}
                   className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left ${
-                    cid === id ? 'border-accent/50 bg-accent/10' : 'border-edge bg-white/[0.05] active:bg-white/[0.09]'
+                    cid === id ? 'border-accent/50 bg-accent/10' : 'border-edge bg-surface active:bg-surface-2'
                   }`}
                 >
                   <span className="w-4 text-[11px] font-black text-ink-faint">{i + 1}</span>

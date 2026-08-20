@@ -72,7 +72,7 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
     if (d.date < data.settings.installedAt) return { dot: 'bg-edge', label: 'before the app' }
     if (d.date < today) return { dot: 'bg-danger/50', label: 'unaccounted', tone: 'danger' }
     if (d.date === today) return { dot: 'bg-accent', label: 'today', tone: 'accent' }
-    return { dot: 'bg-white/[0.07] border border-edge', label: 'up next' }
+    return { dot: 'bg-surface-2 border border-edge', label: 'up next' }
   }
 
   function markersFor(d: ResolvedDay): string[] {
@@ -190,7 +190,7 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
                           })
                         }
                         className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
-                          wd === d ? 'bg-accent text-black' : 'bg-white/[0.07] text-ink-faint'
+                          wd === d ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
                         }`}
                       >
                         {WD_LABEL[d]}
@@ -285,7 +285,7 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
                       d.plan.lifeEvents = d.plan.lifeEvents.filter((x) => x.id !== ev.id)
                     })
                   }
-                  className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-bold text-ink-faint"
+                  className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-bold text-ink-faint"
                 >
                   ✕
                 </button>
@@ -303,7 +303,7 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
                         })
                       }
                       className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
-                        days.includes(d) ? 'bg-accent text-black' : 'bg-white/[0.07] text-ink-faint'
+                        days.includes(d) ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
                       }`}
                     >
                       {WD_LABEL[d]}
@@ -352,7 +352,7 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
                 <button
                   aria-label="How this workout works"
                   onClick={() => setBriefOpen(true)}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[13px] font-black text-cyan active:bg-white/[0.11]"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-[13px] font-black text-cyan active:bg-surface-2"
                 >
                   ?
                 </button>
@@ -361,7 +361,7 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
 
             {recap && recap.exercises.length > 0 && (
               <>
-                <div className="overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
+                <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
                   {recap.exercises.map((r, i) => (
                     <div
                       key={`${r.exerciseId}-${i}`}
@@ -431,7 +431,7 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
                 actually contained, and a lifting record read without it
                 describes a different afternoon. */}
             {recap && recap.cardio.length > 0 && (
-              <div className="overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
+              <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
                 {recap.cardio.map((c, i) => (
                   <div
                     key={`${c.label}-${i}`}
@@ -485,7 +485,7 @@ function AddLifeEvent({ onAdd }: { onAdd: (label: string, kind: LifeEventKind) =
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06] py-3 text-[12.5px] font-bold text-ink-faint"
+        className="w-full rounded-xl bg-surface-2 border-2 border-edge py-3 text-[12.5px] font-bold text-ink-faint"
       >
         + Add a life event (gig, shift, whatever's real)
       </button>
@@ -497,7 +497,7 @@ function AddLifeEvent({ onAdd }: { onAdd: (label: string, kind: LifeEventKind) =
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         placeholder='Name it: "DJ set", "night shift", "closing shift"'
-        className="w-full rounded-xl bg-white/[0.07] px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
+        className="w-full rounded-xl bg-surface-2 px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
       />
       <div className="flex gap-1.5">
         {(
@@ -517,7 +517,7 @@ function AddLifeEvent({ onAdd }: { onAdd: (label: string, kind: LifeEventKind) =
           : 'All day standing → the NEXT day drops a jump set (legs arrive pre-fatigued).'}
       </p>
       <div className="flex gap-2">
-        <button onClick={() => setOpen(false)} className="flex-1 rounded-xl bg-white/[0.07] py-2.5 text-[12.5px] font-bold text-ink-dim">
+        <button onClick={() => setOpen(false)} className="flex-1 rounded-xl bg-surface-2 py-2.5 text-[12.5px] font-bold text-ink-dim">
           Cancel
         </button>
         <button

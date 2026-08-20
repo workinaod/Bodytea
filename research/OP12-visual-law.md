@@ -109,6 +109,45 @@ The **onboarding** world keeps its own look: cream paper `#EAE7E0` with ink `#0D
 the dark room `#0B0B0C` on the first screen. It is a separate world on purpose and it is
 also a lane this session does not own.
 
+## This applies to EVERY surface, not the six the concept drew
+
+The preview drew Today, Train, My Plan, Progress, Profile and Badges. It did not draw the
+logger, the twenty-odd sheets, the pickers, the reviews or the trackers, and for one round that
+was read as "those are out of scope". They are not. The concept is a LOOK, and a look that stops
+at the six screens somebody mocked up is a redesign that makes the rest of the app look broken.
+
+`src/paintLaw.test.ts` scans every `.tsx` under `src/` (and both stylesheets) for the idioms
+this file bans by name:
+
+| Banned | Because | Use instead |
+|---|---|---|
+| `bg-white/[0.0x]` | a fill made of opacity | `bg-surface-2` |
+| `ring-1` | a hairline | `border-2 border-edge` |
+| `gradient-to-*` | depth faked with light | a flat fill |
+| `blur` / `backdrop-blur` | glass | nothing |
+| `shadow-lg\|xl\|2xl` | a glow | `shadow-[0_3px_0_var(--color-edge)]` |
+| any `box-shadow` with blur | a halo | the same hard lip |
+
+Three files are exempt and the list only shrinks: `RouteMap`, `RunReplay` and `RunTrackerSheet`
+draw chrome over satellite imagery, and `TabBar` keeps the scrim that fades a scrolling page
+into the ground behind the docked bar, which the approved preview draws too (its `.fade`).
+
+## The one gap that is named rather than closed: 23 sport emoji
+
+The law says zero emoji, and the app's own icons now obey it: `components/stickers.tsx` draws
+every mark the rebuilt screens use, and the badge categories, the cardio doors and the launcher
+coins all went through it.
+
+What is left is `plan/cardio.ts`, where **23 distinct emoji** identify 24 activities: run, bike,
+swim, row, ski, box, yoga, basketball, football, and so on. That is not a sweep, it is 23 pieces
+of artwork, and the honest reason it is not done here is that the cheap version is worse than
+the emoji: mapping 23 sports onto five generic marks would make a run and a swim look identical,
+which loses information the emoji actually carry.
+
+`src/paintLaw.test.ts` pins the count. It can only go DOWN. Every sticker somebody draws for
+that table is one fewer emoji, and nobody can add a 24th activity with an emoji without the
+guard saying so.
+
 ## Enforcement
 
 `src/visualLaw.test.ts` reads `src/index.css` and asserts the approved values are present.

@@ -21,7 +21,7 @@ export function StageSheet({ stage, onClose }: { stage: Stage; onClose: () => vo
     <Sheet open onClose={onClose} title={stage.label}>
       <div className="space-y-4 pb-8">
         {done ? (
-          <div className="rounded-2xl bg-lime/10 px-4 py-3 ring-1 ring-lime/25">
+          <div className="rounded-2xl bg-lime/10 px-4 py-3 border-2 border-[var(--lip-lime)]">
             <p className="text-[13px] font-black text-lime">
               Done{stage.hitOn ? ` · ${formatShort(stage.hitOn)}` : ''}
             </p>
@@ -41,7 +41,7 @@ export function StageSheet({ stage, onClose }: { stage: Stage; onClose: () => vo
                 {stage.unit}
               </span>
             </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
               <div className="grow h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
             </div>
             <p className="mt-1 text-[10.5px] text-ink-faint">{pct}% of the way from where you started</p>
@@ -54,7 +54,7 @@ export function StageSheet({ stage, onClose }: { stage: Stage; onClose: () => vo
         <p className="text-[13px] leading-snug text-ink">{stage.detail}</p>
 
         {!done && (
-          <div className="rounded-2xl bg-white/[0.045] px-4 py-3 ring-1 ring-white/[0.05]">
+          <div className="rounded-2xl bg-surface-2 px-4 py-3 border-2 border-edge">
             {stage.blocker ? (
               <>
                 <p className="text-[12.5px] font-black text-gold">Nothing to measure yet</p>

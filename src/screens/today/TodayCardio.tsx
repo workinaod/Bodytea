@@ -120,7 +120,7 @@ export function CardioBackupChooser({ data, date }: { data: AppData; date: ISODa
               <button
                 key={c.exerciseId}
                 onClick={() => chooseCardio(date, c.exerciseId)}
-                className="flex w-full items-center justify-between rounded-xl bg-white/[0.07] px-3.5 py-3 text-left active:bg-white/[0.09]"
+                className="flex w-full items-center justify-between rounded-xl bg-surface-2 px-3.5 py-3 text-left active:bg-surface-2"
               >
                 <span className="text-[13.5px] font-bold">{def.name}</span>
                 <span className="font-mono text-[11.5px] text-ink-dim">{c.repText}</span>

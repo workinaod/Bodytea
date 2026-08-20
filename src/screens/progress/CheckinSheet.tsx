@@ -122,7 +122,7 @@ export function CheckinSheet({ open, onClose, onSaved, last }: { open: boolean; 
                   fileRef.current?.click()
                 }}
                 className={`rounded-xl border p-3 text-center text-[12px] font-bold ${
-                  m.photoIds[angle] ? 'border-lime/40 bg-lime/8 text-lime' : 'border-edge bg-white/[0.07] text-ink-dim'
+                  m.photoIds[angle] ? 'border-lime/40 bg-lime/8 text-lime' : 'border-edge bg-surface-2 text-ink-dim'
                 }`}
               >
                 {busy === angle ? 'Saving…' : m.photoIds[angle] ? `✓ ${angle}` : `📷 ${angle}`}

@@ -61,13 +61,13 @@ export function ReviewOffer({ today }: { today: string }) {
         <div className="mt-2.5 flex gap-2">
           <button
             onClick={() => setOpen(true)}
-            className="sheen flex-[2] rounded-xl bg-gradient-to-b from-cyan to-[#2aa3bd] py-3 text-[14px] font-black text-black active:scale-[0.98]"
+            className="press-down flex-[2] rounded-[14px] border-2 border-[var(--lip-ice)] bg-cyan py-3 text-[14px] font-black text-[var(--ink-on-ice)] [--lip:var(--lip-ice)]"
           >
             See it
           </button>
           <button
             onClick={markSeen}
-            className="flex-1 rounded-xl border border-edge bg-white/[0.06] py-3 text-[13px] font-bold text-ink-dim active:scale-[0.98]"
+            className="flex-1 rounded-xl border border-edge bg-surface-2 py-3 text-[13px] font-bold text-ink-dim active:scale-[0.98]"
           >
             Not now
           </button>

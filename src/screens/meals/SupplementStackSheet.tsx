@@ -26,7 +26,7 @@ export function SupplementStackSheet({ onClose }: { onClose: () => void }) {
   const age = useAppStore((s) => s.data.profile?.age)
   const signals: SuppressionSignal[] = age !== undefined && age < 18 ? ['minor'] : []
   const available = offeredSupplements(diet, limits, signals).filter((c) => !stack.some((s) => s.id === c.id))
-  const field = 'rounded-xl bg-white/[0.07] px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint'
+  const field = 'rounded-xl bg-surface-2 px-3 py-2.5 text-[13px] outline-none placeholder:text-ink-faint'
 
   /**
    * What a row actually shows.
@@ -61,7 +61,7 @@ export function SupplementStackSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet open onClose={onClose} title="My supplement stack">
       <div className="space-y-4 pb-6">
-        <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+        <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
           {stack.map((s, i) => (
             <div key={s.id} className={`flex items-center justify-between gap-2 px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}>
               <div className="min-w-0">

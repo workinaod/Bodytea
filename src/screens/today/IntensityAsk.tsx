@@ -47,12 +47,12 @@ export function IntensityAsk({
               key={o.id}
               onClick={() => onAnswer(o.id)}
               aria-pressed={on}
-              className={`press flex-1 rounded-2xl px-2 py-3 text-center ring-1 transition-colors ${
+              className={`press flex-1 rounded-2xl border-2 px-2 py-3 text-center transition-colors ${
                 on
-                  ? 'bg-accent/15 ring-accent/45'
+                  ? 'bg-accent/15 border-accent-deep'
                   : answered
-                    ? 'bg-white/[0.03] ring-white/[0.05] opacity-45'
-                    : 'bg-white/[0.06] ring-white/[0.07]'
+                    ? 'bg-surface-2 border-edge opacity-45'
+                    : 'bg-surface-2 border-edge'
               }`}
             >
               <span

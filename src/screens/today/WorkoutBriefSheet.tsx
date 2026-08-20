@@ -39,7 +39,7 @@ export function WorkoutBriefSheet({
         </div>
 
         {brief.focus.length > 0 && (
-          <section className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
+          <section className="rounded-2xl bg-surface-2 border-2 border-edge p-4">
             <h4 className="mb-3 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
               What it works
             </h4>
@@ -50,7 +50,7 @@ export function WorkoutBriefSheet({
                   <span className="w-[92px] shrink-0 truncate text-[12px] font-bold capitalize text-ink-dim">
                     {f.label}
                   </span>
-                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.07]">
+                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
                     <span
                       className="block h-full rounded-full bg-accent"
                       style={{ width: `${(f.sets / topSets) * 100}%` }}
@@ -69,7 +69,7 @@ export function WorkoutBriefSheet({
           </section>
         )}
 
-        <section className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
+        <section className="rounded-2xl bg-surface-2 border-2 border-edge p-4">
           <h4 className="mb-3 text-[11px] font-black uppercase tracking-[0.14em] text-ink-faint">
             The order, and why
           </h4>

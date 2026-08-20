@@ -234,7 +234,7 @@ export function FinishChain({ chain, onDone }: { chain: ChainData; onDone: () =>
         {current === 'pr' && chain.pr && (
           <div key="pr" className="relative text-center">
             {burstAt === 'pr' && <ConfettiBurst />}
-            <div className="drop mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gold/15 ring-1 ring-gold/45">
+            <div className="drop mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gold/15 border-2 border-[var(--lip-gold)]">
               <span className="num text-[21px] font-black text-gold">PR</span>
             </div>
             <div className="eyebrow mt-4 text-gold">Personal record</div>
@@ -273,8 +273,8 @@ export function FinishChain({ chain, onDone }: { chain: ChainData; onDone: () =>
             {burstAt === 'badge' && <ConfettiBurst />}
             <div className="eyebrow text-ink-faint">{chain.badge.unlocked ? 'Badge unlocked' : 'Next up'}</div>
             <div
-              className={`mx-auto mt-3 flex h-16 w-16 items-center justify-center rounded-2xl text-[28px] ring-1 ${
-                chain.badge.unlocked ? 'flip-y bg-lime/15 ring-lime/50' : 'bg-surface-2 ring-edge grayscale'
+              className={`mx-auto mt-3 flex h-16 w-16 items-center justify-center rounded-2xl border-2 text-[28px] ${
+                chain.badge.unlocked ? 'flip-y bg-lime/15 border-[var(--lip-lime)]' : 'bg-surface-2 border-edge grayscale'
               }`}
             >
               {chain.badge.icon}

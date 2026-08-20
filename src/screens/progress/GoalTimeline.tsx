@@ -157,7 +157,7 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
                 key={t.label}
                 onClick={() => setTrack(t.id)}
                 className={`shrink-0 rounded-full px-3 py-1.5 text-[11.5px] font-bold ${
-                  track === t.id ? 'bg-white/[0.1] text-ink' : 'bg-white/[0.04] text-ink-faint'
+                  track === t.id ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-faint'
                 }`}
               >
                 {t.label}

@@ -10,6 +10,7 @@ import type { Intensity } from '../../engine/intensity'
 import { cardioKcal } from '../../engine/intensity'
 import { IntensityAsk } from './IntensityAsk'
 import { Sheet } from '../../components/Sheet'
+import { Sticker } from '../../components/stickers'
 import { RunTrackerSheet } from './RunTrackerSheet'
 import { CardioTimerSheet } from './CardioTimerSheet'
 
@@ -134,7 +135,7 @@ export function CardioSheet({
         {entries.length > 0 && !picked && (
           <div className="space-y-1.5">
             {entries.map((e) => (
-              <div key={e.id} className="flex items-center gap-2.5 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2.5">
+              <div key={e.id} className="flex items-center gap-2.5 rounded-xl bg-surface-2 border-2 border-edge px-3 py-2.5">
                 <span className="text-[16px]">{cardioActivity(e.activityId).emoji}</span>
                 <div className="min-w-0 flex-1">
                   <div className="text-[13.5px] font-bold">{e.label}{e.mode ? ` · ${modeLabel(e.activityId, e.mode)}` : ''}</div>
@@ -142,7 +143,7 @@ export function CardioSheet({
                 </div>
                 <button
                   onClick={() => removeCardio(date, e.id)}
-                  className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-bold text-danger"
+                  className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-bold text-danger"
                 >
                   ✕
                 </button>
@@ -156,16 +157,16 @@ export function CardioSheet({
           <div className="grid grid-cols-2 gap-2.5">
             {(
               [
-                { id: 'log', emoji: '✍️', label: 'Log it', sub: 'Already done' },
-                { id: 'track', emoji: '⏱', label: 'Track it', sub: 'Start now' },
+                { id: 'log', icon: 'pencil', label: 'Log it', sub: 'Already done' },
+                { id: 'track', icon: 'stopwatch', label: 'Track it', sub: 'Start now' },
               ] as const
             ).map((c) => (
               <button
                 key={c.id}
                 onClick={() => setIntent(c.id)}
-                className="press flex flex-col items-center justify-center gap-1 rounded-3xl bg-gradient-to-b from-white/[0.13] to-white/[0.05] py-6 shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_10px_24px_-12px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.09]"
+                className="press-down flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-edge bg-surface-2 py-6 [--lip:var(--lip-quiet)]"
               >
-                <span className="text-[24px] leading-none">{c.emoji}</span>
+                <Sticker name={c.icon} size={26} />
                 <span className="text-heading font-extrabold">{c.label}</span>
                 <span className="text-micro font-bold tracking-normal text-ink-faint">{c.sub}</span>
               </button>
@@ -181,7 +182,7 @@ export function CardioSheet({
               <span className="text-[16px] font-black">Custom</span>
               <button
                 onClick={() => { setNaming(false); setCustomLabel('') }}
-                className="ml-auto rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold text-ink-dim"
+                className="ml-auto rounded-full bg-surface-2 px-3 py-1 text-[11px] font-bold text-ink-dim"
               >
                 back
               </button>
@@ -191,7 +192,7 @@ export function CardioSheet({
               value={customLabel}
               onChange={(e) => setCustomLabel(e.target.value)}
               placeholder="What is it? (spin class, boxing, …)"
-              className="w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
+              className="w-full rounded-xl bg-surface-2 border-2 border-edge px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
             />
             <Btn
               className="w-full py-3.5"
@@ -216,7 +217,7 @@ export function CardioSheet({
               </p>
               <button
                 onClick={() => setIntent(null)}
-                className="press ml-auto rounded-full bg-white/[0.07] px-3 py-1 text-micro font-bold tracking-normal text-ink-dim"
+                className="press ml-auto rounded-full bg-surface-2 px-3 py-1 text-micro font-bold tracking-normal text-ink-dim"
               >
                 back
               </button>
@@ -226,7 +227,7 @@ export function CardioSheet({
                 <button
                   key={a.id}
                   onClick={() => choose(a.id)}
-                  className="press rounded-xl bg-white/[0.05] px-2 py-3 text-center ring-1 ring-white/[0.05]"
+                  className="press rounded-xl bg-surface-2 px-2 py-3 text-center border-2 border-edge"
                 >
                   <div className="text-[20px]">{a.emoji}</div>
                   <div className="mt-0.5 text-[11px] font-bold leading-tight">{a.label}</div>
@@ -247,7 +248,7 @@ export function CardioSheet({
             <div className="flex items-center gap-2">
               <span className="text-[22px]">{def.emoji}</span>
               <span className="text-[16px] font-black">{def.label}</span>
-              <button onClick={resetForm} className="ml-auto rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold text-ink-dim">
+              <button onClick={resetForm} className="ml-auto rounded-full bg-surface-2 px-3 py-1 text-[11px] font-bold text-ink-dim">
                 change
               </button>
             </div>
@@ -275,7 +276,7 @@ export function CardioSheet({
                 value={customLabel}
                 onChange={(e) => setCustomLabel(e.target.value)}
                 placeholder="What was it? (spin class, boxing, …)"
-                className="w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
+                className="w-full rounded-xl bg-surface-2 border-2 border-edge px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
               />
             )}
 

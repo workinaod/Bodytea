@@ -70,7 +70,7 @@ export function TrackSheet({
             <button
               key={a.id}
               onClick={() => onPickGps(a.id)}
-              className="press flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-b from-accent/[0.16] to-accent/[0.05] py-4 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset] ring-1 ring-accent/25"
+              className="press flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-surface py-4 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset] border-2 border-accent-deep"
             >
               <span className="text-[22px] leading-none">{a.emoji}</span>
               <span className="text-[11.5px] font-extrabold text-accent-soft">{a.label}</span>
@@ -84,7 +84,7 @@ export function TrackSheet({
             <button
               key={a.id}
               onClick={() => onPickTimed(a.id)}
-              className="press flex min-h-[74px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-white/[0.055] px-1.5 py-3 ring-1 ring-white/[0.06] active:bg-white/[0.11]"
+              className="press flex min-h-[74px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-surface px-1.5 py-3 border-2 border-edge active:bg-surface-2"
             >
               <span className="text-[19px] leading-none">{a.emoji}</span>
               <span className="text-center text-[10.5px] font-bold leading-tight text-ink-dim">
@@ -95,7 +95,7 @@ export function TrackSheet({
         </div>
 
         {/* The whole bottom row, and the field itself. */}
-        <div className="mt-2 flex items-center gap-2 rounded-2xl bg-white/[0.055] px-3.5 py-2.5 ring-1 ring-white/[0.06] focus-within:ring-accent/40">
+        <div className="mt-2 flex items-center gap-2 rounded-2xl bg-surface-2 px-3.5 py-2.5 border-2 border-edge focus-within:ring-accent/40">
           <span className="text-[18px] leading-none">✨</span>
           <input
             value={custom}

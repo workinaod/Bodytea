@@ -28,7 +28,7 @@ function PhotoArc({ pairs }: { pairs: PhotoPair[] }) {
             className={`rounded-full px-3 py-1 text-[11px] font-bold capitalize ${
               n === Math.min(i, pairs.length - 1)
                 ? 'bg-ink text-black'
-                : 'bg-white/[0.08] text-ink-dim'
+                : 'bg-surface-2 text-ink-dim'
             }`}
           >
             {p.angle}
@@ -41,7 +41,7 @@ function PhotoArc({ pairs }: { pairs: PhotoPair[] }) {
           { url: after, label: pair.afterDate, tag: 'Now' },
         ].map((side) => (
           <div key={side.tag}>
-            <div className="aspect-[3/4] overflow-hidden rounded-xl bg-white/[0.06]">
+            <div className="aspect-[3/4] overflow-hidden rounded-xl bg-surface-2">
               {side.url ? (
                 <img src={side.url} alt={`${side.tag} ${pair.angle}`} className="h-full w-full object-cover" />
               ) : (
@@ -67,12 +67,12 @@ function CardBody({ card }: { card: StoryCard }) {
     return (
       <div className="w-full space-y-2.5">
         {card.cohort.map((c) => (
-          <div key={c.label} className="rounded-xl bg-white/[0.055] px-3.5 py-3 text-left">
+          <div key={c.label} className="rounded-xl bg-surface-2 px-3.5 py-3 text-left">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-[12px] font-black uppercase tracking-wider text-ink-faint">{c.label}</span>
               <span className="text-[15px] font-extrabold">{c.value}</span>
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
               <div className="h-full rounded-full bg-cyan" style={{ width: `${c.percentile}%` }} />
             </div>
             <p className="mt-1.5 text-[12px] leading-snug text-ink-dim">{c.standing}</p>
@@ -87,7 +87,7 @@ function CardBody({ card }: { card: StoryCard }) {
     return (
       <div className="w-full space-y-2">
         {card.items.map((it) => (
-          <div key={it.label} className="flex items-start gap-2.5 rounded-xl bg-white/[0.055] px-3.5 py-3 text-left">
+          <div key={it.label} className="flex items-start gap-2.5 rounded-xl bg-surface-2 px-3.5 py-3 text-left">
             {it.icon && <span className="text-[16px] leading-none">{it.icon}</span>}
             <div className="min-w-0">
               <div className="text-[14px] font-extrabold leading-tight">{it.label}</div>
@@ -154,7 +154,7 @@ export function PeriodReviewSheet({
 
       <div className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto px-7 py-4 text-center">
         <div
-          className="pointer-events-none absolute h-72 w-72 rounded-full opacity-20 blur-3xl"
+          className="pointer-events-none absolute h-72 w-72 rounded-full opacity-[0.09]"
           style={{ background: card.glow }}
         />
         <div className="relative w-full max-w-sm">

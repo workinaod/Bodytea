@@ -51,12 +51,12 @@ export function MealDetailSheet({
             Same macros, common groceries
           </div>
           {alts.length === 0 && (
-            <p className="rounded-2xl bg-white/[0.045] px-4 py-3 text-[12px] leading-snug text-ink-faint ring-1 ring-white/[0.05]">
+            <p className="rounded-2xl bg-surface-2 px-4 py-3 text-[12px] leading-snug text-ink-faint border-2 border-edge">
               Nothing on the common-groceries list fits this meal and your food limits. Hit the
               protein and calorie numbers your own way.
             </p>
           )}
-          <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+          <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
             {alts.map((a, i) => (
               <div key={a.id} className={`px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}>
                 <div className="flex items-center justify-between gap-2">
@@ -82,7 +82,7 @@ export function MealDetailSheet({
                     Use instead
                   </button>
                   <button
-                    className="flex-1 rounded-lg bg-white/[0.07] py-2 text-[12px] font-bold text-ink-dim"
+                    className="flex-1 rounded-lg bg-surface-2 py-2 text-[12px] font-bold text-ink-dim"
                     onClick={() => onAddAlt(a)}
                   >
                     + Add to plan

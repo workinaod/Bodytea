@@ -26,6 +26,8 @@ export type StickerName =
   | 'redo'
   | 'wrench'
   | 'check'
+  | 'pencil'
+  | 'stopwatch'
 
 // The neutral sticker palette: one light face, one shaded facet.
 const FACE = '#E9F2F7'
@@ -136,6 +138,25 @@ const BODIES: Record<StickerName, React.ReactNode> = {
       d="M20.8 6.4a5.4 5.4 0 0 1-7 6.8L7 20a2.3 2.3 0 0 1-3.2-3.2l6.8-6.8a5.4 5.4 0 0 1 6.8-7l-3 3 .6 3.2 3.2.6Z"
       fill={SHADE}
     />
+  ),
+  // Logging something that already happened, and starting a clock on
+  // something that has not. The two doors the cardio sheet opens with,
+  // which were an emoji pair.
+  pencil: (
+    <>
+      <path d="M3.4 17.2 14.6 6l3.4 3.4L6.8 20.6l-4.2.8Z" fill={FACE} />
+      <path d="M3.4 17.2 6.8 20.6l-4.2.8Z" fill={DEEP} />
+      <path d="M16.2 4.4a2.4 2.4 0 0 1 3.4 0l.6.6a2.4 2.4 0 0 1 0 3.4l-1 1-4-4Z" fill={SHADE} />
+    </>
+  ),
+  stopwatch: (
+    <>
+      <rect x="9.2" y="1.6" width="5.6" height="2.6" rx="1.1" fill={SHADE} />
+      <circle cx="12" cy="13.4" r="8.4" fill={FACE} />
+      <circle cx="12" cy="13.4" r="6.2" fill={SHADE} />
+      <path d="M12 8.6v5h3.6" fill="none" stroke={DEEP} strokeWidth="2" strokeLinecap="round" />
+      <path d="M18.4 4.6l2 2-1.7 1.7-2-2Z" fill={SHADE} />
+    </>
   ),
   check: (
     <path

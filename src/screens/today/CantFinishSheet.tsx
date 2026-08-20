@@ -195,7 +195,7 @@ export function CantFinishSheet({
     >
       {done ? (
         <div className="pb-7 pt-1">
-          <div className="rounded-2xl bg-gradient-to-b from-lime/[0.14] to-lime/[0.04] px-4 py-4 ring-1 ring-lime/25 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset]">
+          <div className="rounded-2xl bg-surface px-4 py-4 border-2 border-[var(--lip-lime)] shadow-[0_3px_0_var(--lip-lime)]">
             <p className="text-[15px] font-extrabold leading-snug text-lime">{done}</p>
           </div>
           <Btn kind="subtle" size="lg" className="mt-3 w-full" onClick={close}>
@@ -224,7 +224,7 @@ export function CantFinishSheet({
               </button>
             ))}
           </div>
-          <div className="mt-2 rounded-2xl bg-white/[0.055] px-4 py-3 ring-1 ring-white/[0.06] focus-within:ring-accent/40">
+          <div className="mt-2 rounded-2xl bg-surface-2 px-4 py-3 border-2 border-edge focus-within:ring-accent/40">
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}

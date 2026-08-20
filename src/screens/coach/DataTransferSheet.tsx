@@ -70,7 +70,7 @@ export function DataTransferSheet({ open, onClose }: { open: boolean; onClose: (
           on any device. That's the whole transfer story.
         </p>
 
-        <div className="rounded-xl bg-white/[0.07] px-3.5 py-3 text-[12px] text-ink-dim">
+        <div className="rounded-xl bg-surface-2 px-3.5 py-3 text-[12px] text-ink-dim">
           <div>
             Last backup:{' '}
             <span className="font-bold text-ink">

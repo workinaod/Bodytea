@@ -73,12 +73,12 @@ export function PlanView({
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+      <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
         {meals.map((t, i) => (
           <button
             key={t.id}
             onClick={() => setOpenMeal(t)}
-            className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left active:bg-white/[0.07] ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
+            className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left active:bg-surface-2 ${i > 0 ? 'border-t border-white/[0.05]' : ''}`}
           >
             <span className="min-w-0">
               <span className="block truncate text-[13.5px] font-extrabold">
@@ -151,7 +151,7 @@ export function PlanView({
       >
         Supplement stack
       </SectionTitle>
-      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+      <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
         {plan.supplements.map((s, i) => {
           // An 'app' item resolves against the catalog every render, so a
           // corrected dose reaches an existing booklet with no migration.

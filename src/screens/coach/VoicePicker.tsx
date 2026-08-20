@@ -142,7 +142,7 @@ export function VoicePicker() {
           picked "not installed", and told somebody who had downloaded
           every one of them to go and download them. */}
       {missing.length > 0 && (
-        <div className="rounded-xl bg-white/[0.04] px-3.5 py-2.5 ring-1 ring-white/[0.07]">
+        <div className="rounded-xl bg-surface-2 px-3.5 py-2.5 border-2 border-edge">
           <p className="text-[12.5px] font-bold">Not available to this browser</p>
           <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">
             <span className="font-semibold text-ink">{missing.join(', ')}</span>{' '}
@@ -155,14 +155,14 @@ export function VoicePicker() {
               primeVoiceList()
               say('Checking for voices.', { interrupt: true })
             }}
-            className="press mt-2 rounded-full bg-white/[0.07] px-3 py-1.5 text-[11px] font-bold text-ink"
+            className="press mt-2 rounded-full bg-surface-2 px-3 py-1.5 text-[11px] font-bold text-ink"
           >
             Check again
           </button>
         </div>
       )}
 
-      <div className="max-h-64 overflow-y-auto overscroll-contain rounded-2xl ring-1 ring-white/[0.07]">
+      <div className="max-h-64 overflow-y-auto overscroll-contain rounded-2xl border-2 border-edge">
         {sorted.map((v) => {
           const q = voiceQuality(v)
           const active = chosen === v.voiceURI
@@ -171,7 +171,7 @@ export function VoicePicker() {
               key={v.voiceURI}
               onClick={() => choose(v.voiceURI)}
               className={`flex w-full items-center justify-between gap-3 border-b border-white/[0.05] px-4 py-3 text-left last:border-b-0 ${
-                active ? 'bg-accent/12' : 'bg-white/[0.03] active:bg-white/[0.08]'
+                active ? 'bg-accent/12' : 'bg-surface active:bg-surface-2'
               }`}
             >
               <span className="min-w-0">
@@ -185,7 +185,7 @@ export function VoicePicker() {
                   <span
                     className={`rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider ${
                       q === 'compact'
-                        ? 'bg-white/[0.07] text-ink-faint'
+                        ? 'bg-surface-2 text-ink-faint'
                         : 'bg-lime/15 text-lime'
                     }`}
                   >
@@ -224,7 +224,7 @@ export function VoicePicker() {
       </button>
 
       {showAll && (
-        <div className="max-h-64 overflow-y-auto overscroll-contain rounded-2xl ring-1 ring-white/[0.07]">
+        <div className="max-h-64 overflow-y-auto overscroll-contain rounded-2xl border-2 border-edge">
           {[...allEnglish]
             .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
             .map((v) => {
@@ -235,7 +235,7 @@ export function VoicePicker() {
                   key={v.voiceURI}
                   onClick={() => choose(v.voiceURI)}
                   className={`flex w-full items-center justify-between gap-3 border-b border-white/[0.05] px-4 py-2.5 text-left last:border-b-0 ${
-                    active ? 'bg-accent/12' : 'bg-white/[0.03] active:bg-white/[0.08]'
+                    active ? 'bg-accent/12' : 'bg-surface active:bg-surface-2'
                   }`}
                 >
                   <span className="min-w-0">
@@ -248,7 +248,7 @@ export function VoicePicker() {
                     {QUALITY_LABEL[q] && (
                       <span
                         className={`rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider ${
-                          q === 'compact' ? 'bg-white/[0.07] text-ink-faint' : 'bg-lime/15 text-lime'
+                          q === 'compact' ? 'bg-surface-2 text-ink-faint' : 'bg-lime/15 text-lime'
                         }`}
                       >
                         {QUALITY_LABEL[q]}

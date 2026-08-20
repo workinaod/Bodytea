@@ -23,7 +23,7 @@ function shortfallChoices(target: number): number[] {
   return Array.from({ length: Math.min(4, target) }, (_, i) => target - 1 - i).filter((n) => n >= 0)
 }
 
-const CHIP = 'rounded-full bg-white/[0.07] px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-white/[0.14]'
+const CHIP = 'rounded-full bg-surface-2 px-4 py-2 text-[12px] font-bold text-ink-dim active:bg-surface-2'
 
 export function EffortAsk({
   target,

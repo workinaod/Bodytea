@@ -30,7 +30,7 @@ export function HowToSlides({ def, onClose }: { def: ExerciseDef; onClose: () =>
         <button
           aria-label="Close"
           onClick={onClose}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-ink-dim"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink-dim"
         >
           <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18" />
@@ -57,13 +57,13 @@ export function HowToSlides({ def, onClose }: { def: ExerciseDef; onClose: () =>
         <button
           onClick={() => setI((n) => Math.max(0, n - 1))}
           disabled={i === 0}
-          className="flex-1 rounded-2xl bg-white/[0.07] py-4 text-[14px] font-black text-ink-dim disabled:opacity-30"
+          className="flex-1 rounded-2xl bg-surface-2 py-4 text-[14px] font-black text-ink-dim disabled:opacity-30"
         >
           Back
         </button>
         <button
           onClick={() => (last ? onClose() : setI((n) => n + 1))}
-          className="sheen flex-[2] rounded-2xl bg-gradient-to-b from-accent to-accent-deep py-4 text-[14px] font-black text-black shadow-lg shadow-accent/20"
+          className="press-down flex-[2] rounded-2xl border-2 border-accent-deep bg-accent py-4 text-[14px] font-black text-white [--lip:var(--lip-accent)]"
         >
           {last ? 'Got it' : 'Next'}
         </button>

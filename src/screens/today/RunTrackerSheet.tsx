@@ -267,7 +267,7 @@ export function RunTrackerSheet({
           <RouteMap points={points} live follow pannable flush zoom={zoom} width={vw} height={vh} />
 
           {/* Zoom, held clear of the notch */}
-          <div className="absolute right-3 top-[max(env(safe-area-inset-top),14px)] flex flex-col overflow-hidden rounded-xl bg-black/55 ring-1 ring-white/15 backdrop-blur-sm">
+          <div className="absolute right-3 top-[max(env(safe-area-inset-top),14px)] flex flex-col overflow-hidden rounded-xl bg-black/55 border-2 border-edge backdrop-blur-sm">
             <button
               aria-label="Zoom in"
               onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 1))}
@@ -362,7 +362,7 @@ export function RunTrackerSheet({
         {/* Top bar */}
         <div className="flex shrink-0 items-center justify-between py-1">
           <div className="eyebrow text-ink-dim">{`${label} tracker`}</div>
-          <button onClick={onClose} className="press rounded-full bg-white/[0.07] px-4 py-1.5 text-[12px] font-bold text-ink-dim">
+          <button onClick={onClose} className="press rounded-full bg-surface-2 px-4 py-1.5 text-[12px] font-bold text-ink-dim">
             {phase === 'done' ? '✕' : 'Cancel'}
           </button>
         </div>
@@ -430,7 +430,7 @@ export function RunTrackerSheet({
             </p>
 
             {review && (
-              <div className="rounded-2xl bg-white/[0.045] p-4 ring-1 ring-white/[0.05]">
+              <div className="rounded-2xl bg-surface-2 p-4 border-2 border-edge">
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">{review.title}</p>
                 <div className="mt-2.5 space-y-1.5">
                   {review.rows.map((r) => (
@@ -448,7 +448,7 @@ export function RunTrackerSheet({
               </div>
             )}
 
-            <div className="rounded-2xl bg-white/[0.045] p-3.5 ring-1 ring-white/[0.05]">
+            <div className="rounded-2xl bg-surface-2 p-3.5 border-2 border-edge">
               <IntensityAsk
                 answered={felt}
                 onAnswer={(tier) => {
@@ -479,7 +479,7 @@ export function RunTrackerSheet({
             {shareNote && <p className="text-center text-[11.5px] font-bold text-lime">{shareNote}</p>}
 
             {saved.splits.length > 0 && (
-              <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+              <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
                 {saved.splits.map((s, i) => (
                   <div
                     key={i}

@@ -101,7 +101,7 @@ export function OwnWorkoutSheet({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder='Name it (optional): "Bench with Dre"'
-          className="w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-3 text-[14px] font-semibold outline-none focus:ring-accent/45"
+          className="w-full rounded-xl bg-surface-2 border-2 border-edge px-3.5 py-3 text-[14px] font-semibold outline-none focus:ring-accent/45"
         />
 
         {items.length === 0 && (
@@ -113,13 +113,13 @@ export function OwnWorkoutSheet({
 
         <div className="space-y-2">
           {items.map((it, i) => (
-            <div key={`${it.exerciseId}-${i}`} className="rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] p-3">
+            <div key={`${it.exerciseId}-${i}`} className="rounded-xl bg-surface-2 border-2 border-edge p-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 truncate text-[13.5px] font-bold">{it.name}</div>
                 <button
                   aria-label={`Remove ${it.name}`}
                   onClick={() => setItems((cur) => cur.filter((_, idx) => idx !== i))}
-                  className="shrink-0 rounded-full bg-white/[0.07] px-2.5 py-1 text-[11px] font-bold text-danger"
+                  className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-bold text-danger"
                 >
                   ✕
                 </button>
@@ -139,7 +139,7 @@ export function OwnWorkoutSheet({
                     const n = Number(repText)
                     patch(i, { repText, repsNum: n > 0 ? n : undefined })
                   }}
-                  className="w-24 rounded-lg bg-white/[0.07] px-2.5 py-1.5 text-[12.5px] font-semibold outline-none focus:ring-accent/45"
+                  className="w-24 rounded-lg bg-surface-2 px-2.5 py-1.5 text-[12.5px] font-semibold outline-none focus:ring-accent/45"
                   placeholder="reps"
                 />
                 {it.loaded && (
@@ -163,7 +163,7 @@ export function OwnWorkoutSheet({
         </div>
 
         {items.length > 0 && (
-          <div className="rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06] px-3.5 py-3">
+          <div className="rounded-xl bg-surface-2 border-2 border-edge px-3.5 py-3">
             <div className="text-[11px] font-black uppercase tracking-wider text-ink-faint">
               What this covers
             </div>
@@ -174,7 +174,7 @@ export function OwnWorkoutSheet({
                   className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
                     covered.has(g)
                       ? 'bg-lime/15 text-lime'
-                      : 'bg-white/[0.05] text-ink-faint'
+                      : 'bg-surface-2 text-ink-faint'
                   }`}
                 >
                   {GROUP_LABEL[g]}

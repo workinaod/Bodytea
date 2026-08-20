@@ -18,6 +18,7 @@ import { useAppStore } from '../../store/appStore'
 import { useToday } from '../../logic/clock'
 import { Chip } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
+import { Sticker } from '../../components/stickers'
 
 // ============================================================
 // Choosing an exercise, with help.
@@ -226,7 +227,7 @@ export function ExercisePicker({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search a name, a muscle, a quality…"
-          className="mb-2.5 w-full rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-3 text-[14px] font-semibold outline-none focus:ring-accent/45"
+          className="mb-2.5 w-full rounded-xl bg-surface-2 border-2 border-edge px-3.5 py-3 text-[14px] font-semibold outline-none focus:ring-accent/45"
         />
 
         {/* What you have been skipping, from your own logged sets. */}
@@ -278,8 +279,8 @@ export function ExercisePicker({
         <div className="mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <button
             onClick={() => setGearOnly(!gearOnly)}
-            className={`rounded-full px-3 py-1.5 text-[11.5px] font-bold ring-1 ${
-              gearOnly ? 'bg-lime/12 text-lime ring-lime/30' : 'bg-white/[0.06] text-ink-dim ring-white/[0.08]'
+            className={`rounded-full border-2 px-3 py-1.5 text-[11.5px] font-bold ${
+              gearOnly ? 'bg-lime/12 text-lime border-[var(--lip-lime)]' : 'bg-surface-2 text-ink-dim border-edge'
             }`}
           >
             {gearOnly ? '✓ Only what I can do' : 'Showing everything'}
@@ -341,7 +342,7 @@ export function ExercisePicker({
                   <button
                     key={id}
                     onClick={() => onPick(id)}
-                    className="flex w-full items-center gap-3 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3 py-2 text-left active:border-accent/50"
+                    className="flex w-full items-center gap-3 rounded-xl bg-surface-2 border-2 border-edge px-3 py-2 text-left active:border-accent/50"
                   >
                     {photo ? (
                       <img
@@ -351,7 +352,9 @@ export function ExercisePicker({
                         className="h-10 w-14 shrink-0 rounded-lg object-cover"
                       />
                     ) : (
-                      <span className="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg bg-white/[0.07] text-[16px]">🏃</span>
+                      <span className="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg border-2 border-edge bg-surface-2">
+                        <Sticker name="dumbbell" size={18} />
+                      </span>
                     )}
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13.5px] font-bold">{def.name}</span>

@@ -87,7 +87,7 @@ export function ExerciseBrief({
           {/* Scrolls again. Any non-visible overflow still clips for the
               roll-up, so `auto` collapses exactly like `hidden` did. */}
           <div className="min-h-0 overflow-y-auto overscroll-contain">
-        <div className="rounded-2xl bg-white/[0.05] ring-1 ring-white/[0.05] p-4">
+        <div className="rounded-2xl bg-surface-2 border-2 border-edge p-4">
           {vid ? (
             videoOpen ? (
               <div className="mx-auto overflow-hidden rounded-xl" style={VIDEO_BOX}>
@@ -112,7 +112,7 @@ export function ExerciseBrief({
                   loading="lazy"
                 />
                 <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent shadow-xl">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent shadow-[0_4px_0_var(--lip-accent)]">
                     <svg viewBox="0 0 24 24" className="ml-0.5 h-6 w-6 fill-black">
                       <path d="M8 5v14l11-7L8 5Z" />
                     </svg>
@@ -159,7 +159,7 @@ export function ExerciseBrief({
         {live && (
           <button
             onClick={onToggleSteps}
-            className="press mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-white/[0.05] py-2.5 ring-1 ring-white/[0.06]"
+            className="press mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-surface-2 py-2.5 border-2 border-edge"
           >
             <span className="eyebrow text-ink-dim">Steps</span>
             <svg

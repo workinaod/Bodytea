@@ -22,7 +22,7 @@ import { cutToEssentials } from '../../logic/timeActions'
 // ============================================================
 
 const GLASS =
-  'bg-white/[0.055] ring-1 ring-white/[0.06] shadow-[0_1px_0_rgba(255,255,255,0.06)_inset] active:bg-white/[0.11]'
+  'bg-surface border-2 border-edge shadow-[0_1px_0_rgba(255,255,255,0.06)_inset] active:bg-surface-2'
 
 export function TimeCheckSheet({
   open,
@@ -50,7 +50,7 @@ export function TimeCheckSheet({
     <Sheet open={open} onClose={close} title={done ? 'Sorted' : 'Short on time?'}>
       {done ? (
         <div className="pb-7 pt-1">
-          <div className="rounded-2xl bg-gradient-to-b from-lime/[0.14] to-lime/[0.04] px-4 py-4 ring-1 ring-lime/25 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset]">
+          <div className="rounded-2xl bg-surface px-4 py-4 border-2 border-[var(--lip-lime)] shadow-[0_3px_0_var(--lip-lime)]">
             <p className="text-[15px] font-extrabold leading-snug text-lime">{done}</p>
           </div>
           <Btn kind="subtle" size="lg" className="mt-3 w-full" onClick={close}>
@@ -72,7 +72,7 @@ export function TimeCheckSheet({
                     : `${cut.dropped} ${cut.dropped === 1 ? 'movement' : 'movements'} out, ${cut.setsSaved} fewer sets. The ones that matter stay.`,
                 )
               }}
-              className="press block w-full rounded-2xl bg-gradient-to-b from-accent/[0.16] to-accent/[0.05] px-4 py-3.5 text-left ring-1 ring-accent/25 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset]"
+              className="press block w-full rounded-2xl bg-surface px-4 py-3.5 text-left border-2 border-accent-deep shadow-[0_1px_0_rgba(255,255,255,0.12)_inset]"
             >
               <span className="block text-[14.5px] font-extrabold leading-tight text-accent-soft">
                 Cut to the essentials

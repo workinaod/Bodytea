@@ -28,18 +28,18 @@ export function QuitGate({
       className="fixed inset-0 z-[80] flex items-center justify-center px-6"
     >
       <div className="absolute inset-0 bg-black/70 animate-fade-in" onClick={onStay} />
-      <div className="relative w-full max-w-sm rounded-2xl border border-danger/40 bg-bg p-5 shadow-2xl animate-fade-in">
+      <div className="relative w-full max-w-sm rounded-2xl border-2 border-danger bg-surface p-5 shadow-[0_4px_0_var(--lip-danger)] animate-fade-in">
         <h3 className="text-[17px] font-black tracking-tight text-danger">{quit.title}</h3>
         <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">{quit.body}</p>
         <div className="mt-4 flex flex-col gap-2">
           <button
-            className="sheen w-full rounded-xl bg-gradient-to-b from-accent to-accent-deep py-3 text-[14px] font-black text-black shadow-lg shadow-accent/20 active:scale-[0.98]"
+            className="press-down w-full rounded-[14px] border-2 border-accent-deep bg-accent py-3 text-[14px] font-black text-white [--lip:var(--lip-accent)]"
             onClick={onStay}
           >
             {quit.stay}
           </button>
           <button
-            className="w-full rounded-xl border border-danger/40 bg-white/[0.07] py-3 text-[13px] font-bold text-danger active:scale-[0.98]"
+            className="w-full rounded-xl border border-danger/40 bg-surface-2 py-3 text-[13px] font-bold text-danger active:scale-[0.98]"
             onClick={onGo}
           >
             {quit.go}

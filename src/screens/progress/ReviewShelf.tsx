@@ -54,7 +54,7 @@ export function ReviewShelf({
             <button
               key={k}
               onClick={() => setKind(k)}
-              className="press rounded-xl bg-white/[0.055] px-3 py-2.5 text-left ring-1 ring-white/[0.06] active:bg-white/[0.11]"
+              className="press rounded-xl bg-surface px-3 py-2.5 text-left border-2 border-edge active:bg-surface-2"
             >
               <span className="block text-[13px] font-extrabold leading-tight">{LABEL[k]}</span>
               <span className="mt-0.5 block text-[10.5px] font-semibold text-ink-faint">

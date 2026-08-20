@@ -278,7 +278,7 @@ export function ProgressScreen() {
 
       {/* Milestones */}
       <SectionTitle>Milestones</SectionTitle>
-      <div className="overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05]">
+      <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
         {REVIEW_MARKS.map((mark, i) => {
           const unlocked = unlockedMarks(data, today).some((m) => m.id === mark.id)
           const daysIn = daysBetween(data.settings.phaseStartDate, today)
@@ -298,7 +298,7 @@ export function ProgressScreen() {
                   : undefined
               }
               className={`flex items-center justify-between px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''} ${
-                unlocked ? 'cursor-pointer active:bg-white/[0.07]' : 'opacity-50'
+                unlocked ? 'cursor-pointer active:bg-surface-2' : 'opacity-50'
               }`}
             >
               <span className="text-[13px] font-bold">{mark.label}</span>
@@ -358,7 +358,7 @@ function PhotoCompare({ measurements }: { measurements: Measurement[] }) {
           { url: rightUrl, m: right, idx: rightIdx, set: setRightIdx },
         ].map((side, i) => (
           <div key={i}>
-            <div className="aspect-[3/4] overflow-hidden rounded-xl bg-white/[0.07]">
+            <div className="aspect-[3/4] overflow-hidden rounded-xl bg-surface-2">
               {side.url ? (
                 <img src={side.url} alt="progress" className="h-full w-full object-cover" />
               ) : (

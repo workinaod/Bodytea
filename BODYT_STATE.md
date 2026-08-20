@@ -2152,6 +2152,52 @@ the pre-existing plans that genuinely have no record of what built them.
   Dashboard republished at the same url with an OP12 section and the new counts.
   NEXT: the owner's screenshot review. Nothing in this lane is blocked.
 
+- **2026-08-20 · OP12 · the paint, everywhere.** The owner, and they were right: *"You have to
+  go over the first stuff you touched as well."* The six screens the concept drew came out flat.
+  The sixty behind them did not, and neither did anything built in C1 through C5, which all
+  predate both law files. **287 surfaces across 65 files** were still drawing in the exact
+  idioms the concept replaced: translucent white fills, `ring-1` hairlines, gradients, glass and
+  glow. Every sheet, the logger, the pickers, the reviews, the trackers.
+  `src/paintLaw.test.ts` is the guard, written first and watched fail at 287, then driven to 0.
+  It names the idiom and the fix on every line it reports. Three files are exempt with a reason
+  each (map chrome over satellite tiles) plus the tab bar's scrim, which the approved preview
+  draws too. Shrink-only.
+  LEARNED, and the second one cost a screenshot to find:
+  (1) **A guard that reads code has to skip prose.** Its own file header, which explains the
+  banned idioms by name, failed it.
+  (2) **A codemod that flattens a fill can make it disappear.** Rows dropped from
+  `bg-white/[0.05]` to `bg-surface` INSIDE a sheet whose ground is already `bg-surface`, so the
+  readiness check came out as four invisible rectangles. The whole translucent family belongs at
+  `surface-2`, the concept's raised tone, which reads on both grounds. The test could not see
+  this and the 390px screenshot could, in one glance. Neither one is optional.
+  (3) **`border-transparent` is a fill with no edge**, which no banned-idiom scan catches. The
+  Toggle wore one everywhere it appears.
+  (3b) **A half-done codemod is worse than none.** Moving `ring-1` to `border-2` left the ring
+  COLOUR behind on the ternary branches, so `border-2` had nothing to colour it and fell back to
+  currentColor: the workouts shelf came out outlined in near-white, and it looked deliberate.
+  Worse, the first fix pass missed every white one because the pattern ended in `]` and the
+  regex appended `\b`, which cannot match after a non-word character. Two bugs, one visible
+  only in a screenshot and one only by re-grepping after the "fix". The guard now flags a ring
+  colour with no `ring-1` drawing it.
+  (4) **The glow hid in CSS.** `.nav-glow` was a sliding rainbow under a two-colour pulsing
+  halo, on the strip the tab bar folds into during a live session: a light show on the screen
+  somebody stares at for an hour, against the law twice (zero gradients, and nothing moves at
+  rest but the flame). The guard now reads both stylesheets. Its first version flagged
+  `box-shadow: 0 0 0` as a halo, which is the law's OWN pressed lip: a glow is BLUR, the third
+  value, not the first two.
+  Also retired: `.sheen`, the gloss overlay on every coloured button.
+  ONE GAP IS NAMED RATHER THAN CLOSED: `plan/cardio.ts` identifies 24 activities with **23
+  distinct emoji**, and the law says zero. That is 23 pieces of artwork, not a sweep, and the
+  cheap version is worse than the emoji: five generic marks would make a run and a swim
+  identical. So the count is PINNED and can only fall. Every sticker somebody draws is one
+  fewer, and nobody can add a 24th activity with an emoji without the guard saying so. The two
+  hardcoded ones in the cardio sheet (the log/track doors) were real UI and are stickers now.
+  A NOTE ON PROVING GUARDS: the first mutation of that pin SWAPPED an emoji instead of adding
+  one, so the count stayed 23 and the guard passed. It looked like proof and was not. Adding a
+  genuinely new activity made it bite. A mutation that does not change the thing the assertion
+  measures proves nothing.
+  Gates: typecheck clean, **1,751/1,751 unit**, build green, **90/90 e2e** on a fresh server.
+
 ## 10. SOURCES
 
 - Living dashboard (this plan, rendered, republishable via url):

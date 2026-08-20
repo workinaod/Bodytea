@@ -58,7 +58,7 @@ export function MakeupSheet({
               <button
                 key={r.date}
                 onClick={() => onRun(r.date, r.cns)}
-                className="flex w-full items-center justify-between gap-3 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.05] px-3.5 py-3 text-left active:bg-white/[0.08]"
+                className="flex w-full items-center justify-between gap-3 rounded-xl bg-surface border-2 border-edge px-3.5 py-3 text-left active:bg-surface-2"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-[13.5px] font-bold">{r.title}</span>

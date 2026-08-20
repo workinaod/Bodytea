@@ -181,7 +181,7 @@ export function CardioTimerSheet({
           <button
             aria-label="Close"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.07] text-ink-dim"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-ink-dim"
           >
             <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
               <path d="M6 6l12 12M18 6L6 18" />
@@ -198,7 +198,7 @@ export function CardioTimerSheet({
               {mm}:{ss}
             </div>
             {saved.tier && (
-              <div className="mt-3 rounded-full bg-accent/12 px-3.5 py-1.5 text-[11.5px] font-black uppercase tracking-[0.14em] text-accent-soft ring-1 ring-accent/25">
+              <div className="mt-3 rounded-full bg-accent/12 px-3.5 py-1.5 text-[11.5px] font-black uppercase tracking-[0.14em] text-accent-soft border-2 border-accent-deep">
                 {/* "All out session", not "All out intensity". The tier
                     words are the ones the question below offers, so the
                     two have to read as the same sentence. */}

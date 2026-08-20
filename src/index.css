@@ -196,21 +196,6 @@ h3 {
   outline: none;
 }
 
-/* Glossy top-light on colored buttons: depth without a border. The
-   overlay inherits the radius, so it works on pills and blocks alike. */
-.sheen {
-  position: relative;
-  isolation: isolate;
-}
-.sheen::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 45%);
-  pointer-events: none;
-}
-
 /* Hide scrollbars on chip rows but keep scrollability */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -259,33 +244,12 @@ h3 {
 }
 
 /* In-session nav: the tab bar folds into this glowing, flowing strip */
-@keyframes nav-flow {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 300% 50%;
-  }
-}
-@keyframes nav-breathe {
-  0%,
-  100% {
-    box-shadow: 0 0 14px 1px rgba(255, 79, 48, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 24px 5px rgba(198, 242, 78, 0.45);
-  }
-}
-.nav-glow {
-  background: linear-gradient(
-    90deg,
-    var(--color-accent),
-    var(--color-lime),
-    var(--color-cyan),
-    var(--color-accent)
-  );
-  background-size: 300% 100%;
-  animation:
-    nav-flow 3.2s linear infinite,
-    nav-breathe 2.6s ease-in-out infinite;
+/* The strip the tab bar folds into while a session is live.
+   It used to be a rainbow gradient sliding under a pulsing two-colour
+   glow: a light show, on the screen the athlete stares at for an hour,
+   and against both halves of the law (zero gradients, and nothing moves
+   at rest but the flame). Now it is what it always was: a handle. */
+.nav-grip {
+  background: var(--color-accent);
+  box-shadow: 0 3px 0 var(--lip-accent);
 }

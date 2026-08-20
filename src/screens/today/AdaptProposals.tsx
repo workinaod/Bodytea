@@ -78,7 +78,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   return (
     <div className="relative space-y-2">
       {verdictLine && (
-        <div className="rounded-2xl bg-white/[0.05] px-4 py-3 ring-1 ring-white/[0.08]">
+        <div className="rounded-2xl bg-surface-2 px-4 py-3 border-2 border-edge">
           <p className="text-[12.5px] font-black tracking-tight text-ink">
             {verdict!.verdict === 'worked' ? 'That worked' : 'Following up'}
           </p>
@@ -88,12 +88,12 @@ export function AdaptProposals({ date }: { date: ISODate }) {
       <button
         aria-label="Dismiss what the coach noticed"
         onClick={() => acceptAdaptation(date, 'dismissed')}
-        className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full text-[15px] font-bold text-ink-faint active:bg-white/[0.09] active:text-ink"
+        className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full text-[15px] font-bold text-ink-faint active:bg-surface-2 active:text-ink"
       >
         ✕
       </button>
       {notices.map((p) => (
-        <div key={p.exerciseId ?? p.kind} className="rounded-2xl bg-gold/[0.07] px-4 py-3 ring-1 ring-gold/25">
+        <div key={p.exerciseId ?? p.kind} className="rounded-2xl bg-gold/[0.07] px-4 py-3 border-2 border-[var(--lip-gold)]">
           <p className="pr-7 text-[12.5px] font-black tracking-tight text-ink">Go lighter here, don't drop it</p>
           <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{p.because}</p>
         </div>
@@ -104,8 +104,8 @@ export function AdaptProposals({ date }: { date: ISODate }) {
         return (
           <div
             key={p.kind}
-            className={`rounded-2xl px-4 py-3 ring-1 ${
-              accepted ? 'bg-lime/10 ring-lime/30' : 'bg-white/[0.05] ring-white/[0.08]'
+            className={`rounded-2xl border-2 px-4 py-3 ${
+              accepted ? 'bg-lime/10 border-[var(--lip-lime)]' : 'bg-surface-2 border-edge'
             }`}
           >
             <p className="pr-7 text-[12.5px] font-black tracking-tight text-ink">
@@ -118,7 +118,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
                 accepted ? undoAdaptation(date, choice) : acceptAdaptation(date, choice)
               }
               className={`press mt-2 rounded-full px-3.5 py-2 text-[12px] font-bold ${
-                accepted ? 'bg-white/[0.07] text-ink-dim' : 'bg-accent text-black'
+                accepted ? 'bg-surface-2 text-ink-dim' : 'bg-accent text-black'
               }`}
             >
               {accepted ? 'Never mind, run it as planned' : 'Do that'}
