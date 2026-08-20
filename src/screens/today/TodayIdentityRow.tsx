@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
 import type { AppData, ISODate } from '../../types'
 import { StreakChip } from '../../components/StreakChip'
 import { Sticker } from '../../components/stickers'
@@ -53,11 +53,14 @@ export function TodayIdentityRow({
   today,
   onOpenProgress,
   onOpenProfile,
+  onPickDay,
 }: {
   data: AppData
   today: ISODate
   onOpenProgress?: () => void
   onOpenProfile?: () => void
+  /** Browse another day. The path IS the day picker now. */
+  onPickDay?: (date: ISODate) => void
 }) {
   const nodes = useMemo(() => weekStates(data, today), [data, today])
   const streak = useMemo(() => streakDays(data, today), [data, today])
@@ -96,20 +99,37 @@ export function TodayIdentityRow({
         </button>
       </div>
 
-      <div>
-        <div className="flex items-center px-1.5" aria-hidden>
-          {nodes.map((n, i) => (
-            <span key={n.date} className="flex flex-1 items-center last:flex-none">
-              {i > 0 && <PathLink lit={nodes[i - 1].state === 'done' && n.state !== 'future'} />}
-              <WeekNode state={n.state} />
-            </span>
-          ))}
-        </div>
-        <div className="mt-1 flex justify-between px-1.5 text-[8.5px] font-extrabold uppercase tracking-[0.04em] text-ink-faint">
-          {WEEKDAYS.map((d, i) => (
-            <span key={i}>{d}</span>
-          ))}
-        </div>
+      {/* Every node is a real button, and its weekday letter rides inside
+          it. The letters used to be a justify-between row underneath, which
+          only lines up while every node is the same width; today's node is
+          21px and a rest node is 13px, so they never did. */}
+      <div className="flex items-start px-1.5">
+        {nodes.map((n, i) => (
+          <Fragment key={n.date}>
+            {i > 0 && (
+              <span className="flex flex-1 pt-[9px]">
+                <PathLink lit={nodes[i - 1].state === 'done' && n.state !== 'future'} />
+              </span>
+            )}
+            <button
+              type="button"
+              aria-label={`Open ${n.date}`}
+              onClick={() => onPickDay?.(n.date)}
+              className="press flex w-7 shrink-0 flex-col items-center px-1.5"
+            >
+              <span className="flex h-[21px] items-center">
+                <WeekNode state={n.state} />
+              </span>
+              <span
+                className={`mt-1 text-[8.5px] font-extrabold uppercase tracking-[0.04em] ${
+                  n.state === 'today' ? 'text-accent-soft' : 'text-ink-faint'
+                }`}
+              >
+                {WEEKDAYS[i]}
+              </span>
+            </button>
+          </Fragment>
+        ))}
       </div>
     </div>
   )

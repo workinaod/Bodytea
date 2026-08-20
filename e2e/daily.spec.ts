@@ -66,7 +66,9 @@ test('custom life events: add one, pick its days, engine reacts next day', async
   await quickOnboard(page)
 
   await page.getByRole('button', { name: 'Plan', exact: true }).click()
-  await expect(page.getByText('Life this week')).toBeVisible()
+  // The editor is a door on the week now, not a section of it: a calendar
+  // shows the week, a form changes it.
+  await page.getByRole('button', { name: 'Life this week' }).click()
   // Generated plans start with no events, the empty-state pitch shows
   await expect(page.getByText(/Late nights, long shifts/)).toBeVisible()
 
@@ -81,6 +83,7 @@ test('custom life events: add one, pick its days, engine reacts next day', async
     .filter({ hasText: /^Which days\?/ })
     .getByRole('button', { name: 'Mon', exact: true })
     .click()
+  await page.getByRole('button', { name: 'Close' }).click()
 
   // Markers: Monday shows the event, Tuesday shows the jump-set drop
   await expect(page.getByText('🦵 on feet')).toBeVisible()
@@ -88,11 +91,15 @@ test('custom life events: add one, pick its days, engine reacts next day', async
 
   // Tomorrow's session carries the pre-fatigued banner
   await page.getByRole('button', { name: 'Today', exact: true }).click()
-  await page.getByRole('button', { name: 'Next day' }).click() // Tuesday
+  // The week path is the day picker now: Today's live view carries no
+  // header, because a header row whose only job was a pair of arrows is
+  // a block spent on navigation the screen already has.
+  await page.getByRole('button', { name: 'Open 2026-08-11' }).click() // Tuesday
   await expect(page.getByText(/Closing shift yesterday: a jump set dropped/)).toBeVisible()
 
   // A late-night event warns on the day itself
   await page.getByRole('button', { name: 'Plan', exact: true }).click()
+  await page.getByRole('button', { name: 'Life this week' }).click()
   await page.getByRole('button', { name: /Add a life event/ }).click()
   await page.getByPlaceholder(/Name it/).fill('DJ set')
   await page.getByText('🌙 Late night').click()
@@ -103,6 +110,7 @@ test('custom life events: add one, pick its days, engine reacts next day', async
     .nth(1)
     .getByRole('button', { name: 'Mon', exact: true })
     .click()
+  await page.getByRole('button', { name: 'Close' }).click()
   await page.getByRole('button', { name: 'Today', exact: true }).click()
   await expect(page.getByText(/DJ set tonight/)).toBeVisible()
 })

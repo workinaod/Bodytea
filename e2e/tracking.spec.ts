@@ -105,7 +105,7 @@ test('a session with nothing to measure still logs, and shows no zeros', async (
   await page.getByRole('button', { name: 'Progress', exact: true }).click()
   await page.clock.runFor(400)
   await page.waitForTimeout(400)
-  await expect(page.getByText('Sport, last 30 days')).toBeVisible()
+  await expect(page.getByText('Conditioning · last 30 days')).toBeVisible()
   await expect(page.getByText('Basketball', { exact: true })).toBeVisible()
 })
 

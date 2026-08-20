@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import type { LifeEventKind, ResolvedDay, Tier, TierDayRole, Weekday } from '../../types'
-import { uid, useAppStore } from '../../store/appStore'
+import type { ResolvedDay, Tier, TierDayRole, Weekday } from '../../types'
+import { useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatShort, mondayOf, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
-import { Card, Chip, DayArrow, ScreenHeader, SectionTitle, SetCoin, Tile, Toggle, WeekNode } from '../../components/ui'
+import { Chip, DayArrow, ScreenHeader, SectionTitle, SetCoin, Tile, WeekNode } from '../../components/ui'
 import { dayActivities, shortDuration } from '../../engine/activityStats'
 import { intensityLabel } from '../../engine/intensity'
 import { Sheet } from '../../components/Sheet'
@@ -25,7 +25,6 @@ const TIER_INFO: Record<Tier, { name: string; blurb: string }> = {
 
 export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
   const data = useAppStore((s) => s.data)
-  const update = useAppStore((s) => s.update)
   const updateWeek = useAppStore((s) => s.updateWeek)
   const today = useToday()
   const [selected, setSelected] = useState<string | null>(null)
@@ -129,83 +128,92 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
 
       {/* Tier picker */}
       <SectionTitle>This week's tier {needsPick && <span className="text-danger">· pick it now</span>}</SectionTitle>
-      {needsPick && (
-        <p className="py-1 text-center text-[12.5px] font-semibold leading-snug text-gold/95">
-          Pick once, at the start of the week. Go with what you honestly have.
-        </p>
-      )}
+
       {/* Three tiles, not three rows in a box. The tier IS the week's
           contract, and the one you signed should look chosen rather than
-          ticked. */}
+          ticked, so the tier you are on carries its own day placement
+          instead of it living in a separate section further down. */}
       <div className="space-y-2">
-        {([1, 2, 3] as Tier[]).map((t) => (
-          <Tile
-            key={t}
-            tone={tier === t ? 'heat' : 'plain'}
-            onClick={() => handleTierTap(t)}
-            ariaLabel={TIER_INFO[t].name}
-            className="!py-3"
-          >
-            <div className="flex items-center gap-3">
-              {tier === t ? (
-                <span className="h-[17px] w-[17px] shrink-0 rounded-full border-2 border-accent-deep bg-accent shadow-[0_2px_0_var(--lip-accent)]" />
-              ) : (
-                <WeekNode state="future" />
+        {needsPick && (
+          <p className="px-1 pb-0.5 text-[12.5px] font-bold leading-snug text-gold">
+            Pick once, at the start of the week. Go with what you honestly have.
+          </p>
+        )}
+        {([1, 2, 3] as Tier[]).map((t) => {
+          const on = tier === t
+          return (
+            <Tile key={t} tone={on ? 'heat' : 'plain'} className="!py-3">
+              <button
+                type="button"
+                onClick={() => handleTierTap(t)}
+                aria-label={TIER_INFO[t].name}
+                aria-pressed={on}
+                className="press flex w-full items-center gap-3 text-left"
+              >
+                {on ? (
+                  <span className="h-[17px] w-[17px] shrink-0 rounded-full border-2 border-accent-deep bg-accent shadow-[0_2px_0_var(--lip-accent)]" />
+                ) : (
+                  <WeekNode state="future" />
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className={`block text-[13.5px] font-black ${on ? 'text-accent-soft' : ''}`}>
+                    {TIER_INFO[t].name}
+                  </span>
+                  <span className="mt-px block text-[11px] font-bold leading-snug text-ink-faint">
+                    {TIER_INFO[t].blurb}
+                  </span>
+                </span>
+              </button>
+
+              {/* Where the shortened week's days land. It belongs to the
+                  tier that created them, not to a section of its own. */}
+              {on && t > 1 && (
+                <div className="mt-3 space-y-2.5 border-t-2 border-edge-soft pt-3">
+                  {(Object.entries({ ...data.plan.tierDefaultPlacement[t as 2 | 3], ...(week?.tierPlacement ?? {}) }) as [TierDayRole, Weekday][]).map(
+                    ([role, wd]) => (
+                      <div key={role} className="flex items-center justify-between gap-2">
+                        <span className="text-[12px] font-black capitalize">
+                          {role}
+                          {role === 'explosive' && (
+                            <span className="ml-1 text-[10px] font-bold text-accent-soft">never dropped</span>
+                          )}
+                        </span>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5, 6].map((d) => (
+                            <button
+                              key={d}
+                              onClick={() =>
+                                updateWeek(weekStart, (w) => {
+                                  w.tierPlacement = { ...data.plan.tierDefaultPlacement[t as 2 | 3], ...(w.tierPlacement ?? {}), [role]: d as Weekday }
+                                })
+                              }
+                              className={`press-down h-8 w-9 rounded-lg border-2 text-[11px] font-black ${
+                                wd === d
+                                  ? 'border-accent-deep bg-accent text-black [--lip:var(--lip-accent)]'
+                                  : 'border-edge bg-surface-2 text-ink-faint [--lip:var(--lip-quiet)]'
+                              }`}
+                            >
+                              {WD_LABEL[d]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ),
+                  )}
+                  <p className="text-[11px] leading-snug text-ink-faint">
+                    Space them however the week allows. Steps still count; protein never drops.
+                  </p>
+                </div>
               )}
-              <span className="min-w-0 flex-1">
-                <span className={`block text-[13.5px] font-black ${tier === t ? 'text-accent-soft' : ''}`}>
-                  {TIER_INFO[t].name}
-                </span>
-                <span className="mt-px block text-[11px] font-bold leading-snug text-ink-faint">
-                  {TIER_INFO[t].blurb}
-                </span>
-              </span>
-            </div>
-          </Tile>
-        ))}
+            </Tile>
+          )
+        })}
       </div>
 
-      {/* Both doors into the plan itself. They used to live on a Coach tab,
-          two taps from the week they describe. */}
-      <PlanDoors />
-
-      {/* Tier 2/3 day placement */}
-      {tier > 1 && (
-        <>
-          <SectionTitle>Day placement</SectionTitle>
-          <Card className="space-y-3">
-            {(Object.entries({ ...data.plan.tierDefaultPlacement[tier as 2 | 3], ...(week?.tierPlacement ?? {}) }) as [TierDayRole, Weekday][]).map(
-              ([role, wd]) => (
-                <div key={role} className="flex items-center justify-between">
-                  <span className="text-[13px] font-bold capitalize">
-                    {role} {role === 'explosive' && <span className="text-[10px] text-accent">(never dropped)</span>}
-                  </span>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5, 6].map((d) => (
-                      <button
-                        key={d}
-                        onClick={() =>
-                          updateWeek(weekStart, (w) => {
-                            w.tierPlacement = { ...data.plan.tierDefaultPlacement[tier as 2 | 3], ...(w.tierPlacement ?? {}), [role]: d as Weekday }
-                          })
-                        }
-                        className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
-                          wd === d ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
-                        }`}
-                      >
-                        {WD_LABEL[d]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ),
-            )}
-            <p className="text-[11px] leading-snug text-ink-faint">
-              Space them however the week allows. Steps still count; protein never drops.
-            </p>
-          </Card>
-        </>
-      )}
+      {/* Every door out of the week: the rules, the booklet, and what your
+          life is doing to it. They used to live on a Coach tab and in an
+          inline form halfway down this screen. */}
+      <PlanDoors weekStart={weekStart} />
 
       {/* 7-day strip */}
       <SectionTitle>The days</SectionTitle>
@@ -250,92 +258,6 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
             </div>
           )
         })}
-      </div>
-
-      {/* Life this week: custom events, day-pickable */}
-      <SectionTitle>Life this week</SectionTitle>
-      <div className="space-y-2">
-        {data.plan.lifeEvents.length === 0 && (
-          <Card className="!py-3.5">
-            <p className="text-center text-[12.5px] leading-relaxed text-ink-dim">
-              {ball
-                ? 'A gig, a night shift, a long day on your feet. Tap the days and the plan bends around it.'
-                : 'Late nights, long shifts, whatever drains you. Tap the days and the plan bends around it.'}
-            </p>
-          </Card>
-        )}
-        {data.plan.lifeEvents.map((ev) => {
-          const days = week?.events[ev.id] ?? []
-          return (
-            <Card key={ev.id} className="!py-3.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="truncate text-[14px] font-bold">
-                    {ev.kind === 'late-night' ? '🌙' : '🦵'} {ev.label}
-                  </div>
-                  <div className="text-[10.5px] text-ink-faint">
-                    {ev.kind === 'late-night'
-                      ? 'Train that morning · next day starts short on sleep'
-                      : 'Next day drops a jump set, legs arrive pre-fatigued'}
-                  </div>
-                </div>
-                <button
-                  onClick={() =>
-                    update((d) => {
-                      d.plan.lifeEvents = d.plan.lifeEvents.filter((x) => x.id !== ev.id)
-                    })
-                  }
-                  className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-bold text-ink-faint"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="mt-2.5 flex items-center justify-between gap-1">
-                <span className="text-[11px] font-black uppercase tracking-wider text-ink-faint">Which days?</span>
-                <div className="flex gap-1">
-                  {([1, 2, 3, 4, 5, 6, 0] as Weekday[]).map((d) => (
-                    <button
-                      key={d}
-                      onClick={() =>
-                        updateWeek(weekStart, (w) => {
-                          const cur = w.events[ev.id] ?? []
-                          w.events[ev.id] = cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]
-                        })
-                      }
-                      className={`h-8 w-9 rounded-lg text-[11px] font-bold ${
-                        days.includes(d) ? 'bg-accent text-black' : 'bg-surface-2 text-ink-faint'
-                      }`}
-                    >
-                      {WD_LABEL[d]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {data.plan.lifeRules.djWeekend && ev.id === 'dj' && days.includes(5) && (
-                <div className="mt-2">
-                  <Toggle
-                    on={!!week?.friPushedToSat}
-                    onChange={(v) => updateWeek(weekStart, (w) => { w.friPushedToSat = v })}
-                    label="→ Push Friday's pull to Saturday"
-                    sub="Saturday becomes speed + lighter combined pull."
-                  />
-                </div>
-              )}
-            </Card>
-          )
-        })}
-        <AddLifeEvent onAdd={(label, kind) => update((d) => { d.plan.lifeEvents.push({ id: uid(), label, kind }) })} />
-        <Toggle
-          on={(week?.badSleepDates ?? []).includes(addDaysISO(today, -1))}
-          onChange={(v) =>
-            updateWeek(mondayOf(addDaysISO(today, -1)), (w) => {
-              const y = addDaysISO(today, -1)
-              w.badSleepDates = v ? [...new Set([...w.badSleepDates, y])] : w.badSleepDates.filter((d) => d !== y)
-            })
-          }
-          label="Bad sleep last night (under 6 h)"
-          sub="Two in a row cuts the next day's volume by a third automatically."
-        />
       </div>
 
       {/* Day preview sheet */}
@@ -472,67 +394,5 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
         />
       )}
     </div>
-  )
-}
-
-/** Inline creator for a custom life event (label + effect kind). */
-function AddLifeEvent({ onAdd }: { onAdd: (label: string, kind: LifeEventKind) => void }) {
-  const [open, setOpen] = useState(false)
-  const [label, setLabel] = useState('')
-  const [kind, setKind] = useState<LifeEventKind>('late-night')
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="w-full rounded-xl bg-surface-2 border-2 border-edge py-3 text-[12.5px] font-bold text-ink-faint"
-      >
-        + Add a life event (gig, shift, whatever's real)
-      </button>
-    )
-  }
-  return (
-    <Card className="space-y-3 !py-3.5">
-      <input
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        placeholder='Name it: "DJ set", "night shift", "closing shift"'
-        className="w-full rounded-xl bg-surface-2 px-3.5 py-2.5 text-[14px] font-semibold outline-none focus:ring-accent/45"
-      />
-      <div className="flex gap-1.5">
-        {(
-          [
-            ['late-night', '🌙 Late night'],
-            ['on-feet', '🦵 On my feet all day'],
-          ] as const
-        ).map(([id, l]) => (
-          <Chip key={id} tone={kind === id ? 'accent' : 'default'} onClick={() => setKind(id)}>
-            {l}
-          </Chip>
-        ))}
-      </div>
-      <p className="text-[10.5px] leading-snug text-ink-faint">
-        {kind === 'late-night'
-          ? 'Late night → train that morning; the next day gets a short-sleep heads-up.'
-          : 'All day standing → the NEXT day drops a jump set (legs arrive pre-fatigued).'}
-      </p>
-      <div className="flex gap-2">
-        <button onClick={() => setOpen(false)} className="flex-1 rounded-xl bg-surface-2 py-2.5 text-[12.5px] font-bold text-ink-dim">
-          Cancel
-        </button>
-        <button
-          onClick={() => {
-            if (!label.trim()) return
-            onAdd(label.trim(), kind)
-            setLabel('')
-            setOpen(false)
-          }}
-          className="flex-1 rounded-xl bg-accent py-2.5 text-[12.5px] font-black text-black disabled:opacity-40"
-          disabled={!label.trim()}
-        >
-          Add it
-        </button>
-      </div>
-    </Card>
   )
 }

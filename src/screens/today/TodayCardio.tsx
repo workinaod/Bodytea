@@ -63,7 +63,10 @@ export function TodayCardio({
   const tip = cardioTip(day, date, data)
 
   return (
-    <>
+    // One block, not four siblings. The chip, the coaching line and the
+    // activity lines are one idea (cardio, today) and the concept draws
+    // one idea as one object.
+    <div className="space-y-1.5">
       <div className="flex flex-wrap gap-1.5">
         <Chip tone={cardioEntries.length > 0 ? 'lime' : 'default'} onClick={onOpenCardio}>
           {cardioEntries.length > 0
@@ -98,7 +101,7 @@ export function TodayCardio({
             .map((bit) => ` · ${bit}`)}
         </p>
       ))}
-    </>
+    </div>
   )
 }
 

@@ -1,41 +1,36 @@
 import { useMemo, useState } from 'react'
 import type { Measurement } from '../../types'
 import { useAppStore } from '../../store/appStore'
-import { addDaysISO, formatShort, weekdayOf } from '../../engine/calendar'
+import { formatShort, weekdayOf } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { streakDays } from '../../engine/streak'
-import {
-  adherenceMap,
-  liftSeries,
-  proteinFor,
-  repMaxSeries,
-  totalSessions,
-} from '../../engine/stats'
-import { Btn, Card, Chip, ScreenHeader, SectionTitle, Segmented, Tile } from '../../components/ui'
-import { Heatmap, SimpleLine } from '../../components/charts'
-import { buildMilestoneReview, REVIEW_MARKS, reviewReady, unlockedMarks, type MilestoneReview } from '../../engine/review'
-import { daysBetween } from '../../engine/calendar'
+import { adherenceMap, totalSessions } from '../../engine/stats'
+import { Btn, Chip, ScreenHeader, Segmented, Tile } from '../../components/ui'
+import { Heatmap } from '../../components/charts'
+import { buildMilestoneReview, reviewReady, type MilestoneReview, type ReviewMarkId } from '../../engine/review'
 import { MilestoneReviewSheet } from './MilestoneReview'
 import { CheckinSheet } from './CheckinSheet'
 import { ReviewShelf } from './ReviewShelf'
 import { WeeklyRecap } from './WeeklyRecap'
 import { RecordView } from './RecordView'
 import { ProgressBody } from './ProgressBody'
+import { TrendsTile } from './TrendsTile'
 import { Flame } from '../../components/Flame'
 import { BoardContent } from '../board/BoardScreen'
 import { ActivityLog } from './ActivityLog'
 import { GoalTimeline } from './GoalTimeline'
 import { usePhotoUrl } from './usePhotoUrl'
 
-const METRICS = [
-  { key: 'weightLb', label: 'Weight', unit: ' lb', caption: 'Will barely move, that\'s the design. Recomp, not a cut.' },
-  { key: 'bodyFatPct', label: 'Body fat', unit: '%', caption: 'Target: 10% or less. Same method, same morning. The trend is the truth.' },
-  { key: 'waistIn', label: 'Waist', unit: '"', caption: 'THE metric. This line falling is the whole recomp.' },
-  { key: 'chestIn', label: 'Chest', unit: '"', caption: '' },
-  { key: 'armsIn', label: 'Arms', unit: '"', caption: 'Target: 16"' },
-  { key: 'thighIn', label: 'Thigh', unit: '"', caption: '' },
-  { key: 'vertIn', label: 'Vert / rim', unit: '"', caption: 'Consistent dunks are the goal. Track the same touch point.' },
-] as const
+// ============================================================
+// Progress, per research/OP12-screen-law.md §7.
+//
+// Twelve blocks, and the law says twelve is a ceiling rather
+// than a target: the body, the counters, the climb, the last
+// twelve weeks. Everything under that heading is ONE object
+// each. It shipped at twenty-four because every approved piece
+// got added on top of the old screen instead of replacing part
+// of it, which is what e2e/density.spec.ts now measures.
+// ============================================================
 
 export function ProgressScreen() {
   const data = useAppStore((s) => s.data)
@@ -44,8 +39,6 @@ export function ProgressScreen() {
   const [review, setReview] = useState<MilestoneReview | null>(null)
   const [recapOpen, setRecapOpen] = useState(false)
   const [view, setView] = useState<'me' | 'record' | 'board'>('me')
-  const [metric, setMetric] = useState<(typeof METRICS)[number]['key']>('waistIn')
-  const [lift, setLift] = useState(data.plan.trackedLifts[0]?.exerciseId ?? 'front-squat')
 
   // The same streak the flame counts, so one number means one thing.
   const streak = streakDays(data)
@@ -56,47 +49,17 @@ export function ProgressScreen() {
   const lastCheckin = data.measurements[data.measurements.length - 1]
   const checkinDue =
     isCheckinDay && (!lastCheckin || lastCheckin.date !== today)
+  // A milestone that unlocked and has not been opened yet.
+  const ready = useMemo(() => reviewReady(data, today), [data, today])
 
-  const metricPoints = useMemo(
-    () =>
-      data.measurements
-        .filter((m) => m[metric] !== undefined)
-        .map((m) => ({ date: m.date, value: m[metric]! })),
-    [data.measurements, metric],
-  )
-
-  const liftPoints = useMemo(() => {
-    if (lift === 'pull-up') {
-      return repMaxSeries(data, 'pull-up').map((p) => ({ date: p.date, value: p.reps }))
-    }
-    return liftSeries(data, lift).map((p) => ({ date: p.date, value: p.e1rm }))
-  }, [data, lift])
-
-  const proteinPoints = useMemo(() => {
-    const pts: { date: string; value: number }[] = []
-    for (let i = 29; i >= 0; i--) {
-      const d = addDaysISO(today, -i)
-      const p = proteinFor(data, d)
-      if (p > 0) pts.push({ date: d, value: p })
-    }
-    return pts
-  }, [data, today])
-
-  const activeMetric = METRICS.find((m) => m.key === metric)!
-
-  // Captions speak to the USER's booklet: custom targets win, then the
-  // goal statement for the metric closest to their goal; the owner's
-  // NAOD preset keeps its original captions.
-  const captionFor = (key: string, fallback: string): string => {
-    const plan = data.plan
-    if (plan.name.startsWith('NAOD')) return fallback
-    const hint = key === 'vertIn' ? 'vert' : key === 'armsIn' ? 'arm' : key === 'waistIn' ? 'waist' : key === 'weightLb' ? 'weight' : key === 'bodyFatPct' ? 'fat' : '␀'
-    const t = plan.customTargets.find((c) => c.label.toLowerCase().includes(hint))
-    if (t) return `Target: ${t.target}${t.unit} · “${plan.goalStatement}”`
-    if (key === 'vertIn' && (plan.goal === 'vertical' || plan.goal === 'speed')) return `“${plan.goalStatement}”. Track the same touch point every time.`
-    if (key === 'waistIn' && plan.goal === 'lean') return 'THE metric for your cut. This line falling is the whole goal.'
-    if (key === 'weightLb' && plan.goal === 'muscle') return 'Should trend UP slowly. Muscle is built, not wished for.'
-    return ''
+  // Opening a milestone marks it seen, so the offer above stops asking.
+  function openMark(id: ReviewMarkId) {
+    setReview(buildMilestoneReview(data, id, today))
+    update((d) => {
+      if (!(d.settings.reviewsSeen ?? []).includes(id)) {
+        d.settings.reviewsSeen = [...(d.settings.reviewsSeen ?? []), id]
+      }
+    })
   }
 
   return (
@@ -119,196 +82,94 @@ export function ProgressScreen() {
       {view === 'board' && <BoardContent />}
       {view === 'record' && <RecordView />}
 
-      {view === 'me' && checkinDue && (
-        <Card className="border-accent/40">
-          <p className="text-[13.5px] font-bold text-accent-soft">Weekly check-in day</p>
-          <p className="mt-0.5 text-[12px] text-ink-dim">
-            Same morning, same conditions. Write it down or it didn't happen.
-          </p>
-          <Btn className="mt-2.5 w-full" onClick={() => setCheckinOpen(true)}>
-            Do the check-in
-          </Btn>
-        </Card>
-      )}
-
       {view === 'me' && (
         <>
-      {/* Milestone review, when one has unlocked and hasn't been opened */}
-      {(() => {
-        const ready = reviewReady(data, today)
-        if (!ready) return null
-        return (
-          <Card className="border-accent/40">
-            <p className="text-[13.5px] font-bold text-accent-soft">Your {ready.label.toLowerCase()} is ready</p>
-            <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
-              {ready.days} days on the books. Deltas, before/after, and an honest read on gains vs effort.
-            </p>
-            <Btn
-              className="mt-2.5 w-full"
-              onClick={() => {
-                setReview(buildMilestoneReview(data, ready.id, today))
-                update((d) => {
-                  d.settings.reviewsSeen = [...(d.settings.reviewsSeen ?? []), ready.id]
-                })
-              }}
-            >
-              Open the review
-            </Btn>
-          </Card>
-        )
-      })()}
-
-      {/* The body leads. What changed because you showed up, drawn on the
-          thing that changed, before any chart gets a word in. */}
-      <ProgressBody data={data} today={today} />
-
-      {/* Records strip */}
-      <div className="grid grid-cols-3 gap-2">
-        <Tile className="!px-2 !py-2.5 text-center">
-          <div className="flex items-center justify-center gap-1">
-            {streak > 0 && <Flame streak={streak} size={13} />}
-            <span className="num text-[23px] font-black leading-none text-accent-soft">{streak}</span>
+          {/* Anything the calendar has ready for them, in one column. Two
+              prompts that mean the same thing ("this is waiting for you")
+              were two separate cards on two separate rows. */}
+          <div className="space-y-3 empty:hidden">
+            {checkinDue && (
+              <Tile tone="heat">
+                <p className="text-[13.5px] font-black text-accent-soft">Weekly check-in day</p>
+                <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
+                  Same morning, same conditions. Write it down or it didn't happen.
+                </p>
+                <Btn className="mt-2.5 w-full" onClick={() => setCheckinOpen(true)}>
+                  Do the check-in
+                </Btn>
+              </Tile>
+            )}
+            {ready && (
+              <Tile tone="gold">
+                <div className="eyebrow text-gold">Ready</div>
+                <p className="mt-1 text-[13.5px] font-black">Your {ready.label.toLowerCase()} is ready</p>
+                <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
+                  {ready.days} days on the books. Deltas, before/after, and an honest read on gains vs effort.
+                </p>
+                <Btn className="mt-2.5 w-full" onClick={() => openMark(ready.id)}>
+                  Open the review
+                </Btn>
+              </Tile>
+            )}
           </div>
-          <div className="eyebrow mt-1 text-[9px] text-ink-faint">streak</div>
-        </Tile>
-        <Tile className="!px-2 !py-2.5 text-center">
-          <div className="num text-[23px] font-black leading-none text-lime">{sessions}</div>
-          <div className="eyebrow mt-1 text-[9px] text-ink-faint">sessions</div>
-        </Tile>
-        <Tile className="!px-2 !py-2.5 text-center">
-          <div className="num text-[23px] font-black leading-none text-cyan">{data.measurements.length}</div>
-          <div className="eyebrow mt-1 text-[9px] text-ink-faint">check-ins</div>
-        </Tile>
-      </div>
 
-      {/* The climb.
-          Directly under the three counters, because those say what has
-          happened and this says where it is going — and "am I getting
-          anywhere" is the question the whole screen exists to answer.
-          Above the heatmap, which is the same question at one week's
-          resolution. */}
-      <GoalTimeline data={data} today={today} onAnchor={() => setCheckinOpen(true)} />
+          {/* The body leads. What changed because you showed up, drawn on
+              the thing that changed, before any chart gets a word in. */}
+          <ProgressBody data={data} today={today} />
 
-      {/* The same question at four distances, on demand. The closing
-          period comes to them on Today; this is for the other days. */}
-      <ReviewShelf data={data} today={today} onTakePhotos={() => setCheckinOpen(true)} />
+          {/* Records strip */}
+          <div className="grid grid-cols-3 gap-2">
+            <Tile className="!px-2 !py-2.5 text-center">
+              <div className="flex items-center justify-center gap-1">
+                {streak > 0 && <Flame streak={streak} size={13} />}
+                <span className="num text-[23px] font-black leading-none text-accent-soft">{streak}</span>
+              </div>
+              <div className="eyebrow mt-1 text-[9px] text-ink-faint">streak</div>
+            </Tile>
+            <Tile className="!px-2 !py-2.5 text-center">
+              <div className="num text-[23px] font-black leading-none text-lime">{sessions}</div>
+              <div className="eyebrow mt-1 text-[9px] text-ink-faint">sessions</div>
+            </Tile>
+            <Tile className="!px-2 !py-2.5 text-center">
+              <div className="num text-[23px] font-black leading-none text-cyan">{data.measurements.length}</div>
+              <div className="eyebrow mt-1 text-[9px] text-ink-faint">check-ins</div>
+            </Tile>
+          </div>
 
-      {/* Adherence heatmap */}
-      <SectionTitle
-        right={
-          <button onClick={() => setRecapOpen(true)} className="text-[11px] font-bold text-accent underline">
-            ▶ replay my week
-          </button>
-        }
-      >
-        Last 12 weeks
-      </SectionTitle>
-      <Card>
-        <Heatmap days={heat} />
-      </Card>
+          {/* The climb: its own section title and ONE tile.
+              Directly under the three counters, because those say what has
+              happened and this says where it is going, and "am I getting
+              anywhere" is the question the whole screen exists to answer. */}
+          <GoalTimeline data={data} today={today} onAnchor={() => setCheckinOpen(true)} />
 
-      {/* Body metrics */}
-      <SectionTitle
-        right={
-          !checkinDue ? (
-            <button onClick={() => setCheckinOpen(true)} className="text-[11px] font-bold text-cyan underline">
-              + log measurements
-            </button>
-          ) : undefined
-        }
-      >
-        Body
-      </SectionTitle>
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-        {METRICS.map((m) => (
-          <Chip key={m.key} tone={metric === m.key ? 'accent' : 'default'} onClick={() => setMetric(m.key)}>
-            {m.label}
-          </Chip>
-        ))}
-      </div>
-      <Card>
-        <SimpleLine
-          points={metricPoints}
-          unit={activeMetric.unit}
-          targetValue={metric === 'armsIn' ? 16 : undefined}
-          targetLabel={metric === 'armsIn' ? '16" goal' : undefined}
-        />
-        {captionFor(activeMetric.key, activeMetric.caption) && (
-          <p className="mt-1 text-[11px] font-semibold text-ink-faint">{captionFor(activeMetric.key, activeMetric.caption)}</p>
-        )}
-      </Card>
-
-      {/* Strength */}
-      <SectionTitle>Strength (est. 1RM)</SectionTitle>
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-        {data.plan.trackedLifts.map((l) => (
-          <Chip key={l.exerciseId} tone={lift === l.exerciseId ? 'accent' : 'default'} onClick={() => setLift(l.exerciseId)}>
-            {l.label}
-          </Chip>
-        ))}
-        <Chip tone={lift === 'pull-up' ? 'accent' : 'default'} onClick={() => setLift('pull-up')}>
-          Pull-ups (reps)
-        </Chip>
-      </div>
-      <Card>
-        <SimpleLine points={liftPoints} unit={lift === 'pull-up' ? ' reps' : ' lb'} color="var(--color-lime)" />
-        <p className="mt-1 text-[11px] font-semibold text-ink-faint">
-          Core movers never rotate. Keep adding load and watch this climb.
-        </p>
-      </Card>
-
-      {/* Protein */}
-      <SectionTitle>Protein (last 30 days)</SectionTitle>
-      <Card>
-        <SimpleLine
-          points={proteinPoints}
-          unit="g"
-          color="var(--color-cyan)"
-          targetValue={data.settings.proteinTargetG}
-          targetLabel={`${data.settings.proteinTargetG}g`}
-        />
-      </Card>
-
-      {/* Sport, runs and rides */}
-      <ActivityLog data={data} today={today} />
-
-      {/* Photos */}
-      <SectionTitle>Progress photos</SectionTitle>
-      <PhotoCompare measurements={data.measurements} />
-
-      {/* Milestones */}
-      <SectionTitle>Milestones</SectionTitle>
-      <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
-        {REVIEW_MARKS.map((mark, i) => {
-          const unlocked = unlockedMarks(data, today).some((m) => m.id === mark.id)
-          const daysIn = daysBetween(data.settings.phaseStartDate, today)
-          return (
-            <div
-              key={mark.id}
-              onClick={
-                unlocked
-                  ? () => {
-                      setReview(buildMilestoneReview(data, mark.id, today))
-                      update((d) => {
-                        if (!(d.settings.reviewsSeen ?? []).includes(mark.id)) {
-                          d.settings.reviewsSeen = [...(d.settings.reviewsSeen ?? []), mark.id]
-                        }
-                      })
-                    }
-                  : undefined
-              }
-              className={`flex items-center justify-between px-4 py-3 ${i > 0 ? 'border-t border-white/[0.05]' : ''} ${
-                unlocked ? 'cursor-pointer active:bg-surface-2' : 'opacity-50'
-              }`}
-            >
-              <span className="text-[13px] font-bold">{mark.label}</span>
-              <span className="text-[11.5px] font-semibold text-ink-faint">
-                {unlocked ? 'open →' : `unlocks in ${mark.days - daysIn} days`}
-              </span>
+          {/* The heading is ON the tile. It was a SectionTitle above it,
+              and it never headed a section: the trends below run 30 days
+              or all time, and the reviews are rolling. It heads the
+              heatmap, so it lives on the heatmap. */}
+          <Tile>
+            <div className="mb-2.5 flex items-baseline justify-between gap-3">
+              <span className="eyebrow text-ink-faint">Last 12 weeks</span>
+              <button onClick={() => setRecapOpen(true)} className="press text-[11px] font-bold text-accent underline">
+                ▶ replay my week
+              </button>
             </div>
-          )
-        })}
-      </div>
+            <Heatmap days={heat} />
+          </Tile>
+
+          <TrendsTile data={data} today={today} onLogMeasurements={() => setCheckinOpen(true)} />
+
+          {/* Sport, runs and rides: what conditioning the month actually
+              held, on top of the lifting. */}
+          <ActivityLog data={data} today={today} />
+
+          <PhotoCompare measurements={data.measurements} />
+
+          <ReviewShelf
+            data={data}
+            today={today}
+            onTakePhotos={() => setCheckinOpen(true)}
+            onOpenMark={openMark}
+          />
         </>
       )}
 
@@ -333,21 +194,27 @@ function PhotoCompare({ measurements }: { measurements: Measurement[] }) {
   const leftUrl = usePhotoUrl(left?.photoIds[angle])
   const rightUrl = usePhotoUrl(right?.photoIds[angle])
 
+  // The heading is ON the tile. It used to be a SectionTitle above it,
+  // which is a whole block spent saying what the picture already says.
+  const head = <div className="eyebrow text-ink-faint">Progress photos</div>
+
   if (withPhotos.length === 0) {
     return (
-      <Card>
-        <p className="py-2 text-center text-[12.5px] text-ink-faint">
+      <Tile>
+        {head}
+        <p className="mt-2 py-1 text-[12.5px] leading-snug text-ink-faint">
           No photos yet. The mirror lags the logbook. Photos catch it moving.
         </p>
-      </Card>
+      </Tile>
     )
   }
 
   return (
-    <Card className="space-y-2.5">
+    <Tile className="space-y-2.5">
+      {head}
       <div className="flex gap-1.5">
         {(['front', 'side', 'back'] as const).map((a) => (
-          <Chip key={a} tone={angle === a ? 'accent' : 'default'} onClick={() => setAngle(a)}>
+          <Chip key={a} tone={angle === a ? 'accent' : 'default'} pressed={angle === a} onClick={() => setAngle(a)}>
             {a}
           </Chip>
         ))}
@@ -358,7 +225,7 @@ function PhotoCompare({ measurements }: { measurements: Measurement[] }) {
           { url: rightUrl, m: right, idx: rightIdx, set: setRightIdx },
         ].map((side, i) => (
           <div key={i}>
-            <div className="aspect-[3/4] overflow-hidden rounded-xl bg-surface-2">
+            <div className="aspect-[3/4] overflow-hidden rounded-xl border-2 border-edge bg-surface-2">
               {side.url ? (
                 <img src={side.url} alt="progress" className="h-full w-full object-cover" />
               ) : (
@@ -375,6 +242,6 @@ function PhotoCompare({ measurements }: { measurements: Measurement[] }) {
           </div>
         ))}
       </div>
-    </Card>
+    </Tile>
   )
 }

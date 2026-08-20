@@ -316,7 +316,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP9 | The day knows whether ITS OWN workout has been started (owner: "the day is still closed"): SessionLog.ownPlanStarted, because an A/B week repeats a template and the movements alone cannot tell a make-up from today's session; plus the hero naming today rather than the day that was made up | product | **done + LIVE 2026-08-20** (deploy 9b355c5, live bundle verified byte-identical by sha256) | OP8 | off-plan training session |
 | OP10 | Nothing claims the day is done while today's workout is owed (owner: "bro why is it still closed"): the finished-day card stops grading the day and says "Today is not done", and the hero stops naming the made-up day once today's session is running | product | **done + LIVE 2026-08-20** (deploy de04e6a, live bundle verified byte-identical by sha256) | OP9 | off-plan training session |
 | OP11 | The day's workout list comes back while its work is owed, and the coach's offer can be closed (owner requests) | product | **done + LIVE 2026-08-20** (deploy 5019cf1, live bundle verified byte-identical by sha256) | OP10 | off-plan training session |
-| OP12 | UI/UX overhaul phase 1 (owner request, "Master Prompt v3"): the owner lifted the post-core visual-overhaul fence for this lane. Daily-loop experience work: motion system (3 juice tiers with habituation guards), flame ladder visible from day 1 (11 stages), Today as a mission hub (identity HUD, week path, one dominant CTA, real-badge Next up), the finish-chain ceremony (count-up, PR, flame ignition, badge delta, tomorrow), set-done haptic, Train tab (off-plan surfaces promoted from Today), My Plan tab (Week + Meals as segments, owner decision), Progress Body coverage card, and Profile replacing Coach as the identity hub (badges move in, My Room socket, honest Connected apps) with coaching redistributed into Today / My Plan / Progress. **ONBOARDING IS OUT OF SCOPE: the owner is building it elsewhere** (see the checkpoint for the multi-goal defect they caught and the engine facts that lane needs). Zero engine or generator changes; golden lock untouched | product | **in-progress 2026-08-20** (branch `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip 12e110b, 17 commits, unpushed; C0-C8 landed: motion, flame ladder, Today split, Today mission hub, finish chain, navigation, the approved visual law with a guard, the approved SCREEN law with a guard, Profile + badges with earned dates, Progress Body. C9 ship is what remains. Owner merges when ready, deploy.yml untouched) | - | UI/UX overhaul session |
+| OP12 | UI/UX overhaul phase 1 (owner request, "Master Prompt v3"): the owner lifted the post-core visual-overhaul fence for this lane. Daily-loop experience work: motion system (3 juice tiers with habituation guards), flame ladder visible from day 1 (11 stages), Today as a mission hub (identity HUD, week path, one dominant CTA, real-badge Next up), the finish-chain ceremony (count-up, PR, flame ignition, badge delta, tomorrow), set-done haptic, Train tab (off-plan surfaces promoted from Today), My Plan tab (Week + Meals as segments, owner decision), Progress Body coverage card, and Profile replacing Coach as the identity hub (badges move in, My Room socket, honest Connected apps) with coaching redistributed into Today / My Plan / Progress. **ONBOARDING IS OUT OF SCOPE: the owner is building it elsewhere** (see the checkpoint for the multi-goal defect they caught and the engine facts that lane needs). Zero engine or generator changes; golden lock untouched | product | **in-progress 2026-08-20** (branch `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip 12e110b, 17 commits, unpushed; C0-C8 landed: motion, flame ladder, Today split, Today mission hub, finish chain, navigation, the approved visual law with a guard, the approved SCREEN law with a guard, Profile + badges with earned dates, Progress Body, the paint sweep with a guard, and the DENSITY pass with a guard (`e2e/density.spec.ts`: Today 12 to 7, Progress 24 to 11, My Plan Training 11 to 8, Nutrition 14 to 8; a redesign is an edit and every screen now has a block cap that can only shrink). C9 ship is what remains. Owner merges when ready, deploy.yml untouched) | - | UI/UX overhaul session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -478,6 +478,16 @@ the pre-existing plans that genuinely have no record of what built them.
   in code and something consumes it, not when the markdown is written. The W rows below
   track that gap and are the only place it is visible. As of 2026-08-18 the packs propose
   roughly 141 typed shapes and 1,200 corpus rows, and ZERO of the shapes exist in src.
+- **A REDESIGN IS AN EDIT (owner, 2026-08-20): "the whole app needs a refresh every screen
+  not you just changing the fuckifn color and shape."** A screen wearing the approved palette
+  is not redesigned, it is painted, and a screen that got LONGER is not redesigned either.
+  `research/OP12-screen-law.md` opens with the rule ("THE LIST IS THE SCREEN. NOT A LIST OF
+  ADDITIONS") and carries a block cap per screen; `e2e/density.spec.ts` counts the top-level
+  blocks each screen actually renders and fails past its cap, naming the blocks. **The caps
+  shrink and never grow.** A screen that genuinely needs another block earns it by absorbing
+  two, and the law is edited first so the next session inherits the decision rather than the
+  workaround. Absorb, relocate or drop; never delete a capability to hit a number.
+
 - **THE GRAPHICS BAR (owner, 2026-08-20, stated twice and about the whole redesign, not
   one component): "that is the level of animations and graphics that I'm expecting
   throughout this redesign of the app."** The reference is the streak flame in
@@ -2197,6 +2207,74 @@ the pre-existing plans that genuinely have no record of what built them.
   genuinely new activity made it bite. A mutation that does not change the thing the assertion
   measures proves nothing.
   Gates: typecheck clean, **1,751/1,751 unit**, build green, **90/90 e2e** on a fresh server.
+
+- **2026-08-20 · OP12 · the redesign was an addition, and a redesign is an EDIT.** The owner,
+  and this is the sentence the whole checkpoint exists under: *"You are just copying the same
+  app ux and not chaging shit like how the previews did. Wtf the whole app needs a refresh
+  every screen not you just changing the fuckifn color and shape by."* They were right, and it
+  was measurable, which is the only reason there is anything to write here. Counting the
+  top-level blocks the concept frames draw against the ones the build renders:
+
+  | Screen | Concept | Shipped | Now |
+  |---|---|---|---|
+  | Today | 9 | 12 | 7 |
+  | Train | 9 | 7 | 7 |
+  | My Plan · Training | 8 | 11 | 8 |
+  | My Plan · Nutrition | 8 | 14 | 8 |
+  | Progress | 12 | **24** | 11 |
+  | Profile | 8 | 7 | 7 |
+
+  **THE MISTAKE WAS IN MY OWN LAW FILE.** `research/OP12-screen-law.md` listed what should be
+  ON each screen and never said *and nothing else*. So I read the approved preview as a list of
+  additions, added every one of them on top of the screen that was already there, and every
+  screen I touched got LONGER while looking more correct. The two screens built from nothing,
+  Train and Profile, came out right, which is the tell: it was never a taste problem.
+  THE FIX IS STRUCTURAL. The law now opens with **"THE LIST IS THE SCREEN. NOT A LIST OF
+  ADDITIONS"** and a table of numbers, and `e2e/density.spec.ts` counts what each screen
+  actually renders and fails past its cap, printing the offending block list so the next
+  session sees WHICH block to absorb rather than being told a number. Caps shrink, never grow;
+  a screen that needs another block earns it by absorbing two.
+  WHAT ACTUALLY CHANGED, screen by screen, and none of it is a deletion:
+  (1) **Today.** No header on the live day: the week path IS the day picker, every node is a
+  button, and a header row whose only job was a pair of date arrows was a block spent on
+  navigation the screen already had. Nine engine siblings (banners, proposals, the
+  after-midnight tile, restore pill, reminders, cardio, rest card, review offer, make-up,
+  add-more) became ONE column that collapses when the engine has nothing to say. The mission
+  tile stands down once the day is banked, because the volt completion tile IS the mission
+  then and printing the title twice is the screen arguing with itself. The day note and the
+  browsing caveat became footnotes inside the exercise list.
+  (2) **My Plan · Training.** Day placement moved ONTO the tier tile that creates it. The Life
+  this week editor moved into a sheet behind a door: a calendar shows the week, a form changes
+  it, and the day rows already draw what the form produces. Three doors now, each with a coin.
+  (3) **My Plan · Nutrition.** The rings, the macro rings and the target chips are one fuel
+  tile, because chips that name the targets the rings measure against are not a separate
+  subject. Five engine cards became one column. Supplements close the Eaten list rather than
+  opening a section. The Log/My plan/Grocery picker rides the header.
+  (4) **Progress, 24 to 11.** GoalTimeline was FIVE top-level blocks by itself and is now a
+  title and a tile. Body metrics, strength and protein were three sections, three chip rows,
+  three charts and three copies of "Log at least two entries to draw the trend": one Trends
+  tile with a lens row. ActivityLog was five blocks: one Conditioning tile. Photos and the
+  heatmap carry their headings on the tile. Milestones merged into the Reviews shelf, which is
+  the same engine at fixed distances instead of rolling ones.
+  LEARNED:
+  (1) **A law that lists contents without a count is a shopping list.** Every screen law from
+  here carries its number, and the number is enforced.
+  (2) **The obvious relocation can be the wrong one.** Conditioning looked like it belonged on
+  the Record segment (a log of what happened), and moving it put TWO run lists on one screen,
+  because RecordView's timeline already carries a run row per GPS session. The e2e suite caught
+  it as a strict-mode violation, not a design review. It stayed on Progress, as one tile.
+  (3) **An empty slot is worse than an honest one.** Day one had a HUD with nothing in it but
+  an avatar, because the streak is zero and a flame at zero would be a lie. It says "No streak
+  yet" over a cold coal now. The pressure is the point of the HUD; an empty row has none.
+  (4) **A row of nodes cannot be labelled by a row underneath it.** The weekday letters were a
+  `justify-between` row under the week path, which only lines up while every node is the same
+  width, and today's node is 21px against a rest day's 13. Each letter rides inside its own
+  node's button now.
+  Gates: typecheck clean, **1,751/1,751 unit**, build green, **91/91 e2e** on a fresh server,
+  390px screenshots reviewed and iterated (the HUD, the week path, the reminder buttons and the
+  plan doors are all screenshot fixes, not test fixes).
+  NEXT: the owner's review of these screens. The finish chain, the logger and the sheets are
+  the surfaces the concept does not frame, so they have no cap yet.
 
 ## 10. SOURCES
 

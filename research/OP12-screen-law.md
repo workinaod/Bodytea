@@ -4,6 +4,39 @@
 what each screen CONTAINS and in what order, transcribed from the approved preview frame by
 frame. `src/screenLaw.test.ts` asserts the landmarks named here still exist in `src/`.
 
+## THE LIST IS THE SCREEN. NOT A LIST OF ADDITIONS.
+
+Read this before the screens below, because the first version of this file did not say it and
+the app paid for it.
+
+Each screen's contents are **exhaustive and ordered**. That list is not "things that should be
+present". It is the screen. Anything not on it either gets absorbed into something that is, or
+moves to where it belongs, or goes.
+
+The failure this prevents, in the owner's words: *"You are just copying the same app ux and not
+changing shit like how the previews did."* They were right, and it was measurable. The concept
+draws Progress in 7 blocks; the build shipped **24**, because every approved element got added
+on top of the old screen instead of replacing it. Today: 9 in the concept, 12 shipped. Train and
+Profile were built from nothing and came out at 7 and 6, which is the whole tell.
+
+`e2e/density.spec.ts` counts the top-level blocks each screen actually renders and fails when a
+screen grows past its number. A redesign is an EDIT. If a screen is getting longer, it is not
+being redesigned, it is being decorated.
+
+| Screen | Blocks |
+|---|---|
+| Today, fresh | 9 |
+| Today, complete | 8 |
+| Train | 9 |
+| My Plan · Training | 8 |
+| My Plan · Nutrition | 8 |
+| Progress | 12 |
+| Profile | 8 |
+
+Progress is 12 rather than the concept's 7 because the concept frame stops at the fold, and the
+charts genuinely continue below it. Twelve is the honest number for the whole screen: the four
+the concept shows, plus grouped trends, photos and reviews. It is not twenty-four.
+
 ## Why this file exists
 
 The visual law was written after a session rebuilt the palette from memory and got it
@@ -42,7 +75,10 @@ The sticker set the preview uses: `bolt` (Today), `dumbbell` (Train, light and w
 
 ## 1. Today, fresh
 
-In order, top to bottom:
+In order, top to bottom. **There is no header row.** The week path is the day picker: every
+node is a button, and a header whose only job was a pair of date arrows is a block spent on
+navigation the screen already has. Browsing another day with those nodes brings the header
+back, because there the date IS the subject.
 
 1. **HUD row.** flame + streak count in `heat-soft` (tap goes to Progress) · medal sticker +
    earned-badge count in `gold` · avatar 34px r12 `panel2` 2px `line` (tap goes to Profile).
@@ -53,9 +89,11 @@ In order, top to bottom:
    the tagline · the why line · chip row (`~{min} min`, `{n} sets`, `{muscles}`) · the
    `b3d heat` **Start session** button INSIDE the tile.
 4. `quietlink` **Can't train today** directly under the tile, centred, underlined, sentence case.
-5. Everything the engine already says: banners, adapt proposals, restore pill, reminders,
-   cardio, rest-day card, make-up card. Suggestions are a `tile gold` with a `Suggestion`
-   eyebrow.
+5. Everything the engine already says, in ONE container that collapses when it is empty:
+   banners, adapt proposals, the after-midnight tile, restore pill, reminders, cardio,
+   rest-day card, review offer, make-up card, add-more-work. Suggestions are a `tile gold`
+   with a `Suggestion` eyebrow. This is one block, not nine: it was nine siblings, and that
+   alone put Today three over its number.
 6. **Next up** `tile`: eyebrow + `All badges ›` in `ice`; two rows, each a 22px sticker + name +
    `{progress}/{target}` + a `QBar`.
 7. **The Sergeant line** `tile`: the daily quote in italic + `The Sergeant · daily` eyebrow +
@@ -117,36 +155,79 @@ than from the preview's placeholder.
 3. Centred `‹ Week of {date} ›` 12.5px/900/dim + eyebrow `Week {n} · Block {n} · {AB}`.
 4. `SectionTitle` **This week's tier**.
 5. Three tier tiles, each a `WeekNode` + `Tier {n} · {name}` + the sub line. The chosen tier's
-   tile is `tile heat` with a heat node.
-6. `tile` row **The Plan** — Rules, why your week looks like this, exercise guides — with a `›`.
+   tile is `tile heat` with a heat node, and on tier 2 or 3 it carries the **day placement**
+   rows under a `line2` rule inside itself. The pick-now nudge sits above the three, in the
+   same container.
+6. `tile` rows, the doors out of the week: **The Plan** (rules, exercise guides) ·
+   **My Booklet · {plan}** · **Life this week** (gigs, shifts, bad nights), each with a `›`.
 7. `SectionTitle` **The days**.
 8. Day rows: weekday `SetCoin` (volt for done, heat for today, plain otherwise) + the day title
    + its sub + a status `chip` (`done` volt / `today` heat / `rest` / `up next`).
 
+**Day placement and Life this week, decided.** Both used to be sections of their own further
+down, which is how this screen reached eleven blocks. Placement belongs to the tier that
+created it, so it lives on that tier's tile. Life events are a form, and a form does not belong
+inside a calendar that already draws what it produces: the day rows keep the markers
+(`🌙 late night`, `🦵 on feet`) and the editor moved into `LifeEventsSheet`, one tap behind a
+door. Nothing was removed.
+
 ## 6. My Plan · Nutrition
 
 1. `ScreenName` **My Plan** + the segment, Nutrition active.
-2. Centred `‹ Fuel · {day} ›`.
-3. `tile` with two flat rings side by side: protein 126px, 12px stroke, heat, centre
-   `{eaten}` over `/ {target} g`; calories 98px, 12px stroke, ice, centre `{kcal}` over
-   `/ {target}`. Track is `panel2`, no gradients, round caps.
-4. Chip row: `Training day · {kcal}` (ice) · `floor {n} g` · `{n}-day streak` (gold).
+2. Centred `‹ Fuel · {day} ›` with the `Log · My plan · Grocery` chips under it, in the same
+   block. Two segmented switches stacked makes neither read as the primary choice, so the
+   view picker is header furniture rather than a second control.
+3. **The fuel tile**: two flat rings side by side, protein 132px and calories 104px, 12px
+   stroke, heat and ice, centre `{eaten}` over `/ {target}`, `panel2` track, no gradients,
+   round caps; then carbs and fat at 96px under a `line2` rule when the day has macro data;
+   then the target chips under a second rule: `Training day · {kcal}` · `protein never drops:
+   {n} g` · `fibre floor: {n} g` · `{n}-day protein streak` (gold). Rings and the numbers they
+   are measured against are one object.
+4. The coach column: whichever of the verdict, energy, learned-maintenance and calorie-target
+   cards have something true to say today, in one container that collapses when they do not.
 5. `b3d heat` **+ Log food**, full width and loud.
 6. `SectionTitle` **Eaten ({n})**.
-7. Food rows: protein `SetCoin` (`52P`) + name + `{kcal} kcal` + the quantity controls.
+7. Food rows: protein `SetCoin` (`52P`) + name + `{kcal} kcal` + the quantity controls, closed
+   by the **Supplements** grid under a `line2` rule. What you took today is part of what you
+   ate today.
 
 ## 7. Progress
 
 1. `ScreenName` **Progress**.
 2. Segmented **[Progress | Record | The Board]**.
-3. `tile` **Your body this week**: the anatomy figure front and back, trained groups lit,
+3. The offers column, collapsing when empty: the weekly check-in prompt (`tile heat`) and an
+   unlocked milestone review (`tile gold`). Two cards saying "this is waiting for you" were
+   two blocks on two rows.
+4. `tile` **Your body this week**: the anatomy figure front and back, trained groups lit,
    recent ones dimmer; `{n} of 7 muscle groups trained this week`; the stalest-group line.
    Under two sessions it says `Assessing. A few sessions and this fills in.`
-4. Three stat tiles in a row: flame + streak in `heat-soft` · sessions in `volt` ·
+5. Three stat tiles in a row: flame + streak in `heat-soft` · sessions in `volt` ·
    check-ins in `ice`, each with a 9px eyebrow underneath.
-5. `SectionTitle` **The climb** + `Next up {stage} · ~{n} weeks at your rate` + a node path
-   whose current node is a 30px heat `HERE` and whose last node holds a trophy sticker.
-6. `SectionTitle` **Last 12 weeks** + the existing charts, heatmap, photos.
+6. `SectionTitle` **The climb** + `{n} of {m}` on the right.
+7. ONE `tile` holding the whole route: `Next up {stage} · ~{n} weeks at your rate`, the strand
+   chips, the node path whose current node is a 54px heat `HERE` and whose goal node holds a
+   trophy sticker, and the estimates footnote.
+8. `tile` **Last 12 weeks** + `▶ replay my week`, holding the adherence heatmap. The heading is
+   on the tile: it was a `SectionTitle`, and it never headed a section, because the trends
+   below run 30 days or all time and the reviews are rolling.
+9. `tile` **Trends**: `+ log measurements` on the right, a `Body / Lifts / Fuel` lens row, the
+   series chips for that lens, ONE chart and ONE empty state. Body metrics, strength and
+   protein used to be three sections with three chip rows, three charts and three copies of
+   `Log at least two entries to draw the trend.`
+10. `tile` **Conditioning · last 30 days**: the hours and calories, the per-sport rows with
+    their intensity mix, the honest trend line, then **Runs & rides** under a `line2` rule with
+    the weekly-miles chart and the tappable run list. Five blocks became one; every one of them
+    was answering "what conditioning did the month hold".
+11. `tile` **Progress photos**: the angle chips and the two-up compare, or the honest empty
+    line. The heading is on the tile.
+12. `tile` **Reviews**: the four rolling periods as a 2×2, then the three fixed milestone marks
+    under a `line2` rule, each `open ›` or `unlocks in {n} days`. Same question, same engine;
+    they were two sections because that is how the data model is shaped, not how the screen
+    reads.
+
+**Conditioning stays on Progress, not Record.** Moving it to Record put two run lists on one
+screen: `RecordView`'s timeline already carries a run row per GPS session. The timeline is the
+narrative; this tile is the total. They are different questions about the same runs.
 
 ## 8. Profile
 

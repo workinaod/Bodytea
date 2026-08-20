@@ -3,7 +3,7 @@ import type { AppData, ISODate } from '../../types'
 import { buildJourney, type Stage } from '../../engine/journey'
 import { Sticker } from '../../components/stickers'
 import { formatShort } from '../../engine/calendar'
-import { SectionTitle } from '../../components/ui'
+import { Chip, SectionTitle, Tile } from '../../components/ui'
 import { StageSheet } from './StageSheet'
 
 // ============================================================
@@ -131,10 +131,15 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
         The climb
       </SectionTitle>
 
+      {/* The route is ONE object: the next-up line, the strand filter,
+          the road and its footnote were four loose blocks stacked down
+          the screen, which is a paragraph about a journey rather than a
+          picture of one. */}
+      <Tile>
       {/* Where they are and what is immediately next, in one line, so
           the answer is there before anybody swipes anything. */}
       {next && (
-        <p className="-mt-1 px-1 text-[12px] leading-snug text-ink-dim">
+        <p className="text-[12px] leading-snug text-ink-dim">
           Next up <span className="font-bold text-ink">{next.label}</span>
           {next.etaWeeks !== undefined && (
             <>
@@ -150,18 +155,17 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
       )}
 
       {journey.tracks.length > 1 && (
-        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+        <div className="no-scrollbar -mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
           {[{ id: null, label: 'All' }, ...journey.tracks.map((t) => ({ id: t.id as string | null, label: t.label }))].map(
             (t) => (
-              <button
+              <Chip
                 key={t.label}
+                tone={track === t.id ? 'accent' : 'default'}
+                pressed={track === t.id}
                 onClick={() => setTrack(t.id)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[11.5px] font-bold ${
-                  track === t.id ? 'bg-surface-2 text-ink' : 'bg-surface text-ink-faint'
-                }`}
               >
                 {t.label}
-              </button>
+              </Chip>
             ),
           )}
         </div>
@@ -169,7 +173,7 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
 
       <div
         ref={scroller}
-        className="-mx-4 overflow-x-auto overflow-y-hidden px-0"
+        className="-mx-4 mt-1 overflow-x-auto overflow-y-hidden px-0"
         style={{ scrollbarWidth: 'none' }}
         aria-label="Your climb, stage by stage"
       >
@@ -243,9 +247,10 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
         </div>
       </div>
 
-      <p className="px-1 text-[10.5px] leading-snug text-ink-faint">
+      <p className="text-[10.5px] leading-snug text-ink-faint">
         Tap any stage for what it takes. Targets never move. The dates do, and they are estimates, not promises.
       </p>
+      </Tile>
 
       {open && <StageSheet stage={open} onClose={() => setOpen(null)} />}
     </>

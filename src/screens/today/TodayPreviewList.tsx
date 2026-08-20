@@ -113,17 +113,23 @@ export function TodayPreviewList({
           )
         })}
         {day.exercises.length === 0 && <EmptyNote>Nothing scheduled.</EmptyNote>}
+
+        {/* The day's own note and the browsing caveat are footnotes ON the
+            list, not two more blocks under it. They sit inside the rows
+            container above the rule that closes it. */}
+        {(day.note || !today) && (
+          <div className="space-y-1 border-t-2 border-edge-soft pt-2.5">
+            {day.note && (
+              <p className="px-1 text-[12px] leading-relaxed text-ink-faint">{day.note}</p>
+            )}
+            {!today && (
+              <p className="px-1 text-[11.5px] font-bold text-ink-faint">
+                Preview only. Sessions start on their day.
+              </p>
+            )}
+          </div>
+        )}
       </div>
-
-      {day.note && (
-        <p className="px-2 text-center text-[12px] leading-relaxed text-ink-faint">{day.note}</p>
-      )}
-
-      {!today && (
-        <p className="px-1 text-center text-[11.5px] text-ink-faint">
-          Preview only. Sessions start on their day.
-        </p>
-      )}
     </>
   )
 }

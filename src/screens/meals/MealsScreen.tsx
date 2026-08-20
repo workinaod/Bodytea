@@ -104,209 +104,225 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
 
   return (
     <div className="space-y-3 pb-6">
-      <ScreenHeader
-        slim={embedded}
-        title={date === today ? 'Fuel' : formatDayLabel(date)}
-        onTitleTap={() => setSelected(null)}
-        left={<DayArrow dir="prev" onClick={() => setSelected(addDaysISO(date, -1))} />}
-        right={<DayArrow dir="next" onClick={() => setSelected(addDaysISO(date, 1))} />}
-      />
-
-      {/* The three jobs. Chips rather than a second segmented switch: this
-          screen is embedded under My Plan's Training/Nutrition switch, and
-          two identical controls stacked makes neither one read as the
-          primary choice. One heat segment per screen. */}
-      <div className="flex gap-1.5">
-        {(
-          [
-            { id: 'today', label: 'Log' },
-            { id: 'plan', label: 'My plan' },
-            { id: 'grocery', label: 'Grocery' },
-          ] as const
-        ).map((v) => (
-          <Chip
-            key={v.id}
-            tone={view === v.id ? 'accent' : 'default'}
-            pressed={view === v.id}
-            onClick={() => setView(v.id)}
-            className="!px-3 !py-1.5 !text-[12px]"
-          >
-            {v.label}
-          </Chip>
-        ))}
+      {/* The date and the three jobs, as one piece of header furniture.
+          Chips rather than a second segmented switch: this screen is
+          embedded under My Plan's Training/Nutrition switch, and two
+          identical controls stacked makes neither read as the primary
+          choice. One heat segment per screen. */}
+      <div>
+        <ScreenHeader
+          slim={embedded}
+          title={date === today ? 'Fuel' : formatDayLabel(date)}
+          onTitleTap={() => setSelected(null)}
+          left={<DayArrow dir="prev" onClick={() => setSelected(addDaysISO(date, -1))} />}
+          right={<DayArrow dir="next" onClick={() => setSelected(addDaysISO(date, 1))} />}
+        />
+        <div className="mt-2 flex justify-center gap-1.5">
+          {(
+            [
+              { id: 'today', label: 'Log' },
+              { id: 'plan', label: 'My plan' },
+              { id: 'grocery', label: 'Grocery' },
+            ] as const
+          ).map((v) => (
+            <Chip
+              key={v.id}
+              tone={view === v.id ? 'accent' : 'default'}
+              pressed={view === v.id}
+              onClick={() => setView(v.id)}
+              className="!px-3 !py-1.5 !text-[12px]"
+            >
+              {v.label}
+            </Chip>
+          ))}
+        </div>
       </div>
 
       {view === 'today' && (
         <>
-          {/* items-end, so two rings of different sizes still put their
-              labels on one line instead of two. */}
-          <Tile className="flex items-end justify-around !py-4">
-            <Ring value={protein} target={data.settings.proteinTargetG} label="Protein" unit="g" color="var(--color-accent)" size={132} />
-            <Ring value={kcal} target={kcalTarget} label="Calories" unit="kcal" color="var(--color-cyan)" size={104} />
+          {/* The day's fuel, as ONE object.
+              Two big rings, the two smaller ones under them, and the
+              targets they are all measured against. These were three
+              stacked blocks, which made the chips read as a separate
+              subject from the rings that display exactly those numbers.
+              items-end, so rings of different sizes still put their labels
+              on one line instead of two. */}
+          <Tile className="!py-4">
+            <div className="flex items-end justify-around">
+              <Ring value={protein} target={data.settings.proteinTargetG} label="Protein" unit="g" color="var(--color-accent)" size={132} />
+              <Ring value={kcal} target={kcalTarget} label="Calories" unit="kcal" color="var(--color-cyan)" size={104} />
+            </div>
+
+            {/* Carbs and fat.
+                Protein and calories are the two numbers the plan is built
+                on, so they keep the big rings. These sit under them because
+                they are the fuel and the floor rather than the target: carbs
+                flex with how much work the day holds, and fat has a minimum
+                below which hormones suffer, which is a thing to stay ABOVE
+                rather than hit.
+                Hidden entirely on a day with no macro data behind it. A ring
+                at zero would read as "you ate no carbs" when what it means
+                is "the app has no idea", and those are different sentences. */}
+            {macros.coveredKcal > 0 && bodyweight !== null && (
+              <div className="mt-3 border-t-2 border-edge-soft pt-3">
+                <div className="flex items-end justify-around">
+                  <Ring value={macros.carbsG} target={macroTarget.carbsG} label="Carbs" unit="g" color="var(--color-lime)" size={96} />
+                  <Ring value={macros.fatG} target={macroTarget.fatG} label="Fat" unit="g" color="var(--color-gold)" size={96} />
+                </div>
+                <p className="mt-2 text-center text-[10.5px] leading-snug text-ink-faint">
+                  {macros.coverage >= 0.95
+                    ? 'Carbs flex with the work in the day. Fat is a floor, not a target.'
+                    : `Based on the ${Math.round(macros.coverage * 100)}% of today's calories logged with full macros. Custom entries only carry protein and calories.`}
+                </p>
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 border-t-2 border-edge-soft pt-3">
+              <Chip tone={dayType === 'training' ? 'accent' : 'default'} onClick={() => cycleDayTypeOverride(date)}>
+                {dayType === 'training' ? 'Training day' : 'Rest day'} · {kcalTarget} kcal
+                {day?.dayTypeOverride ? ' (manual)' : ''}
+              </Chip>
+              <Chip tone="lime">protein never drops: {data.settings.proteinTargetG} g</Chip>
+              {/* A floor, not a ring: nothing here logs fibre, so showing a
+                  progress arc against it would be inventing a number. */}
+              <Chip tone="default">fibre floor: {macroTarget.fiberG} g</Chip>
+              {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
+            </div>
           </Tile>
 
-          {/* Carbs and fat.
-              Protein and calories are the two numbers the plan is built
-              on, so they keep the big rings. These sit under them because
-              they are the fuel and the floor rather than the target: carbs
-              flex with how much work the day holds, and fat has a minimum
-              below which hormones suffer, which is a thing to stay ABOVE
-              rather than hit.
-              Hidden entirely on a day with no macro data behind it. A ring
-              at zero would read as "you ate no carbs" when what it means
-              is "the app has no idea", and those are different sentences. */}
-          {macros.coveredKcal > 0 && bodyweight !== null && (
-            <Tile className="!py-3.5">
-              <div className="flex items-end justify-around">
-                <Ring value={macros.carbsG} target={macroTarget.carbsG} label="Carbs" unit="g" color="var(--color-lime)" size={96} />
-                <Ring value={macros.fatG} target={macroTarget.fatG} label="Fat" unit="g" color="var(--color-gold)" size={96} />
-              </div>
-              <p className="mt-2 text-center text-[10.5px] leading-snug text-ink-faint">
-                {macros.coverage >= 0.95
-                  ? 'Carbs flex with the work in the day. Fat is a floor, not a target.'
-                  : `Based on the ${Math.round(macros.coverage * 100)}% of today's calories logged with full macros. Custom entries only carry protein and calories.`}
-              </p>
-            </Tile>
-          )}
+          {/* Everything the nutrition engines have to say, in one column.
+              Five separate cards on a 390px screen is the committee this
+              screen's own comment warns about; a column at least reads as
+              one voice with several things to say. */}
+          <div className="space-y-3 empty:hidden">
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Chip tone={dayType === 'training' ? 'accent' : 'default'} onClick={() => cycleDayTypeOverride(date)}>
-              {dayType === 'training' ? 'Training day' : 'Rest day'} · {kcalTarget} kcal
-              {day?.dayTypeOverride ? ' (manual)' : ''}
-            </Chip>
-            <Chip tone="lime">protein never drops: {data.settings.proteinTargetG} g</Chip>
-            {/* A floor, not a ring: nothing here logs fibre, so showing a
-                progress arc against it would be inventing a number. */}
-            <Chip tone="default">fibre floor: {macroTarget.fiberG} g</Chip>
-            {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
-          </div>
+            {/* An answer to something the athlete already did outranks any
+                new suggestion, including the ones below. Saying "that did
+                not help, so it is back to how it was" out loud is the whole
+                reason the ledger exists. */}
+            {verdict && (
+              <Card className={verdict.verdict === 'worked' ? 'border-lime/40' : 'border-white/15'}>
+                <p className="text-[13px] font-bold text-ink">
+                  {verdict.verdict === 'worked' ? 'That worked' : 'Following up'}
+                </p>
+                <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{verdictCopy(verdict)}</p>
+              </Card>
+            )}
 
-          {/* An answer to something the athlete already did outranks any
-              new suggestion, including the ones below. Saying "that did
-              not help, so it is back to how it was" out loud is the whole
-              reason the ledger exists. */}
-          {verdict && (
-            <Card className={verdict.verdict === 'worked' ? 'border-lime/40' : 'border-white/15'}>
-              <p className="text-[13px] font-bold text-ink">
-                {verdict.verdict === 'worked' ? 'That worked' : 'Following up'}
-              </p>
-              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{verdictCopy(verdict)}</p>
-            </Card>
-          )}
+            {/* Safety first, and it is not competing with the ladder below. */}
+            {energy && (
+              <Card className="border-gold/40">
+                <p className="text-[13px] font-bold text-gold">
+                  {energy.level === 'low' ? 'Not much left to run on' : 'Worth a look'}
+                </p>
+                <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{energyCopy(energy)}</p>
+              </Card>
+            )}
 
-          {/* Safety first, and it is not competing with the ladder below. */}
-          {energy && (
-            <Card className="border-gold/40">
-              <p className="text-[13px] font-bold text-gold">
-                {energy.level === 'low' ? 'Not much left to run on' : 'Worth a look'}
-              </p>
-              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{energyCopy(energy)}</p>
-            </Card>
-          )}
+            {learned && !advice && (
+              <Card>
+                <p className="text-[13px] font-bold text-ink">What your own weeks say</p>
+                <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{learned}</p>
+              </Card>
+            )}
 
-          {learned && !advice && (
-            <Card>
-              <p className="text-[13px] font-bold text-ink">What your own weeks say</p>
-              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{learned}</p>
-            </Card>
-          )}
-
-          {advice === 'step' && step && (
-            <Card className="border-accent/40">
-              <p className="text-[13px] font-bold text-accent-soft">What the scale is actually doing</p>
-              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
-                {returningCopy({ allowed: true, returningBecauseWorse: step.returningBecauseWorse, declines: 0 })}{step.returningBecauseWorse ? ' ' : ''}
-                {stepCopy(step)}
-              </p>
-              {/* Two buttons now. The second one used to be impossible:
-                  there was nowhere to record a no, so it would have set
-                  the number to what it already was and the card would
-                  have come straight back. The ledger fixed that. */}
-              <div className="mt-2.5 flex gap-2">
-                <Btn kind="subtle" className="flex-1 !py-2"
-                  onClick={() => update((d) => {
-                    const gap = d.plan.nutrition.kcalTraining - d.plan.nutrition.kcalRest
-                    d.plan.nutrition.kcalTraining = step.toKcal
-                    d.plan.nutrition.kcalRest = Math.max(MIN_KCAL_REST, step.toKcal - gap)
-                    appendDecision(d, stepDecision(step, 'accepted', today, d.decisions.length))
-                  })}>
-                  Move to {step.toKcal}
-                </Btn>
-                <Btn kind="subtle" className="flex-1 !py-2"
-                  onClick={() => update((d) => {
-                    appendDecision(d, stepDecision(step, 'declined', today, d.decisions.length))
-                  })}>
-                  Not now
-                </Btn>
-              </div>
-            </Card>
-          )}
-
-
-          {advice === 'recheck' && recheck && (
-            <Card className="border-accent/40">
-              <p className="text-[13px] font-bold text-accent-soft">
-                {recheck.athleteSet ? 'Worth another look' : 'Your target was set before this'}
-              </p>
-              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
-                {learnedCopy(recheck.learned, recheck.athleteSet)} On what I know now your training days come out at{' '}
-                {recheck.suggested.kcalTraining} kcal, not {recheck.current.kcalTraining}. Your call.
-              </p>
-              <div className="mt-2.5 flex gap-2">
-                <Btn kind="subtle" className="flex-1 !py-2"
-                  onClick={() => update((d) => {
-                    const next = applyRecheck(d, today)
-                    if (!next) return
-                    d.plan.nutrition = next.nutrition
-                    d.plan.nutritionBasis = next.nutritionBasis
-                    appendDecision(d, recheckDecision(recheck, 'accepted', today, d.decisions.length))
-                  })}>
-                  Use {recheck.suggested.kcalTraining}
-                </Btn>
-                <Btn kind="subtle" className="flex-1 !py-2"
-                  onClick={() => update((d) => {
-                    d.plan.nutritionBasis = recheck.basis
-                    appendDecision(d, recheckDecision(recheck, 'declined', today, d.decisions.length))
-                  })}>
-                  Keep {recheck.current.kcalTraining}
-                </Btn>
-              </div>
-            </Card>
-          )}
-
-          {advice === 'bump' && bump && (
-            <Card className="border-gold/40">
-              <p className="text-[13px] font-bold text-gold">Check-in rule triggered</p>
-              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
-                Strength up {bump.strengthGainPct}% while the scale moved {bump.weightChangeLb} lb over 3+
-                weeks. The plan says: add 150–200 kcal to training days. Recomp is slow, don't panic-cut.
-              </p>
-              <div className="mt-2.5 flex gap-2">
-                {[150, 200].map((b) => (
-                  <Btn key={b} kind="subtle" className="flex-1 !py-2"
-                    onClick={() => update((d) => { d.settings.trainingDayKcalBonus = b as 150 | 200 })}>
-                    +{b} kcal
+            {advice === 'step' && step && (
+              <Card className="border-accent/40">
+                <p className="text-[13px] font-bold text-accent-soft">What the scale is actually doing</p>
+                <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
+                  {returningCopy({ allowed: true, returningBecauseWorse: step.returningBecauseWorse, declines: 0 })}{step.returningBecauseWorse ? ' ' : ''}
+                  {stepCopy(step)}
+                </p>
+                {/* Two buttons now. The second one used to be impossible:
+                    there was nowhere to record a no, so it would have set
+                    the number to what it already was and the card would
+                    have come straight back. The ledger fixed that. */}
+                <div className="mt-2.5 flex gap-2">
+                  <Btn kind="subtle" className="flex-1 !py-2"
+                    onClick={() => update((d) => {
+                      const gap = d.plan.nutrition.kcalTraining - d.plan.nutrition.kcalRest
+                      d.plan.nutrition.kcalTraining = step.toKcal
+                      d.plan.nutrition.kcalRest = Math.max(MIN_KCAL_REST, step.toKcal - gap)
+                      appendDecision(d, stepDecision(step, 'accepted', today, d.decisions.length))
+                    })}>
+                    Move to {step.toKcal}
                   </Btn>
-                ))}
-              </div>
-            </Card>
-          )}
+                  <Btn kind="subtle" className="flex-1 !py-2"
+                    onClick={() => update((d) => {
+                      appendDecision(d, stepDecision(step, 'declined', today, d.decisions.length))
+                    })}>
+                    Not now
+                  </Btn>
+                </div>
+              </Card>
+            )}
 
-          {/* Skipped meal setup during onboarding? Do it here, anytime. */}
-          {mealPlan.templates.length === 0 && (
-            <button
-              onClick={() => setSetupOpen(true)}
-              className="w-full rounded-2xl border border-accent/35 bg-accent/8 px-4 py-3.5 text-left active:bg-accent/15"
-            >
-              <span className="block text-[13.5px] font-extrabold text-accent-soft">
-                No meal plan yet. Build one in 20 seconds
-              </span>
-              <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-dim">
-                How many meals a day, how you eat (vegetarian and vegan covered). The coach does the math.
-                Or skip it and just log, the rings work either way.
-              </span>
-            </button>
-          )}
+
+            {advice === 'recheck' && recheck && (
+              <Card className="border-accent/40">
+                <p className="text-[13px] font-bold text-accent-soft">
+                  {recheck.athleteSet ? 'Worth another look' : 'Your target was set before this'}
+                </p>
+                <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
+                  {learnedCopy(recheck.learned, recheck.athleteSet)} On what I know now your training days come out at{' '}
+                  {recheck.suggested.kcalTraining} kcal, not {recheck.current.kcalTraining}. Your call.
+                </p>
+                <div className="mt-2.5 flex gap-2">
+                  <Btn kind="subtle" className="flex-1 !py-2"
+                    onClick={() => update((d) => {
+                      const next = applyRecheck(d, today)
+                      if (!next) return
+                      d.plan.nutrition = next.nutrition
+                      d.plan.nutritionBasis = next.nutritionBasis
+                      appendDecision(d, recheckDecision(recheck, 'accepted', today, d.decisions.length))
+                    })}>
+                    Use {recheck.suggested.kcalTraining}
+                  </Btn>
+                  <Btn kind="subtle" className="flex-1 !py-2"
+                    onClick={() => update((d) => {
+                      d.plan.nutritionBasis = recheck.basis
+                      appendDecision(d, recheckDecision(recheck, 'declined', today, d.decisions.length))
+                    })}>
+                    Keep {recheck.current.kcalTraining}
+                  </Btn>
+                </div>
+              </Card>
+            )}
+
+            {advice === 'bump' && bump && (
+              <Card className="border-gold/40">
+                <p className="text-[13px] font-bold text-gold">Check-in rule triggered</p>
+                <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
+                  Strength up {bump.strengthGainPct}% while the scale moved {bump.weightChangeLb} lb over 3+
+                  weeks. The plan says: add 150–200 kcal to training days. Recomp is slow, don't panic-cut.
+                </p>
+                <div className="mt-2.5 flex gap-2">
+                  {[150, 200].map((b) => (
+                    <Btn key={b} kind="subtle" className="flex-1 !py-2"
+                      onClick={() => update((d) => { d.settings.trainingDayKcalBonus = b as 150 | 200 })}>
+                      +{b} kcal
+                    </Btn>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Skipped meal setup during onboarding? Do it here, anytime. */}
+            {mealPlan.templates.length === 0 && (
+              <button
+                onClick={() => setSetupOpen(true)}
+                className="w-full rounded-2xl border border-accent/35 bg-accent/8 px-4 py-3.5 text-left active:bg-accent/15"
+              >
+                <span className="block text-[13.5px] font-extrabold text-accent-soft">
+                  No meal plan yet. Build one in 20 seconds
+                </span>
+                <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-dim">
+                  How many meals a day, how you eat (vegetarian and vegan covered). The coach does the math.
+                  Or skip it and just log, the rings work either way.
+                </span>
+              </button>
+            )}
+          </div>
 
           {/* THE action on this screen */}
           <Btn className="w-full py-4 text-[15px]" onClick={() => setLogOpen(true)}>
@@ -339,48 +355,51 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
               </div>
             ))}
             {!day?.entries.length && (
-              <p className="px-4 py-4 text-center text-[12.5px] font-bold text-ink-faint">
+              <p className="px-1 py-4 text-center text-[12.5px] font-bold text-ink-faint">
                 Nothing logged yet. The button above covers the whole day in a few taps.
               </p>
             )}
-          </div>
 
-          {/* Supplements, daily tick-off */}
-          {mealPlan.supplements.length > 0 && (
-            <>
-              <SectionTitle
-                right={
-                  <button onClick={() => setStackOpen(true)} className="text-[11px] font-bold text-accent underline">
+            {/* Supplements, daily tick-off. What you took today is part of
+                what you ate today, so it closes the same list rather than
+                opening a section of its own. */}
+            {mealPlan.supplements.length > 0 && (
+              <div className="border-t-2 border-edge-soft pt-3">
+                <div className="mb-2 flex items-baseline justify-between">
+                  <span className="eyebrow text-ink-faint">Supplements</span>
+                  <button onClick={() => setStackOpen(true)} className="press text-[11px] font-bold text-accent underline">
                     edit stack
                   </button>
-                }
-              >
-                Supplements
-              </SectionTitle>
-              <div className="grid grid-cols-2 gap-2">
-                {mealPlan.supplements.map((s) => {
-                  const on = day?.supplements[s.id] ?? false
-                  const rec = s.source === 'app' ? supplementRecord(s.id) : undefined
-                  const name = rec?.name ?? s.name ?? s.id
-                  const detail = rec
-                    ? [rec.dose.display, rec.when].filter(Boolean).join(' · ')
-                    : [s.dose, s.when].filter(Boolean).join(' · ')
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => toggleSupplement(date, s.id)}
-                      className={`rounded-xl border p-3 text-left ${on ? 'border-lime/40 bg-lime/8' : 'border-edge bg-surface-2'}`}
-                    >
-                      <div className={`text-[12.5px] font-bold ${on ? 'text-lime' : 'text-ink'}`}>
-                        {on ? '✓ ' : ''}{name}
-                      </div>
-                      <div className="text-[10.5px] text-ink-faint">{detail}</div>
-                    </button>
-                  )
-                })}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {mealPlan.supplements.map((s) => {
+                    const on = day?.supplements[s.id] ?? false
+                    const rec = s.source === 'app' ? supplementRecord(s.id) : undefined
+                    const name = rec?.name ?? s.name ?? s.id
+                    const detail = rec
+                      ? [rec.dose.display, rec.when].filter(Boolean).join(' · ')
+                      : [s.dose, s.when].filter(Boolean).join(' · ')
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => toggleSupplement(date, s.id)}
+                        className={`press-down rounded-xl border-2 p-3 text-left ${
+                          on
+                            ? 'border-[var(--lip-lime)] bg-surface-2 [--lip:var(--lip-lime)]'
+                            : 'border-edge bg-surface-2 [--lip:var(--lip-quiet)]'
+                        }`}
+                      >
+                        <div className={`text-[12.5px] font-black ${on ? 'text-lime' : 'text-ink'}`}>
+                          {on ? '✓ ' : ''}{name}
+                        </div>
+                        <div className="mt-px text-[10.5px] font-bold text-ink-faint">{detail}</div>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </>
       )}
 

@@ -48,3 +48,32 @@ export async function openRecord(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Progress', exact: true }).click()
   await page.getByRole('button', { name: 'Record', exact: true }).click()
 }
+
+/**
+ * The generator onboarding walk, start to Week 1.
+ *
+ * Six specs had their own copy of these twenty clicks. It is exactly the
+ * kind of walk a redesign changes, which is the rule for putting
+ * something in this file.
+ */
+export async function onboardGenerated(page: Page): Promise<void> {
+  await page.getByRole('button', { name: "Let's get started" }).click()
+  await page.locator('input').first().fill('Naod')
+  await page.getByRole('button', { name: 'Male', exact: true }).click()
+  await page.getByPlaceholder('Age').fill('30')
+  await page.getByLabel('Height').fill('510')
+  await page.getByLabel('Weight').fill('180')
+  await page.getByRole('button', { name: 'Next: the goal' }).click()
+  await page.getByText('Jump higher').click()
+  await page.getByPlaceholder(/before my wedding/).fill('by June')
+  await page.getByRole('button', { name: 'Next: a few questions' }).click()
+  await page.getByRole('button', { name: 'Next: my week' }).click()
+  await page.getByRole('button', { name: '6 days' }).click()
+  await page.getByRole('button', { name: 'Next: my gear' }).click()
+  await page.getByText('Full gym').click()
+  await page.getByRole('button', { name: 'Next: experience' }).click()
+  await page.getByRole('button', { name: 'Next: food' }).click()
+  await page.getByRole('button', { name: 'Build my plan' }).click()
+  await page.getByRole('button', { name: 'Skip' }).click()
+  await page.getByRole('button', { name: 'Start Week 1' }).click()
+}

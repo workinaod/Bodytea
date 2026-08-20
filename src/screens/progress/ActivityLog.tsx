@@ -4,7 +4,7 @@ import { formatShort } from '../../engine/calendar'
 import { avgMph, fmtDuration, fmtPace, weeklyMiles } from '../../engine/runs'
 import { intensityLabel } from '../../engine/intensity'
 import { intensityTrend, sportSummary, sportTotals, type ActivityRollup } from '../../engine/activityStats'
-import { Card, SectionTitle } from '../../components/ui'
+import { Tile } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { SimpleLine } from '../../components/charts'
 import { RunReplay } from '../../components/RunReplay'
@@ -21,6 +21,11 @@ import { RunReplay } from '../../components/RunReplay'
 // graded out. "You showed up" was the only question the log
 // could answer before. This one answers "how hard, and is that
 // changing".
+//
+// ONE tile. It used to be up to five top-level blocks (two
+// section titles, two cards and a list) stacked under the
+// charts, which is why Progress read as a document. Conditioning
+// is one subject, so it is one object, with rules inside it.
 // ============================================================
 
 /** A month is long enough to have a shape and short enough to still be you. */
@@ -42,25 +47,26 @@ export function ActivityLog({ data, today }: { data: AppData; today: ISODate }) 
 
   return (
     <>
-      {rows.length > 0 && (
-        <>
-          <SectionTitle>Sport, last 30 days</SectionTitle>
-          <Card>
+      <Tile>
+        <div className="eyebrow text-ink-faint">Conditioning · last 30 days</div>
+
+        {rows.length > 0 && (
+          <>
             {/* Two big numbers on one row, everything else on the caption
                 under them. Stacking the session count beside the clock
                 wrapped at 390px and dropped "sessions" onto the calories. */}
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="num text-[26px] font-bold leading-none">{hours(totals.minutes)}</span>
+            <div className="mt-2 flex items-baseline justify-between gap-3">
+              <span className="num text-[26px] font-black leading-none">{hours(totals.minutes)}</span>
               {totals.kcal > 0 && (
                 <span className="shrink-0">
-                  <span className="num text-[20px] font-bold leading-none">
+                  <span className="num text-[20px] font-black leading-none">
                     {totals.kcal.toLocaleString()}
                   </span>
                   <span className="ml-1 text-[11px] font-bold text-ink-faint">cal</span>
                 </span>
               )}
             </div>
-            <p className="mt-1.5 text-[11.5px] font-semibold text-ink-faint">
+            <p className="mt-1.5 text-[11.5px] font-bold text-ink-faint">
               {[
                 `${totals.sessions} ${totals.sessions === 1 ? 'session' : 'sessions'}`,
                 totals.steps > 0 ? `${totals.steps.toLocaleString()} steps` : null,
@@ -70,14 +76,14 @@ export function ActivityLog({ data, today }: { data: AppData; today: ISODate }) 
                 .join(' · ')}
             </p>
 
-            <div className="mt-3 space-y-2.5 border-t border-white/[0.06] pt-3">
+            <div className="mt-3 space-y-2.5 border-t-2 border-edge-soft pt-3">
               {rows.map((r) => (
                 <Row key={r.activityId} row={r} />
               ))}
             </div>
 
             {trend && (
-              <p className="mt-3 border-t border-white/[0.06] pt-2.5 text-[11.5px] leading-snug text-ink-dim">
+              <p className="mt-3 border-t-2 border-edge-soft pt-2.5 text-[11.5px] leading-snug text-ink-dim">
                 {trend.direction === 'up'
                   ? 'Your tracked sessions are grading harder than the month before.'
                   : trend.direction === 'down'
@@ -85,38 +91,39 @@ export function ActivityLog({ data, today }: { data: AppData; today: ISODate }) 
                     : 'Intensity is holding steady against the month before.'}
               </p>
             )}
-          </Card>
-        </>
-      )}
+          </>
+        )}
 
-      {data.runs.length > 0 && (
-        <>
-          <SectionTitle>Runs &amp; rides</SectionTitle>
-          <Card>
-            <SimpleLine points={weeklyMiles(data, today)} unit=" mi" color="var(--color-accent)" />
-            <p className="mt-1 text-[11px] font-semibold text-ink-faint">Weekly miles, GPS-tracked.</p>
-          </Card>
-          <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
-            {[...data.runs]
-              .reverse()
-              .slice(0, 8)
-              .map((r, i) => (
-                <div
-                  key={r.id}
-                  onClick={() => setOpenRun(r)}
-                  className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 active:bg-surface-2 ${
-                    i > 0 ? 'border-t border-white/[0.05]' : ''
-                  }`}
-                >
-                  <span className="shrink-0 text-[13px] font-bold">
-                    {runLabel(r)} · {formatShort(r.date)}
-                  </span>
-                  <span className="text-right font-mono text-[12px] text-ink-dim">{runSummary(r)}</span>
-                </div>
-              ))}
+        {data.runs.length > 0 && (
+          <div className={rows.length > 0 ? 'mt-3 border-t-2 border-edge-soft pt-3' : 'mt-2'}>
+            <div className="eyebrow text-ink-faint">Runs &amp; rides</div>
+            <div className="mt-2">
+              <SimpleLine points={weeklyMiles(data, today)} unit=" mi" color="var(--color-accent)" />
+            </div>
+            <p className="mt-1 text-[11px] font-bold text-ink-faint">Weekly miles, GPS-tracked.</p>
+            <div className="mt-2.5">
+              {[...data.runs]
+                .reverse()
+                .slice(0, 8)
+                .map((r, i) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setOpenRun(r)}
+                    className={`press flex w-full items-center justify-between gap-3 py-2.5 text-left ${
+                      i > 0 ? 'border-t-2 border-edge-soft' : ''
+                    }`}
+                  >
+                    <span className="shrink-0 text-[13px] font-extrabold">
+                      {runLabel(r)} · {formatShort(r.date)}
+                    </span>
+                    <span className="num text-right text-[12px] font-bold text-ink-dim">{runSummary(r)}</span>
+                  </button>
+                ))}
+            </div>
           </div>
-        </>
-      )}
+        )}
+      </Tile>
 
       <Sheet
         open={!!openRun}
@@ -141,7 +148,7 @@ export function ActivityLog({ data, today }: { data: AppData; today: ISODate }) 
             </div>
             {openRun.points.length > 1 && <RunReplay log={openRun} height={240} />}
             {openRun.splits.length > 0 && (
-              <div className="overflow-hidden rounded-2xl bg-surface-2 border-2 border-edge">
+              <div className="overflow-hidden rounded-2xl border-2 border-edge bg-surface-2">
                 {openRun.splits.map((s, i) => (
                   <div
                     key={i}

@@ -12,8 +12,11 @@ import { getExercise } from '../plan/exercises'
 // even when genetics carried the numbers.
 // ============================================================
 
+/** The three fixed distances. Named so the screens can pass one around. */
+export type ReviewMarkId = '3mo' | '6mo' | '1yr'
+
 export interface ReviewMark {
-  id: '3mo' | '6mo' | '1yr'
+  id: ReviewMarkId
   days: number
   label: string
 }

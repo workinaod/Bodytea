@@ -132,6 +132,10 @@ export function TodayScreen({
   // the made-up day's title on the tile, so the screen read "this is your
   // workout, and it is done" over a session nobody had started.
   const heroDay = planOwed.length > 0 && !inProgress ? day : viewDay
+  // The day's own work is on the record and nothing is outstanding. The
+  // completion tile becomes the mission then, so the mission tile stands
+  // down rather than printing the same title twice.
+  const banked = !!finished && planOwed.length === 0
   // The one day that can be started: the live one, still owing the plan's
   // work. Gated on what is OWED rather than on whether a session exists,
   // because a make-up or an off-plan workout takes the day's session slot
@@ -222,15 +226,19 @@ export function TodayScreen({
 
   return (
     <div className="space-y-3">
-      <ScreenHeader
-        title={today ? 'Today' : formatDayLabel(date)}
-        onTitleTap={() => setSelected(null)}
-        left={<DayArrow dir="prev" onClick={() => setSelected(addDaysISO(date, -1))} />}
-        right={<DayArrow dir="next" onClick={() => setSelected(addDaysISO(date, 1))} />}
-        sub={
-          !today && <div className="text-[10px] font-bold text-accent">tap to jump to today</div>
-        }
-      />
+      {/* The live day carries no header. Its week path is the day picker,
+          and a header row whose only job was a pair of arrows is a block
+          spent on navigation the screen already has. Browsing history keeps
+          the header, because there the date IS the subject. */}
+      {!today && (
+        <ScreenHeader
+          title={formatDayLabel(date)}
+          onTitleTap={() => setSelected(null)}
+          left={<DayArrow dir="prev" onClick={() => setSelected(addDaysISO(date, -1))} />}
+          right={<DayArrow dir="next" onClick={() => setSelected(addDaysISO(date, 1))} />}
+          sub={<div className="text-[10px] font-bold text-accent">tap to jump to today</div>}
+        />
+      )}
 
       {today && (
         <TodayIdentityRow
@@ -238,155 +246,170 @@ export function TodayScreen({
           today={homeDate}
           onOpenProgress={onOpenProgress}
           onOpenProfile={onOpenProfile}
+          onPickDay={(d) => setSelected(d === homeDate ? null : d)}
         />
-      )}
-
-      {graceDate && date === graceDate && (
-        <Tile tone="ice" className="!py-3">
-          <div className="eyebrow text-cyan">After midnight</div>
-          <p className="mt-1 text-[12px] font-bold leading-snug text-ink-dim">
-            {session
-              ? `Still finishing yesterday's session, it logs under ${formatDayLabel(graceDate)}.`
-              : `${formatDayLabel(graceDate)}'s session is still open until 3 AM. Start now and it logs under ${formatDayLabel(graceDate)}.`}
-          </p>
-        </Tile>
       )}
 
       {/* The mission carries its own button now. A CTA that lives outside
           the tile it belongs to is a second object, and the concept's whole
-          move here is that there is one object and it has a handle. */}
-      <TodayHero
-        data={data}
-        day={heroDay}
-        session={session}
-        onOpenBrief={() => setBriefOpen(true)}
-        cta={
-          canStart
-            ? {
-                label: day.cns
-                  ? 'Readiness check → start'
-                  : session
-                    ? "Start today's session"
-                    : 'Start session',
-                onStart: handleStart,
-              }
-            : undefined
-        }
-        onCantTrain={canStart ? () => setSkipOpen(true) : undefined}
-      />
-
-      {day.banners.map((b) => (
-        <BannerRow key={b.id} banner={b} />
-      ))}
-
-      <AdaptProposals date={date} />
-
-      {/* Trimmed-day escape hatch: the meeting got cancelled after all */}
-      {!session && data.dayLoad[date] === 'trimmed' && (
-        <button
-          onClick={() => restoreToday(date)}
-          className="press-down w-full rounded-[14px] border-2 border-edge bg-surface px-3.5 py-2.5 text-[12.5px] font-black text-ink-dim [--lip:var(--lip-quiet)]"
-        >
-          Day freed up? Restore the full session
-        </button>
+          move here is that there is one object and it has a handle.
+          Once the day is banked the volt tile below becomes the mission,
+          so this one steps aside rather than repeating the title. */}
+      {!banked && (
+        <TodayHero
+          data={data}
+          day={heroDay}
+          session={session}
+          onOpenBrief={() => setBriefOpen(true)}
+          cta={
+            canStart
+              ? {
+                  label: day.cns
+                    ? 'Readiness check → start'
+                    : session
+                      ? "Start today's session"
+                      : 'Start session',
+                  onStart: handleStart,
+                }
+              : undefined
+          }
+          onCantTrain={canStart ? () => setSkipOpen(true) : undefined}
+        />
       )}
 
-      {/* One-time reminder opt-in, free push, hard-capped at two a day */}
-      {today &&
-        !data.settings.remindersEnabled &&
-        !remindNudgeGone &&
-        !['unsupported', 'denied'].includes(notificationSupport()) && (
+      {/* ONE column for everything the engine already says, per screen law
+          §1 block 5. These were nine top-level siblings, which is how a
+          screen that should read as five objects came out reading as
+          twelve. The wrapper collapses when the engine has nothing. */}
+      <div className="space-y-3 empty:hidden">
+        {day.banners.map((b) => (
+          <BannerRow key={b.id} banner={b} />
+        ))}
+
+        <AdaptProposals date={date} />
+
+        {/* Still inside yesterday's session after midnight. */}
+        {graceDate && date === graceDate && (
           <Tile tone="ice" className="!py-3">
-            <div className="eyebrow text-cyan">Reminders</div>
-            <div className="mt-0.5 text-[13.5px] font-black">Want workout reminders?</div>
-            <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
-              Two a day max, only while a session is unfinished. Free, on this phone.
+            <div className="eyebrow text-cyan">After midnight</div>
+            <p className="mt-1 text-[12px] font-bold leading-snug text-ink-dim">
+              {session
+                ? `Still finishing yesterday's session, it logs under ${formatDayLabel(graceDate)}.`
+                : `${formatDayLabel(graceDate)}'s session is still open until 3 AM. Start now and it logs under ${formatDayLabel(graceDate)}.`}
             </p>
-            <div className="mt-2.5 flex gap-2">
-              <Btn
-                className="flex-1 py-2.5"
-                disabled={remindBusy}
-                onClick={() => {
-                  setRemindBusy(true)
-                  void enableReminders().then((ok) => {
-                    setRemindBusy(false)
-                    if (!ok) {
-                      try {
-                        localStorage.setItem('bodytea.remnudge', '1')
-                      } catch {
-                        /* ignore */
-                      }
-                      setRemindNudgeGone(true)
-                    }
-                  })
-                }}
-              >
-                Turn them on
-              </Btn>
-              <Btn
-                kind="ghost"
-                className="flex-1 py-2.5"
-                onClick={() => {
-                  try {
-                    localStorage.setItem('bodytea.remnudge', '1')
-                  } catch {
-                    /* ignore */
-                  }
-                  setRemindNudgeGone(true)
-                }}
-              >
-                No thanks
-              </Btn>
-            </div>
           </Tile>
         )}
 
-      <TodayCardio
-        data={data}
-        date={date}
-        day={day}
-        today={today}
-        realToday={realToday}
-        finished={!!finished}
-        hasSession={!!session}
-        onOpenCardio={() => setCardioOpen(true)}
-      />
+        {/* Trimmed-day escape hatch: the meeting got cancelled after all */}
+        {!session && data.dayLoad[date] === 'trimmed' && (
+          <button
+            onClick={() => restoreToday(date)}
+            className="press-down w-full rounded-[14px] border-2 border-edge bg-surface px-3.5 py-2.5 text-[12.5px] font-black text-ink-dim [--lip:var(--lip-quiet)]"
+          >
+            Day freed up? Restore the full session
+          </button>
+        )}
 
-      {/* Body states */}
-      {day.kind === 'rest' && !session && (
-        <Tile>
-          <p className="text-[13px] leading-relaxed text-ink-dim">{restCard}</p>
-        </Tile>
-      )}
+        {/* One-time reminder opt-in, free push, hard-capped at two a day */}
+        {today &&
+          !data.settings.remindersEnabled &&
+          !remindNudgeGone &&
+          !['unsupported', 'denied'].includes(notificationSupport()) && (
+            <Tile tone="ice" className="!py-3">
+              <div className="eyebrow text-cyan">Reminders</div>
+              <div className="mt-0.5 text-[13.5px] font-black">Want workout reminders?</div>
+              <p className="mt-0.5 text-[12px] leading-snug text-ink-dim">
+                Two a day max, only while a session is unfinished. Free, on this phone.
+              </p>
+              <div className="mt-2.5 flex gap-2">
+                {/* A nudge, not a second mission. A full heat button here
+                    weighs the same as Start session two blocks up. */}
+                <Btn
+                  kind="subtle"
+                  className="flex-1 !py-2"
+                  disabled={remindBusy}
+                  onClick={() => {
+                    setRemindBusy(true)
+                    void enableReminders().then((ok) => {
+                      setRemindBusy(false)
+                      if (!ok) {
+                        try {
+                          localStorage.setItem('bodytea.remnudge', '1')
+                        } catch {
+                          /* ignore */
+                        }
+                        setRemindNudgeGone(true)
+                      }
+                    })
+                  }}
+                >
+                  Turn them on
+                </Btn>
+                <Btn
+                  kind="ghost"
+                  className="flex-1 !py-2"
+                  onClick={() => {
+                    try {
+                      localStorage.setItem('bodytea.remnudge', '1')
+                    } catch {
+                      /* ignore */
+                    }
+                    setRemindNudgeGone(true)
+                  }}
+                >
+                  No thanks
+                </Btn>
+              </div>
+            </Tile>
+          )}
 
-      {/* A week, month, quarter or year just closed and has not been
-          looked at yet. Offered, never forced. */}
-      <ReviewOffer today={date} />
-
-      {/* A miss with an open window is coaching about THIS week, so it
-          stays here. The rest of the off-plan arsenal lives in Train. */}
-      <MakeupCard
-        date={date}
-        active={stillOpenForLogging(date, homeDate, new Date())}
-        hasSession={!!session}
-        dayKind={day.kind}
-        onRunDay={runDay}
-        onOpenTrain={onOpenTrain}
-      />
-
-      {/* Already training today and did something else as well. Nothing
-          inside the session view can add an exercise, which is how an
-          athlete ended up with nowhere to put the next thing. */}
-      {!!session && stillOpenForLogging(date, homeDate, new Date()) && (
-        <AddMoreWork
+        <TodayCardio
+          data={data}
           date={date}
-          onLive={() => setViewMode('list')}
-          onLogged={(d) => {
-            setViewMode('list')
-            if (d) setDebrief({ data: d })
-          }}
+          day={day}
+          today={today}
+          realToday={realToday}
+          finished={!!finished}
+          hasSession={!!session}
+          onOpenCardio={() => setCardioOpen(true)}
         />
-      )}
+
+        {/* Body states */}
+        {day.kind === 'rest' && !session && (
+          <Tile>
+            <p className="text-[13px] leading-relaxed text-ink-dim">{restCard}</p>
+          </Tile>
+        )}
+
+        {/* A week, month, quarter or year just closed and has not been
+            looked at yet. Offered, never forced. */}
+        <ReviewOffer today={date} />
+
+        {/* A miss with an open window is coaching about THIS week, so it
+            stays here. The rest of the off-plan arsenal lives in Train. */}
+        <MakeupCard
+          date={date}
+          active={stillOpenForLogging(date, homeDate, new Date())}
+          hasSession={!!session}
+          dayKind={day.kind}
+          onRunDay={runDay}
+          onOpenTrain={onOpenTrain}
+        />
+
+        {/* Already training today and did something else as well. Nothing
+            inside the session view can add an exercise, which is how an
+            athlete ended up with nowhere to put the next thing. */}
+        {!!session && stillOpenForLogging(date, homeDate, new Date()) && (
+          <AddMoreWork
+            date={date}
+            onLive={() => setViewMode('list')}
+            onLogged={(d) => {
+              setViewMode('list')
+              if (d) setDebrief({ data: d })
+            }}
+          />
+        )}
+      </div>
 
       {today && <TodayNextUp data={data} today={homeDate} onOpenBadges={onOpenProfile} />}
 
