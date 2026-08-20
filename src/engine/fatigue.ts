@@ -172,7 +172,7 @@ export const EXPOSURES_BEFORE_STALLED = 6
  * twice before this existed. Two copies of a sentence drift, and a coach
  * that says almost the same thing in two places reads as two coaches.
  */
-const STALLED_LINE = `${EXPOSURES_BEFORE_STALLED} sessions on this since it was flagged and it has not come back. Going lighter was not the answer, so the reps start again at the bottom of the range and climb from there.`
+const STALLED_LINE = `${EXPOSURES_BEFORE_STALLED} sessions lighter and it has not come back. Reps restart at the bottom of the range.`
 
 interface FlagState {
   /** Short sessions standing behind the flag. */
@@ -393,7 +393,7 @@ export function flagNotes(data: AppData, today: ISODate, present: Set<string>): 
   if (easing.length) {
     const many = easing.length > 1
     out.push(
-      `${wordList(easing)} ${many ? 'open' : 'opens'} lighter today. You came up short on ${many ? 'them' : 'it'} recently, and two clean sessions in a row puts ${many ? 'each' : 'it'} back to normal.`,
+      `${wordList(easing)} ${many ? 'open' : 'opens'} lighter today. Two clean sessions in a row and ${many ? 'each is' : 'it is'} back to normal.`,
     )
   }
   return out

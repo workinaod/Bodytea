@@ -247,5 +247,5 @@ test('a movement that keeps dying says so on the day', async ({ page }) => {
   })
   await boot(page, state)
   await expect(page.getByText(/bottom of the range/)).toBeVisible()
-  await expect(page.getByText(/Flat DB Press: 6 sessions on this/)).toBeVisible()
+  await expect(page.getByText(/Flat DB Press: 6 sessions lighter/)).toBeVisible()
 })

@@ -73,7 +73,7 @@ describe('rebound is the test', () => {
     settleDeloads(d, TODAY)
     const row = weekRow(d)
     expect(row.verdict).toBe('no-change')
-    expect(deloadVerdictCopy(row)).toContain('not fatigue')
+    expect(deloadVerdictCopy(row)).toContain('fatigue is not the problem')
   })
 
   it('and when the lifts did not come back at all', () => {
@@ -83,7 +83,7 @@ describe('rebound is the test', () => {
     settleDeloads(d, TODAY)
     const row = weekRow(d)
     expect(row.verdict).toBe('worse')
-    expect(deloadVerdictCopy(row)).toContain('fresher, not flatter')
+    expect(deloadVerdictCopy(row)).toContain('still have not come back')
   })
 
   it('does not call the same lift twice a rebound', () => {

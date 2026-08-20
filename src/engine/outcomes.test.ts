@@ -238,7 +238,7 @@ describe('the app does not argue with itself', () => {
     // directions.
     const d = backfired()
     expect(d.decisions[0].verdict).toBe('worse')
-    expect(verdictCopy(d.decisions[0])).toContain('did not help')
+    expect(verdictCopy(d.decisions[0])).toContain('wrong way')
     expect(calorieStep(d, TODAY)).toBeNull()
   })
 

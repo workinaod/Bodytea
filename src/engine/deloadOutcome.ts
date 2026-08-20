@@ -132,11 +132,11 @@ export function deloadVerdictCopy(row: DecisionRecord): string | null {
   if (row.type !== DELOAD_TYPE || !row.verdict) return null
   switch (row.verdict) {
     case 'worked':
-      return `Three weeks after your last deload, your best lift was up on anything from the three weeks before it. That week off the gas did its job.`
+      return `Three weeks on from your last deload, your best lift is up. It did its job.`
     case 'no-change':
-      return `Three weeks either side of your last deload, your best lift did not move. One is not a pattern, but if the next one does the same, what is holding you back is not fatigue.`
+      return `Three weeks either side of your last deload, nothing moved. If the next one does the same, fatigue is not the problem.`
     case 'worse':
-      return `Three weeks after your last deload, your best lift still had not come back up. Worth watching, because a deload is meant to leave you fresher, not flatter.`
+      return `Three weeks on from your last deload, your lifts still have not come back. Worth watching.`
     default:
       return null
   }

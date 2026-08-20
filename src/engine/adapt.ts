@@ -268,13 +268,13 @@ export function planAdjustments(
   if (alsoStuck.length) {
     const joints = jointList(alsoStuck.map(([j]) => j))
     const ids = [...new Set(alsoStuck.flatMap(([, list]) => list))]
-    const many = ids.length > 1
+
     out.push({
       kind: 'reduce-load',
       automatic: false,
       exerciseId: ids[0],
       allIds: ids,
-      because: `Your ${joints} ${alsoStuck.length > 1 ? 'have' : 'has'} been complaining for over two weeks now. I said that is where an app runs out of road, and it is: swapping the movement did not settle it and swapping it again will not either. Keep ${many ? 'them' : 'it'} in at a lighter weight and stop at the first sharp rep. Two weeks of this is a physio question, not an app one.`,
+      because: `Your ${joints} ${alsoStuck.length > 1 ? 'have' : 'has'} been sore two weeks running. Swapping did not fix it. Stay light, stop at the first sharp rep, and see a physio.`,
     })
   }
 
@@ -296,7 +296,7 @@ export function planAdjustments(
         automatic: true,
         exerciseId: ids[0],
         allIds: ids,
-        because: `You told me about your ${j}, and every version of ${ids.length > 1 ? 'these movements' : 'this movement'} loads it. There is no swap that trains the pattern and spares the joint, so ${ids.length > 1 ? 'they are' : 'it is'} in at a lighter weight rather than out. Stop the set at the first sharp one rather than at the rep count.`,
+        because: `Your ${j}: nothing here trains the pattern without loading it. ${ids.length > 1 ? 'They stay' : 'It stays'} in, lighter. Stop at the first sharp rep.`,
       })
       continue
     }
@@ -304,7 +304,7 @@ export function planAdjustments(
       kind: 'reduce-load',
       automatic: false,
       exerciseId: ids[0],
-      because: `Your ${j} keeps getting flagged, and every version of ${ids.length > 1 ? 'these movements' : 'this movement'} loads it. There is no swap that trains the pattern and spares the joint. So keep ${ids.length > 1 ? 'them' : 'it'} in and take the weight down instead: roughly a third off, stop the set at the first sharp one rather than at the rep count. If it is still there in two weeks, that is a question for a physio and not for an app.`,
+      because: `Your ${j} keeps getting flagged and nothing spares it. Keep ${ids.length > 1 ? 'them' : 'it'} in, a third lighter, stop at the first sharp rep. Still sore in two weeks, see a physio.`,
     })
   }
 

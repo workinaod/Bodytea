@@ -102,3 +102,86 @@ describe('user-visible copy', () => {
     expect(seen.map((l) => l.line.includes('—'))).toEqual([true])
   })
 })
+
+// ============================================================
+// How much the coach is allowed to say at once.
+//
+// Owner, 2026-08-20, looking at a Today screen with two blue paragraphs
+// stacked on it: "Why do generate paragraphs or super long sentences to
+// explain stuff. It makes the app way too text heavy."
+//
+// He is right, and it was already a standing constraint ("casual,
+// natural, SHORT") that drifted because every slice added one more card
+// and each one read fine on its own. The worst were 72, 64 and 49 words,
+// and three I shipped that same day were 35, 34 and 28. Nobody reads
+// that on a phone between sets.
+//
+// Scoped to the CARD surfaces, because engine/ writes the lines that
+// land on Today, Meals and Progress. Exercise guides and the plan
+// booklet are deliberately out of scope: somebody who taps into a
+// movement guide has asked for the explanation.
+//
+// Same shape as the allowlists in structure.test.ts. The gate is live
+// today rather than after a big-bang rewrite, and it can only shrink.
+// ============================================================
+
+/** Words in one line of coach-facing copy. Past this, cut it. */
+const MAX_WORDS = 30
+
+/**
+ * Already over the line when the rule landed, each on a surface worth
+ * reading in place before rewriting: analyze.ts is the plan booklet read
+ * once at signup, reviewStory is the periodic review, messages.ts is the
+ * fallback nudge. None may grow and nothing new may join them.
+ */
+const LONG_ALLOWED = new Set([
+  'engine/adapt.ts: Also worth not chasing a new number today. Sa',
+  'plan/analyze.ts: Maintenance mode: the bar is showing up, not ',
+  'plan/messages.ts: Your own plan says it: a month of fallback we',
+  'engine/reviewStory.ts: Take a front and a side shot. Same spot, same',
+  'plan/analyze.ts: You credited showing up. Correct. Consistency',
+  'plan/analyze.ts: Your goal is ${goalWord} but nothing in this ',
+  'plan/analyze.ts: Muscle up AND weight down at the same time is',
+  'plan/analyze.ts: You said it yourself: the weight keeps going ',
+  'plan/analyze.ts: Losing weight is won in the kitchen. Your cal',
+  'plan/analyze.ts: Your routine stays yours: nothing here gets r',
+])
+
+/** Where the coach speaks in short form. */
+const CARD_SURFACES = /^(engine\/|plan\/analyze\.ts|plan\/messages\.ts)/
+
+/** A literal that reads like a sentence somebody is shown. */
+const SENTENCE = /[`'"]([A-Z][^`'"\n]{40,})[`'"]/g
+
+function longLines(): { key: string; words: number }[] {
+  const out: { key: string; words: number }[] = []
+  for (const { path, text } of FILES) {
+    if (!CARD_SURFACES.test(path) || /\.test\./.test(path)) continue
+    for (const raw of text.split('\n')) {
+      for (const m of raw.matchAll(SENTENCE)) {
+        const line = m[1]
+        // Not prose unless it actually reads like prose.
+        if (!line.includes('. ') && !line.endsWith('.')) continue
+        const words = line.replace(/\$\{[^}]*\}/g, 'X').split(/\s+/).length
+        // Keyed by its opening rather than its line number, so moving
+        // code around cannot silently empty the allowlist.
+        if (words > MAX_WORDS) out.push({ key: `${path}: ${line.slice(0, 45)}`, words })
+      }
+    }
+  }
+  return out
+}
+
+describe('the coach says it short', () => {
+  it('never ships a new card line longer than a person will read', () => {
+    const fresh = longLines().filter((l) => !LONG_ALLOWED.has(l.key))
+    expect(fresh.map((l) => `${l.words}w ${l.key}`)).toEqual([])
+  })
+
+  it('keeps the allowlist honest: every entry is still over the line', () => {
+    // An entry that has since been shortened comes OFF the list rather
+    // than sitting there making the gate look bigger than it is.
+    const keys = new Set(longLines().map((l) => l.key))
+    expect([...LONG_ALLOWED].filter((k) => !keys.has(k))).toEqual([])
+  })
+})

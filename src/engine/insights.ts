@@ -95,7 +95,7 @@ const RULES: RuleDef[] = [
       return { gain: s.strengthGainPct, change: fmt(s.weightChangeLb) }
     },
     variants: [
-      'Check-in rule triggered: strength up {gain}% but the scale moved just {change} lb over 3+ weeks. The plan says add 150-200 kcal to training days. Do it in Settings. This is fuel, not cheating.',
+      'Strength up {gain}% but the scale barely moved in 3+ weeks. Add 150-200 kcal on training days. That is fuel, not cheating.',
       'Your lifts climbed {gain}% while bodyweight stayed put ({change} lb). Per the plan\'s own rule: bump training days by 150-200 kcal. Recomp is slow; underfueling makes it slower.',
       'Data check: strength +{gain}%, weight {change} lb. The 3-4 week rule says training days get 150-200 more kcal now. The muscle you want has a food bill.',
     ],
@@ -141,7 +141,7 @@ const RULES: RuleDef[] = [
       return null
     },
     variants: [
-      'Protein hit only {hit} of the last 7 days. Training tears muscle down; without the {proteinTarget} g it rebuilds at half speed. The shake + Greek yogurt combo closes 50 g in five minutes, no cooking.',
+      'Protein hit only {hit} of the last 7 days. Without the {proteinTarget} g it rebuilds at half speed. A shake and Greek yogurt closes 50 g.',
       '{hit}/7 on protein this week. Everything you lifted this week rebuilds slower because of it. Front-load tomorrow: eggs + yogurt at breakfast is 45 g before noon.',
       'The weak link this week wasn\'t training, it was {hit}/7 on protein. Fix breakfast and the number fixes itself.',
     ],
@@ -169,7 +169,7 @@ const RULES: RuleDef[] = [
     },
     variants: [
       'Leg strength up {gain}% this month but the vert hasn\'t moved yet. Normal. Strength banks first, elasticity cashes it out. Saturday\'s pogos and approach jumps do the conversion. Do NOT trim them.',
-      'Squat/hip thrust +{gain}%, vert flat. The force is there; the spring is still being built. This is exactly why the plan protects Saturday. The elastic work turns gym strength into air.',
+      'Squat and hip thrust +{gain}%, vert flat. The force is there, the spring is not. That is what Saturday is for.',
       '{gain}% stronger, same jump. For now. The strength arrives weeks before the inches. Keep Saturday quality high and the chart catches up.',
     ],
   },
@@ -209,9 +209,9 @@ const RULES: RuleDef[] = [
       return { weeks }
     },
     variants: [
-      'Week {weeks} reminder from your own plan: the one-foot jump feels WEAKER than two-foot at first. Normal. The elasticity takes weeks, then for many converted jumpers it passes the two-foot number. Don\'t judge it in month one.',
+      'Week {weeks}: the one-foot jump feels WEAKER than two-foot at first. Normal. The elasticity takes weeks. Don\'t judge it in month one.',
       'One-foot plant still mushy in week {weeks}? That\'s the documented curve, not a verdict. Tendon stiffness compounds quietly. Pogos crisp, penultimate step LOW.',
-      'Early-phase check (week {weeks}): one-foot jumping is supposed to feel worse than it will. You keep all your run-up speed once the spring stiffens. The plan literally warned you not to quit in the first month.',
+      'Week {weeks}: one-foot jumping is supposed to feel worse than it will. You keep the run-up speed once the spring stiffens.',
     ],
   },
   {
@@ -367,8 +367,8 @@ const RULES: RuleDef[] = [
     },
     variants: [
       '{done} of {scheduled} sessions over the last month. Not a lecture: {pct}% is enough to hold ground and not quite enough to build on it. If the week is the problem rather than the training, the Week tab moves days around, and a lighter tier still counts.',
-      'The last four weeks came out at {done} of {scheduled}. The sessions you did do are logged and they count. The question worth answering is whether {scheduled} a week was ever the right number, because a smaller plan you finish beats a bigger one you do not.',
-      'You have missed {missed} of the last {scheduled} scheduled sessions. That usually means life changed rather than that you stopped caring. Drop a tier for a week, or move the days: both are in the app and both keep the streak honest.',
+      'Last four weeks: {done} of {scheduled}. Worth asking whether {scheduled} a week was ever the right number. A smaller plan you finish beats a bigger one you do not.',
+      'Missed {missed} of {scheduled} sessions. That usually means life changed, not that you stopped caring. Drop a tier for a week, or move the days.',
     ],
   },
   {

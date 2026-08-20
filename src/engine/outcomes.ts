@@ -239,13 +239,13 @@ export function verdictCopy(row: DecisionRecord): string | null {
   const step = Math.abs(Number(row.evidence.stepKcal ?? 0))
   switch (row.verdict) {
     case 'worked':
-      return `That ${step} kcal change did what it was meant to. Your trend moved the way you wanted it to.`
+      return `That ${step} kcal change did its job. Your trend moved the way you wanted.`
     case 'no-change':
       return `Three weeks on, that ${step} kcal change moved your trend by almost nothing. Worth trying something other than food.`
     case 'worse':
-      return `That ${step} kcal change did not help, and your trend went the other way. Back to where you were is a fair call.`
+      return `That ${step} kcal change went the wrong way. Going back is a fair call.`
     case 'unattributable':
-      return `Too much changed at once to say whether that ${step} kcal move did anything. Not a failure, just not readable.`
+      return `Too much changed at once to read that ${step} kcal move. Not a failure, just not readable.`
     case 'abandoned':
       return null
     default:

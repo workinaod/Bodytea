@@ -99,7 +99,7 @@ describe('what the plan does about it', () => {
     expect(out.find((a) => a.kind === 'substitute')).toBeUndefined()
     const drop = out.find((a) => a.kind === 'reduce-load')
     expect(drop).toBeDefined()
-    expect(drop!.because).toContain('over two weeks')
+    expect(drop!.because).toContain('two weeks running')
     expect(drop!.because).toContain('physio')
   })
 
@@ -134,7 +134,7 @@ describe('it says this once', () => {
     const drops = out.filter((a) => a.kind === 'reduce-load')
     expect(drops).toHaveLength(1)
     expect(drops[0].because).toContain('shoulder and elbow')
-    expect(drops[0].because).toContain('have been complaining')
+    expect(drops[0].because).toContain('have been sore')
   })
 
   it('still reads as one joint when only one is stuck', () => {
@@ -144,8 +144,8 @@ describe('it says this once', () => {
     d.prefs.limitations = [{ label: 'elbow', joints: ['elbow'], since: '2026-01-01' }]
     aching(d, ago(18, 11, 4, 0))
     const out = planAdjustments([ex(PRESS)], adaptContext(d, TODAY, [...GYM] as EquipTag[]))
-    const stuck = out.filter((a) => a.kind === 'reduce-load' && a.because.includes('physio question'))
+    const stuck = out.filter((a) => a.kind === 'reduce-load' && a.because.includes('two weeks running'))
     expect(stuck).toHaveLength(1)
-    expect(stuck[0].because).toContain('Your shoulder has been complaining')
+    expect(stuck[0].because).toContain('Your shoulder has been sore')
   })
 })

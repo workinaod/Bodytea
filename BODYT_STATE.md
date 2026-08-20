@@ -491,6 +491,14 @@ and never whether it appears. Absence of a basis still means silence, but that i
 the pre-existing plans that genuinely have no record of what built them.
 
 ## 6. STANDING CONSTRAINTS (permanent; from the owner)
+- **SHORT. No paragraphs on a card** (owner, 2026-08-20, looking at a Today screen with two
+  blue paragraphs stacked on it: "Why do generate paragraphs or super long sentences to
+  explain stuff. It makes the app way too text heavy."). This was already implied by "casual,
+  natural, SHORT" and it drifted anyway, because every slice adds one more card and each one
+  reads fine on its own. Say the fact and the action, drop the justification. `copy.test.ts`
+  now caps coach-facing lines in `engine/` at 30 words with a shrink-only allowlist, the same
+  shape as the structure allowances. Exercise guides and the plan booklet are out of scope:
+  somebody who taps into a movement guide has asked for the explanation.
 
 - **PHASES RUN IN ORDER (owner, 2026-08-18). Finish one before starting the next.** The
   only legitimate reason to move on is that finishing the current phase DEPENDS on the
@@ -2195,6 +2203,37 @@ the pre-existing plans that genuinely have no record of what built them.
   NEXT: the R3 s9.2 rows nothing has touched yet, in the pack's order: readiness downgrade,
   volume ceiling raise and lower, rest change, schedule change, exercise variation, phase
   promotion. The equipment-substitute default stays blocked on the owner (section 5).
+
+### 2026-08-20 · owner call · the app was too text heavy, and the rule now has a gate
+  Owner, on a screenshot of Today: "Why do generate paragraphs or super long sentences to
+  explain stuff. It makes the app way too text heavy." Right, and it was already a standing
+  constraint. It drifted because each slice adds one card, every card reads fine on its own,
+  and nothing was counting.
+  MEASURED FIRST. The worst card lines were 72, 64 and 49 words, all in adapt.ts, and three I
+  had shipped that same day were 35, 34 and 28. Everything on the card surfaces is now 9 to
+  29, and the one 29 is the joint-pain safety line carrying four separate instructions (why,
+  keep training, how much lighter, when to stop the set, when to escalate), down from 72.
+  ONE THING WAS NOT JUST LENGTH. Cutting the flagged-joint line to "A third off, stop at the
+  first sharp rep" lost "keep it in", which is the half that stops the whole sentence reading
+  as "stop training". adapt.test.ts caught it, which is what that test was written for.
+  THE GATE IS THE DURABLE PART. copy.test.ts already existed for the em-dash rule and is the
+  right home: it now also caps engine/ card copy at 30 words, keyed by the opening of each
+  line rather than by line number so moving code cannot silently empty the allowlist. Ten
+  entries, and a SECOND test that fails if an allowlisted line has since been shortened, so
+  the list cannot sit there making the gate look bigger than it is. Proved both ways: a 47
+  word line fails the gate, and shortening the seven insights.ts cards forced them off the
+  allowlist rather than letting them linger.
+  Trimmed in this pass: three adapt.ts joint lines, the three deload verdicts, the stalled and
+  easing notes, three step verdicts, seven insights cards. STILL ALLOWLISTED and named as the
+  next copy pass: plan/analyze.ts (7, the booklet read once at signup), reviewStory.ts (1),
+  plan/messages.ts (1), adapt.ts (1). Those are surfaces I have not watched somebody read, and
+  rewriting copy blind is how meaning goes missing.
+  ALSO: I clobbered src/copy.test.ts by writing a new file over it, the second time this
+  session I have overwritten a committed file whose name I guessed was free. Restored from
+  git and the length rule was appended to it instead. Check `git status` for ` M` on a file
+  you believe you just created.
+  Validation: tsc -b clean, **1,765/1,765 unit** (2 new), build green, sim 20 personas,
+  **92/92 e2e**.
 
 ## 10. SOURCES
 
