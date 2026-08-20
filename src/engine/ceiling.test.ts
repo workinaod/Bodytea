@@ -183,6 +183,19 @@ describe('raising needs all six', () => {
     expect(ceilingRaiseOffer(d, TODAY)).toBeNull()
   })
 
+  it('refuses on a single reported set, which is not a median', () => {
+    // Distinct from reporting NOTHING: one honest answer is a data
+    // point, not a pattern, and taking it as permission to add volume
+    // is the shape of mistake this whole gate exists to avoid. The
+    // no-effort test above does not cover this, because with nothing
+    // reported the region never enters the tally at all.
+    const d = cruising()
+    for (const date of RAISE_DAYS.slice(1)) {
+      delete (d.sessions[date].exercises[0] as { rir?: number }).rir
+    }
+    expect(ceilingRaiseOffer(d, TODAY)).toBeNull()
+  })
+
   it('refuses when the athlete was working at the edge', () => {
     expect(ceilingRaiseOffer(cruising({ rir: 0 }), TODAY)).toBeNull()
   })
