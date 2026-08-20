@@ -11,7 +11,13 @@ import { settleDeloads } from '../../engine/deloadOutcome'
 import { limitStepCopy, limitStepDecision, limitStepOffer } from '../../engine/limitLoad'
 import { MOVEMENT } from '../../plan/movement'
 import { earlyFlagCopy, earlyFlagOffer, readinessDecision } from '../../engine/readiness'
-import { ceilingDecision, ceilingLowerCopy, ceilingLowerOffer } from '../../engine/ceiling'
+import {
+  ceilingDecision,
+  ceilingLowerCopy,
+  ceilingLowerOffer,
+  ceilingRaiseCopy,
+  ceilingRaiseOffer,
+} from '../../engine/ceiling'
 import { appendDecision } from '../../engine/decisions'
 
 /**
@@ -63,7 +69,16 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // quiet long enough to have earned it. Its own card rather than a
   // planAdjustment, because it is not about today's session: it is a
   // standing reduction being partly lifted.
-  const ceilRaw = useMemo(() => ceilingLowerOffer(data, date), [data, date])
+  // Down first, always. A raise is an invitation to more fatigue and R3
+  // s5.4 says hold when the evidence is ambiguous, so the lower offer is
+  // computed first and a raise is only looked at when there is nothing
+  // to take off.
+  const ceilRaw = useMemo(() => {
+    const down = ceilingLowerOffer(data, date)
+    if (down) return { change: down, dir: 'lower' as const }
+    const up = ceilingRaiseOffer(data, date)
+    return up ? { change: up, dir: 'raise' as const } : null
+  }, [data, date])
 
   const limitRaw = useMemo(() => {
     const resolved = resolveDay(date, data)
@@ -142,20 +157,28 @@ export function AdaptProposals({ date }: { date: ISODate }) {
       )}
       {ceil && (
         <div className="rounded-2xl bg-white/[0.05] px-4 py-3 ring-1 ring-white/[0.08]">
-          <p className="text-[12.5px] font-black tracking-tight text-ink">Too much of this?</p>
-          <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{ceilingLowerCopy(ceil)}</p>
+          <p className="text-[12.5px] font-black tracking-tight text-ink">
+            {ceil.dir === 'lower' ? 'Too much of this?' : 'Room for one more?'}
+          </p>
+          <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">
+            {ceil.dir === 'lower' ? ceilingLowerCopy(ceil.change) : ceilingRaiseCopy(ceil.change)}
+          </p>
           <div className="mt-2 flex gap-2">
             <button
               onClick={() =>
-                update((d) => appendDecision(d, ceilingDecision(ceil, 'lower', 'accepted', date, d.decisions.length)))
+                update((d) =>
+                  appendDecision(d, ceilingDecision(ceil.change, ceil.dir, 'accepted', date, d.decisions.length)),
+                )
               }
               className="press rounded-full bg-accent px-3.5 py-2 text-[12px] font-bold text-black"
             >
-              Take one off
+              {ceil.dir === 'lower' ? 'Take one off' : 'Add one'}
             </button>
             <button
               onClick={() =>
-                update((d) => appendDecision(d, ceilingDecision(ceil, 'lower', 'declined', date, d.decisions.length)))
+                update((d) =>
+                  appendDecision(d, ceilingDecision(ceil.change, ceil.dir, 'declined', date, d.decisions.length)),
+                )
               }
               className="press rounded-full bg-white/[0.07] px-3.5 py-2 text-[12px] font-bold text-ink-dim"
             >

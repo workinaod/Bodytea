@@ -180,3 +180,146 @@ export function ceilingDecision(
 export function ceilingLowerCopy(c: CeilingChange): string {
   return `One less ${c.label.toLowerCase()} set per session, because ${c.because}.`
 }
+
+// ---------------- Raising, which needs six things ----------------
+
+/** At least this share of planned sessions done, over the window. */
+export const RAISE_MIN_ADHERENCE = 0.75
+
+/** A gap this long anywhere in the window disqualifies the claim. */
+export const RAISE_MAX_GAP_DAYS = 10
+
+/** Reps in reserve on the last set before there is headroom to spend. */
+export const RAISE_MIN_RIR = 2
+
+/** Weeks of evidence a raise is judged on. */
+export const RAISE_WINDOW_DAYS = 28
+
+/**
+ * Goals a raise is even on the table for.
+ *
+ * R3 s5.6, from S18 and S7: strength gain plateaus at low volumes and is
+ * much more sensitive to diminishing returns than hypertrophy, so volume
+ * is size's first lever and strength's last one. For fat loss and
+ * general health the pack says do not chase volume at all, and the
+ * explosive goals live or die on freshness, which is the whole reason
+ * this app protects Saturday. Refusing is the honest default: a raise is
+ * an invitation to more fatigue and s5.4 says hold when it is ambiguous.
+ */
+const RAISE_GOALS: ReadonlySet<string> = new Set(['muscle', 'strength'])
+
+/** Outer wall for a muscle's WEEKLY fractional total. R3 s5.2, S31. */
+export const WEEKLY_BAND_TOP = 20
+
+/** Fractional sets this region took in the last seven days. */
+function weeklyFractional(data: AppData, region: MuscleRegion, today: ISODate): number {
+  let n = 0
+  for (const s of trained(data, today)) {
+    if (daysBetween(s.date, today) > 7) break
+    for (const ex of s.exercises) {
+      if (ex.skipped) continue
+      const m = musclesFor(ex.exerciseId)
+      const w = (m.primary as MuscleRegion[]).includes(region)
+        ? 1
+        : (m.secondary as MuscleRegion[]).includes(region)
+          ? 0.5
+          : 0
+      if (w) n += ex.sets.filter((x) => x.done).length * w
+    }
+  }
+  return n
+}
+
+/**
+ * Was the window clean enough that the tolerance was actually tested.
+ *
+ * R3 s5.5 guard 1 and s5.3 condition 6, which are the same rule twice:
+ * a deload, a readiness downgrade or a bad-sleep cut means the athlete
+ * was not carrying the current dose, so finishing everything says
+ * nothing about whether they could carry more.
+ */
+function windowWasSoftened(data: AppData, today: ISODate): boolean {
+  for (const s of trained(data, today)) {
+    if (daysBetween(s.date, today) > 14) break
+    if (s.readiness?.downgraded || s.status === 'downgraded-completed') return true
+    if (s.exercises.some((ex) => ex.sets.some((x) => x.light))) return true
+  }
+  return roughWeeks(data, today) > 0
+}
+
+/** Adherence and the worst gap, over the raise window. */
+function attendance(data: AppData, today: ISODate): { rate: number; worstGap: number } {
+  const all = Object.values(data.sessions)
+    .filter((s) => s.date <= today && daysBetween(s.date, today) <= RAISE_WINDOW_DAYS)
+    .sort((a, b) => (a.date < b.date ? -1 : 1))
+  const kept = all.filter((s) => s.status !== 'skipped')
+  if (!kept.length) return { rate: 0, worstGap: RAISE_WINDOW_DAYS }
+  // Seeded from the NEWEST session, not the oldest. Reading it the other
+  // way round measured the whole window as one gap, so nobody ever
+  // cleared the bar and the raise could not fire at all.
+  let worst = daysBetween(kept[kept.length - 1].date, today)
+  for (let i = 1; i < kept.length; i++) {
+    worst = Math.max(worst, daysBetween(kept[i - 1].date, kept[i].date))
+  }
+  return { rate: kept.length / all.length, worstGap: worst }
+}
+
+/**
+ * The muscle worth offering one more set on, if there is one.
+ *
+ * Six conditions, all of them, and the goal has to be one volume is even
+ * a lever for. R3 s5.3's asymmetry made concrete: this is the long half.
+ */
+export function ceilingRaiseOffer(data: AppData, today: ISODate): CeilingChange | null {
+  if (!RAISE_GOALS.has(data.plan?.goal ?? '')) return null
+  if (windowWasSoftened(data, today)) return null
+
+  const { rate, worstGap } = attendance(data, today)
+  if (rate < RAISE_MIN_ADHERENCE || worstGap > RAISE_MAX_GAP_DAYS) return null
+
+  const anyRow = (data.decisions ?? []).filter((d) => d.type === CEILING_TYPE)
+  const last = anyRow[anyRow.length - 1]
+  if (last && daysBetween(last.respondedAt ?? last.offeredAt, today) < CEILING_MIN_DAYS_BETWEEN) return null
+
+  const deltas = ceilingDeltas(data)
+  const suggestions = nextSessionSuggestions(data, today)
+  // Any shortfall or pain evidence at all disqualifies the region.
+  const barred = new Set<MuscleRegion>()
+  for (const s of suggestions) {
+    for (const r of s.regions) barred.add(r)
+    if (s.exerciseId) for (const r of primaryOf(s.exerciseId)) barred.add(r)
+  }
+
+  // Regions the athlete actually trains, with their reported effort.
+  const rir = new Map<MuscleRegion, number[]>()
+  for (const s of trained(data, today)) {
+    if (daysBetween(s.date, today) > RAISE_WINDOW_DAYS) break
+    for (const ex of s.exercises) {
+      if (ex.skipped || ex.rir === undefined) continue
+      for (const r of primaryOf(ex.exerciseId)) rir.set(r, [...(rir.get(r) ?? []), ex.rir])
+    }
+  }
+
+  for (const [region, reported] of rir) {
+    if (barred.has(region)) continue
+    if ((deltas[region] ?? 0) >= CEILING_MAX_DRIFT) continue
+    // Absent evidence is not permission: R3 s5.3 condition 4.
+    if (reported.length < 2) continue
+    const sorted = [...reported].sort((a, b) => a - b)
+    const median = sorted[Math.floor(sorted.length / 2)]
+    if (median < RAISE_MIN_RIR) continue
+    if (weeklyFractional(data, region, today) >= WEEKLY_BAND_TOP) continue
+    if (!offerPolicy(data, CEILING_TYPE, region, today).allowed) continue
+    return {
+      region,
+      label: regionName(region),
+      because: 'it has finished clean with something left in the tank',
+    }
+  }
+  return null
+}
+
+/** Short, because it is a card. */
+export function ceilingRaiseCopy(c: CeilingChange): string {
+  return `One more ${c.label.toLowerCase()} set per session, because ${c.because}.`
+}
