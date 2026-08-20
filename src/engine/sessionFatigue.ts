@@ -1,5 +1,6 @@
-import type { ExerciseLog, SetLog } from '../sessionTypes'
+import type { ExerciseLog } from '../sessionTypes'
 import { dropTo } from './fatigue'
+import { askedFor, cameUpShort, emptiedTheTank } from './shortfall'
 
 // ============================================================
 // Fatigue that arrives while you are still in the session.
@@ -31,9 +32,6 @@ import { dropTo } from './fatigue'
 // it can be moved without touching a call site.
 // ============================================================
 
-/** Reps below the ask before the weight, rather than the athlete, is the problem. */
-export const SHORTFALL_TO_ACT = 2
-
 export type FatigueResponseKind = 'drop-load' | 'offer-ease'
 
 export interface FatigueResponse {
@@ -51,12 +49,6 @@ export interface FatigueResponse {
  */
 export function isAutomatic(kind: FatigueResponseKind): boolean {
   return kind === 'drop-load'
-}
-
-/** The rep number a set was asked for, when it was asked for a number at all. */
-function askedFor(set: SetLog): number | null {
-  const n = Number((set.targetReps.match(/^\d+/) ?? [])[0])
-  return Number.isFinite(n) ? n : null
 }
 
 /**
@@ -83,8 +75,7 @@ export function respondToSet(log: ExerciseLog, setIdx: number): FatigueResponse 
     const unloaded = log.sets.every((s) => s.weightLb === undefined || s.weightLb <= 0)
     if (!unloaded) return null
     const asked = askedFor(set)
-    const short = asked !== null && set.achieved !== undefined && asked - set.achieved >= SHORTFALL_TO_ACT
-    if (!short) return null
+    if (!cameUpShort(set)) return null
     return {
       kind: 'offer-ease',
       because: `That set came up ${asked! - set.achieved!} short and there is no weight to take off. Want the rest of the day shortened?`,
@@ -97,10 +88,9 @@ export function respondToSet(log: ExerciseLog, setIdx: number): FatigueResponse 
   if (!remaining.some((s) => (s.weightLb ?? weight) >= weight)) return null
 
   const asked = askedFor(set)
-  const short = asked !== null && set.achieved !== undefined && asked - set.achieved >= SHORTFALL_TO_ACT
-  const empty = log.rir !== undefined && log.rir <= 0 && set.achieved !== undefined && asked !== null && set.achieved < asked
+  const short = cameUpShort(set)
 
-  if (short || empty) {
+  if (short || emptiedTheTank(log, set)) {
     const to = dropTo(weight)
     if (to <= 0 || to >= weight) return null
     return {

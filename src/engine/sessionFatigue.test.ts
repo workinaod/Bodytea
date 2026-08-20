@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ExerciseLog, SetLog } from '../sessionTypes'
-import { isAutomatic, respondToSet, SHORTFALL_TO_ACT } from './sessionFatigue'
+import { isAutomatic, respondToSet } from './sessionFatigue'
+import { SHORTFALL_TO_ACT } from './shortfall'
 
 // ============================================================
 // "The third set came out at five of eight and the app asked me

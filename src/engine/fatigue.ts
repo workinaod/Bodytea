@@ -2,6 +2,7 @@ import type { AppData, FatigueNote, FatigueReason, ISODate, SessionLog } from '.
 import type { MuscleRegion } from '../plan/muscleRegions'
 import { musclesFor } from '../plan/muscles'
 import { daysBetween } from './calendar'
+import { loadProvedWrong } from './shortfall'
 
 // ============================================================
 // What "I can't finish this" means, and what to do about it.
@@ -174,11 +175,14 @@ function failingFlags(data: AppData, today: ISODate): Map<string, number> {
     for (const log of s.exercises) {
       // A day the movement was not actually worked says nothing either way.
       if (log.skipped || !log.sets.some((set) => set.done)) continue
-      const short = log.sets.some((set) => {
-        if (set.achieved === undefined) return false
-        const asked = Number((set.targetReps.match(/^\d+/) ?? [])[0])
-        return Number.isFinite(asked) && asked - set.achieved >= 2
-      })
+      // The SAME test the in-session drop acts on, not a second copy of
+      // half of it. This used to count only a two-rep shortfall, so a
+      // movement the app took weight off for because the athlete emptied
+      // the tank and finished one down never counted towards the flag.
+      // The drop happened every session and the next prescription never
+      // heard about it. R3 s9.2 calls this escalation "already exists";
+      // it did not, for that half of the evidence.
+      const short = loadProvedWrong(log)
       let w = walks.get(log.exerciseId)
       if (!w) walks.set(log.exerciseId, (w = { flagged: false, cleanRun: 0, shorts: [] }))
       if (short) {
