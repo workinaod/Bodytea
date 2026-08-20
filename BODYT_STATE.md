@@ -279,7 +279,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP5 | Extra work adds to the day instead of replacing it (owner bug report): append not overwrite, day stays open to 3am, one day one debrief | product | **done + LIVE 2026-08-19** (deploy 1450838) | OP1 | off-plan training session |
 | OP6 | Extra work never ends the day and never spends the plan's session (owner bug report, the same one twice): logExtraWork seeds the scheduled workout and adds inside it, the door stays open mid-session, a debrief only comes from a day that is over | product | **done + LIVE 2026-08-19** (deploy 316976c, live bundle verified byte-identical by sha256) | OP5 | off-plan training session |
 | OP7 | Period reviews (owner request): a Wrapped-style review when a week, month, quarter or year closes, with progression, highlights, goals accomplished and a cohort comparison; the week always asks for front and side photos, the quarter and year show the first photo next to the latest | product | **done + LIVE 2026-08-20** (deploy 9a70b5d, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
-| OP8 | A make-up never eats the day it runs on (owner bug report, the third door): startSession merges instead of overwriting, and Today offers the day's own session while the plan's work is still owed | product | **done 2026-08-20** | OP6 | off-plan training session |
+| OP8 | A make-up never eats the day it runs on (owner bug report, the third door): startSession merges instead of overwriting, and Today offers the day's own session while the plan's work is still owed | product | **done + LIVE 2026-08-20** (deploy a24ef44, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1583,6 +1583,7 @@ the pre-existing plans that genuinely have no record of what built them.
   whole to `screens/today/DayDoneCard.tsx`. No allowance added; the file came DOWN 585 -> 562.
   Validation: typecheck clean, **1,605/1,605 unit** (8 new), build green, **e2e 89 passed /
   0 failed** (1 new).
+  Shipped at deploy `a24ef44`, live bundle verified byte-identical by sha256.
   NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
   STILL TRUE: a date holds ONE SessionLog. Three doors have now been taught not to destroy
   what is on it, and the day's own work is reachable again, but "two separate sessions on one
