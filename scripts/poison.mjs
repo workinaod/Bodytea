@@ -2199,10 +2199,10 @@ const MUTATIONS = [
 const E2E_MUTATIONS = [
   {
     id: 'schedule-move-never-reaches-the-plan',
-    bug: 'the athlete agrees to move the session, the ledger records it, and the plan still asks for the old day',
-    file: 'src/screens/today/AdaptProposals.tsx',
-    find: '                  applyScheduleMove(d, move)',
-    to: '',
+    bug: 'the athlete agrees to move the session, the ledger records it, and the new day never gets the session',
+    file: 'src/engine/scheduleFit.ts',
+    find: '  data.plan.tier1ByWeekday[move.to] = move.templateId',
+    to: '  data.plan.tier1ByWeekday[move.to] = null',
     spec: 'e2e/adapt.spec.ts',
   },
   {

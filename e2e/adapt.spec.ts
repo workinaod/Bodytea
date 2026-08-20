@@ -404,9 +404,27 @@ test('the plan moves to the day the athlete actually trains', async ({ page }) =
 
   await page.getByRole('button', { name: 'Move it' }).click()
   await expect(page.getByText('Wrong day?')).toHaveCount(0)
+  // The PLAN, not just the ledger. Asserting only that a row landed
+  // would pass for a move that quietly did nothing, which is exactly
+  // what the first version of this test did.
   await expect
-    .poll(async () => await page.evaluate(() => localStorage.getItem('naod.state') ?? ''), {
-      message: 'the schedule move never reached the plan',
-    })
-    .toContain('schedule-fit')
+    .poll(
+      async () =>
+        await page.evaluate(() => {
+          const raw = localStorage.getItem('naod.state') ?? '{}'
+          const find = (o: unknown): Record<string, unknown> | null => {
+            if (!o || typeof o !== 'object') return null
+            const r = o as Record<string, unknown>
+            if (r.tier1ByWeekday) return r.tier1ByWeekday as Record<string, unknown>
+            for (const v of Object.values(r)) {
+              const hit = find(v)
+              if (hit) return hit
+            }
+            return null
+          }
+          return JSON.stringify(find(JSON.parse(raw)))
+        }),
+      { message: 'the schedule move never reached the plan' },
+    )
+    .toContain('"4":"tuesday"')
 })

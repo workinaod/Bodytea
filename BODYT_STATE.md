@@ -2347,6 +2347,32 @@ the pre-existing plans that genuinely have no record of what built them.
   and exercise-variation rows and need the same treatment: build the intervention, then judge
   it. J7's trainsOnWeekday and daysSinceRegion are the inputs waiting for them.
 
+### 2026-08-20 · J8 · schedule fit
+  Second of J8's three build-the-intervention pieces. The plan asks for Tuesday, the athlete
+  trains Thursday, has done for a month, and nothing in the app ever noticed. So the plan went
+  on being wrong in exactly the same way indefinitely while the athlete went on "missing" a
+  session they had in fact done.
+  Read from the LOG, never from the plan. J7's adherenceShape carries that comment for the same
+  reason and this is what it was built for: checking the schedule against itself would make it
+  a mirror rather than a measurement, and `schedule-fit-reads-the-plan-not-the-log` is the
+  mutation that proves the difference. Three of each side before it counts as a pattern, so one
+  bad fortnight does not rewrite anybody's week.
+  Tier 1 only. Tiers 2 and 3 are placements picked per week rather than a standing schedule, so
+  moving one would be answering a question nobody asked.
+  Accepting REWRITES THE PLAN, which none of the other offers in this job do, so the e2e checks
+  the plan changed rather than only that a row landed in the ledger. Last in the card ladder
+  and deliberately: rewriting somebody's week is the biggest of these asks and the least
+  urgent, because the sets in front of them today matter more than which day next week's
+  session lands on.
+  Day names moved to plan/words.ts alongside wordList. workoutBrief.ts had a private copy, and
+  two lists of the days of the week is exactly the thing that ends up disagreeing about whether
+  the week starts on Sunday.
+  Validation: tsc -b clean, **1,814/1,814 unit** (6 new), build green, sim 20 personas,
+  **99/99 e2e** (1 new), **poison 268/268 unit + 19/19 e2e**.
+  NEXT: exercise fit, the last of J8's three. R3 s9.2's exercise-variation row plus ladder rung
+  6, with J7's daysSinceRegion as the guard against swapping into a pattern whose muscle has
+  not recovered.
+
 ## 10. SOURCES
 
 - Living dashboard (this plan, rendered, republishable via url):
