@@ -33,6 +33,39 @@ https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
    23-commit stale-live incident.)
 7. Never assume a task on an old list is still necessary. Check it against this file and
    the code first. Several sessions' worth of work shipped between most lists and now.
+8. **REVIEW PASS at the end of every chunk** (owner instruction, 2026-08-20). Not after every
+   slice, and not never: when a JOB closes, or when three or four slices have stacked on one
+   another, stop building and review what is now there as a whole.
+
+   This exists because it works. The pass that followed J7 found three real defects in a day
+   of work that had shipped green four times: a weight trend with no window at all (an athlete
+   flat for a month read as still losing, so the plateau rule never fired), the same
+   all-history mistake repeated in two more files, and two engines contradicting each other on
+   one screen (add 150 kcal / take 250 away, both rendering at once). None of it was caught by
+   the slices, because **each slice only ever tested itself.**
+
+   What the pass actually does, in order:
+
+   - **Re-read the whole surface, not the diff.** The window bug existed from the first line
+     of `weightTrend` and survived four slices built on top of it. A diff cannot show you that.
+   - **Look for contradictions between engines.** List everything that can fire on the same
+     screen on the same day and ask whether any two can disagree. Build a probe and PROVE it
+     rather than reasoning about it; the contradiction found on 2026-08-20 was confirmed by a
+     throwaway fixture, not by reading.
+   - **Check paired quantities share a scope.** Any subtraction between two measurements needs
+     both sides over the same window. Two of the three defects were this.
+   - **Probe every new constant.** Set it to an absurd value and run its spec. If nothing goes
+     red, the constant guards nothing: either write the test that makes it bite or delete it.
+     This found `REAL_BF_CHANGE_PCT` doing a job nobody had named.
+   - **Look at the screen at 390px as a whole**, not card by card. Five stacked advice cards
+     is what building one card per slice produces.
+   - **Confirm every new export has a real caller**, and that the dead-export ledger shrank
+     rather than grew.
+   - **Re-run the full ritual** (rule 5) plus `npm run sim` and `node scripts/poison.mjs`, and
+     add a mutation for every defect the pass found, so it cannot come back quietly.
+
+   Then record it: a checkpoint entry naming each defect, how it was proved, and what now
+   guards it. A review that finds nothing gets recorded too, in one line.
 
 ---
 
