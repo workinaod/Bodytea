@@ -111,3 +111,41 @@ describe('what the plan does about it', () => {
     expect(drop.because).not.toContain('still there in two weeks')
   })
 })
+
+describe('it says this once', () => {
+  it('names every stuck joint in one card, not one card per joint', () => {
+    // Caught by screenshot in the slice 5 review pass. A pressing movement
+    // stresses the shoulder AND the elbow, so a single pain note makes
+    // both persistent, and the engine files each movement under the FIRST
+    // of its stressed joints. flat-db-press lists shoulder first and
+    // close-grip-press lists elbow first, so the athlete got the same
+    // four-sentence paragraph twice with one word changed. How many cards
+    // you saw came down to the order of two strings in the catalog, which
+    // is not a thing that should be visible from the outside at all.
+    const d = aching(base(), ago(18, 11, 4, 0))
+    const joints = persistentPainJoints(d, TODAY)
+    expect(joints).toContain('shoulder')
+    expect(joints).toContain('elbow')
+
+    const out = planAdjustments(
+      [ex(PRESS), ex('close-grip-press')],
+      adaptContext(d, TODAY, [...GYM] as EquipTag[]),
+    )
+    const drops = out.filter((a) => a.kind === 'reduce-load')
+    expect(drops).toHaveLength(1)
+    expect(drops[0].because).toContain('shoulder and elbow')
+    expect(drops[0].because).toContain('have been complaining')
+  })
+
+  it('still reads as one joint when only one is stuck', () => {
+    // The plural must not leak into the single case: "your shoulder have
+    // been complaining" is the sort of sentence that costs an app trust.
+    const d = base()
+    d.prefs.limitations = [{ label: 'elbow', joints: ['elbow'], since: '2026-01-01' }]
+    aching(d, ago(18, 11, 4, 0))
+    const out = planAdjustments([ex(PRESS)], adaptContext(d, TODAY, [...GYM] as EquipTag[]))
+    const stuck = out.filter((a) => a.kind === 'reduce-load' && a.because.includes('physio question'))
+    expect(stuck).toHaveLength(1)
+    expect(stuck[0].because).toContain('Your shoulder has been complaining')
+  })
+})

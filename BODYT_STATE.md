@@ -406,6 +406,24 @@ Recorded here rather than in a checkpoint entry because it is a standing constra
 board, not an event: it stays true until the redesign lands.
 
 ## 5. DECISIONS
+### 2026-08-20 · An equipment substitute becoming the slot default (NEEDS OWNER)
+  R3 s9.2 asks: when the athlete has kept an equipment substitute for 4 exposures, offer to
+  make it the slot's default. The detection is easy and the storage is the problem.
+  The only mechanism that exists is `prefs.blocked`, which would mean blocking the ORIGINAL
+  movement. Two things stop me shipping that on my own judgement:
+  (1) NOTHING IN THE APP WRITES `prefs.blocked` TODAY. It is read by adapt.ts rule 0 and set
+  by nothing but tests. Accepting this offer would be the app's FIRST write to that store.
+  (2) There is no screen that lists or clears blocked movements, so accepting would be a
+  one-way door: the athlete could never see the choice again or undo it. That is the exact
+  shape of thing this repo's standing constraints exist to prevent.
+  Options, with my recommendation first:
+  (a) Build the offer AND a place to see and undo it, as part of the UI/UX redesign lane
+      that already owns the profile surfaces. Correct, and it waits on that lane.
+  (b) A new `Prefs.slotDefaults` field, so "this is my squat now" is its own statement
+      rather than "I cannot do the barbell one". Truer semantics, costs a schema change.
+  (c) Ship it onto `prefs.blocked` with reason 'cannot' now and add the undo later. Fastest,
+      and it puts a door in front of users before the handle exists. I would not.
+  Blocked on the owner. The rest of R3 s9.2's substitution work (joint pain) shipped.
 - **A deload is dynamic, not a calendar law (owner, 2026-08-19).** R17 flagged that the app
   said two contradictory things: `analyze.ts` promised imported athletes an automatic
   fourth-week deload with sets halved, and R5's F9 said preserve an imported routine
@@ -501,6 +519,23 @@ the pre-existing plans that genuinely have no record of what built them.
 ---
 
 ## 7. KNOWN GAPS AND FAILURES LEDGER (turn each into a regression when fixed)
+- **Two of the four `Prefs` fields have no writer (found 2026-08-20, slice 5 review).**
+  `prefs.blocked` and `prefs.pinned` are read (adapt.ts rule 0, phase.ts promotion) and set
+  by nothing outside tests. So "a movement the athlete does not want, and does not want to
+  keep saying so about" cannot be said even once, and somebody training for a competition
+  lift has no way to stop the app rotating it at a block boundary. `limitations` IS written,
+  at onboarding; `sessionMinutes` is read by resolveDay and written nowhere I can find.
+  prefsTypes.ts says "every field here is read somewhere, deliberately" and that is true and
+  beside the point: a preference nobody can SET is the same silence from the other end.
+  Fix needs a screen, so it sits with the UI/UX redesign lane.
+- **R3 s9.2's failing-flag escalation is still open (scoped 2026-08-20).** "If 2 clean
+  sessions never arrive within 6 exposures, escalate to plateau ladder rung 3." The LOAD
+  half of rung 3 already ships and is more aggressive than R3 asks: prescription.ts softens
+  a flagged movement via dropTo with a proportional 60% floor. The missing half is
+  "restart the range at its bottom", which is the rep-progression system (repStepFor and a
+  re-climb path), plus the fact that nothing currently notices a movement sitting flagged
+  for 6 exposures at all. It just stays softened, silently, forever. That is a slice of its
+  own rather than the tail of this one, and it is the next thing in the engines lane.
 - **One e2e flake, seen once, recorded rather than waved off (2026-08-19).**
   `settings.spec.ts:68` "the detour flag does not linger for the next visit" failed one
   full-suite run on the tree that merges W17 with OP4's anatomy figure, and passed in
@@ -2047,6 +2082,69 @@ the pre-existing plans that genuinely have no record of what built them.
   **91/91 e2e** (1 new), **poison 219/219 unit + 11/11 e2e** (5 new, 1 anchor re-aimed).
   NEXT: R3 s9.2 still has the two substitution kinds (equipment, joint pain), drop-load and
   the failing-flag softening. Same machinery, more metrics.
+
+### 2026-08-20 · J8 slice 5 · two engines that disagreed, and a promise finally kept
+  R3 s9.2's remaining rows, taken in the pack's own order. Two shipped, one is blocked on
+  the owner, one is scoped as its own slice and named in the gaps ledger.
+  DROP-LOAD (s9.2 row 1). R3 says this needs no outcome of its own and escalates to the
+  failing flag "which already exists". It did not, for half the evidence, and a probe proved
+  it before anything was changed: three empty-the-tank sessions returned NO suggestions,
+  while three two-rep sessions returned start-lighter with a count of three. There were two
+  definitions of "the weight was wrong today" and they disagreed. The in-session drop fires
+  on a two-rep shortfall OR a set that emptied the tank and finished one down; the flag
+  counted only the first. So an athlete grinding to failure and missing by one had the
+  weight taken off the bar mid-session, every session, and was handed the same prescription
+  the next time. The app acted on the evidence and then refused to learn from it.
+  engine/shortfall.ts is the single definition now, a third module rather than one importing
+  the other because sessionFatigue.ts already reads dropTo from fatigue.ts. Same fix as
+  proposals.ts, same reason. The change broke NO existing test until the new ones were
+  written, which is the weightTrend signal exactly.
+  JOINT-PAIN SUBSTITUTION (s9.2 row 6). adapt.ts has told athletes since it was written that
+  "if it is still there in two weeks, that is a question for a physio and not for an app",
+  and nothing ever checked. The line repeated itself every session for as long as the joint
+  hurt, which is the app naming a deadline out loud and then declining to notice it pass.
+  Of everything in here that is the sentence a person would most reasonably expect it to
+  keep. signals.ts gains persistentPainJoints, reading ALL history rather than the 14-day
+  signal window, because the whole question is how long this has been going on and a
+  fortnight-wide window can only ever answer "a fortnight at most". A quiet stretch of 14
+  days ends a run, so a flare last winter and one this morning are two complaints rather
+  than one ten-month injury. A stuck joint stops being swapped (every substitute was already
+  chosen to spare it, so swapping again is an answer this app watched fail) and goes down
+  the reduce-load path that already existed, with a sentence that has stopped promising a
+  date that has gone by. Still an offer, never automatic.
+  Validation: tsc -b clean, **1,749/1,749 unit** (23 new), build green, sim 20 personas,
+  **91/91 e2e**, **poison 231/231** (12 new).
+
+### 2026-08-20 · review pass over J8 slice 5 (rule 8)
+  THREE MORE, all found by probe or screenshot rather than by reading.
+  (1) CLEAN_SESSIONS_TO_UNFLAG SURVIVED BEING SET TO 99, and it is the only route off a
+  softened prescription. At 99 a movement stays reduced forever however many clean sessions
+  the athlete strings together, so work they have plainly earned is never given back, and
+  nothing said so. Setting it to 1 also survived, which is the flicker the hysteresis was
+  written to stop. Both pinned, both mutated.
+  (2) RECENT_DAYS SURVIVED BEING SET TO 999. Three bad sessions spread across a year would
+  read as a movement that is failing today. Same all-history mistake the weight trend was
+  carrying before the J7 review, in a second file, and the third time this session that a
+  window has turned out to be untested.
+  (3) THE SAME PARAGRAPH TWICE, ONE WORD CHANGED, caught by screenshot. A pressing movement
+  stresses the shoulder AND the elbow, and planAdjustments files each movement under the
+  FIRST of its stressed joints. flat-db-press lists shoulder first, close-grip-press lists
+  elbow first, so the athlete got two near-identical four-sentence cards stacked. How many
+  cards you saw came down to the order of two strings in the catalog. Collapsed into one
+  card naming every stuck joint, with the singular case tested too: "your shoulder have
+  been complaining" is the sort of sentence that costs an app trust.
+  ALSO RECORDED RATHER THAN BUILT: `prefs.blocked` and `prefs.pinned` have no writer
+  anywhere in the app, which is why the equipment-substitute default is in section 5 waiting
+  on the owner rather than shipped. Building it would have been the app's first write to a
+  store with no screen to see or undo it.
+  Probed and clean: PAIN_PERSISTS_DAYS, COMPLAINT_GAP_DAYS both directions, PAIN_PATTERN_COUNT,
+  SHORT_SESSIONS_TO_ACT, SHORTFALL_TO_ACT; no new file near its allowance; every new export
+  has a non-test caller; the stated-limitation branch still outranks the escalation, so
+  somebody who typed "knee replacement" is not told their knee has been complaining.
+  Validation: tsc -b clean, **1,749/1,749 unit**, build green, sim 20 personas, **91/91 e2e**,
+  **poison 231/231**.
+  NEXT: the failing-flag 6-exposure escalation (gaps ledger), then the R3 s9.2 rows nothing
+  has touched yet: volume ceiling, rest change, schedule change, exercise variation.
 
 ## 10. SOURCES
 

@@ -3,6 +3,7 @@ import { emptyAppData, type AppData } from '../types'
 import type { SessionLog } from '../sessionTypes'
 import { nextSessionSuggestions } from './fatigue'
 import { respondToSet } from './sessionFatigue'
+import { CLEAN_SESSIONS_TO_UNFLAG, RECENT_DAYS, SHORT_SESSIONS_TO_ACT } from './fatigue'
 import { SHORTFALL_TO_ACT, loadProvedWrong } from './shortfall'
 
 // ============================================================
@@ -99,5 +100,63 @@ describe('the load drop and the failing flag read the same evidence', () => {
     expect(loadProvedWrong(log(7, 0) as never)).toBe(true) // one down, empty
     expect(loadProvedWrong(log(7, 2) as never)).toBe(false) // one down, reps left
     expect(loadProvedWrong(log(8, 0) as never)).toBe(false) // made it
+  })
+})
+
+describe('a flag has to be able to come off again', () => {
+  // Found by probe in the J8 slice 5 review: setting CLEAN_SESSIONS_TO_UNFLAG
+  // to 99 broke nothing. That constant is the only way off a softened
+  // prescription, so at 99 a movement stays reduced forever no matter how
+  // many clean sessions the athlete strings together, and the app never
+  // gives back work they have plainly earned. Nothing said so.
+  const raise = (d: AppData) => {
+    for (const date of ['2026-05-01', '2026-05-08', '2026-05-15']) {
+      d = session(d, date, { achieved: 6 })
+    }
+    return d
+  }
+
+  it('raises on three short sessions and comes off after two clean ones', () => {
+    let d = raise(emptyAppData(TODAY, TODAY))
+    expect(flagged(d)).toHaveLength(1)
+    d = session(d, '2026-05-20', { achieved: 8 })
+    d = session(d, '2026-05-25', { achieved: 8 })
+    expect(flagged(d)).toHaveLength(0)
+  })
+
+  it('does not hand the work back after a single good day', () => {
+    // The hysteresis is the point. One clean session inside a bad month
+    // is not evidence the load is right again.
+    let d = raise(emptyAppData(TODAY, TODAY))
+    d = session(d, '2026-05-20', { achieved: 8 })
+    expect(flagged(d)).toHaveLength(1)
+  })
+
+  it('costs exactly what it says it costs', () => {
+    expect(SHORT_SESSIONS_TO_ACT).toBe(3)
+    expect(CLEAN_SESSIONS_TO_UNFLAG).toBe(2)
+  })
+})
+
+describe('the flag reads a window, not a lifetime', () => {
+  // The other probe survivor: RECENT_DAYS at 999 broke nothing. Three bad
+  // sessions spread across a year are not a movement that is failing, they
+  // are a movement that had three bad days, and softening somebody's
+  // prescription off that is the same all-history mistake the weight trend
+  // was carrying in the J7 review.
+  it('flags three short sessions inside the window', () => {
+    let d = emptyAppData(TODAY, TODAY)
+    for (const date of ['2026-05-01', '2026-05-08', '2026-05-15']) d = session(d, date, { achieved: 6 })
+    expect(flagged(d)).toHaveLength(1)
+  })
+
+  it('does not flag the same three spread across half a year', () => {
+    let d = emptyAppData(TODAY, TODAY)
+    for (const date of ['2025-12-01', '2026-02-01', '2026-05-01']) d = session(d, date, { achieved: 6 })
+    expect(flagged(d)).toHaveLength(0)
+  })
+
+  it('holds the window where it says it does', () => {
+    expect(RECENT_DAYS).toBe(21)
   })
 })

@@ -124,6 +124,13 @@ export interface AdaptContext {
 
 const can = (owned: Set<EquipTag>) => (id: string) => canDo(id, owned)
 
+/** "shoulder", "shoulder and elbow", "shoulder, elbow and wrist". */
+function jointList(joints: Joint[]): string {
+  const words = joints.map((j) => j.replace('-', ' '))
+  if (words.length <= 1) return words[0] ?? ''
+  return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`
+}
+
 /**
  * Everything that should change about a session, given what has actually
  * been happening. Pure: it decides, it does not apply.
@@ -253,7 +260,29 @@ export function planAdjustments(
   //     honest part is admitting an app cannot tell which one this is
   //     after two weeks.
   const stated = new Set(ctx.limited ?? [])
+
+  // Every stuck joint in ONE card. A pressing movement stresses the
+  // shoulder and the elbow, so one pain note makes both persistent and a
+  // per-joint loop handed the athlete the same four-sentence paragraph
+  // twice with one word changed. Caught by screenshot in the slice 5
+  // review; the unroutable map exists to make somebody hear a thing once
+  // and this was the same rule broken one level up.
+  const alsoStuck = [...unroutable].filter(([j]) => stuck.has(j) && !stated.has(j))
+  if (alsoStuck.length) {
+    const joints = jointList(alsoStuck.map(([j]) => j))
+    const ids = [...new Set(alsoStuck.flatMap(([, list]) => list))]
+    const many = ids.length > 1
+    out.push({
+      kind: 'reduce-load',
+      automatic: false,
+      exerciseId: ids[0],
+      allIds: ids,
+      because: `Your ${joints} ${alsoStuck.length > 1 ? 'have' : 'has'} been complaining for over two weeks now. I said that is where an app runs out of road, and it is: swapping the movement did not settle it and swapping it again will not either. Keep ${many ? 'them' : 'it'} in at a lighter weight and stop at the first sharp rep. Two weeks of this is a physio question, not an app one.`,
+    })
+  }
+
   for (const [joint, ids] of unroutable) {
+    if (stuck.has(joint) && !stated.has(joint)) continue
     const j = joint.replace('-', ' ')
     // Told, or inferred? The app should act on the first and offer on the
     // second, and it should not use the same sentence for both.
@@ -271,20 +300,6 @@ export function planAdjustments(
         exerciseId: ids[0],
         allIds: ids,
         because: `You told me about your ${j}, and every version of ${ids.length > 1 ? 'these movements' : 'this movement'} loads it. There is no swap that trains the pattern and spares the joint, so ${ids.length > 1 ? 'they are' : 'it is'} in at a lighter weight rather than out. Stop the set at the first sharp one rather than at the rep count.`,
-      })
-      continue
-    }
-    // The two weeks are up, and this app said what it would do about
-    // that. Repeating "if it is still there in two weeks" to somebody in
-    // week three is the app failing to notice its own deadline, and it
-    // is the sentence people would most reasonably expect it to keep.
-    if (stuck.has(joint)) {
-      out.push({
-        kind: 'reduce-load',
-        automatic: false,
-        exerciseId: ids[0],
-        allIds: ids,
-        because: `Your ${j} has been complaining for over two weeks now. I said that is where an app runs out of road, and it is: swapping the movement did not settle it and swapping it again will not either. Keep ${ids.length > 1 ? 'them' : 'it'} in at a lighter weight and stop at the first sharp rep. Two weeks of this is a physio question, not an app one.`,
       })
       continue
     }
