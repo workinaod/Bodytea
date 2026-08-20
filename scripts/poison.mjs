@@ -1424,8 +1424,10 @@ const MUTATIONS = [
     id: "recheck-ignores-the-tape",
     bug: "the body-composition model still cannot reach the calorie target, because the recheck does not read the tape either",
     file: "src/engine/nutritionRecheck.ts",
-    find: "  const bodyFatPct = readUserModel(data, today).bodyFatPct?.value",
-    to: "  const bodyFatPct = undefined",
+    // Moved into nutritionInputsNow when the step rule needed the same
+    // inputs. Mutating it there now covers both engines, not one.
+    find: "    bodyFatPct: readUserModel(data, today).bodyFatPct?.value,",
+    to: "    bodyFatPct: undefined,",
     spec: "src/engine/nutritionRecheck.test.ts",
   },
   {
@@ -1448,8 +1450,8 @@ const MUTATIONS = [
     id: "recheck-counts-planned-not-completed",
     bug: "the appetite of a six-day week handed to somebody training once, because the plan is read instead of the log",
     file: "src/engine/nutritionRecheck.ts",
-    find: "  const sessionsPerWeek = shape ? Math.round(shape.samples / (ADHERENCE_WINDOW_DAYS / 7)) : undefined",
-    to: "  const sessionsPerWeek = plan.daysPerWeek",
+    find: "    sessionsPerWeek: shape ? Math.round(shape.samples / (ADHERENCE_WINDOW_DAYS / 7)) : undefined,",
+    to: "    sessionsPerWeek: data.plan?.daysPerWeek,",
     spec: "src/engine/nutritionRecheck.test.ts",
   },
   {
