@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { finishToDebrief } from './util'
+import { finishToDebrief, openNutrition } from './util'
 
 // One serial journey through the core loop, each step depends on the last.
 test.describe.configure({ mode: 'serial' })
@@ -97,7 +97,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   }
 
   // ---- Meals: log-first, the one button opens every path ----
-  await page.getByRole('button', { name: 'Meals', exact: true }).click()
+  await openNutrition(page)
   await expect(page.getByText('Protein', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '+ Log food' }).click()
   await page.locator('button', { hasText: /Breakfast · / }).first().click() // one tap, sheet closes
@@ -148,7 +148,7 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
   await expect(page.getByText(/unlocks in \d+ days/).first()).toBeVisible()
 
   // ---- Coach: export downloads a backup file ----
-  await page.getByRole('button', { name: 'Coach', exact: true }).click()
+  await page.getByRole('button', { name: 'Profile', exact: true }).click()
   await page.getByRole('button', { name: 'Settings' }).click()
   await page.getByRole('button', { name: /^Backup and data/ }).click()
   const downloadPromise = page.waitForEvent('download')
@@ -191,6 +191,6 @@ test('midnight rollover advances the app without a reload', async ({ page }) => 
   // Meals follow too: Thursday is a rest day → the GENERATED rest target.
   // 180 lb vertical plan at 5'10": 2700 bodyweight base, +25 because an
   // inch over the reference height is a real inch, +200 goal, −300 rest.
-  await page.getByRole('button', { name: 'Meals', exact: true }).click()
+  await openNutrition(page)
   await expect(page.getByText(/Rest day · 2625 kcal/)).toBeVisible()
 })

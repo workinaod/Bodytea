@@ -56,7 +56,7 @@ test('daily cardio: run outdoors with miles; game day marks played', async ({ pa
   await expect(page.getByText(/that's this week's conditioning/)).toBeVisible()
 
   // Week tab: played marker + backup section satisfied
-  await page.getByRole('button', { name: 'Week', exact: true }).click()
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
   await expect(page.getByText('🏃 conditioned').first()).toBeVisible()
 })
 
@@ -65,7 +65,7 @@ test('custom life events: add one, pick its days, engine reacts next day', async
   await page.goto('./')
   await quickOnboard(page)
 
-  await page.getByRole('button', { name: 'Week', exact: true }).click()
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
   await expect(page.getByText('Life this week')).toBeVisible()
   // Generated plans start with no events, the empty-state pitch shows
   await expect(page.getByText(/Late nights, long shifts/)).toBeVisible()
@@ -92,7 +92,7 @@ test('custom life events: add one, pick its days, engine reacts next day', async
   await expect(page.getByText(/Closing shift yesterday: a jump set dropped/)).toBeVisible()
 
   // A late-night event warns on the day itself
-  await page.getByRole('button', { name: 'Week', exact: true }).click()
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
   await page.getByRole('button', { name: /Add a life event/ }).click()
   await page.getByPlaceholder(/Name it/).fill('DJ set')
   await page.getByText('🌙 Late night').click()

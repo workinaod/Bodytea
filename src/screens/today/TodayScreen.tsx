@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import type { DebriefData } from '../../types'
+import { useEffect, useMemo, useState } from 'react'
+import type { DebriefData, ISODate } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatDayLabel, todayISO } from '../../engine/calendar'
@@ -21,7 +21,7 @@ import { TodayNextUp } from './TodayNextUp'
 import { TodayCardio, CardioBackupChooser } from './TodayCardio'
 import { TodayCompletion } from './TodayCompletion'
 import { TodayPreviewList } from './TodayPreviewList'
-import { ExtraTraining } from './ExtraTraining'
+import { MakeupCard } from './MakeupCard'
 import { WorkoutBriefSheet } from './WorkoutBriefSheet'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
@@ -36,10 +36,17 @@ import { CardioSheet } from './CardioSheet'
 export function TodayScreen({
   onOpenProgress,
   onOpenProfile,
+  onOpenTrain,
+  pendingRun,
+  onPendingRunTaken,
 }: {
   /** Jumps out of Today. Optional so the screen still stands alone. */
   onOpenProgress?: () => void
   onOpenProfile?: () => void
+  onOpenTrain?: () => void
+  /** Train picked a day to run; Today owns the gates that actually start it. */
+  pendingRun?: { date: ISODate; cns: boolean } | null
+  onPendingRunTaken?: () => void
 } = {}) {
   const data = useAppStore((s) => s.data)
   const realToday = useToday()
@@ -108,6 +115,21 @@ export function TodayScreen({
     return data.coach.feed.find((f) => f.kind === 'debrief' && f.debrief?.date === date)?.debrief ?? null
   }, [finished, data.coach.feed, date])
 
+
+  // Train hands a day over and steps out of the way: the readiness and
+  // intensity gates live here, next to the session they start.
+  function runDay(d: ISODate, cns: boolean) {
+    setMakeupTarget(d)
+    if (cns) setReadinessOpen(true)
+    else setIntensityOpen(true)
+  }
+
+  useEffect(() => {
+    if (!pendingRun) return
+    runDay(pendingRun.date, pendingRun.cns)
+    onPendingRunTaken?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingRun])
 
   function handleStart() {
     if (day.cns) setReadinessOpen(true)
@@ -281,19 +303,15 @@ export function TodayScreen({
         </Card>
       )}
 
-      {/* Training the plan didn't schedule: make-ups, reruns, the
-          workouts shelf, and the build-your-own path all live here */}
-      <ExtraTraining
+      {/* A miss with an open window is coaching about THIS week, so it
+          stays here. The rest of the off-plan arsenal lives in Train. */}
+      <MakeupCard
         date={date}
         active={today}
         hasSession={!!session}
         dayKind={day.kind}
-        onRunDay={(d, cns) => {
-          setMakeupTarget(d)
-          if (cns) setReadinessOpen(true)
-          else setIntensityOpen(true)
-        }}
-        onLogged={(d) => setDebrief({ data: d })}
+        onRunDay={runDay}
+        onOpenTrain={onOpenTrain}
       />
 
       {today && <TodayNextUp data={data} today={homeDate} onOpenProgress={onOpenProgress} />}

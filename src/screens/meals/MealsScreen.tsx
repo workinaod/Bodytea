@@ -24,7 +24,7 @@ import { SupplementStackSheet } from './SupplementStackSheet'
 
 type MealsView = 'today' | 'plan' | 'grocery'
 
-export function MealsScreen() {
+export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
   const data = useAppStore((s) => s.data)
   const update = useAppStore((s) => s.update)
   const today = useToday()
@@ -64,6 +64,7 @@ export function MealsScreen() {
   return (
     <div className="space-y-3 pb-6">
       <ScreenHeader
+        slim={embedded}
         title={date === today ? 'Fuel' : formatDayLabel(date)}
         onTitleTap={() => setSelected(null)}
         left={<DayArrow dir="prev" onClick={() => setSelected(addDaysISO(date, -1))} />}

@@ -22,7 +22,7 @@ const TIER_INFO: Record<Tier, { name: string; blurb: string }> = {
   3: { name: 'Tier 3 · Bare minimum', blurb: '2 days: one explosive, one full-body. Holding ground.' },
 }
 
-export function WeekScreen() {
+export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
   const data = useAppStore((s) => s.data)
   const update = useAppStore((s) => s.update)
   const updateWeek = useAppStore((s) => s.updateWeek)
@@ -113,6 +113,7 @@ export function WeekScreen() {
   return (
     <div className="space-y-3">
       <ScreenHeader
+        slim={embedded}
         title={`Week of ${formatShort(weekStart)}`}
         onTitleTap={() => setSelected(null)}
         left={<DayArrow dir="prev" unit="week" onClick={() => setSelected(addDaysISO(weekStart, -7))} />}

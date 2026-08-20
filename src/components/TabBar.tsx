@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { Glyph } from './glyphs'
 
-export type TabId = 'today' | 'week' | 'meals' | 'progress' | 'coach'
+export type TabId = 'today' | 'train' | 'plan' | 'progress' | 'me'
 
+// Coach stopped being a destination. Coaching happens where the
+// decisions are (Today, the plan, the session, the debrief), and the
+// fifth tab is now the person doing it rather than the voice at them.
 const LEFT: { id: TabId; label: string }[] = [
   { id: 'today', label: 'Today' },
-  { id: 'week', label: 'Week' },
+  { id: 'train', label: 'Train' },
 ]
 const RIGHT: { id: TabId; label: string }[] = [
-  { id: 'meals', label: 'Meals' },
+  { id: 'plan', label: 'Plan' },
   { id: 'progress', label: 'Progress' },
-  { id: 'coach', label: 'Coach' },
+  { id: 'me', label: 'Profile' },
 ]
 
 function TabButton({ id, label, active, onClick }: { id: TabId; label: string; active: boolean; onClick: () => void }) {

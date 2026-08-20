@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openNutrition } from './util'
 
 // The v19 reset is the most destructive thing the app does to existing
 // users, so it gets proven end to end: a real plan and real logged data
@@ -76,7 +77,7 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
   await buildPlan(page, "Let's get started", 'Jump higher', 'dunk on a 10-ft rim by June')
 
   // Log a meal so there is real history to protect
-  await page.getByRole('button', { name: 'Meals', exact: true }).click()
+  await openNutrition(page)
   await page.getByRole('button', { name: '+ Log food' }).click()
   await page.locator('button', { hasText: /Breakfast · / }).first().click()
   await expect(page.locator('text=/4[05] ?\\/ 180/').first()).toBeVisible({ timeout: 5000 })
@@ -101,7 +102,7 @@ test('v19 reset: a generated-plan user rebuilds, and keeps everything they logge
   // muscle. Pinning 180 here made this test assert the old flat prescription
   // as a side effect of checking that a meal survived. What the target
   // SHOULD be per goal is covered directly in plan/sportsNutrition.test.ts.
-  await page.getByRole('button', { name: 'Meals', exact: true }).click()
+  await openNutrition(page)
   await expect(page.locator('text=/4[05] ?\\/ \\d{3}/').first()).toBeVisible({ timeout: 5000 })
 })
 

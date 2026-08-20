@@ -8,7 +8,7 @@
 // no fills except where `active` lights one up.
 // ============================================================
 
-export type GlyphName = 'today' | 'week' | 'meals' | 'progress' | 'coach' | 'track'
+export type GlyphName = 'today' | 'train' | 'plan' | 'progress' | 'me' | 'track'
 
 function Svg({ size, children }: { size: number; children: React.ReactNode }) {
   return (
@@ -52,29 +52,29 @@ export function Glyph({
 const BODIES: Record<GlyphName, (a: boolean) => React.ReactNode> = {
   // A bolt: today is the day you actually do the work
   today: (a) => <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z" fill={a ? 'currentColor' : 'none'} />,
-  // The week's calendar
-  week: (a) => (
+  // A loaded bar: the room you go to, not the day you are on
+  train: (a) => (
+    <>
+      <path d="M2 12h2M20 12h2M7.5 12h9" />
+      <rect x="4.5" y="8.5" width="3" height="7" rx="1" fill={a ? 'currentColor' : 'none'} />
+      <rect x="16.5" y="8.5" width="3" height="7" rx="1" fill={a ? 'currentColor' : 'none'} />
+    </>
+  ),
+  // The calendar, which is what a plan looks like from above
+  plan: (a) => (
     <>
       <rect x="3" y="5" width="18" height="16" rx="3" />
       <path d="M3 10h18M8 3v4M16 3v4" />
       {a && <circle cx="12" cy="15" r="2" fill="currentColor" stroke="none" />}
     </>
   ),
-  // Fork and a real, closed-blade knife
-  meals: () => (
-    <>
-      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
-      <path d="M7 2v20" />
-      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
-    </>
-  ),
   // Bars climb left to right: progress goes UP
   progress: () => <path d="M4 20v-5M10 20V9M16 20V4M21 20H3" />,
-  // The Sergeant's whistle
-  coach: (a) => (
+  // A person. Not a whistle: this tab is who you are, not who is shouting
+  me: (a) => (
     <>
-      <path d="M9.5 9H20a1.5 1.5 0 0 1 1.5 1.5v1.2a1.5 1.5 0 0 1-1.1 1.45L15 14.4A5.5 5.5 0 1 1 9.5 9Z" />
-      <circle cx="9.5" cy="14.5" r="1.6" fill={a ? 'currentColor' : 'none'} />
+      <circle cx="12" cy="8" r="3.6" fill={a ? 'currentColor' : 'none'} />
+      <path d="M4.8 20.5a7.2 7.2 0 0 1 14.4 0" />
     </>
   ),
   // A route with a start and a finish: everything cardio lives here

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { GpsActivity } from './activityTypes'
+import type { ISODate } from './types'
 import { setPreferredVoice } from './platform/speech'
 import { useAppStore, usePersistHealth } from './store/appStore'
 import { TabBar, type TabId } from './components/TabBar'
 import { TodayScreen } from './screens/today/TodayScreen'
-import { WeekScreen } from './screens/week/WeekScreen'
-import { MealsScreen } from './screens/meals/MealsScreen'
+import { TrainScreen } from './screens/train/TrainScreen'
+import { MyPlanScreen } from './screens/plan/MyPlanScreen'
 import { ProgressScreen } from './screens/progress/ProgressScreen'
 import { CoachScreen } from './screens/coach/CoachScreen'
 import { RunTrackerSheet } from './screens/today/RunTrackerSheet'
@@ -23,6 +24,9 @@ export default function App() {
   const data = useAppStore((s) => s.data)
   const today = useToday()
   const [tab, setTab] = useState<TabId>('today')
+  // Train picks the day, Today runs it. One shot: Today takes it, starts
+  // its own readiness or intensity gate, and clears it behind itself.
+  const [pendingRun, setPendingRun] = useState<{ date: ISODate; cns: boolean } | null>(null)
   const [track, setTrack] = useState<'choose' | GpsActivity | null>(null)
   const [timerActivity, setTimerActivity] = useState<string | null>(null)
   // Only set when the user typed their own name in the custom row.
@@ -95,11 +99,27 @@ export default function App() {
           swapped. No fill-mode: a retained transform would become the
           containing block for the fixed sheets inside the screens. */}
       <div key={tab} style={{ animation: 'rise 0.24s ease-out' }}>
-        {tab === 'today' && <TodayScreen />}
-        {tab === 'week' && <WeekScreen />}
-        {tab === 'meals' && <MealsScreen />}
+        {tab === 'today' && (
+          <TodayScreen
+            onOpenProgress={() => setTab('progress')}
+            onOpenProfile={() => setTab('me')}
+            onOpenTrain={() => setTab('train')}
+            pendingRun={pendingRun}
+            onPendingRunTaken={() => setPendingRun(null)}
+          />
+        )}
+        {tab === 'train' && (
+          <TrainScreen
+            onOpenToday={() => setTab('today')}
+            requestRun={(date, cns) => {
+              setPendingRun({ date, cns })
+              setTab('today')
+            }}
+          />
+        )}
+        {tab === 'plan' && <MyPlanScreen />}
         {tab === 'progress' && <ProgressScreen />}
-        {tab === 'coach' && <CoachScreen />}
+        {tab === 'me' && <CoachScreen />}
       </div>
       <TabBar tab={tab} onChange={setTab} onTrack={() => setTrack('choose')} session={sessionLive && tab === 'today'} />
       <TrackSheet

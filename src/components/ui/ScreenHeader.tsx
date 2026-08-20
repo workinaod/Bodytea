@@ -19,6 +19,7 @@ export function ScreenHeader({
   left,
   right,
   sub,
+  slim = false,
 }: {
   title: string
   /** Tapping the title, e.g. "jump back to today" on date-scoped tabs. */
@@ -27,8 +28,36 @@ export function ScreenHeader({
   right?: ReactNode
   /** One quiet line under the title. Used sparingly. */
   sub?: ReactNode
+  /**
+   * This header is inside another screen's, so it drops the reserved
+   * gutters and the tap height and becomes one compact centred row.
+   * Two full-size headers stacked is what an embedded screen looks
+   * like when nobody thought about it.
+   */
+  slim?: boolean
 }) {
   const label = <span className="eyebrow block truncate text-ink-dim">{title}</span>
+  const inner = (
+    <>
+      {onTitleTap ? (
+        <button onClick={onTitleTap} className="pointer-events-auto max-w-full px-2 py-1 text-center">
+          {label}
+        </button>
+      ) : (
+        label
+      )}
+      {sub}
+    </>
+  )
+  if (slim) {
+    return (
+      <div className="flex items-center justify-center gap-1">
+        {left}
+        <div className="flex min-w-0 flex-col items-center">{inner}</div>
+        {right}
+      </div>
+    )
+  }
   return (
     <div className="relative flex min-h-11 items-center justify-between">
       {/* Slots sit in the flow so they stay tappable; the title floats
@@ -41,14 +70,7 @@ export function ScreenHeader({
           buttons; anything longer truncates instead of colliding. */}
       <div className="flex items-center gap-1">{left}</div>
       <div className="pointer-events-none absolute inset-x-0 flex flex-col items-center px-[104px]">
-        {onTitleTap ? (
-          <button onClick={onTitleTap} className="pointer-events-auto max-w-full px-2 py-1 text-center">
-            {label}
-          </button>
-        ) : (
-          label
-        )}
-        {sub}
+        {inner}
       </div>
       <div className="flex items-center gap-1">{right}</div>
     </div>

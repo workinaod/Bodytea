@@ -31,7 +31,7 @@ async function openSettings(page: import('@playwright/test').Page) {
   await page.clock.install({ time: new Date(2026, 7, 11, 9, 0) })
   await page.goto('./')
   await page.clock.runFor(1500)
-  await page.getByRole('button', { name: 'Coach', exact: true }).click()
+  await page.getByRole('button', { name: 'Profile', exact: true }).click()
   await page.getByRole('button', { name: /settings/i }).first().click()
   await expect(page.getByRole('dialog')).toContainText('Settings')
 }

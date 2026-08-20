@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { trainTab } from './util'
 
 // ============================================================
 // Training the plan didn't schedule: build your own workout,
@@ -34,17 +35,16 @@ async function onboardGenerated(page: Page) {
   await page.getByRole('button', { name: "Start Week 1" }).click()
 }
 
-const offPlanButton = (page: Page) =>
-  page.getByRole('button', { name: /Training something else today/ })
+const offPlanButton = (page: Page) => trainTab(page)
 
 test('build your own workout and run it live', async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) }) // Monday
   await page.goto('./')
   await onboardGenerated(page)
 
-  // A scheduled day keeps the plan first: off-plan work is one quiet line.
+  // Train opens by pointing back at the plan: this tab is the alternative.
   await offPlanButton(page).click()
-  await expect(page.getByText('Train off the plan')).toBeVisible()
+  await expect(page.getByText("Today's session")).toBeVisible()
   await page.getByRole('button', { name: /Your own workout/ }).click()
 
   // Pick a movement off the full catalog.

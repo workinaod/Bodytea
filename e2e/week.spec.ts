@@ -29,7 +29,7 @@ async function openDay(page: import('@playwright/test').Page, state: string) {
   await page.clock.install({ time: new Date(2026, 7, 11, 9, 0) })
   await page.goto('./')
   await page.clock.runFor(1500)
-  await page.getByRole('button', { name: 'Week', exact: true }).click()
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
   await page.getByText('Push + Shoulder Health').first().click()
   await expect(page.getByRole('dialog')).toBeVisible()
 }

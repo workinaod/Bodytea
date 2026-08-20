@@ -23,3 +23,14 @@ export async function finishToDebrief(page: Page): Promise<void> {
   await carryOn.click()
   await expect(page.getByRole('dialog', { name: 'Session debrief' })).toBeVisible()
 }
+
+/** The Meals tab is now My Plan's second segment. */
+export async function openNutrition(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
+  await page.getByRole('button', { name: 'Nutrition', exact: true }).click()
+}
+
+/** Everything off the plan (shelf, own workout, previous days) lives in Train. */
+export function trainTab(page: Page) {
+  return page.getByRole('button', { name: 'Train', exact: true })
+}

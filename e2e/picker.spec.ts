@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { trainTab } from './util'
 
 // ============================================================
 // Choosing an exercise, with help.
@@ -36,7 +37,7 @@ async function onboardBareFloor(page: Page) {
 }
 
 async function openPicker(page: Page) {
-  await page.getByRole('button', { name: /Training something else today/ }).click()
+  await trainTab(page).click()
   await page.getByRole('button', { name: /Your own workout/ }).click()
   await page.getByRole('button', { name: '+ Add exercise' }).click()
 }
