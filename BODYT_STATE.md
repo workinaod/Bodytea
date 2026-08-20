@@ -2547,6 +2547,39 @@ two call sites (ExerciseDemo's no-clip path, MuscleMap) are unchanged.
 Gates: typecheck clean, **1,757/1,757 unit**, build green, three.js confirmed absent from the
 shipped bundle.
 
+### 2026-08-20 · OP12 · seven rejected bodies, and the rule that comes out of it
+
+Owner, on the 3D figure: *"Bro wtf is that the Michelin man ??"*
+
+They are right, and the count matters more than the fix: **four rounds of 2D drawing and three
+of 3D ellipsoids, seven bodies, seven rejections.** That is not a tuning problem, it is a signal,
+and the rule going in the constraints is:
+
+> **DO NOT HAND-AUTHOR AN ANATOMICAL FIGURE.** Not in SVG paths, not in primitives. Seven
+> attempts across one session produced nothing the owner would ship. A muscle has flat planes
+> and sharp tendon insertions; an ellipsoid is round everywhere, so a stack of them is a tyre
+> mascot at any scale. The figure comes from a real rigged model or it does not come.
+
+WHAT ACTUALLY ANSWERED THE BRIEF, and it was in the repo the whole time: **the verified clip.**
+141 of 194 exercises now show real footage of a real human doing the whole movement. That is the
+premium, lifelike demo the owner asked for, it shipped, and it needed no art from me at all.
+
+WHAT I SHOULD NOT HAVE TOUCHED: the 2D `AnatomyFigure` muscle map. The owner never complained
+about it, it looks good, and proposing to replace it with the ellipsoid body was scope I created.
+It stays exactly as it is.
+
+THE 3D LANE IS PARKED, not deleted, because the half that works is the half that is hard: the
+rig, the pose transfer (all 194 sequences, no retargeting), the per-muscle-region highlighting
+and the camera are correct and tested. Only `muscles.ts` is bad. A bought model drops into the
+same rig. `three` is in package.json and NOT in the shipped bundle.
+
+WHAT A USABLE MODEL NEEDS, all three or it is not usable, and the owner's Sketchfab link failed
+every one: downloadable, rigged with a humanoid skeleton, and under about 30k triangles.
+Sketchfab's search for downloadable+rigged anatomy returns generic base meshes, not ecorches,
+and its downloads need an authenticated account this session does not have. Real sources are
+Mixamo (free, rigged, the standard for this), Quaternius (CC0 rigged low-poly), Ready Player Me,
+or a paid rigged anatomy model. **The owner has to supply the file; I cannot fetch one.**
+
 ## 10. SOURCES
 
 - Round 8, the 3D ecorche (live, draggable): https://claude.ai/code/artifact/7327dff2-7556-4491-bf79-645ecbf19b2d
