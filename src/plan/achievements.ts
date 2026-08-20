@@ -247,19 +247,39 @@ export interface FlameTier {
   from: number
   name: string
   /** Drives the size and speed of the animation. */
-  level: 1 | 2 | 3 | 4 | 5
+  level: 1 | 2 | 3 | 4 | 5 | 6 | 7
 }
 
-/** Under 7 days there is no flame at all. A streak has to mean something. */
-export const FLAME_MIN = 7
+/**
+ * Day one lights an ember.
+ *
+ * This used to be 7, on the reasoning that a two day streak is not an
+ * achievement and dressing it up cheapens the real ones. That reasoning
+ * holds and the fix was never to hide the flame, it was to make day one
+ * LOOK like day one: an ember is small, dim, slow and obviously fragile.
+ * Nobody mistakes it for the thing at 365. Showing it from the start is
+ * what gives a new athlete something to lose by tomorrow, which is the
+ * entire mechanism of a streak; an invisible one cannot be protected.
+ *
+ * The permanent streak BADGES are unaffected. They are still earned
+ * against the best run ever and still start at 7.
+ */
+export const FLAME_MIN = 1
 
 export const FLAME_TIERS: FlameTier[] = [
-  { from: 7, name: 'Lit', level: 1 },
-  { from: 30, name: 'Heating Up', level: 2 },
-  { from: 90, name: 'On Fire', level: 3 },
-  { from: 180, name: 'Blazing', level: 4 },
-  { from: 365, name: 'Inferno', level: 5 },
+  { from: 1, name: 'Ember', level: 1 },
+  { from: 3, name: 'Spark', level: 2 },
+  { from: 7, name: 'Heating Up', level: 3 },
+  { from: 14, name: 'Locked In', level: 3 },
+  { from: 30, name: 'Fire Built', level: 4 },
+  { from: 60, name: 'Pressure Rising', level: 4 },
+  { from: 90, name: 'On Fire', level: 5 },
+  { from: 180, name: 'Blazing', level: 6 },
+  { from: 365, name: 'Inferno', level: 7 },
+  { from: 500, name: 'Built Different', level: 7 },
+  { from: 1000, name: 'Immortal Flame', level: 7 },
 ]
+
 
 export function flameFor(streak: number): FlameTier | null {
   if (streak < FLAME_MIN) return null

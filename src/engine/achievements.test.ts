@@ -6,7 +6,7 @@ import { resolveDay } from './resolveDay'
 import { streakState } from './streak'
 import { athleteFacts } from './achievementFacts'
 import { evaluateAchievements, nextUp } from './achievements'
-import { ACHIEVEMENTS, ACHIEVEMENT_BY_ID, flameFor, FLAME_MIN } from '../plan/achievements'
+import { ACHIEVEMENTS, ACHIEVEMENT_BY_ID, flameFor, FLAME_MIN, FLAME_TIERS } from '../plan/achievements'
 
 const START: ISODate = '2026-01-05' // a Monday
 
@@ -78,19 +78,39 @@ describe('the catalog itself', () => {
 })
 
 describe('the flame', () => {
-  it('stays dark under a week, because a 3 day streak is not a streak', () => {
+  // Deliberate change: the flame used to stay dark under 7 days. It lights
+  // on day one now, as an ember, because a streak nobody can see is a
+  // streak nobody can be afraid of losing. Honesty moved from hiding it to
+  // how small it looks.
+  it('lights on day one and never before it', () => {
+    expect(flameFor(1)!.name).toBe('Ember')
+    expect(flameFor(1)!.level).toBe(1)
     expect(flameFor(FLAME_MIN - 1)).toBeNull()
     expect(flameFor(0)).toBeNull()
   })
 
   it('climbs a tier at each milestone', () => {
-    expect(flameFor(7)!.level).toBe(1)
-    expect(flameFor(29)!.level).toBe(1)
-    expect(flameFor(30)!.name).toBe('Heating Up')
+    expect(flameFor(3)!.name).toBe('Spark')
+    expect(flameFor(7)!.name).toBe('Heating Up')
+    expect(flameFor(14)!.name).toBe('Locked In')
+    expect(flameFor(29)!.name).toBe('Locked In')
+    expect(flameFor(30)!.name).toBe('Fire Built')
+    expect(flameFor(60)!.name).toBe('Pressure Rising')
     expect(flameFor(90)!.name).toBe('On Fire')
     expect(flameFor(180)!.name).toBe('Blazing')
     expect(flameFor(365)!.name).toBe('Inferno')
-    expect(flameFor(2000)!.name).toBe('Inferno')
+    expect(flameFor(500)!.name).toBe('Built Different')
+    expect(flameFor(1000)!.name).toBe('Immortal Flame')
+    expect(flameFor(4000)!.name).toBe('Immortal Flame')
+  })
+
+  it('never lets the ember look like the inferno', () => {
+    // The ladder has to be monotonic or the visual promise breaks.
+    let last = 0
+    for (const t of FLAME_TIERS) {
+      expect(t.level).toBeGreaterThanOrEqual(last)
+      last = t.level
+    }
   })
 })
 

@@ -3,8 +3,14 @@ import { flameFor } from '../plan/achievements'
 // ============================================================
 // The streak, burning.
 //
-// Five tiers, and the animation earns its keep by changing with
-// them: a week-old flame flickers politely, a year-old one roars.
+// Seven visual levels across eleven named rungs, and the
+// animation earns its keep by changing with them: an ember on
+// day one barely holds on, a year-old flame roars.
+//
+// Levels 1 and 2 are the new bottom of the ladder and they are
+// deliberately unimpressive: small, dim, slow, no glow. A day
+// one streak should look like something you could lose by
+// tomorrow, because it is.
 // Same SVG throughout, driven entirely by the tier, so nothing
 // about it can drift out of step with the number beside it.
 //
@@ -16,11 +22,13 @@ const TIER_STYLE: Record<
   number,
   { core: string; mid: string; outer: string; speed: string; glow: string; scale: number }
 > = {
-  1: { core: '#ffd9a0', mid: '#ff9d3c', outer: '#ff6a1f', speed: '2.4s', glow: '0 0 6px rgba(255,120,40,0.35)', scale: 0.92 },
-  2: { core: '#ffe08a', mid: '#ff8a20', outer: '#ff5a15', speed: '1.9s', glow: '0 0 10px rgba(255,110,30,0.5)', scale: 1 },
-  3: { core: '#fff0a0', mid: '#ff7a10', outer: '#ff3d0a', speed: '1.5s', glow: '0 0 14px rgba(255,80,20,0.6)', scale: 1.08 },
-  4: { core: '#ffffff', mid: '#ffd23c', outer: '#ff2f05', speed: '1.15s', glow: '0 0 20px rgba(255,90,20,0.72)', scale: 1.16 },
-  5: { core: '#ffffff', mid: '#9fd8ff', outer: '#ff2a00', speed: '0.85s', glow: '0 0 28px rgba(120,190,255,0.6), 0 0 40px rgba(255,70,10,0.5)', scale: 1.26 },
+  1: { core: '#f0d3a8', mid: '#c98a4a', outer: '#8a5a30', speed: '3.2s', glow: 'none', scale: 0.72 },
+  2: { core: '#f7dda2', mid: '#e09a45', outer: '#a86a35', speed: '2.8s', glow: '0 0 4px rgba(220,150,70,0.28)', scale: 0.84 },
+  3: { core: '#ffd9a0', mid: '#ff9d3c', outer: '#ff6a1f', speed: '2.4s', glow: '0 0 6px rgba(255,120,40,0.35)', scale: 0.96 },
+  4: { core: '#ffe08a', mid: '#ff8a20', outer: '#ff5a15', speed: '1.9s', glow: '0 0 10px rgba(255,110,30,0.5)', scale: 1.06 },
+  5: { core: '#fff0a0', mid: '#ff7a10', outer: '#ff3d0a', speed: '1.5s', glow: '0 0 14px rgba(255,80,20,0.6)', scale: 1.14 },
+  6: { core: '#ffffff', mid: '#ffd23c', outer: '#ff2f05', speed: '1.15s', glow: '0 0 20px rgba(255,90,20,0.72)', scale: 1.2 },
+  7: { core: '#ffffff', mid: '#9fd8ff', outer: '#ff2a00', speed: '0.85s', glow: '0 0 28px rgba(120,190,255,0.6), 0 0 40px rgba(255,70,10,0.5)', scale: 1.28 },
 }
 
 export function Flame({ streak, size = 22 }: { streak: number; size?: number }) {
@@ -67,10 +75,9 @@ export function Flame({ streak, size = 22 }: { streak: number; size?: number }) 
 }
 
 /**
- * The whole streak badge: flame, count, tier name. Under 7 days it
- * renders nothing at all, on purpose, because a two day streak is
- * not an achievement and dressing it up like one cheapens the real
- * ones.
+ * The whole streak badge: flame, count, tier name. It renders from day
+ * one now. The honesty that used to come from hiding it comes from the
+ * ember instead: day one is visibly the bottom of a long ladder.
  */
 export function StreakBadge({ streak, size = 22 }: { streak: number; size?: number }) {
   const tier = flameFor(streak)

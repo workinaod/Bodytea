@@ -96,7 +96,7 @@ export function TrophyCase() {
           ) : (
             <div className="text-[13px] font-bold leading-snug text-ink-dim">
               {facts.streakCurrent > 0
-                ? `${facts.streakCurrent} day${facts.streakCurrent === 1 ? '' : 's'} in. The flame lights at 7.`
+                ? `${facts.streakCurrent} day${facts.streakCurrent === 1 ? '' : 's'} in. Keep it lit.`
                 : 'No streak yet. One session starts it.'}
             </div>
           )}
