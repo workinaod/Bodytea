@@ -353,8 +353,6 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'plan/sportsNutrition.ts:mlToOz',
   'plan/sportsNutrition.ts:proteinPerMealG',
   'plan/sportsNutrition.ts:waterTargetMl',
-  'plan/sportsNutrition.ts:weeklyGainRangeLb',
-  'plan/sportsNutrition.ts:weeklyLossRangeLb',
 
   // W-ONT / W9: the movement ontology, most of it still unconsumed.
   'plan/movement.ts:movementChain',

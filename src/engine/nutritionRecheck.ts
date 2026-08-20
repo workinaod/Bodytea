@@ -90,6 +90,32 @@ export interface NutritionRecheck {
 }
 
 /**
+ * Everything the calorie model wants to know about this athlete today.
+ *
+ * Exported because two engines need it and two gatherings of the same
+ * inputs is how they drift apart. `bodyweightLb` is null rather than
+ * guessed when nobody has weighed in.
+ */
+export function nutritionInputsNow(data: AppData, today: ISODate) {
+  const profile = data.profile ?? {}
+  const shape = adherenceShape(data, today, ADHERENCE_WINDOW_DAYS)
+  return {
+    // bfFormula, not a sex field, because there is no sex field:
+    // onboarding writes the same male/female answer here and the tape
+    // estimator reads it. One question, one place.
+    sex: profile.bfFormula,
+    heightIn: profile.heightIn,
+    ageYears: profile.age,
+    bodyweightLb: latestBodyweightLb(data),
+    bodyFatPct: readUserModel(data, today).bodyFatPct?.value,
+    // Completed sessions only. A plan that assumes six and gets three is
+    // the main way a calculator lies, and the plan's own daysPerWeek is a
+    // statement of intent, not a record of what happened.
+    sessionsPerWeek: shape ? Math.round(shape.samples / (ADHERENCE_WINDOW_DAYS / 7)) : undefined,
+  }
+}
+
+/**
  * What the app would say about this athlete's calories today.
  *
  * Null means no suggestion, which is most of the time and by design.
@@ -100,22 +126,9 @@ export function nutritionRecheck(data: AppData, today: ISODate): NutritionRechec
   const current = plan?.nutrition
   if (!basis || !current) return null
 
-  const profile = data.profile ?? {}
-  // bfFormula, not a sex field, because there is no sex field: onboarding
-  // writes the same male/female answer here and the tape estimator reads
-  // it. One question, one place, and the calorie model wants it too.
-  const sex = profile.bfFormula
-  const heightIn = profile.heightIn
-  const ageYears = profile.age
-
-  const weighed = latestBodyweightLb(data)
-  const bodyweightLb = weighed ?? basis.bodyweightLb
-  const bodyFatPct = readUserModel(data, today).bodyFatPct?.value
-  const shape = adherenceShape(data, today, ADHERENCE_WINDOW_DAYS)
-  // Completed sessions only. A plan that assumes six and gets three is the
-  // main way a calculator lies, and the plan's own daysPerWeek is a
-  // statement of intent, not a record of what happened.
-  const sessionsPerWeek = shape ? Math.round(shape.samples / (ADHERENCE_WINDOW_DAYS / 7)) : undefined
+  const { sex, heightIn, ageYears, bodyweightLb: measured, bodyFatPct, sessionsPerWeek } =
+    nutritionInputsNow(data, today)
+  const bodyweightLb = measured ?? basis.bodyweightLb
 
   const learned: LearnedSince[] = []
   if (Math.abs(bodyweightLb - basis.bodyweightLb) >= REAL_WEIGHT_CHANGE_LB) learned.push('weight')

@@ -1,19 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  CARB_G_PER_KG,
-  FUELLING,
-  PROTEIN_CEILING_G_PER_KG,
-  PROTEIN_G_PER_KG,
-  SUPPLEMENT_EVIDENCE,
-  carbTargetG,
-  fatFloorG,
-  macroTargets,
-  proteinTargetG,
-  toKg,
-  waterTargetMl,
-  weeklyGainRangeLb,
-  weeklyLossRangeLb,
-} from './sportsNutrition'
+import { CARB_G_PER_KG, FUELLING, PROTEIN_CEILING_G_PER_KG, PROTEIN_G_PER_KG, SUPPLEMENT_EVIDENCE, carbTargetG, fatFloorG, macroTargets, proteinTargetG, toKg, waterTargetMl, weeklyGainRangeLb, weeklyLossRangeLb } from './sportsNutrition'
 import { buildNutrition, proteinContextFor } from './generator'
 
 // ============================================================
@@ -179,5 +165,31 @@ describe('the knowledge entries are complete enough to show', () => {
     // strongest claims are not buried below the weak ones.
     expect(grades[0]).toBe(0)
     expect(Math.max(...grades)).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('the fibre floor scales with the food actually prescribed', () => {
+  const fibreAt = (kcal: number) =>
+    macroTargets({ bodyweightLb: 190, kcal, protein: 'deficit', load: 'moderate' }).fiberG
+
+  it('gives a cut its own number, not one built for a bigger day', () => {
+    // The reference intakes are 38 g for men and 25 for women, but both
+    // are stated at reference calorie intakes. Prescribing 38 to somebody
+    // eating 1,600 is a number built for a different amount of food.
+    expect(fibreAt(1600)).toBe(22)
+    expect(fibreAt(2700)).toBe(38)
+    expect(fibreAt(1800)).toBe(25)
+  })
+
+  it('rises with the target', () => {
+    expect(fibreAt(1500)).toBeLessThan(fibreAt(3000))
+    expect(fibreAt(1500)).toBeGreaterThan(0)
+  })
+
+  it('rides along with every macro target the app computes', () => {
+    for (const kcal of [1500, 2000, 2500, 3200]) {
+      const m = macroTargets({ bodyweightLb: 190, kcal, protein: 'deficit', load: 'moderate' })
+      expect(m.fiberG, `${kcal} kcal`).toBe(Math.round((kcal / 1000) * 14))
+    }
   })
 })

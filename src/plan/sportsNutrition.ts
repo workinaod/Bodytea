@@ -230,6 +230,29 @@ export interface MacroTargets {
   carbsG: number
   fatG: number
   kcal: number
+  /** The floor, not a target to hit exactly. See FIBER_G_PER_1000_KCAL. */
+  fiberG: number
+}
+
+/**
+ * Fibre, per thousand calories actually prescribed.
+ *
+ * The reference intakes land at 38 g a day for men and 25 for women, but
+ * those are stated at reference calorie intakes, and prescribing 38 g to
+ * somebody eating 1,600 on a cut is asking them to hit a number built for
+ * a different amount of food. The per-1000 form is the same guidance
+ * scaled to the target this app actually printed: that 1,600 kcal day
+ * gets 22 g, not 38.
+ *
+ * Worth knowing where most people start: the US average is around 8 g per
+ * 1000 kcal, so this is a floor almost nobody is already over, and it
+ * wants ramping over a week or two rather than hitting on day one.
+ */
+export const FIBER_G_PER_1000_KCAL = 14
+
+function fiberFloorG(kcal: number): number {
+  if (!(kcal > 0)) return 0
+  return Math.round((kcal / 1000) * FIBER_G_PER_1000_KCAL)
 }
 
 export function macroTargets(args: {
@@ -245,7 +268,7 @@ export function macroTargets(args: {
   // is not all carbohydrate. Carbs then take the remainder.
   const fatG = Math.round(Math.max(fatMin, (afterProtein * 0.3) / 9) / 5) * 5
   const carbsG = Math.max(0, Math.round((afterProtein - fatG * 9) / 4 / 5) * 5)
-  return { proteinG, carbsG, fatG, kcal: args.kcal }
+  return { proteinG, carbsG, fatG, kcal: args.kcal, fiberG: fiberFloorG(args.kcal) }
 }
 
 // ---------------- Hydration ----------------

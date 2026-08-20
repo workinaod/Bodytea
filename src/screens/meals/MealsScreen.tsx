@@ -7,6 +7,8 @@ import { kcalTargetFor, nutritionDayType } from '../../engine/dayType'
 import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor, proteinStreak } from '../../engine/stats'
 import { applyRecheck, learnedCopy, nutritionRecheck } from '../../engine/nutritionRecheck'
 import { energyCheck, energyCopy } from '../../engine/energyAvailability'
+import { calorieStep, stepCopy } from '../../engine/calorieStep'
+import { MIN_KCAL_REST } from '../../plan/kcalFloor'
 import { macroTargets } from '../../plan/sportsNutrition'
 import { Btn, Card, Chip, DayArrow, Ring, ScreenHeader, SectionTitle } from '../../components/ui'
 import { cycleDayTypeOverride, removeMealEntry, setMealServings, toggleSupplement } from '../../logic/actions'
@@ -64,6 +66,7 @@ export function MealsScreen() {
   const bump = useMemo(() => kcalBumpSuggestion(data), [data])
   const recheck = useMemo(() => nutritionRecheck(data, today), [data, today])
   const energy = useMemo(() => energyCheck(data, today), [data, today])
+  const step = useMemo(() => calorieStep(data, today), [data, today])
 
   return (
     <div className="space-y-3 pb-6">
@@ -132,8 +135,32 @@ export function MealsScreen() {
               {day?.dayTypeOverride ? ' (manual)' : ''}
             </Chip>
             <Chip tone="lime">protein never drops: {data.settings.proteinTargetG} g</Chip>
+            {/* A floor, not a ring: nothing here logs fibre, so showing a
+                progress arc against it would be inventing a number. */}
+            <Chip tone="default">fibre floor: {macroTarget.fiberG} g</Chip>
             {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
           </div>
+
+          {step && (
+            <Card className="border-accent/40">
+              <p className="text-[13px] font-bold text-accent-soft">What the scale is actually doing</p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{stepCopy(step)}</p>
+              {/* One button, because the other one would have been a lie:
+                  there is nowhere to record a decline, so a "hold" would
+                  have set the number to what it already was and the card
+                  would have come straight back. Not tapping is declining. */}
+              <div className="mt-2.5">
+                <Btn kind="subtle" className="w-full !py-2"
+                  onClick={() => update((d) => {
+                    const gap = d.plan.nutrition.kcalTraining - d.plan.nutrition.kcalRest
+                    d.plan.nutrition.kcalTraining = step.toKcal
+                    d.plan.nutrition.kcalRest = Math.max(MIN_KCAL_REST, step.toKcal - gap)
+                  })}>
+                  Move to {step.toKcal} kcal
+                </Btn>
+              </div>
+            </Card>
+          )}
 
           {energy && (
             <Card className="border-gold/40">
