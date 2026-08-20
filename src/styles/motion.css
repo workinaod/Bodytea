@@ -130,6 +130,51 @@
   animation-delay: 280ms;
 }
 
+/* The week path assembling left to right.
+   A connector that scales in from its left edge reads as a line being
+   DRAWN; seven dots fading in together read as seven dots. The delay
+   is set per element in TodayIdentityRow rather than by nth-child,
+   because the path interleaves nodes and links and the arithmetic
+   belongs next to the index it comes from. */
+@keyframes bt-drawx {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.link-draw {
+  animation: bt-drawx var(--dur-base) var(--ease-out) backwards;
+  transform-origin: left center;
+}
+@keyframes bt-nodein {
+  from { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  to { transform: scale(1); opacity: 1; }
+}
+.node-in {
+  animation: bt-nodein var(--dur-base) var(--ease-hit) backwards;
+}
+
+/* A SCREEN arriving, block by block.
+   `.enter-stagger` staggers a LIST. This staggers a SCREEN, which is
+   the same idea with one hazard: several screens render a full-screen
+   overlay as a direct child of their own root (FocusView, QuitGate,
+   FinishChain, WeeklyRecap). Those are `position: fixed`, and a fixed
+   element inside an ancestor with a live transform is positioned
+   against that ancestor rather than the viewport, so an overlay
+   mounting mid-animation would land in the wrong place.
+   `:not(.fixed)` skips them. Every overlay root in this codebase
+   carries Tailwind's `fixed` class, which is what makes that work;
+   an overlay positioned some other way has to be excluded by hand.
+   Sheets are safe either way, they portal to the body. */
+.stagger > *:not(.fixed) {
+  animation: bt-enter var(--dur-slow) var(--ease-out) backwards;
+}
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(n + 6) { animation-delay: 200ms; }
+
 /* ---------- ambient: the field behind onboarding ----------
 
    A tunnel, not a lava lamp.
@@ -743,7 +788,10 @@
   .enter,
   .enter-fade,
   .breathe-in,
-  .enter-stagger > * {
+  .enter-stagger > *,
+  .stagger > *:not(.fixed),
+  .link-draw,
+  .node-in {
     animation: bt-fade 120ms ease-out both !important;
   }
   /* The shafts stop where they are. They are the lighting of the

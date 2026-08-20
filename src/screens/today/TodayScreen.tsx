@@ -225,7 +225,7 @@ export function TodayScreen({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="stagger space-y-3">
       {/* The live day carries no header. Its week path is the day picker,
           and a header row whose only job was a pair of arrows is a block
           spent on navigation the screen already has. Browsing history keeps

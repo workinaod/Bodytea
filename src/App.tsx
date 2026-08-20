@@ -32,6 +32,14 @@ export default function App() {
   // nobody asked to START that session.
   const [pendingList, setPendingList] = useState(false)
   const [track, setTrack] = useState<'choose' | GpsActivity | null>(null)
+  // A tab switch REMOUNTS the screen, so it has no scroll position to
+  // keep, but the document does, and it kept the last one. Leaving a
+  // scrolled Today for Progress landed you halfway down Progress, past
+  // the block that answers the question the tab exists for. It also
+  // meant the arrival choreography played above the fold, to nobody.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [tab])
   const [timerActivity, setTimerActivity] = useState<string | null>(null)
   // Only set when the user typed their own name in the custom row.
   const [timerLabel, setTimerLabel] = useState<string | undefined>(undefined)
@@ -99,10 +107,13 @@ export default function App() {
   return (
     <div className="mx-auto min-h-dvh max-w-lg px-5 pb-28 pt-[max(env(safe-area-inset-top),16px)]">
       <SaveFailedBanner />
-      {/* keyed wrapper: every tab switch rises in, screens feel placed, not
-          swapped. No fill-mode: a retained transform would become the
-          containing block for the fixed sheets inside the screens. */}
-      <div key={tab} style={{ animation: 'rise 0.24s ease-out' }}>
+      {/* Keyed wrapper: a tab switch remounts the screen, and the screen
+          arrives block by block via `.stagger` rather than the whole plate
+          sliding as one. The wrapper itself no longer animates, because a
+          retained transform here would become the containing block for
+          every fixed overlay inside the screens.
+          `data-screen` is the hook e2e/density.spec.ts counts blocks from. */}
+      <div key={tab} data-screen>
         {tab === 'today' && (
           <TodayScreen
             onOpenProgress={() => setTab('progress')}

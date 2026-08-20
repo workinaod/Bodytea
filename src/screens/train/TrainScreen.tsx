@@ -132,7 +132,7 @@ export function TrainScreen({
   }
 
   return (
-    <div className="space-y-3 pb-6">
+    <div className="stagger space-y-3 pb-6">
       <ScreenHeader title="Train" />
 
       {/* The plan first, always. This tab is the alternative, not the default. */}

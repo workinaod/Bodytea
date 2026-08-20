@@ -25,7 +25,7 @@ export function MyPlanScreen() {
   const [view, setView] = useState<PlanView>('training')
 
   return (
-    <div className="space-y-3 pb-6">
+    <div className="stagger space-y-3 pb-6">
       <ScreenHeader title="My Plan" />
 
       <Segmented

@@ -13,6 +13,7 @@ import { Odometer } from '../../components/Odometer'
 import { ConfettiBurst } from '../../components/ConfettiBurst'
 import { useCountUp } from '../../components/useCountUp'
 import { buzzAlert } from '../../platform/haptics'
+import { sfxRecord, sfxSessionDone, sfxStreakDay } from '../../logic/sfx'
 
 // ============================================================
 // The finish chain: the beat between the last set and the
@@ -44,7 +45,7 @@ const DIP_MS = 120
 
 export interface ChainData {
   beats: BeatId[]
-  work: { done: number; total: number; tonnage: number; grade: string }
+  work: { done: number; total: number; tonnage: number; grade: string; quiet: boolean }
   pr: { name: string; line: string } | null
   streak: { days: number; tier: string; lit: 'first' | 'up' | null; pull: string | null } | null
   badge: { name: string; icon: string; from: number; to: number; target: number; unlocked: boolean } | null
@@ -75,7 +76,10 @@ export function buildFinishChain(before: AppData, after: AppData, date: ISODate)
 
   const { done, total } = sessionSetsDone(session)
   const grade = sessionGrade(session)
-  const work = { done, total, tonnage: sessionTonnage(session), grade: GRADE_LABEL[grade] }
+  // A day that went on the record softly still went on the record. The
+  // fanfare plays either way and the volume is the honest part.
+  const quiet = grade === 'light' || grade === 'extremely-light'
+  const work = { done, total, tonnage: sessionTonnage(session), grade: GRADE_LABEL[grade], quiet }
 
   const prs = detectPRs(after, session)
   const pr = prs.length
@@ -179,7 +183,16 @@ export function FinishChain({ chain, onDone }: { chain: ChainData; onDone: () =>
       timers.push(setTimeout(() => setI(0), DIP_MS))
     } else {
       const beat = chain.beats[i]
-      if (beat === 'pr') buzzAlert()
+      // Sound is a channel that reaches somebody who is not looking at
+      // the screen, which after the last set is most people. Each of
+      // these is gated on the beat, and a beat with nothing true to say
+      // never renders, so none of them can fire for a day nobody earned.
+      if (beat === 'work') sfxSessionDone(chain.work.quiet)
+      if (beat === 'pr') {
+        buzzAlert()
+        sfxRecord()
+      }
+      if (beat === 'streak') sfxStreakDay()
       // The bar has to paint where it started before it is told to move,
       // or the transition has nothing to transition from.
       if (beat === 'badge') timers.push(setTimeout(() => setBarFull(true), 90))
@@ -188,7 +201,7 @@ export function FinishChain({ chain, onDone }: { chain: ChainData; onDone: () =>
       }
     }
     return () => timers.forEach(clearTimeout)
-  }, [i, chain.beats, last])
+  }, [i, chain.beats, chain.work.quiet, last])
 
   // Confetti belongs to ONE beat per ceremony. Three earned things in a
   // day is a great day, not three parades.

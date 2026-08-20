@@ -44,7 +44,7 @@ const SCREENS: Screen[] = [
 /** Top-level children of the tab's screen container. */
 async function blocks(page: Page, flattenLast: boolean): Promise<string[]> {
   return page.evaluate((flatten) => {
-    const root = document.querySelector('div[style*="rise"]')?.firstElementChild
+    const root = document.querySelector('[data-screen]')?.firstElementChild
     if (!root) throw new Error('screen container not found')
     const kids = Array.from(root.children)
     const flat =
@@ -81,4 +81,58 @@ test('no screen is longer than the concept draws it', async ({ page }) => {
         found.map((b, i) => `  ${i + 1}. ${b}`).join('\n'),
     ).toBeLessThanOrEqual(s.cap)
   }
+})
+
+// ============================================================
+// A full-screen overlay is never staggered.
+//
+// Screens arrive block by block via `.stagger`, which animates each
+// direct child's transform. Several screens render a full-screen
+// overlay as a direct child of their own root: FocusView, QuitGate,
+// FinishChain, WeeklyRecap. Those are `position: fixed`, and a fixed
+// element inside an ancestor with a live transform positions against
+// that ancestor rather than the viewport, so one mounting mid-stagger
+// would land somewhere other than the screen.
+//
+// The CSS excludes them with `:not(.fixed)`. This is the test that
+// says so: drop that selector and the logger gets an animation and
+// this goes red.
+// ============================================================
+test('a full-screen overlay is never given the arrival animation', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+  await onboardGenerated(page)
+
+  // A staggered block DOES animate, so the guard is measuring something.
+  const blockAnim = await page.evaluate(() => {
+    const el = document.querySelector('[data-screen] > * > *')
+    return el ? getComputedStyle(el).animationName : 'no-block'
+  })
+  expect(blockAnim).toBe('bt-enter')
+
+  const readiness = page.getByRole('button', { name: /Readiness check → start/ })
+  if (await readiness.isVisible().catch(() => false)) {
+    await readiness.click()
+    await page.getByRole('button', { name: /^Start session$/ }).click()
+  } else {
+    await page.getByRole('button', { name: 'Start session', exact: true }).click()
+    await page.getByRole('button', { name: /^Full session/ }).click()
+  }
+  await expect(page.getByText(/Set 1 of/).first()).toBeVisible()
+
+  // The logger is a fixed child of Today's staggered root and must be
+  // left alone by it.
+  const overlay = await page.evaluate(() => {
+    const el = Array.from(document.querySelectorAll("[data-screen] > * > *")).find((n) =>
+      n.classList.contains('fixed'),
+    )
+    if (!el) return { found: false, animationName: '', transform: '' }
+    const cs = getComputedStyle(el)
+    return { found: true, animationName: cs.animationName, transform: cs.transform }
+  })
+  expect(overlay.found, 'the logger should be a fixed child of the staggered screen root').toBe(true)
+  expect(overlay.animationName).toBe('none')
+  expect(overlay.transform).toBe('none')
 })

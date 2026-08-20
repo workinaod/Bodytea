@@ -26,6 +26,10 @@ import { evaluateAchievements } from '../../engine/achievements'
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
+/** How far apart the path's nodes land. Seven of them, so 46ms is the
+ *  longest step that still finishes inside the arrival window. */
+const STEP = 46
+
 function weekStates(data: AppData, today: ISODate): { date: ISODate; state: NodeState }[] {
   const monday = mondayOf(today)
   // You cannot miss a day you did not have the app for. Onboarding on a
@@ -107,7 +111,10 @@ export function TodayIdentityRow({
         {nodes.map((n, i) => (
           <Fragment key={n.date}>
             {i > 0 && (
-              <span className="flex flex-1 pt-[9px]">
+              <span
+                className="link-draw flex flex-1 pt-[9px]"
+                style={{ animationDelay: `${STEP * i - 26}ms` }}
+              >
                 <PathLink lit={nodes[i - 1].state === 'done' && n.state !== 'future'} />
               </span>
             )}
@@ -115,7 +122,8 @@ export function TodayIdentityRow({
               type="button"
               aria-label={`Open ${n.date}`}
               onClick={() => onPickDay?.(n.date)}
-              className="press flex w-7 shrink-0 flex-col items-center px-1.5"
+              className="node-in press flex w-7 shrink-0 flex-col items-center px-1.5"
+              style={{ animationDelay: `${STEP * i}ms` }}
             >
               <span className="flex h-[21px] items-center">
                 <WeekNode state={n.state} />

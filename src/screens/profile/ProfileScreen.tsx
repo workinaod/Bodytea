@@ -108,7 +108,7 @@ export function ProfileScreen({ onOpenProgress }: { onOpenProgress?: () => void 
   }, [journey])
 
   return (
-    <div className="space-y-3 pb-6">
+    <div className="stagger space-y-3 pb-6">
       <ScreenHeader
         title="Profile"
         right={

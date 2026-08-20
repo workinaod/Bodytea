@@ -7,6 +7,9 @@ import { beep, cancelSpeech, say, speechInSupported, startEars, type EarStatus }
 import { EarStatusNote } from './EarStatusNote'
 import { useAppStore } from '../../store/appStore'
 import { abandonSession, patchSet, restartSession, setWeightForward} from '../../logic/actions'
+import { sfxRepTarget, sfxSetBanked } from '../../logic/sfx'
+import { tapConfirm } from '../../platform/haptics'
+import { SoundModePicker } from './SoundModePicker'
 import { setSessionFeel } from '../../logic/prescription'
 import { recordRir, recordShortfall } from '../../logic/fatigueActions'
 import { Stepper } from '../../components/ui'
@@ -75,7 +78,6 @@ export function FocusView({
   const update = useAppStore((s) => s.update)
   // Four sound levels: full voice / beeps + next-exercise name / beeps / silent
   const soundMode = data.settings.soundMode ?? ((data.settings.voiceCoach ?? true) ? 'voice' : 'silent')
-  const [soundOpen, setSoundOpen] = useState(false)
   const soundRef = useRef(soundMode)
   soundRef.current = soundMode
 
@@ -245,6 +247,22 @@ export function FocusView({
     clearTimers()
     justRef.current = { exIdx: current.exIdx, setIdx: current.setIdx }
     patchSet(session.date, current.exIdx, current.setIdx, { done: true })
+    // EVERY set answers back, not only the ones that happen to have rest
+    // after them. The tick used to live in BreakScreen for one reason: this
+    // file had no room. It has room now, so a superset gets the same
+    // confirmation as anything else.
+    try {
+      tapConfirm()
+    } catch {
+      /* no vibration */
+    }
+    // The fifth up is the plan's rep target, not any rep. Same event,
+    // different weight, and nobody has to be told which one they got.
+    // `achieved` is written ONLY when the athlete came up short, so its
+    // absence IS the clear. See sessionTypes.ts.
+    const justSet = session.exercises[current.exIdx]?.sets[current.setIdx]
+    if (justSet?.achieved === undefined) sfxRepTarget()
+    else sfxSetBanked()
     const rest = restAfter(session, current)
     const next = nextFocusItem(session, current)
     if (rest > 0 && next) {
@@ -439,42 +457,7 @@ export function FocusView({
         </div>
         <div className="flex-1" />
         <div className="flex gap-1.5">
-          <div className="relative">
-            <button
-              onClick={() => setSoundOpen((v) => !v)}
-              className={`rounded-full px-3 py-1.5 ${soundMode !== 'silent' ? 'bg-accent/20 text-accent-soft' : 'bg-surface-2 text-ink-faint'}`}
-              aria-label="Session sound"
-            >
-              <VolumeIcon waves={soundMode === 'voice' ? 3 : soundMode === 'beeps-names' ? 2 : soundMode === 'beeps' ? 1 : 0} />
-            </button>
-            {soundOpen && (
-              <div className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-2xl border-2 border-edge bg-surface shadow-[0_4px_0_var(--color-edge)]">
-                {(
-                  [
-                    ['voice', 3, 'Voice coach', 'Set intros + countdown'],
-                    ['beeps-names', 2, 'Beeps + names', 'Countdown beeps, next exercise name only'],
-                    ['beeps', 1, 'Beeps only', 'Countdown beeps'],
-                    ['silent', 0, 'Silent', 'Screen only, no sound'],
-                  ] as const
-                ).map(([id, waves, label, sub], i) => (
-                  <button
-                    key={id}
-                    onClick={() => {
-                      update((d) => { d.settings.soundMode = id })
-                      setSoundOpen(false)
-                    }}
-                    className={`flex w-full items-center gap-3 px-3.5 py-2.5 text-left ${i > 0 ? 'border-t border-white/[0.05]' : ''} ${soundMode === id ? 'bg-accent/10' : ''}`}
-                  >
-                    <VolumeIcon waves={waves} />
-                    <span className="min-w-0">
-                      <span className={`block text-[12.5px] font-bold ${soundMode === id ? 'text-accent-soft' : 'text-ink'}`}>{label}</span>
-                      <span className="block text-[10px] leading-snug text-ink-faint">{sub}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <SoundModePicker mode={soundMode} />
           {voiceSupported && (
             <button
               onClick={() => {
@@ -656,14 +639,3 @@ export function FocusView({
 }
 
 
-function VolumeIcon({ waves }: { waves: 0 | 1 | 2 | 3 }) {
-  return (
-    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 5 6.5 9H3v6h3.5L11 19V5Z" fill="currentColor" stroke="none" />
-      {waves >= 1 && <path d="M14.5 10a3.2 3.2 0 0 1 0 4" />}
-      {waves >= 2 && <path d="M16.8 8a6.4 6.4 0 0 1 0 8" />}
-      {waves >= 3 && <path d="M19.1 6a9.6 9.6 0 0 1 0 12" />}
-      {waves === 0 && <path d="M14.5 9.5 20 15M20 9.5 14.5 15" />}
-    </svg>
-  )
-}

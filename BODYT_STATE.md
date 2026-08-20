@@ -2334,6 +2334,60 @@ the pre-existing plans that genuinely have no record of what built them.
   the anatomy figure's BEHAVIOUR need nothing from anybody and can start immediately; the
   figure's ART is checked against the character lane first.
 
+- **2026-08-20 · OP12 · the app answers back: motion wired, sound shipped.** Round 7's audit
+  said twenty motion classes and five used, one oscillator with one call site, and a sound
+  setting read by the countdown alone. This spends it. Owner approved the palette.
+  **SOUND, six of them, new `platform/sound.ts` + `logic/sfx.ts`.** The split is the layering:
+  `platform` makes a noise and knows nothing about BodyT, `logic` decides which noise means
+  what and whether the athlete wants it. Set banked (165Hz knock), rep target hit (the same
+  knock a fifth up), rest over, record, streak day, session complete. Nothing above 350Hz
+  except the record, nothing longer than 100ms except the two once-a-day moments, and every
+  one routed through `settings.soundMode`, **which already had four values and was read by the
+  timer alone**. `beep()` is now a thin wrapper over the new envelope, so the 3-2-1 stops
+  clicking and there is ONE AudioContext in the app instead of two.
+  Every sound is gated on an engine event and none of them can fire for junk: the fifth-up is
+  `achieved === undefined`, which is the field's own documented meaning of the target being
+  met; the record sound is what `detectPRs` returned; the fanfare rides the ceremony's work
+  beat and goes QUIET rather than absent on a light day, because the day went on the record
+  either way.
+  **MOTION.** New `.stagger`: a screen arrives block by block at 40ms steps instead of the
+  whole plate sliding as one. New `.link-draw` / `.node-in`: the week path assembles left to
+  right, delays set per index in the component rather than by nth-child, because the path
+  interleaves nodes and links. `.enter-stagger` stays what it was, a LIST stagger.
+  **FocusView 669 → 641, allowance 670 → 642.** `SoundModePicker.tsx` came out whole (button,
+  popover, four modes, VolumeIcon). That bought the room for the thing the logger could not
+  afford before: **every set now answers back**, not only the ones that happen to have rest
+  after them. The tick moved out of `BreakScreen` and into `advance()`, where the event is.
+  TWO DEFECTS FOUND ON THE WAY, both pre-existing:
+  (1) **`RestTimer` fired `buzzRestOver()` every 500ms, forever.** No one-shot guard, so a rest
+  nobody dismissed left the phone shaking on a loop twice a second. `BreakScreen` had the guard
+  and the list-mode timer never did. Found because adding a SOUND there would have looped the
+  sound too, which is how a silent bug becomes an audible one.
+  (2) **A tab switch kept the document's scroll position** while remounting the screen, so
+  leaving a scrolled Today for Progress landed you halfway down Progress, past the block the
+  tab exists to show. Found by screenshot: the first mid-flight capture of the new arrival
+  looked broken, and measuring rather than guessing said `scrollY: 363`. The animation was
+  correct and playing above the fold, to nobody.
+  **THE HAZARD THIS DESIGN EXISTS AROUND, and it has a test.** `.stagger` animates each direct
+  child's transform, and several screens render a full-screen overlay as a direct child of
+  their own root (`FocusView`, `QuitGate`, `FinishChain`, `WeeklyRecap`). A `position: fixed`
+  element inside an ancestor with a live transform positions against that ancestor rather than
+  the viewport, so an overlay mounting mid-stagger would land somewhere other than the screen.
+  The CSS excludes them with `:not(.fixed)`; every overlay root in this codebase carries
+  Tailwind's `fixed`, which is what makes that work. Sheets are safe either way, they portal.
+  `e2e/density.spec.ts` now asserts it: a staggered block HAS `bt-enter` and the logger has
+  `none`. **Proven by mutation:** deleting `:not(.fixed)` gives the logger `bt-enter` and the
+  test goes red.
+  Also: `[data-screen]` replaced `div[style*="rise"]` as the density spec's hook, because
+  keying a test selector to an inline animation style was a coupling waiting to break, and the
+  wrapper stopped animating when the stagger took over.
+  LEARNED: **a screenshot that looks wrong is a measurement, not a verdict.** The arrival
+  looked broken and was correct; the actual bug was two layers away in scroll retention.
+  Gates: typecheck clean, **1,751/1,751 unit**, build green, **92/92 e2e** on a fresh server,
+  390px screenshots reviewed mid-flight and settled.
+  NEXT: the remaining dead classes (`.pop` on the set counter, `.flicker` on a streak that went
+  up, `.charge`), and `MuscleMap` lighting sequentially, which still has zero animation.
+
 ## 10. SOURCES
 
 - OP12 round 6, "Make It Move" (reminder pop-up, Progress as a scoreboard, the flame from zero):

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { buzzRestOver } from '../platform/haptics'
+import { sfxRestOver } from '../logic/sfx'
 
 /**
  * Timestamp-based rest timer, survives backgrounding (iOS throttles
@@ -8,17 +9,24 @@ import { buzzRestOver } from '../platform/haptics'
 export function RestTimer({ seconds, onDismiss }: { seconds: number; onDismiss: () => void }) {
   const endsAt = useRef(Date.now() + seconds * 1000)
   const [remaining, setRemaining] = useState(seconds)
+  // Rest ending is ONE event. Without this the tick fired the buzz every
+  // 500ms for as long as the pill stayed on screen, so a rest nobody
+  // dismissed left the phone shaking on a loop. BreakScreen already had
+  // this guard; the list-mode timer never did.
+  const rang = useRef(false)
 
   useEffect(() => {
     const tick = () => {
       const left = Math.max(0, Math.round((endsAt.current - Date.now()) / 1000))
       setRemaining(left)
-      if (left === 0) {
+      if (left === 0 && !rang.current) {
+        rang.current = true
         try {
           buzzRestOver()
         } catch {
           /* no vibration support */
         }
+        sfxRestOver()
       }
     }
     tick()

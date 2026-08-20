@@ -1,5 +1,6 @@
 import { intoChunks, speakable } from './speakable'
 import { pickVoice } from './voices'
+import { tone } from './sound'
 
 /**
  * The user's chosen voice, set from Settings. Kept as a module value
@@ -160,29 +161,19 @@ export function cancelSpeech(): void {
   }
 }
 
-// ---- Beeps (Web Audio, lazy) ----
+// ---- Beeps ----
 
-let audioCtx: AudioContext | null = null
-
+/**
+ * The countdown's tone, now with an attack and a decay.
+ *
+ * This used to own its own AudioContext and fire a bare sine with a
+ * single gain step, which is an impulse, which is a click. It is a
+ * thin wrapper over platform/sound.ts now, so the 3-2-1 gets the same
+ * envelope as the rest of the palette and there is one context in the
+ * app rather than two.
+ */
 export function beep(freq = 880, ms = 140, gain = 0.15): void {
-  try {
-    type AudioWindow = Window & { webkitAudioContext?: typeof AudioContext }
-    const Ctor = window.AudioContext ?? (window as AudioWindow).webkitAudioContext
-    if (!Ctor) return
-    audioCtx = audioCtx ?? new Ctor()
-    if (audioCtx.state === 'suspended') void audioCtx.resume()
-    const osc = audioCtx.createOscillator()
-    const g = audioCtx.createGain()
-    osc.frequency.value = freq
-    osc.type = 'sine'
-    g.gain.value = gain
-    osc.connect(g)
-    g.connect(audioCtx.destination)
-    osc.start()
-    osc.stop(audioCtx.currentTime + ms / 1000)
-  } catch {
-    /* audio is a garnish, never a blocker */
-  }
+  tone({ f: freq, dur: ms / 1000, gain })
 }
 
 // ---- Listening ----
