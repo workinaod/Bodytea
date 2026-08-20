@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest'
 // this page, is that later in the roadmap and we are just
 // adjusting colors rn?"
 //
-// So the contents are written down in research/OP5-screen-law.md
+// So the contents are written down in research/OP12-screen-law.md
 // and this asserts they are actually on the screens. These are
 // landmarks, not pixels: a section that exists can be improved,
 // a section that was never built cannot.
@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest'
 // ============================================================
 
 const ROOT = join(import.meta.dirname, '..')
-const LAW = 'research/OP5-screen-law.md'
+const LAW = 'research/OP12-screen-law.md'
 
 function src(rel: string): string {
   const p = join(ROOT, 'src', rel)

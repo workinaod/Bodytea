@@ -1,30 +1,8 @@
-import { useEffect, useState } from 'react'
 import type { MilestoneReview } from '../../engine/review'
 import { formatShort } from '../../engine/calendar'
-import { PhotoStore } from '../../store/storage'
 import { Sheet } from '../../components/Sheet'
 import { Btn } from '../../components/ui'
-
-function usePhotoUrl(id: string | undefined): string | null {
-  const [url, setUrl] = useState<string | null>(null)
-  useEffect(() => {
-    let revoked: string | null = null
-    if (!id) {
-      setUrl(null)
-      return
-    }
-    void PhotoStore.get(id).then((blob) => {
-      if (blob) {
-        revoked = URL.createObjectURL(blob)
-        setUrl(revoked)
-      }
-    })
-    return () => {
-      if (revoked) URL.revokeObjectURL(revoked)
-    }
-  }, [id])
-  return url
-}
+import { usePhotoUrl } from './usePhotoUrl'
 
 const TONE_STYLE = {
   win: 'border-lime/70 text-lime/90',

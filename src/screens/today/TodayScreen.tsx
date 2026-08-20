@@ -3,7 +3,7 @@ import type { DebriefData, ISODate } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
 import { addDaysISO, formatDayLabel, todayISO } from '../../engine/calendar'
-import { lateNightGraceDate } from '../../engine/rollover'
+import { lateNightGraceDate, stillOpenForLogging } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
 import { enableReminders, notificationSupport } from '../../logic/reminders'
 import { BannerRow, Btn, DayArrow, ScreenHeader, Tile } from '../../components/ui'
@@ -11,6 +11,7 @@ import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
 import { finishSession, restoreToday } from '../../logic/actions'
 import { startSession } from '../../logic/sessionStart'
+import { planWorkOutstanding } from '../../engine/stats'
 import { briefForDay, briefForSession } from '../../engine/workoutBrief'
 import { streakDays } from '../../engine/streak'
 import { quitCopy } from '../../engine/quit'
@@ -23,6 +24,9 @@ import { TodayCoachLine } from './TodayCoachLine'
 import { TodayCompletion } from './TodayCompletion'
 import { TodayPreviewList } from './TodayPreviewList'
 import { MakeupCard } from './MakeupCard'
+import { AddMoreWork } from './AddMoreWork'
+import { ReviewOffer } from './ReviewOffer'
+import { QuitGate } from './QuitGate'
 import { WorkoutBriefSheet } from './WorkoutBriefSheet'
 import { SessionView } from './SessionView'
 import { FocusView } from './FocusView'
@@ -40,6 +44,8 @@ export function TodayScreen({
   onOpenTrain,
   pendingRun,
   onPendingRunTaken,
+  pendingList,
+  onPendingListTaken,
 }: {
   /** Jumps out of Today. Optional so the screen still stands alone. */
   onOpenProgress?: () => void
@@ -48,6 +54,9 @@ export function TodayScreen({
   /** Train picked a day to run; Today owns the gates that actually start it. */
   pendingRun?: { date: ISODate; cns: boolean } | null
   onPendingRunTaken?: () => void
+  /** Train logged work into today's session; open the list, not the runner. */
+  pendingList?: boolean
+  onPendingListTaken?: () => void
 } = {}) {
   const data = useAppStore((s) => s.data)
   const realToday = useToday()
@@ -85,9 +94,14 @@ export function TodayScreen({
   const day = useMemo(() => resolveDay(date, data), [date, data])
   const session = data.sessions[date]
   // A make-up session runs a MISSED day's workout on a rest day, the
-  // views need that day's resolution, not the rest day's empty one.
+  // views need that day's resolution, not the rest day's empty one. Only
+  // until today's own session is started, though: after that the log holds
+  // both workouts and the day is the athlete's own again.
   const viewDay = useMemo(
-    () => (session?.makeupFor ? resolveDay(session.makeupFor, data) : day),
+    () =>
+      session?.makeupFor && session.ownPlanStarted !== true
+        ? resolveDay(session.makeupFor, data)
+        : day,
     [session, day, data],
   )
   // What today IS, explained: the session if one is running (custom work
@@ -105,12 +119,30 @@ export function TodayScreen({
   const finished = session && (session.endedAt || session.status === 'completed' || session.status === 'downgraded-completed')
   const skipped = session?.status === 'skipped'
   const today = date === homeDate
-  // The one day that can be started: the live one, unstarted, with real
-  // work on it. A required-cardio day with nothing picked yet is not a
-  // session, it is a question, and the chooser below is the answer.
+  // What the plan asked for today that is not on the day's log yet. Empty
+  // means today's own workout is on the record; anything in it means the
+  // day still owes work however finished the session looks.
+  const planOwed = planWorkOutstanding(
+    day.exercises,
+    session,
+    session?.makeupFor ? viewDay.exercises : undefined,
+  )
+  // The mission names what is RUNNING while a session is running, and what
+  // the day still owes once nothing is. A finished make-up used to leave
+  // the made-up day's title on the tile, so the screen read "this is your
+  // workout, and it is done" over a session nobody had started.
+  const heroDay = planOwed.length > 0 && !inProgress ? day : viewDay
+  // The one day that can be started: the live one, still owing the plan's
+  // work. Gated on what is OWED rather than on whether a session exists,
+  // because a make-up or an off-plan workout takes the day's session slot
+  // and used to be read as "today's workout is done". A required-cardio
+  // day with nothing picked yet is not a session, it is a question, and
+  // the chooser below is the answer.
   const canStart =
     today &&
-    !session &&
+    !inProgress &&
+    !skipped &&
+    planOwed.length > 0 &&
     day.kind !== 'rest' &&
     !(day.kind === 'cardio-backup' && day.exercises.length === 0)
 
@@ -132,6 +164,13 @@ export function TodayScreen({
     if (cns) setReadinessOpen(true)
     else setIntensityOpen(true)
   }
+
+  useEffect(() => {
+    if (!pendingList) return
+    setViewMode('list')
+    onPendingListTaken?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingList])
 
   useEffect(() => {
     if (!pendingRun) return
@@ -203,11 +242,14 @@ export function TodayScreen({
       )}
 
       {graceDate && date === graceDate && (
-        <div className="border-l-2 border-cyan/60 py-1 pl-3 text-[12.5px] leading-snug text-cyan/90">
-          {session
-            ? `After midnight. Still finishing yesterday's session, it logs under ${formatDayLabel(graceDate)}.`
-            : `After midnight. ${formatDayLabel(graceDate)}'s session is still open until 3 AM. Start now and it logs under ${formatDayLabel(graceDate)}.`}
-        </div>
+        <Tile tone="ice" className="!py-3">
+          <div className="eyebrow text-cyan">After midnight</div>
+          <p className="mt-1 text-[12px] font-bold leading-snug text-ink-dim">
+            {session
+              ? `Still finishing yesterday's session, it logs under ${formatDayLabel(graceDate)}.`
+              : `${formatDayLabel(graceDate)}'s session is still open until 3 AM. Start now and it logs under ${formatDayLabel(graceDate)}.`}
+          </p>
+        </Tile>
       )}
 
       {/* The mission carries its own button now. A CTA that lives outside
@@ -215,12 +257,19 @@ export function TodayScreen({
           move here is that there is one object and it has a handle. */}
       <TodayHero
         data={data}
-        day={viewDay}
+        day={heroDay}
         session={session}
         onOpenBrief={() => setBriefOpen(true)}
         cta={
           canStart
-            ? { label: day.cns ? 'Readiness check → start' : 'Start session', onStart: handleStart }
+            ? {
+                label: day.cns
+                  ? 'Readiness check → start'
+                  : session
+                    ? "Start today's session"
+                    : 'Start session',
+                onStart: handleStart,
+              }
             : undefined
         }
         onCantTrain={canStart ? () => setSkipOpen(true) : undefined}
@@ -310,16 +359,34 @@ export function TodayScreen({
         </Tile>
       )}
 
+      {/* A week, month, quarter or year just closed and has not been
+          looked at yet. Offered, never forced. */}
+      <ReviewOffer today={date} />
+
       {/* A miss with an open window is coaching about THIS week, so it
           stays here. The rest of the off-plan arsenal lives in Train. */}
       <MakeupCard
         date={date}
-        active={today}
+        active={stillOpenForLogging(date, homeDate, new Date())}
         hasSession={!!session}
         dayKind={day.kind}
         onRunDay={runDay}
         onOpenTrain={onOpenTrain}
       />
+
+      {/* Already training today and did something else as well. Nothing
+          inside the session view can add an exercise, which is how an
+          athlete ended up with nowhere to put the next thing. */}
+      {!!session && stillOpenForLogging(date, homeDate, new Date()) && (
+        <AddMoreWork
+          date={date}
+          onLive={() => setViewMode('list')}
+          onLogged={(d) => {
+            setViewMode('list')
+            if (d) setDebrief({ data: d })
+          }}
+        />
+      )}
 
       {today && <TodayNextUp data={data} today={homeDate} onOpenBadges={onOpenProfile} />}
 
@@ -334,6 +401,7 @@ export function TodayScreen({
         today={today}
         skipped={skipped}
         finished={!!finished}
+        owedTitle={planOwed.length > 0 ? day.title : null}
         pastDebrief={pastDebrief}
         onOpenDebrief={(d) => setDebrief({ data: d })}
         onPreviewTomorrow={setSelected}
@@ -366,29 +434,7 @@ export function TodayScreen({
 
       {/* Quit gate: ending with sets still open takes a deliberate yes */}
       {confirmEnd && session && quit && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center px-6">
-          <div className="absolute inset-0 bg-black/70 animate-fade-in" onClick={() => setConfirmEnd(false)} />
-          <div className="relative w-full max-w-sm rounded-2xl border border-danger/40 bg-bg p-5 shadow-2xl animate-fade-in">
-            <h3 className="text-[17px] font-black tracking-tight text-danger">
-              {quit.title}
-            </h3>
-            <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">{quit.body}</p>
-            <div className="mt-4 flex flex-col gap-2">
-              <button
-                className="sheen w-full rounded-xl bg-gradient-to-b from-accent to-accent-deep py-3 text-[14px] font-black text-black shadow-lg shadow-accent/20 active:scale-[0.98]"
-                onClick={() => setConfirmEnd(false)}
-              >
-                {quit.stay}
-              </button>
-              <button
-                className="w-full rounded-xl border border-danger/40 bg-white/[0.07] py-3 text-[13px] font-bold text-danger active:scale-[0.98]"
-                onClick={handleFinish}
-              >
-                {quit.go}
-              </button>
-            </div>
-          </div>
-        </div>
+        <QuitGate quit={quit} onStay={() => setConfirmEnd(false)} onGo={handleFinish} />
       )}
 
       {!session && day.kind === 'cardio-backup' && day.exercises.length === 0 && (
@@ -400,7 +446,7 @@ export function TodayScreen({
         date={date}
         day={day}
         today={today}
-        hasSession={!!session}
+        owed={planOwed.length > 0 && !inProgress}
         onOpenGuide={setGuideId}
       />
 

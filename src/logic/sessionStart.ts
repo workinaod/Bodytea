@@ -1,9 +1,12 @@
-import type { ExerciseKind, ISODate, SessionIntensity, SessionLog, SetLog } from '../types'
+import type { DebriefData, ExerciseKind, ISODate, SessionIntensity, SessionLog, SetLog } from '../types'
 import { planTemplate, resolveDay } from '../engine/resolveDay'
 import { applyReadinessDowngrade, minimumViableFor } from '../engine/transforms'
 import { parseRepRange, repLabel, type RepRange } from '../engine/reps'
 import { getExercise } from '../plan/exercises'
-import { useAppStore } from '../store/appStore'
+import { composeDebrief } from '../engine/debrief'
+import { pushShown } from '../engine/coach'
+import { uid, useAppStore } from '../store/appStore'
+import { finishSession } from './actions'
 import { prefillFor } from './prescription'
 
 // ============================================================
@@ -73,6 +76,61 @@ function setsFor(
   }))
 }
 
+/**
+ * Put a freshly built session onto the day WITHOUT destroying what is
+ * already on it.
+ *
+ * Both doors reach this. The custom path was fixed to append first, but
+ * `startSession` was left assigning straight over `d.sessions[date]`, and
+ * that is the door a make-up comes through: run Monday's missed workout on
+ * a Thursday and Thursday's own session was replaced by Monday's, along
+ * with anything already logged that morning. The owner found it the same
+ * way as the first one, from the app: "why is my days session still closed
+ * like i did it."
+ *
+ * `reopen` is the whole difference between LOGGING work and STARTING it.
+ * Recording something that already happened never changes whether the day
+ * is over. Starting a workout does: a finished day the athlete then starts
+ * training again is a day back in progress, and that is a deliberate tap,
+ * not a side effect.
+ */
+function putOnDay(date: ISODate, skeleton: SessionLog, opts: { reopen: boolean }): void {
+  store().update((d) => {
+    const existing = d.sessions[date]
+    if (!existing || existing.status === 'skipped') {
+      // A skipped day that somebody then trains anyway is a day they
+      // trained; the skip was the plan for it, not the record of it.
+      d.sessions[date] = skeleton
+      return
+    }
+
+    // Same movement twice in a day merges its sets into the entry that is
+    // already there. Two entries for one exercise would read as two to the
+    // session view and as one to the day recap, which keys by exercise id,
+    // and the second would quietly vanish from the record.
+    for (const add of skeleton.exercises) {
+      const found = existing.exercises.find((e) => e.exerciseId === add.exerciseId)
+      if (found) found.sets.push(...add.sets)
+      else existing.exercises.push(add)
+    }
+
+    if (!opts.reopen) return
+    delete existing.endedAt
+    existing.status = 'partial'
+    // Everything the day already recorded about itself outranks the new
+    // run's blanks: the first readiness answers, the first make-up link,
+    // the clock it started on.
+    existing.startedAt = existing.startedAt ?? skeleton.startedAt
+    existing.readiness = existing.readiness ?? skeleton.readiness
+    existing.makeupFor = existing.makeupFor ?? skeleton.makeupFor
+    existing.intensity = existing.intensity ?? skeleton.intensity
+    // Once today's own plan has been started it stays started: a make-up
+    // landing on top of it afterwards does not un-start it.
+    if (skeleton.ownPlanStarted === true) existing.ownPlanStarted = true
+    else existing.ownPlanStarted = existing.ownPlanStarted ?? skeleton.ownPlanStarted
+  })
+}
+
 export function startSession(
   date: ISODate,
   readinessFlags?: [boolean, boolean, boolean, boolean],
@@ -109,15 +167,16 @@ export function startSession(
     readiness: readinessFlags ? { flags: readinessFlags, downgraded } : undefined,
     intensity: intensity === 'full' ? undefined : intensity,
     makeupFor,
+    // A make-up runs somebody else's day. Today's own workout has not been
+    // started by it, and that is what keeps the day open afterwards.
+    ownPlanStarted: makeupFor === undefined,
     exercises: exercises.map((r) => ({
       exerciseId: r.exerciseId,
       fromSlot: r.fromSlot,
       sets: setsFor(date, r),
     })),
   }
-  store().update((d) => {
-    d.sessions[date] = skeleton
-  })
+  putOnDay(date, skeleton, { reopen: true })
 }
 
 // ---------- Off-plan sessions ----------
@@ -133,8 +192,15 @@ export interface CustomWorkoutItem {
 }
 
 /**
- * Start a workout the plan never scheduled: one picked off the general
+ * Log a workout the plan never scheduled: one picked off the general
  * shelf, or built by hand from the exercise list.
+ *
+ * It ADDS to the day rather than replacing it. The first version of
+ * this assigned straight over `d.sessions[date]`, which meant an
+ * athlete who trained their planned session and then logged anything
+ * extra lost the whole first session: every ticked set, the readiness
+ * answers, the make-up link, the fatigue notes. A day is a record of
+ * everything done in it, not of the last thing started.
  *
  * It becomes an ordinary SessionLog under templateId 'custom', so the
  * whole record pipeline (grades, PRs, tonnage, the debrief, prefill for
@@ -143,9 +209,9 @@ export interface CustomWorkoutItem {
  * keeps doing off-plan still climbs and still earns weight on the wrap.
  *
  * `markDone` is the after-the-fact path ("already did this"): every set
- * is created ticked, and the caller runs finishSession for the debrief.
- * The reps recorded are the ask; if the athlete did less, the set gates
- * are right there after a re-open.
+ * is created ticked. Callers reach it through logExtraWork below, which
+ * owns the question of whether the day is now over. The reps recorded
+ * are the ask; if the athlete did less, the set gates are right there.
  */
 export function startCustomSession(
   date: ISODate,
@@ -192,7 +258,85 @@ export function startCustomSession(
       return { exerciseId: item.exerciseId, sets }
     }),
   }
+  // Whether the day is OVER is deliberately left alone. A day mid-session
+  // stays mid-session, a finished day stays finished: recording work that
+  // happened is not a statement about the rest of the day, and
+  // logExtraWork below is what refreshes the debrief.
+  putOnDay(date, skeleton, { reopen: false })
+}
+
+/**
+ * Log work that happened, without ending the day and without spending the
+ * day's session on it.
+ *
+ * "Already did it" used to call finishSession, which stamps endedAt and a
+ * final grade on the WHOLE day. On a scheduled day nobody had started yet
+ * it was worse than a wrong label: the add-on BECAME that day's session,
+ * so the plan's workout was no longer reachable (Today offers Start only
+ * while the day has no session at all) and the day read as complete. The
+ * report, twice: "i did an extra workout and logged it and todays session
+ * is now closed off and logged as done."
+ *
+ * Two rules, and the rest follows from them.
+ *
+ * Recording work that happened is not a statement about the rest of the
+ * day. A running day stays running, a finished day stays finished.
+ *
+ * The plan's workout is never what gets spent. On a day with scheduled
+ * work and nothing logged against it yet, that workout is seeded first and
+ * the extra work is added INSIDE it: the session is live, this work is in
+ * it and ticked, and every scheduled movement is still sitting there
+ * waiting to be done.
+ *
+ * The day ends here in exactly one case, when this work IS the day: an off
+ * day with nothing scheduled and nothing logged, or a day already written
+ * off as skipped. Something has to be the session then, and finishing it
+ * is what earns the debrief. A debrief comes back only from a day that is
+ * over, because grading a day mid-flight counts sets nobody has reached.
+ */
+export function logExtraWork(
+  date: ISODate,
+  title: string,
+  items: CustomWorkoutItem[],
+): DebriefData | null {
+  if (items.length === 0) return null
+  const before = store().data.sessions[date]
+
+  // Nothing logged yet on a day the plan HAS a workout for.
+  if (!before && resolveDay(date, store().data).exercises.length > 0) {
+    startSession(date)
+    startCustomSession(date, title, items, { markDone: true })
+    return null
+  }
+
+  startCustomSession(date, title, items, { markDone: true })
+
+  // Nothing scheduled and nothing logged, or a day written off as
+  // skipped: the skip was the plan for the day, not the record of it.
+  if (!before || before.status === 'skipped') return finishSession(date)
+
+  const session = store().data.sessions[date]
+  if (!session) return null
+  const over =
+    !!session.endedAt || session.status === 'completed' || session.status === 'downgraded-completed'
+  // Still running, so the session view is the receipt for this work and
+  // the athlete decides when the day is over.
+  if (!over) return null
+
+  // Added to a day that was already over. Its ending is left exactly where
+  // it was and only the debrief is replaced, so the Record describes
+  // everything done rather than the smaller day it was composed from.
+  const composed = composeDebrief(store().data, session, session.date)
   store().update((d) => {
-    d.sessions[date] = skeleton
+    for (const id of composed.shownIds) d.coach.shownMessageIds = pushShown(d.coach.shownMessageIds, id)
+    d.coach.feed = d.coach.feed.filter((f) => !(f.kind === 'debrief' && f.debrief?.date === date))
+    d.coach.feed.unshift({
+      id: uid(),
+      at: new Date().toISOString(),
+      kind: 'debrief',
+      text: `Debrief · ${composed.debrief.title}`,
+      debrief: composed.debrief,
+    })
   })
+  return composed.debrief
 }

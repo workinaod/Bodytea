@@ -1,4 +1,4 @@
-# OP5 VISUAL LAW — the approved concept, checked in
+# OP12 VISUAL LAW — the approved concept, checked in
 
 **This file is the source of truth for how BodyT looks. It is not a proposal.**
 
@@ -95,6 +95,13 @@ this is an offline PWA and a webfont over the network is a blank screen on a gym
 | **tab bar** | docked to the bottom edge, `--panel`, `border-top: 2px var(--line)`, padding 8/8/12. Tab: radius 12, 2px transparent border; active gets `--heat` border, `rgba(255,79,48,.1)` fill, `--heat-soft` text. Centre button: 42px circle, `--heat`, `0 4px 0 --heat-edge` |
 | **week path** | node 17px circle, `--panel2`, 2px `--line`, `0 2px 0`; done = `--volt` fill + `--volt-edge` + a tick in `--volt-ink`; today = 21px, `--heat`, **white** border; rest = 13px at 0.6; connector 3px `--line2`, lit = `--volt-edge` |
 | **section title** | eyebrow + a 2px `--line2` rule filling the remaining width |
+
+## The one place glass survives, on purpose
+
+Map chrome. `RouteMap` and `RunReplay` draw controls and labels OVER a photographic satellite
+tile, and a flat panel with a 2px edge is unreadable there while a translucent scrim is exactly
+right. The law governs the app's own surfaces; it does not govern a pill floating over someone's
+neighbourhood. Anything not sitting on a map is flat.
 
 ## What is deliberately NOT this
 

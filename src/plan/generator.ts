@@ -15,8 +15,7 @@ import { getExercise } from './exercises'
 import { ANCHOR_SLOTS } from './blocks'
 import { canDo, equipFor, resolveForEquipment } from './equip'
 import { buildMealPlan, type MealsPerDay } from './foods'
-import { flooredTargets } from './kcalFloor'
-import { heightAdjustmentKcal, proteinTargetG, type ProteinContext } from './sportsNutrition'
+import { buildNutrition } from './nutritionPlan'
 import { bySportTransfer } from './sportPlan'
 import { NO_SPORT_PROFILE, profileForSport, type SportProfile } from './sportProfiles'
 import { positionOf, sportOf } from './followups'
@@ -46,6 +45,13 @@ export interface OnboardingAnswers {
   heightIn?: number
   /** Tunes the calorie baseline and defaults the body-fat tape formula. */
   sex?: 'male' | 'female'
+  /** Collected in onboarding since day one; read by the calorie model
+   *  since this line. Without it the app cannot tell 22 from 45. */
+  ageYears?: number
+  /** A tape reading, already smoothed and freshness-checked. Unlocks the
+   *  body-composition model, which beats a weight-based one in anyone
+   *  lean or muscular. Absent at signup, present on any later rebuild. */
+  bodyFatPct?: number
   /** How they actually like to eat, the meal plan is built at this count. */
   mealsPerDay?: MealsPerDay
   /** Their real week (shifts, gigs, kids), seeded as life events so the
@@ -487,62 +493,13 @@ function buildRationale(goal: Goal, goalStatement: string, ids: string[]): Recor
   return out
 }
 
-// ---------- Nutrition ----------
 
-export function buildNutrition(
-  goal: Goal,
-  bodyweightLb: number,
-  sex?: 'male' | 'female',
-  ans: Record<string, string> = {},
-  heightIn?: number,
-) {
-  const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
-  // Same protein either way (1 g/lb); the calorie baseline runs a notch
-  // lower for women (bw×14 vs ×15), standard TDEE difference.
-  // Height then nudges it: a bodyweight multiplier cannot tell 5'2" from
-  // 6'5" at the same weight, and that gap is a real meal. Somebody of
-  // average height lands exactly where they did before, by construction.
-  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50 + heightAdjustmentKcal(heightIn, sex)
-  const adj: Record<Goal, number> = { muscle: 300, strength: 250, vertical: 200, speed: 150, general: 100, lean: -300, endurance: 150 }
-  let kcalTraining = base + adj[goal]
-  // Follow-up answers sharpen the number. A 30+ lb cut needs a real
-  // deficit; a desk-bound day burns less than the formula assumes.
-  if (goal === 'lean') {
-    if ((ans['lose-amount'] === '30 to 60 lb' || ans['lose-amount'] === 'More than that')) kcalTraining -= 150
-    else if (ans['lose-amount'] === '10 to 30 lb') kcalTraining -= 75
-    if (ans['day-movement'] === 'Sitting') kcalTraining -= 50
-    kcalTraining = Math.max(1700, kcalTraining)
-  }
-  if (goal === 'muscle' && ans['gain-amount'] === 'As much as I can') kcalTraining += 100
-  return {
-    // Protein now depends on the SITUATION, not just the scale. A cut is
-    // where protein does its most important job (deciding whether the
-    // weight lost is fat or muscle) and where a flat 1 g/lb undershot;
-    // an endurance athlete was being handed protein instead of the carbs
-    // they run on. See plan/sportsNutrition.ts for the ranges and why.
-    proteinTargetG: proteinTargetG(bw, proteinContextFor(goal, ans)),
-    // 1700 above is lean-only; this floors every goal, and the rest day.
-    ...flooredTargets(kcalTraining, base),
-  }
-}
-
-/** Which protein band this athlete's goal and answers put them in. */
-export function proteinContextFor(goal: Goal, ans: Record<string, string> = {}): ProteinContext {
-  if (goal === 'lean') {
-    // A big cut, or a desk-bound day making the deficit bite harder, is
-    // where lean mass is most at risk and protein matters most.
-    return (ans['lose-amount'] === '30 to 60 lb' || ans['lose-amount'] === 'More than that') || ans['lose-amount'] === '10 to 30 lb'
-      ? 'aggressiveDeficit'
-      : 'deficit'
-  }
-  if (goal === 'endurance') return 'endurance'
-  if (goal === 'muscle' || goal === 'strength' || goal === 'vertical') return 'hypertrophy'
-  return 'general'
-}
-
-
-// The deep-goal copy lives in strategy.ts. Re-exported because the
-// booklet preview and eight tests import it from here.
+// The calorie and protein numbers moved to nutritionPlan.ts, the
+// protein-band selector to sportsNutrition.ts beside the bands it
+// selects, and the deep-goal copy to strategy.ts. All re-exported
+// because the booklet preview and the tests import them from here.
+export { buildNutrition } from './nutritionPlan'
+export { proteinContextFor } from './sportsNutrition'
 export { deepGoalStrategy, type NutritionNums } from './strategy'
 import { deepGoalStrategy } from './strategy'
 
@@ -717,7 +674,11 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     label: getExercise(id).name.replace(/\s*\(.*\)$/, ''),
   }))
 
-  const nutrition = buildNutrition(a.goal, a.bodyweightLb, a.sex, a.goalAnswers ?? {}, a.heightIn)
+  const nutrition = buildNutrition(a.goal, a.bodyweightLb, a.sex, a.goalAnswers ?? {}, a.heightIn, {
+    ageYears: a.ageYears,
+    bodyFatPct: a.bodyFatPct,
+    sessionsPerWeek: a.daysPerWeek,
+  })
 
   // Rep waves: the same lift slot moves through a different scheme each
   // 4-week block, volume, load, then a goal-flavored finisher.
@@ -765,6 +726,7 @@ export function generatePlan(a: OnboardingAnswers): { plan: PlanConfig; proteinT
     lifeEvents: (a.lifeSeeds ?? []).map((s, i) => ({ id: `life-${i + 1}`, label: s.label, kind: s.kind })),
     rationale,
     nutrition: { kcalTraining: nutrition.kcalTraining, kcalRest: nutrition.kcalRest },
+    nutritionBasis: nutrition.basis,
     mealPlan: a.skipMeals ? { ...mealPlanFull, templates: [] } : mealPlanFull,
     // resolveDay has had the practice machinery for ages: ballDates
     // suppress scheduled conditioning and raise two banners. The only

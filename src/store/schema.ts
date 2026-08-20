@@ -15,6 +15,10 @@ import { isoDate, weekday } from './primitives'
 import { sessionSchema } from './sessionSchema'
 import { prefsSchema } from './prefsSchema'
 import { profileSchema, settingsSchema } from './settingsSchema'
+import { calorieTargetsSchema, nutritionBasisSchema } from './nutritionSchema'
+import { coachSchema } from './coachSchema'
+import { decisionsField } from './decisionSchema'
+import { measurementSchema, photoMetaSchema } from './measurementSchema'
 import { foodLimitsSchema, mealPlanSchema, migrateSupplementStack } from './mealPlanSchema'
 import { cardioEntrySchema, runLogSchema } from './activitySchema'
 
@@ -84,7 +88,8 @@ export const planConfigSchema = z.object({
     z.object({ id: z.string(), label: z.string().min(1), kind: z.enum(['late-night', 'on-feet']) }),
   ),
   rationale: z.record(z.string(), z.string()),
-  nutrition: z.object({ kcalTraining: z.number().positive(), kcalRest: z.number().positive() }),
+  nutrition: calorieTargetsSchema,
+  nutritionBasis: nutritionBasisSchema.optional(),
   sportMode: z.enum(['ball', 'generic']).optional(),
   dietStyle: z.enum(['omnivore', 'vegetarian', 'vegan', 'pescatarian']).optional(), // all four, or the missing one wipes that athlete: store/dietStyle.test.ts
   foodLimits: foodLimitsSchema.optional(), // dropped on the floor until now: a declared allergy that never reached a meal
@@ -149,59 +154,6 @@ const mealDaySchema = z.object({
   dayTypeOverride: z.enum(['training', 'rest']).optional(),
 })
 
-const measurementSchema = z.object({
-  date: isoDate,
-  weightLb: z.number().optional(),
-  bodyFatPct: z.number().optional(),
-  neckIn: z.number().optional(),
-  hipIn: z.number().optional(),
-  waistIn: z.number().optional(),
-  chestIn: z.number().optional(),
-  armsIn: z.number().optional(),
-  thighIn: z.number().optional(),
-  vertIn: z.number().optional(),
-  photoIds: z.object({
-    front: z.string().optional(),
-    side: z.string().optional(),
-    back: z.string().optional(),
-  }),
-})
-
-const photoMetaSchema = z.object({
-  id: z.string(),
-  kind: z.enum(['progress', 'proof']),
-  takenAt: z.string(),
-  w: z.number(),
-  h: z.number(),
-  bytes: z.number(),
-})
-
-const coachSchema = z.object({
-  feed: z.array(
-    z.object({
-      id: z.string(),
-      at: z.string(),
-      kind: z.enum(['coach', 'debrief', 'insight']),
-      situation: z.string().optional(),
-      text: z.string(),
-      excuseId: z.string().optional(),
-      weekISO: isoDate.optional(),
-      debrief: z
-        .object({
-          date: isoDate,
-          title: z.string(),
-          recap: z.array(z.string()),
-          recovery: z.array(z.string()),
-          eat: z.array(z.string()),
-          sleep: z.array(z.string()),
-          tomorrow: z.string(),
-        })
-        .optional(),
-    }),
-  ),
-  shownMessageIds: z.array(z.string()),
-  surfacedInsights: z.record(z.string(), isoDate),
-})
 
 const appDataSchema = z.object({
   settings: settingsSchema,
@@ -218,15 +170,15 @@ const appDataSchema = z.object({
   cardio: z.record(z.string(), z.array(cardioEntrySchema)),
   swaps: z.record(z.string(), z.record(z.string(), z.string())),
   dayLoad: z.record(z.string(), z.literal('trimmed')),
-  adapt: z.record(z.string(), z.array(z.enum(['hold-load', 'reduce-volume']))).default({}),
+  adapt: z.record(z.string(), z.array(z.enum(['hold-load', 'reduce-volume', 'dismissed']))).default({}),
   runs: z.array(runLogSchema),
-  // Defaulted for the same reason `adapt` is: an envelope written before
-  // this key existed parses cleanly and starts with an empty ladder, so
-  // there is no migration and no SCHEMA_VERSION bump. Nothing is lost
-  // either way — an unstamped stage the athlete has genuinely reached
-  // gets re-derived from the history on the next render and re-stamped.
+  // journey and achievements default like `adapt`: an envelope written
+  // before the key existed parses and starts empty, so no migration and no
+  // SCHEMA_VERSION bump. An unstamped stage re-derives; a badge already
+  // standing is stamped `before-tracking`, never handed an invented date.
   journey: z.object({ hits: z.record(z.string(), z.string()) }).default({ hits: {} }),
-  achievements: z.object({ earnedAt: z.record(z.string(), z.string()), trackingFrom: isoDate.optional() }).default({ earnedAt: {} }), // defaulted like journey: older envelopes parse and get stamped on the next sweep
+  achievements: z.object({ earnedAt: z.record(z.string(), z.string()), trackingFrom: isoDate.optional() }).default({ earnedAt: {} }),
+  decisions: decisionsField,
   prefs: prefsSchema,
 })
 

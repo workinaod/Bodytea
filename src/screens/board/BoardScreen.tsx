@@ -95,7 +95,7 @@ export function BoardContent() {
       <p className="text-[12px] text-ink-faint">Global. Every athlete on the app, one ladder.</p>
 
       {/* Your numbers always render, account or not */}
-      <div className="rounded-2xl bg-white/[0.045] ring-1 ring-white/[0.05] p-3.5">
+      <div className="rounded-2xl border-2 border-edge bg-surface p-3.5 shadow-[0_3px_0_var(--color-edge)]">
         <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-ink-faint">Your numbers</div>
         <div className="grid grid-cols-5 gap-1 text-center">
           <MiniStat label="Streak" value={`${mine.streak}d`} hot={mine.streak >= 7} />

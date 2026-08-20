@@ -135,6 +135,7 @@ export function Onboarding() {
       experience,
       bodyweightLb,
       heightIn: heightIn ?? undefined,
+      ageYears: age ?? undefined,
       mealsPerDay,
       lifeSeeds: [
         ...LIFE_CHIPS.filter((c) => lifePicks.has(c.id)).map((c) => ({ label: c.label, kind: c.kind })),
@@ -146,7 +147,7 @@ export function Onboarding() {
       focusAreas: [...focusAreas],
       sex: sex ?? undefined,
     }
-  }, [goal, statement, goalAnswers, days, profile, extras, experience, bodyweightLb, heightIn, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, dairyFree, allergies, skipMeals, focusAreas, sex])
+  }, [goal, statement, goalAnswers, days, profile, extras, experience, bodyweightLb, heightIn, age, mealsPerDay, lifePicks, customLife, customLifeKind, dietStyle, dairyFree, allergies, skipMeals, focusAreas, sex])
 
   const preview = useMemo(() => (step === 7 ? generatePlan(answers) : null), [step, answers])
 

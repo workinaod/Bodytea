@@ -24,7 +24,7 @@ export function TodayPreviewList({
   date,
   day,
   today,
-  hasSession,
+  owed,
   onOpenGuide,
 }: {
   data: AppData
@@ -32,12 +32,20 @@ export function TodayPreviewList({
   day: ResolvedDay
   /** Viewing the live day, as opposed to browsing with the arrows. */
   today: boolean
-  hasSession: boolean
+  /**
+   * The plan still wants this day's work.
+   *
+   * Not "there is no session": a finished make-up took the list away and
+   * left a Start button over an empty screen, with no way to see what was
+   * being started.
+   */
+  owed: boolean
   onOpenGuide: (exerciseId: string) => void
 }) {
-  // Nothing to preview once a session is live, on a rest day, or on a
-  // required-cardio day nobody has chosen yet (there the chooser IS the day).
-  if (hasSession || day.kind === 'rest' || (day.kind === 'cardio-backup' && day.exercises.length === 0)) {
+  // Nothing to preview on a rest day, on a required-cardio day nobody has
+  // chosen yet (there the chooser IS the day), or once the day's own work
+  // is on the record.
+  if (!owed || day.kind === 'rest' || (day.kind === 'cardio-backup' && day.exercises.length === 0)) {
     return null
   }
 

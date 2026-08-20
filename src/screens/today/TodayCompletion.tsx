@@ -5,7 +5,7 @@ import { Sticker } from '../../components/stickers'
 import { Flame } from '../../components/Flame'
 import { addDaysISO, formatDayLabel } from '../../engine/calendar'
 import { resolveDay } from '../../engine/resolveDay'
-import { detectPRs, sessionGrade, sessionSetsDone, sessionTonnage } from '../../engine/stats'
+import { GRADE_LABEL, detectPRs, sessionGrade, sessionSetsDone, sessionTonnage } from '../../engine/stats'
 import { streakDays } from '../../engine/streak'
 import { flameFor, nextFlameTier } from '../../plan/achievements'
 import { reopenSession } from '../../logic/actions'
@@ -33,6 +33,7 @@ export function TodayCompletion({
   today,
   skipped,
   finished,
+  owedTitle,
   pastDebrief,
   onOpenDebrief,
   onPreviewTomorrow,
@@ -46,6 +47,8 @@ export function TodayCompletion({
   today: boolean
   skipped: boolean
   finished: boolean
+  /** Today's own workout, when the plan still wants it. Null when nothing is owed. */
+  owedTitle: string | null
   pastDebrief: DebriefData | null
   onOpenDebrief: (d: DebriefData) => void
   onPreviewTomorrow?: (date: ISODate) => void
@@ -84,10 +87,49 @@ export function TodayCompletion({
             ? 'Light day logged.'
             : 'Extremely light. Barely on the board, but on it.'
 
+  // Today's own workout is still owed: whatever ran, it was not the day,
+  // so the volt flood would be celebrating the wrong thing.
+  const owed = owedTitle !== null && today
   const sets = sessionSetsDone(session)
   const tonnage = Math.round(sessionTonnage(session))
   const tier = flameFor(streak)
   const next = nextFlameTier(streak)
+
+  const links = (
+    <div className="flex flex-wrap gap-1.5">
+      {session.status === 'partial' && today && (
+        <Chip onClick={() => reopenSession(date)}>↩ Re-open the session</Chip>
+      )}
+      {pastDebrief && <Chip onClick={() => onOpenDebrief(pastDebrief)}>Re-open the debrief</Chip>}
+    </div>
+  )
+
+  // Work went in, but not the work the day asked for. Gold, not volt: the
+  // day is not banked and saying it is would be the app lying to be nice.
+  if (owed) {
+    return (
+      <div className="space-y-2.5">
+        {/* The sentence the owner's bug report produced, kept word for
+            word: a finished SESSION was being reported as a finished DAY.
+            Heat rather than volt, because the day is not banked and saying
+            it is would be the app being nice instead of honest. */}
+        <Tile tone="heat">
+          <p className="text-[14px] font-black text-accent-soft">Today is not done.</p>
+          <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
+            {session.makeupFor
+              ? `What is logged is ${formatDayLabel(session.makeupFor)}'s make-up, not today's workout.`
+              : "What is logged is off-plan work, not today's workout."}{' '}
+            <span className="font-bold text-ink">{owedTitle}</span> is still on the table. Start it
+            above, or say you can't train, and the day is yours either way.
+          </p>
+          <p className="mt-1.5 text-[11.5px] font-bold text-ink-faint">
+            Banked so far: {GRADE_LABEL[grade]}.
+          </p>
+        </Tile>
+        {links}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-2.5">
@@ -165,12 +207,7 @@ export function TodayCompletion({
         </Tile>
       )}
 
-      <div className="flex flex-wrap gap-1.5">
-        {session.status === 'partial' && today && (
-          <Chip onClick={() => reopenSession(date)}>↩ Re-open the session</Chip>
-        )}
-        {pastDebrief && <Chip onClick={() => onOpenDebrief(pastDebrief)}>Re-open the debrief</Chip>}
-      </div>
+      {links}
     </div>
   )
 }

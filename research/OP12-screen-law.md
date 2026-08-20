@@ -1,6 +1,6 @@
-# OP5 SCREEN LAW — every approved screen, contents in order
+# OP12 SCREEN LAW — every approved screen, contents in order
 
-**Companion to `research/OP5-visual-law.md`.** That file says how things LOOK. This one says
+**Companion to `research/OP12-visual-law.md`.** That file says how things LOOK. This one says
 what each screen CONTAINS and in what order, transcribed from the approved preview frame by
 frame. `src/screenLaw.test.ts` asserts the landmarks named here still exist in `src/`.
 

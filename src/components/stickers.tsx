@@ -9,7 +9,7 @@
 // emoji, ever: an emoji is somebody else's art direction.
 //
 // Transcribed from the approved preview. See
-// research/OP5-screen-law.md for which screen uses which.
+// research/OP12-screen-law.md for which screen uses which.
 // ============================================================
 
 export type StickerName =

@@ -1,9 +1,12 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { ISODate } from '../../types'
 import { useAppStore } from '../../store/appStore'
 import { resolveDay } from '../../engine/resolveDay'
 import { adaptContext, planAdjustments } from '../../engine/adapt'
 import { acceptAdaptation, undoAdaptation } from '../../logic/fatigueActions'
+import { useAppStore as useStore } from '../../store/appStore'
+import { dueForVerdict, freshVerdict, settleDue, verdictCopy } from '../../engine/outcomes'
+import { ADAPT_TYPE } from '../../engine/proposals'
 
 /**
  * What the coach has noticed, and what it is offering to do about it.
@@ -31,6 +34,16 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   const session = data.sessions[date]
   const taken = data.adapt[date] ?? []
 
+  // An accepted adaptation gets its answer here, on the screen where it
+  // was taken. Judging is global but a verdict about the size of a
+  // session has no business on the food screen.
+  const update = useStore((st) => st.update)
+  const dueCount = useMemo(() => dueForVerdict(data, date).length, [data, date])
+  useEffect(() => {
+    if (dueCount > 0) update((d) => { settleDue(d, date) })
+  }, [dueCount, date, update])
+  const verdict = useMemo(() => freshVerdict(data, date, [ADAPT_TYPE]), [data, date])
+
   const proposals = useMemo(() => {
     const resolved = resolveDay(date, data)
     if (resolved.kind !== 'session') return []
@@ -39,9 +52,18 @@ export function AdaptProposals({ date }: { date: ISODate }) {
     )
   }, [data, date])
 
-  // Nothing to offer, or the day is already under way: a session in
-  // progress is not the moment to renegotiate its size.
-  if (proposals.length === 0 || (session?.startedAt && !session.endedAt)) return null
+  // Nothing to offer, the day is already under way (a session in progress
+  // is not the moment to renegotiate its size), or the athlete waved the
+  // whole thing away. Ignoring an offer was always free, but free is not
+  // the same as gone: a card that cannot be closed sits on the screen all
+  // day arguing with a decision already made.
+  const waved = taken.includes('dismissed')
+  const verdictLine = verdict ? verdictCopy(verdict) : null
+  // A follow-up on something already taken outlives the offers: it is the
+  // answer to a question the athlete asked a fortnight ago.
+  if ((waved || proposals.length === 0 || (session?.startedAt && !session.endedAt)) && !verdictLine) {
+    return null
+  }
 
   // reduce-load is the one proposal with no switch behind it. "Take a
   // third off the pressing" is not a shape the plan can hold — there is
@@ -54,10 +76,25 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   const notices = proposals.filter((p) => p.kind === 'reduce-load')
 
   return (
-    <div className="space-y-2">
+    <div className="relative space-y-2">
+      {verdictLine && (
+        <div className="rounded-2xl bg-white/[0.05] px-4 py-3 ring-1 ring-white/[0.08]">
+          <p className="text-[12.5px] font-black tracking-tight text-ink">
+            {verdict!.verdict === 'worked' ? 'That worked' : 'Following up'}
+          </p>
+          <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{verdictLine}</p>
+        </div>
+      )}
+      <button
+        aria-label="Dismiss what the coach noticed"
+        onClick={() => acceptAdaptation(date, 'dismissed')}
+        className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full text-[15px] font-bold text-ink-faint active:bg-white/[0.09] active:text-ink"
+      >
+        ✕
+      </button>
       {notices.map((p) => (
         <div key={p.exerciseId ?? p.kind} className="rounded-2xl bg-gold/[0.07] px-4 py-3 ring-1 ring-gold/25">
-          <p className="text-[12.5px] font-black tracking-tight text-ink">Go lighter here, don't drop it</p>
+          <p className="pr-7 text-[12.5px] font-black tracking-tight text-ink">Go lighter here, don't drop it</p>
           <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{p.because}</p>
         </div>
       ))}
@@ -71,7 +108,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
               accepted ? 'bg-lime/10 ring-lime/30' : 'bg-white/[0.05] ring-white/[0.08]'
             }`}
           >
-            <p className="text-[12.5px] font-black tracking-tight text-ink">
+            <p className="pr-7 text-[12.5px] font-black tracking-tight text-ink">
               {accepted ? '✓ ' : ''}
               {p.kind === 'hold-load' ? 'Same weight as last time' : 'A set off each lift'}
             </p>

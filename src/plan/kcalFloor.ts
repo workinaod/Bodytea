@@ -43,7 +43,14 @@ export const MIN_KCAL_REST = 1200
  */
 export const MAX_DEFICIT = 0.25
 
-/** How far a rest day sits under a training day. */
+/**
+ * How far a rest day sits under a training day, when nobody says.
+ *
+ * Kept as the fallback only. The real swing is this athlete's own session
+ * cost, computed by restDaySwing in plan/bmr.ts, and 300 happens to be
+ * what that rule returns for an 86 kg body lifting for an hour. Callers
+ * that know the body pass their own number.
+ */
 export const REST_DAY_DROP = 300
 
 /**
@@ -56,21 +63,22 @@ export const REST_DAY_DROP = 300
 export function flooredTargets(
   kcalTraining: number,
   maintenance: number,
+  restDrop: number = REST_DAY_DROP,
 ): { kcalTraining: number; kcalRest: number } {
   const floor = Math.max(MIN_KCAL_TRAINING, Math.round(maintenance * (1 - MAX_DEFICIT)))
   const training = Math.max(kcalTraining, floor)
   return {
     kcalTraining: training,
-    // The rest clamp is UNREACHABLE while MIN_KCAL_TRAINING - REST_DAY_DROP
-    // equals MIN_KCAL_REST, because a floored training day minus the drop
-    // already lands exactly on it. A mutation test proved that by deleting
-    // the clamp and watching nothing fail.
+    // This clamp used to be unreachable, and the comment here said it
+    // would go live the moment the drop widened past 300. That is exactly
+    // what happened: the drop is now the athlete's own session cost and
+    // tops out at 400, so a floored 1,500 training day minus 400 is 1,100
+    // and this line is the only thing standing between a small athlete
+    // and a rest target no clinician would sign off on.
     //
-    // It stays, and it is load-bearing the moment any of those three
-    // numbers moves — widening the drop to 400 would put rest at 1,100
-    // with nothing to catch it. The invariant is pinned in the test file
-    // so the relationship cannot drift silently instead.
-    kcalRest: Math.max(training - REST_DAY_DROP, MIN_KCAL_REST),
+    // It is load-bearing now. The test that pinned it as redundant has
+    // been rewritten to assert it binds.
+    kcalRest: Math.max(training - restDrop, MIN_KCAL_REST),
   }
 }
 

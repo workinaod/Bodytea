@@ -220,7 +220,8 @@ export interface PlanConfig {
   lifeEvents: LifeEventDef[]
   /** exerciseId → goal-specific "why it's in YOUR plan" (falls back to def.why). */
   rationale: Record<string, string>
-  nutrition: { kcalTraining: number; kcalRest: number }
+  nutrition: CalorieTargets
+  nutritionBasis?: NutritionBasis
   /** The eating side of the booklet, per-user, editable (v10+). */
   mealPlan: MealPlanConfig
   /**
@@ -239,21 +240,22 @@ export interface PlanConfig {
   goalAnswers?: Record<string, string>
 }
 
-export interface Profile {
-  displayName?: string
-  /** Cached leaderboard username (set when an account exists). */
-  username?: string
-  /** For the tape-measure body-fat estimate (US Navy method). */
-  heightIn?: number
-  /** Which Navy formula fits their body, asked once in the estimator. */
-  bfFormula?: 'male' | 'female'
-  age?: number // Years. The one number this app states a minimum of: onboarding/MeStep.tsx
-}
 
 // ---------- Resolved day (engine output) ----------
 
-// Moved to resolvedTypes.ts; the allowance here followed it down.
+// Moved to resolvedTypes.ts, nutritionTypes.ts and profileTypes.ts; the
+// allowance here followed each of them down.
 export * from './resolvedTypes'
+export * from './profileTypes'
+import type { CalorieTargets, NutritionBasis } from './nutritionTypes'
+import type { Profile } from './profileTypes'
+import type { DecisionRecord } from './decisionTypes'
+import type { MealDay, MealPlanConfig, SupplementId } from './mealTypes'
+export * from './mealTypes'
+// Moved to measurementTypes.ts, beside store/measurementSchema.ts which
+// already validates these shapes; the allowance here followed it down.
+import type { Measurement, PhotoMeta } from './measurementTypes'
+export * from './measurementTypes'
 
 // ---------- Logged state ----------
 
@@ -334,109 +336,7 @@ export * from './journeyTypes'
 import type { Prefs } from './prefsTypes'
 export * from './prefsTypes'
 
-// ---------- Meals ----------
-
-export type MealEntrySource = 'chip' | 'mealTemplate' | 'custom' | 'recent'
-
-/** An adaptation the athlete tapped to accept. */
-export type AdaptChoice = 'hold-load' | 'reduce-volume'
-
-export interface MealEntry {
-  id: string
-  at: string
-  label: string
-  proteinG: number
-  kcal: number
-  /**
-   * Carbs and fat, when the entry knew them.
-   *
-   * Optional because the app logged protein and calories only for its
-   * whole life, so every meal already on a device has neither. Read
-   * through engine/stats.ts macrosFor, which backfills from foodId where
-   * the entry came from a food chip and reports how much of the day it
-   * could actually account for. A carb ring drawn over a day it only half
-   * understands is worse than no ring.
-   */
-  carbsG?: number
-  fatG?: number
-  source: MealEntrySource
-  foodId?: string
-  servings: number
-}
-
-/** Free string since v10, users build their own supplement stacks. */
-export type SupplementId = string
-
-export interface MealDay {
-  date: ISODate
-  entries: MealEntry[]
-  supplements: Record<SupplementId, boolean>
-  dayTypeOverride?: 'training' | 'rest'
-}
-
-// ---------- Per-user meal plan (lives in PlanConfig.mealPlan) ----------
-
-export interface MealTemplateDef {
-  id: string
-  dayType: 'training' | 'rest'
-  slot: string
-  name: string
-  detail: string
-  proteinG: number
-  kcal: number
-}
-
-// The supplement shapes moved to supplementTypes.ts, beside foodTypes
-// and prefsTypes for the reason those two give: a shape with a subsystem
-// reading it is no longer a field on this file. The old SupplementDef
-// was four strings with nowhere to put a contraindication.
-export * from './supplementTypes'
-import type { StackItem } from './supplementTypes'
-
-export interface GroceryCategory {
-  category: string
-  items: string[]
-}
-
-/**
- * The eating side of a booklet: one-tap meal templates, the weekly
- * grocery list, the supplement stack, and late-night rules, all
- * per-user data, editable like the training side.
- */
-export interface MealPlanConfig {
-  templates: MealTemplateDef[]
-  grocery: GroceryCategory[]
-  supplements: StackItem[]
-  lateNight: { yes: string[]; no: string[] }
-}
-
-// ---------- Measurements & photos ----------
-
-export interface Measurement {
-  date: ISODate
-  weightLb?: number
-  /** Estimated body fat %, consistency of method beats accuracy. */
-  bodyFatPct?: number
-  /** Tape sites for the Navy estimate (stored so trends stay honest). */
-  neckIn?: number
-  hipIn?: number
-  waistIn?: number
-  chestIn?: number
-  armsIn?: number
-  thighIn?: number
-  /** Vertical reach / rim touch in inches (their choice of metric, tracked consistently). */
-  vertIn?: number
-  photoIds: Partial<Record<'front' | 'side' | 'back', string>>
-}
-
-export interface PhotoMeta {
-  id: string
-  kind: 'progress' | 'proof'
-  takenAt: string
-  w: number
-  h: number
-  bytes: number
-}
+export type AdaptChoice = 'hold-load' | 'reduce-volume' | 'dismissed'
 
 // ---------- Coach ----------
 
@@ -539,7 +439,13 @@ export interface Settings {
   reminderTimes: string[]
   /** Display units (storage stays imperial internally). */
   units: 'imperial' | 'metric'
-  /** Milestone reviews already opened ('3mo' | '6mo' | '1yr'). */
+  /**
+   * Reviews already put in front of the athlete, by id. Holds the
+   * milestone marks ('3mo', '6mo', '1yr') and the calendar periods
+   * ('w-2026-08-10', 'm-2026-08', 'q-2026-3', 'y-2026') in one list,
+   * because the question both ask is the same one and the id spaces
+   * cannot collide.
+   */
   reviewsSeen?: string[]
   /** Spoken counting + briefings in focus mode (default on). */
   voiceCoach?: boolean
@@ -616,6 +522,7 @@ export interface AppData {
    */
   achievements: AchievementLog
   /** What the athlete has said about themselves, and expects remembered. */
+  decisions: DecisionRecord[]
   prefs: Prefs
 }
 

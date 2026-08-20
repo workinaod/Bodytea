@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest'
 // slate, and the old face instead of the approved one. The
 // owner's words: "that's how projects are ruined."
 //
-// So the palette lives in research/OP5-visual-law.md, and this
+// So the palette lives in research/OP12-visual-law.md, and this
 // asserts src/ still agrees with it. An approved decision that
 // nothing enforces is a decision that gets re-litigated by
 // whoever forgets it next.
@@ -26,7 +26,7 @@ import { describe, expect, it } from 'vitest'
 
 const ROOT = join(import.meta.dirname, '..')
 const CSS = readFileSync(join(ROOT, 'src/index.css'), 'utf8')
-const LAW = readFileSync(join(ROOT, 'research/OP5-visual-law.md'), 'utf8')
+const LAW = readFileSync(join(ROOT, 'research/OP12-visual-law.md'), 'utf8')
 
 /** The tokens the whole look hangs off, exactly as approved. */
 const APPROVED: Record<string, string> = {
@@ -59,7 +59,7 @@ describe('the approved visual law', () => {
       expect(found, `${token} is missing from src/index.css entirely`).not.toBeNull()
       expect(
         found![1].toLowerCase(),
-        `${token} drifted from the approved concept. See research/OP5-visual-law.md; ` +
+        `${token} drifted from the approved concept. See research/OP12-visual-law.md; ` +
           'if this change is deliberate the law file moves with it.',
       ).toBe(value)
     })

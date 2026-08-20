@@ -2,7 +2,7 @@
 @import './styles/motion.css';
 
 /* ============================================================
-   THE APPROVED LOOK. The spec is research/OP5-visual-law.md and
+   THE APPROVED LOOK. The spec is research/OP12-visual-law.md and
    src/visualLaw.test.ts fails if this drifts from it.
 
    Flat sticker surfaces on a SLATE ground, never pure black: a
@@ -101,7 +101,7 @@
   line-height: var(--text-micro--line-height);
   letter-spacing: var(--text-micro--letter-spacing);
   text-transform: uppercase;
-  /* 900, per research/OP5-visual-law.md: at 11px a 700 eyebrow reads as
+  /* 900, per research/OP12-visual-law.md: at 11px a 700 eyebrow reads as
      small text rather than as a label cut into the surface. */
   font-weight: 900;
 }

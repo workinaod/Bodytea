@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SessionLog } from '../types'
 import { emptyAppData } from '../types'
-import { lateNightGraceDate, msUntilNextMidnight } from './rollover'
+import { lateNightGraceDate, msUntilNextMidnight, stillOpenForLogging } from './rollover'
 
 describe('msUntilNextMidnight', () => {
   it('computes the wall-clock distance to just past midnight', () => {
@@ -77,5 +77,42 @@ describe('lateNightGraceDate', () => {
   it('refuses to act when today and the wall clock disagree', () => {
     const data = makeData({ '2026-08-08': inProgress })
     expect(lateNightGraceDate(data, '2026-08-10', new Date(2026, 7, 9, 0, 30))).toBeNull()
+  })
+})
+
+// ============================================================
+// A finished session used to close the day out. It should not:
+// people finish the plan's work, then play ball, then remember
+// the abs. The day takes more until 3am, same window the rest
+// of the app already uses for late work.
+// ============================================================
+
+describe('how long a day takes more work', () => {
+  it('the live day is always open', () => {
+    expect(stillOpenForLogging('2026-08-19', '2026-08-19', new Date(2026, 7, 19, 15, 0))).toBe(true)
+    // Even at one minute to midnight.
+    expect(stillOpenForLogging('2026-08-19', '2026-08-19', new Date(2026, 7, 19, 23, 59))).toBe(true)
+  })
+
+  it('yesterday keeps taking work until 3am, and not a minute past', () => {
+    const at = (h: number, m = 0) => new Date(2026, 7, 20, h, m)
+    // Just after midnight the home day has flipped, but last night is
+    // still the night somebody is logging.
+    expect(stillOpenForLogging('2026-08-19', '2026-08-20', at(0, 30))).toBe(true)
+    expect(stillOpenForLogging('2026-08-19', '2026-08-20', at(2, 59))).toBe(true)
+    expect(stillOpenForLogging('2026-08-19', '2026-08-20', at(3, 0))).toBe(false)
+    expect(stillOpenForLogging('2026-08-19', '2026-08-20', at(9, 0))).toBe(false)
+  })
+
+  it('closes older days even inside the window', () => {
+    // Two nights ago is history. It is edited through the record, not
+    // by adding to it.
+    expect(stillOpenForLogging('2026-08-18', '2026-08-20', new Date(2026, 7, 20, 1, 0))).toBe(false)
+  })
+
+  it('stays open when grace has already made yesterday the home day', () => {
+    // An unfinished session holds the anchor; the day it holds is open
+    // by the first rule, with no special case needed.
+    expect(stillOpenForLogging('2026-08-19', '2026-08-19', new Date(2026, 7, 20, 1, 0))).toBe(true)
   })
 })

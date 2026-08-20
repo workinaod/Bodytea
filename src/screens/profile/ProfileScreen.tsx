@@ -32,7 +32,7 @@ import { daysBetween } from '../../engine/calendar'
 // the badges, the path you are on, the room your work builds.
 // Every socket that is not built yet says so on its face.
 //
-// Contents per research/OP5-screen-law.md §8.
+// Contents per research/OP12-screen-law.md §8.
 // ============================================================
 
 function GearIcon() {

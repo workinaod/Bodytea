@@ -67,7 +67,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // FoodLimits moved to foodTypes.ts, beside journeyTypes and prefsTypes,
   // because a shape with a subsystem reading it (plan/foodLimits.ts) is no
   // longer a field. -11 even after PlanConfig gained foodLimits itself.
-  'types.ts': 664,
+  'types.ts': 604,
   // screens/onboarding/Onboarding.tsx came off this list too, which
   // empties the "real splits owed" section entirely. The chip tables and
   // the one goal heuristic went to onboardingData.ts, the goal step, the
@@ -89,7 +89,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // The deep-goal copy moved to plan/strategy.ts: 180 lines of prose
   // that decided nothing, sitting inside the allowance of the file
   // that decides everything. The allowance follows it down.
-  'plan/generator.ts': 790,
+  'plan/generator.ts': 747,
   // Was 835, which it blew through and broke three deploys on. Meal
   // logging moved to logic/mealActions.ts, then the prescription (what
   // load and how many reps to ask for) to logic/prescription.ts, then
@@ -100,7 +100,10 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // +11: two stampReachedStages calls with the comments explaining why a
   // reached stage is written down rather than re-derived, plus the import.
   // The logic itself is in logic/journeyActions.ts.
-  'logic/actions.ts': 663,
+  // Answering the reconcile gate went to logic/reconcileActions.ts, which
+  // paid for the one-day-one-debrief prune in finishSession and then some.
+  // The allowance follows the file down, as always.
+  'logic/actions.ts': 609,
   // Was 836. The how-to reader and the rest screen both moved out, and
   // the allowance follows it down: an oversized file that shrinks does
   // not get to keep the headroom it earned.
@@ -130,7 +133,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // floors that decide what the repair means, so the v20 supplement
   // migration could land without raising the allowance. Both are now
   // delegated to; this file is a list of what a data file holds.
-  'store/schema.ts': 602,
+  'store/schema.ts': 554,
   'engine/engine.test.ts': 705,
   // Test files, where length is coverage rather than a missing split.
   'store/store.test.ts': 667,
@@ -350,8 +353,6 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'plan/sportsNutrition.ts:mlToOz',
   'plan/sportsNutrition.ts:proteinPerMealG',
   'plan/sportsNutrition.ts:waterTargetMl',
-  'plan/sportsNutrition.ts:weeklyGainRangeLb',
-  'plan/sportsNutrition.ts:weeklyLossRangeLb',
 
   // W-ONT / W9: the movement ontology, most of it still unconsumed.
   'plan/movement.ts:movementChain',
@@ -370,6 +371,22 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'plan/safetyRules.ts:constraintsFor',
   'plan/safetyRules.ts:planningLimits',
 
+  // J7 wave 1, the facts layer. weightTrend has a caller already: the
+  // calorie-bump rule reads its caveat so it stops trusting a scale that
+  // creatine is moving. The other four are what J8 was blocked on, and
+  // J8 is the next job rather than a someday: volume autoregulation
+  // needs hardSetsPerWeek, schedule fit needs trainsOnWeekday, exercise
+  // fit needs daysSinceRegion. Four rows and a named consumer.
+  'engine/userModel.ts:workCapacity',
+  'engine/userModel.ts:recoveryByRegion',
+
+  // R-ONT wave 1. resolveExercise left this list the same day it joined
+  // it: the picker calls it now when a literal search comes back empty.
+  // The two below are the parts the notation parser needs and the picker
+  // does not, so they stay until plan/notation.ts lands.
+  'plan/aliases.ts:normalizeName',
+  'plan/aliases.ts:nameScore',
+
   // Older, and each one a small unfinished wire of its own.
   'plan/bookletOps.ts:primaryGoalOf',
   'plan/bookletOps.ts:referencedIds',
@@ -377,7 +394,6 @@ const DEAD_EXPORT_ALLOWED = new Set([
   'plan/followups.ts:readStatement',
   'plan/foodLimits.ts:allergyTerms',
   'plan/generator.ts:ownedTags',
-  'plan/generator.ts:proteinContextFor',
   'plan/milestones.ts:weeksPerLoadStep',
   'plan/reach.ts:bmiOf',
   'plan/reach.ts:dunkVertNeededIn',

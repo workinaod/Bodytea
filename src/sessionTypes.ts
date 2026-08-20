@@ -126,6 +126,21 @@ export interface SessionLog {
   /** Rest-day make-up: the missed date whose workout this session ran. */
   makeupFor?: ISODate
   /**
+   * Has THIS day's own scheduled workout been started?
+   *
+   * Stored rather than derived, which is unusual here and deliberate. A
+   * date holds one session, so a make-up or an off-plan workout can be the
+   * thing occupying it, and the movements alone cannot tell "I did today's
+   * session" from "I did last Monday's, which happens to be the same
+   * workout" once an A/B week repeats a template. The day stays open while
+   * this is false, however finished the session looks.
+   *
+   * Absent on sessions written before the question was asked; readers fall
+   * back to the movements there, which is right for everything except that
+   * one collision.
+   */
+  ownPlanStarted?: boolean
+  /**
    * Name of an off-plan workout: one built from the exercise list, or
    * picked from the general workouts shelf. Present exactly when
    * templateId is 'custom', and the record's only source of a title,

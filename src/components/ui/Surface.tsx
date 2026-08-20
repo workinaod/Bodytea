@@ -71,8 +71,8 @@ export function EmptyNote({ children }: { children: ReactNode }) {
 // `Card` is the same object with the app's older padding, kept
 // because forty screens use it. `Tile` is the concept's version:
 // tighter, tone-aware, and able to become a FILL rather than a
-// tint. See research/OP5-visual-law.md for the geometry and
-// research/OP5-screen-law.md for which screen wears which tone.
+// tint. See research/OP12-visual-law.md for the geometry and
+// research/OP12-screen-law.md for which screen wears which tone.
 // ============================================================
 
 export type TileTone = 'plain' | 'heat' | 'volt' | 'ice' | 'gold'

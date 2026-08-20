@@ -206,7 +206,7 @@ export function GoalTimeline({ data, today, onAnchor }: { data: AppData; today: 
                 {/* Flat, edged, lipped: the same node the week path uses, one
                     size up. It used to be a translucent disc with a 22px glow
                     behind HERE, which is the exact look the concept replaced
-                    (see research/OP5-visual-law.md: zero glow, anywhere). */}
+                    (see research/OP12-visual-law.md: zero glow, anywhere). */}
                 <span
                   className="flex items-center justify-center rounded-full font-black"
                   style={{

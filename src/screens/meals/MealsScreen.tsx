@@ -1,10 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { supplementRecord } from '../../plan/supplements'
 import { addDaysISO, formatDayLabel } from '../../engine/calendar'
 import { useToday } from '../../logic/clock'
 import { kcalTargetFor, nutritionDayType } from '../../engine/dayType'
 import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor, proteinStreak } from '../../engine/stats'
+import { applyRecheck, learnedCopy, nutritionRecheck, recheckDecision } from '../../engine/nutritionRecheck'
+import { energyCheck, energyCopy } from '../../engine/energyAvailability'
+import { STEP_TYPE, calorieStep, stepCopy, stepDecision } from '../../engine/calorieStep'
+import { appendDecision, returningCopy } from '../../engine/decisions'
+import { dueForVerdict, freshVerdict, settleDue, verdictCopy } from '../../engine/outcomes'
+import { learnedCopyFor, learnedMaintenance } from '../../engine/maintenanceLearned'
+import { MIN_KCAL_REST } from '../../plan/kcalFloor'
 import { macroTargets } from '../../plan/sportsNutrition'
 import { Btn, Card, Chip, DayArrow, Ring, ScreenHeader, SectionTitle, SetCoin, Tile } from '../../components/ui'
 import { cycleDayTypeOverride, removeMealEntry, setMealServings, toggleSupplement } from '../../logic/actions'
@@ -60,6 +67,40 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
   )
   const pStreak = proteinStreak(data)
   const bump = useMemo(() => kcalBumpSuggestion(data), [data])
+  const recheck = useMemo(() => nutritionRecheck(data, today), [data, today])
+  const energy = useMemo(() => energyCheck(data, today), [data, today])
+  const step = useMemo(() => calorieStep(data, today), [data, today])
+  const learned = useMemo(() => {
+    const m = learnedMaintenance(data, today)
+    return m ? learnedCopyFor(m) : null
+  }, [data, today])
+
+  // Judging happens on open, because there is nowhere else it can: the
+  // engines never write, and an accepted change whose window closed while
+  // the app was shut still deserves its answer.
+  const dueCount = useMemo(() => dueForVerdict(data, today).length, [data, today])
+  useEffect(() => {
+    if (dueCount > 0) update((d) => { settleDue(d, today) })
+  }, [dueCount, today, update])
+  // Scoped: a training verdict belongs on the training screen.
+  const verdict = useMemo(() => freshVerdict(data, today, [STEP_TYPE]), [data, today])
+
+  // ONE calorie-target suggestion at a time.
+  //
+  // Four engines can have an opinion about this number on the same day,
+  // and stacking them turns a coach into a committee: five cards on a
+  // 390px screen, two of which have already been caught contradicting
+  // each other. They are ranked by how much they know rather than by the
+  // order they were built in.
+  //
+  //   recheck  the inputs themselves changed, so the target is stale
+  //   step     the inputs stand, but the scale disagrees with them
+  //   bump     the older recomp rule, kept as the floor of the ladder
+  //
+  // The energy-availability card is deliberately NOT in this ladder. It
+  // is not an opinion about the target, it is a safety reading, and it
+  // sits above whichever suggestion wins.
+  const advice = recheck ? 'recheck' : step ? 'step' : bump ? 'bump' : null
 
   return (
     <div className="space-y-3 pb-6">
@@ -134,10 +175,106 @@ export function MealsScreen({ embedded = false }: { embedded?: boolean } = {}) {
               {day?.dayTypeOverride ? ' (manual)' : ''}
             </Chip>
             <Chip tone="lime">protein never drops: {data.settings.proteinTargetG} g</Chip>
+            {/* A floor, not a ring: nothing here logs fibre, so showing a
+                progress arc against it would be inventing a number. */}
+            <Chip tone="default">fibre floor: {macroTarget.fiberG} g</Chip>
             {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
           </div>
 
-          {bump && (
+          {/* An answer to something the athlete already did outranks any
+              new suggestion, including the ones below. Saying "that did
+              not help, so it is back to how it was" out loud is the whole
+              reason the ledger exists. */}
+          {verdict && (
+            <Card className={verdict.verdict === 'worked' ? 'border-lime/40' : 'border-white/15'}>
+              <p className="text-[13px] font-bold text-ink">
+                {verdict.verdict === 'worked' ? 'That worked' : 'Following up'}
+              </p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{verdictCopy(verdict)}</p>
+            </Card>
+          )}
+
+          {/* Safety first, and it is not competing with the ladder below. */}
+          {energy && (
+            <Card className="border-gold/40">
+              <p className="text-[13px] font-bold text-gold">
+                {energy.level === 'low' ? 'Not much left to run on' : 'Worth a look'}
+              </p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{energyCopy(energy)}</p>
+            </Card>
+          )}
+
+          {learned && !advice && (
+            <Card>
+              <p className="text-[13px] font-bold text-ink">What your own weeks say</p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{learned}</p>
+            </Card>
+          )}
+
+          {advice === 'step' && step && (
+            <Card className="border-accent/40">
+              <p className="text-[13px] font-bold text-accent-soft">What the scale is actually doing</p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
+                {returningCopy({ allowed: true, returningBecauseWorse: step.returningBecauseWorse, declines: 0 })}{step.returningBecauseWorse ? ' ' : ''}
+                {stepCopy(step)}
+              </p>
+              {/* Two buttons now. The second one used to be impossible:
+                  there was nowhere to record a no, so it would have set
+                  the number to what it already was and the card would
+                  have come straight back. The ledger fixed that. */}
+              <div className="mt-2.5 flex gap-2">
+                <Btn kind="subtle" className="flex-1 !py-2"
+                  onClick={() => update((d) => {
+                    const gap = d.plan.nutrition.kcalTraining - d.plan.nutrition.kcalRest
+                    d.plan.nutrition.kcalTraining = step.toKcal
+                    d.plan.nutrition.kcalRest = Math.max(MIN_KCAL_REST, step.toKcal - gap)
+                    appendDecision(d, stepDecision(step, 'accepted', today, d.decisions.length))
+                  })}>
+                  Move to {step.toKcal}
+                </Btn>
+                <Btn kind="subtle" className="flex-1 !py-2"
+                  onClick={() => update((d) => {
+                    appendDecision(d, stepDecision(step, 'declined', today, d.decisions.length))
+                  })}>
+                  Not now
+                </Btn>
+              </div>
+            </Card>
+          )}
+
+
+          {advice === 'recheck' && recheck && (
+            <Card className="border-accent/40">
+              <p className="text-[13px] font-bold text-accent-soft">
+                {recheck.athleteSet ? 'Worth another look' : 'Your target was set before this'}
+              </p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
+                {learnedCopy(recheck.learned, recheck.athleteSet)} On what I know now your training days come out at{' '}
+                {recheck.suggested.kcalTraining} kcal, not {recheck.current.kcalTraining}. Your call.
+              </p>
+              <div className="mt-2.5 flex gap-2">
+                <Btn kind="subtle" className="flex-1 !py-2"
+                  onClick={() => update((d) => {
+                    const next = applyRecheck(d, today)
+                    if (!next) return
+                    d.plan.nutrition = next.nutrition
+                    d.plan.nutritionBasis = next.nutritionBasis
+                    appendDecision(d, recheckDecision(recheck, 'accepted', today, d.decisions.length))
+                  })}>
+                  Use {recheck.suggested.kcalTraining}
+                </Btn>
+                <Btn kind="subtle" className="flex-1 !py-2"
+                  onClick={() => update((d) => {
+                    d.plan.nutritionBasis = recheck.basis
+                    appendDecision(d, recheckDecision(recheck, 'declined', today, d.decisions.length))
+                  })}>
+                  Keep {recheck.current.kcalTraining}
+                </Btn>
+              </div>
+            </Card>
+          )}
+
+          {advice === 'bump' && bump && (
             <Card className="border-gold/40">
               <p className="text-[13px] font-bold text-gold">Check-in rule triggered</p>
               <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">

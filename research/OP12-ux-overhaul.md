@@ -1,9 +1,9 @@
-# OP5 — the UI/UX overhaul, phase 1
+# OP12 — the UI/UX overhaul, phase 1
 
 What was wrong, what shipped, and what is deliberately still a socket.
 
-This is the record. The two files that GOVERN are `OP5-visual-law.md` (how it looks) and
-`OP5-screen-law.md` (what is on each screen), and each has a test that fails when `src/`
+This is the record. The two files that GOVERN are `OP12-visual-law.md` (how it looks) and
+`OP12-screen-law.md` (what is on each screen), and each has a test that fails when `src/`
 drifts from it.
 
 ## The diagnosis
@@ -44,7 +44,7 @@ Five questions, answered on sight:
 **The look.** Flat sticker surfaces on slate, 2px borders on everything, every button a flat
 fill with a hard bottom edge it depresses onto, Nunito bundled locally, colour as fills with
 dark text. Zero gradients, zero glass, zero glow. The palette and geometry are in
-`OP5-visual-law.md`; `src/visualLaw.test.ts` fails if `src/index.css` drifts.
+`OP12-visual-law.md`; `src/visualLaw.test.ts` fails if `src/index.css` drifts.
 
 **The vocabulary.** `Tile` (with heat/volt/ice/gold tones), `Coin`, `SetCoin`, `SectionTitle`,
 `QBar`, `WeekNode`, `PathLink`, `Segmented`, and `components/stickers.tsx` — the flat two-tone

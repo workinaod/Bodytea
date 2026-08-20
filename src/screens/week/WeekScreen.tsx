@@ -409,9 +409,14 @@ export function WeekScreen({ embedded = false }: { embedded?: boolean } = {}) {
                   ))}
                 </div>
                 <div className="eyebrow text-ink-faint">
-                  {recap.trained
-                    ? `${recap.actualSets} of ${recap.plannedSets} sets done`
-                    : `${recap.exercises.length} exercises · ${recap.plannedSets} sets`}
+                  {!recap.trained
+                    ? `${recap.exercises.length} exercises · ${recap.plannedSets} sets`
+                    : recap.actualSets > recap.plannedSets
+                      ? // Extra work can now be added to a day, so the total
+                        // legitimately passes what was asked for. "19 of 9
+                        // sets done" reads like a bug; this reads like a day.
+                        `${recap.actualSets} sets done, ${recap.actualSets - recap.plannedSets} past the plan`
+                      : `${recap.actualSets} of ${recap.plannedSets} sets done`}
                 </div>
               </>
             )}

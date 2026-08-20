@@ -62,7 +62,7 @@ test('build your own workout and run it live', async ({ page }) => {
   await expect(page.getByText('Off the plan, on the record.')).toBeVisible()
 })
 
-test('the workouts shelf logs one after the fact, straight through the debrief', async ({ page }) => {
+test('the workouts shelf logs one after the fact, into the day and not over it', async ({ page }) => {
   await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) }) // Monday
   await page.goto('./')
   await onboardGenerated(page)
@@ -76,14 +76,12 @@ test('the workouts shelf logs one after the fact, straight through the debrief',
   await expect(page.getByText('Nothing but a floor. Still a real session.')).toBeVisible()
   await page.getByRole('button', { name: 'Already did it' }).click()
 
-  // Logged and finished: the debrief opens, titled by the workout.
-  const debrief = page.getByRole('dialog', { name: 'Session debrief' })
-  await expect(debrief).toBeVisible()
-  await expect(debrief.getByText(/No-Gear Burner/)).toBeVisible()
-  await debrief.getByRole('button', { name: 'Done', exact: true }).click()
-
-  // The day now carries a completed session.
-  await expect(page.getByText('Session complete.')).toBeVisible()
+  // Logged, and that is all. Monday has a scheduled workout, so this joins
+  // it rather than standing in for it: no debrief, because the day is not
+  // over, and the session is running with this work already ticked inside.
+  await expect(page.getByRole('dialog', { name: 'Session debrief' })).toHaveCount(0)
+  await expect(page.getByText('Session complete.')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Finish session/ })).toBeVisible()
 })
 
 test('a missed day gets made up from the recent-days shelf', async ({ page }) => {

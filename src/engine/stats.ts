@@ -1,6 +1,7 @@
 import type { AppData, ISODate, SessionLog } from '../types'
 import { addDaysISO, daysBetween, todayISO } from './calendar'
 import { resolveDay } from './resolveDay'
+import { trendIsConfounded } from './userModel'
 import { getExercise } from '../plan/exercises'
 import { FOODS } from '../plan/foods'
 
@@ -147,6 +148,51 @@ export function sessionSetsDone(session: SessionLog): { done: number; total: num
     }
   }
   return { done, total }
+}
+
+/**
+ * Movements today's plan asked for that are not on the day's session yet.
+ *
+ * A date holds one SessionLog, so whatever runs first owns the slot, and
+ * "is there a session?" stopped being the same question as "has the plan's
+ * work been done?" the moment a make-up or an off-plan workout could be the
+ * thing occupying it. Run Monday's missed lower day on a Thursday and
+ * Thursday's own session is not started, it is merely unreachable, because
+ * the screen only offered Start while the day had no session at all.
+ *
+ * Derived, never stored: the plan's movements for the day against the ones
+ * on the log. An empty answer means the day's work is on the record, done
+ * or not, and nothing more is owed.
+ */
+export function planWorkOutstanding(
+  planned: { exerciseId: string }[],
+  session: SessionLog | undefined,
+  /**
+   * The made-up day's movements, when the session ran one. Read only for
+   * sessions written before the flag existed, to rescue the exact record
+   * the report was staring at.
+   */
+  madeUp?: { exerciseId: string }[],
+): string[] {
+  const all = planned.map((p) => p.exerciseId)
+  if (!session) return all
+  if (session.status === 'skipped') return []
+  // Explicit beats derived. A make-up can run the very template today is
+  // scheduled for, because an A/B week repeats one, and then the movements
+  // on the log cannot tell "I did today's session" from "I did last
+  // Monday's, which happens to be the same workout".
+  if (session.ownPlanStarted === true) return []
+  if (session.ownPlanStarted === false) return all
+  // Written before the flag existed. A session whose every movement came
+  // from the made-up day is entirely that day's work, whatever it has in
+  // common with today's, so today's own is still owed.
+  if (session.makeupFor && madeUp && session.exercises.length > 0) {
+    const fromMakeup = new Set(madeUp.map((m) => m.exerciseId))
+    if (session.exercises.every((e) => fromMakeup.has(e.exerciseId))) return all
+  }
+  // Otherwise read the movements, which is right for everything else.
+  const on = new Set(session.exercises.map((e) => e.exerciseId))
+  return all.filter((id) => !on.has(id))
 }
 
 // ---------- Session grades ----------
@@ -385,6 +431,23 @@ export function kcalBumpSuggestion(data: AppData): KcalBumpSuggestion | null {
   const baseline = threeWeeksAgo[threeWeeksAgo.length - 1]
   const weightChange = (last.weightLb ?? 0) - (baseline.weightLb ?? 0)
   if (weightChange >= 1) return null // scale is creeping up, rule not triggered
+
+  // This whole rule rests on "the scale is not moving", so it is only as
+  // good as the scale. Creatine pulls 1 to 2 kg of water on in the first
+  // weeks and lets it go again on the way out, and neither has anything
+  // to do with energy balance. The dangerous direction is COMING OFF it:
+  // the drop reads as under-eating and this would tell somebody to add
+  // calories they do not need.
+  //
+  // So when the user model says the scale is confounded, the answer is
+  // no answer. It re-evaluates on its own once the water settles.
+  //
+  // Asked as its own question rather than read off a trend's caveat. A
+  // trend is windowed to recent weeks and returns null when the window is
+  // thin, and a guard that evaporates exactly when there is least data is
+  // not a guard. Whether creatine is on board has nothing to do with how
+  // many times somebody stepped on a scale this fortnight.
+  if (trendIsConfounded(data)) return null
 
   // strength climbing? any tracked lift e1RM +3% over the same window
   let bestGain = 0

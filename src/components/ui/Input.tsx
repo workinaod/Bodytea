@@ -19,7 +19,7 @@ export function Stepper({
 }) {
   const v = value ?? 0
   const btn =
-    'press grid h-9 w-9 place-items-center rounded-full bg-white/[0.08] text-lg font-bold text-ink-dim ring-1 ring-white/[0.06]'
+    'press-down grid h-9 w-9 place-items-center rounded-xl border-2 border-edge bg-surface-2 text-lg font-black text-ink-dim [--lip:var(--lip-quiet)]'
   return (
     <div className="flex items-center gap-1">
       <button
@@ -100,7 +100,7 @@ export function Toggle({
 // translucent pill, which is the same defect the buttons had:
 // a control drawn with opacity instead of with edges.
 //
-// Geometry per research/OP5-visual-law.md: 2px line, radius 14,
+// Geometry per research/OP12-visual-law.md: 2px line, radius 14,
 // panel fill, 3px pad, a lip; the active half is a heat fill at
 // radius 10 with its own lip.
 // ============================================================

@@ -4,6 +4,9 @@ import { isAutomatic, respondToSet, type FatigueResponse } from '../engine/sessi
 import { setWeightForward } from './actions'
 import { setAchievedReps, setExerciseRir } from './prescription'
 import { useAppStore } from '../store/appStore'
+import { adaptDecision, appendDecision } from '../engine/decisions'
+import { ADAPT_METRIC, ADAPT_RULE_VERSION, ADAPT_WINDOW_DAYS } from '../engine/proposals'
+import { addDaysISO } from '../engine/calendar'
 
 // ============================================================
 // Acting on "I can't finish this".
@@ -90,15 +93,36 @@ export function endGroupAhead(date: ISODate, exIdx: number): number {
 /**
  * Take an offer the coach made off the last fortnight's evidence.
  *
- * Stored per date and only when ACCEPTED. A proposal nobody took leaves
- * no trace at all, which is what stops a declined suggestion quietly
- * shaping next week: engine/adapt.ts re-derives its offers from the
- * signals every time, so a decline is simply the absence of a yes.
+ * Two things happen, and they are different things. The acceptance is
+ * stored per date, which is what the prescription reads. And a row goes
+ * into the decision ledger, which is what lets the app ask, a fortnight
+ * later, whether it helped.
+ *
+ * The old comment here argued that a proposal leaving no trace is what
+ * stops a declined suggestion shaping next week. That is right about the
+ * PLAN and wrong about the CONVERSATION: with nothing recorded, the same
+ * offer returns tomorrow off the same evidence, and an accepted one is
+ * never followed up. The plan still reads only `adapt`; the ledger is
+ * read by the offering policy and the outcome engine, and by nothing that
+ * prescribes.
  */
-export function acceptAdaptation(date: ISODate, choice: AdaptChoice): void {
+export function acceptAdaptation(date: ISODate, choice: AdaptChoice, because = ''): void {
   store().update((d) => {
     const taken = d.adapt[date] ?? []
     if (!taken.includes(choice)) d.adapt[date] = [...taken, choice]
+    appendDecision(
+      d,
+      adaptDecision({
+        choice,
+        response: choice === 'dismissed' ? 'declined' : 'accepted',
+        evidence: { signals: because.length },
+        at: date,
+        windowClosesAt: addDaysISO(date, ADAPT_WINDOW_DAYS),
+        ruleVersion: ADAPT_RULE_VERSION,
+        metricId: ADAPT_METRIC,
+        seq: d.decisions.length,
+      }),
+    )
   })
 }
 

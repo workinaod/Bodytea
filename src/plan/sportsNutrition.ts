@@ -1,3 +1,4 @@
+import type { Goal } from '../types'
 // ============================================================
 // The sports-nutrition evidence base.
 //
@@ -91,6 +92,21 @@ export type ProteinContext = keyof typeof PROTEIN_G_PER_KG
  * out the carbs and fat that do have jobs. A ceiling, not a target.
  */
 export const PROTEIN_CEILING_G_PER_KG = 2.8
+
+/** Which protein band this athlete's goal and answers put them in. */
+export function proteinContextFor(goal: Goal, ans: Record<string, string> = {}): ProteinContext {
+  if (goal === 'lean') {
+    // A big cut, or a desk-bound day making the deficit bite harder, is
+    // where lean mass is most at risk and protein matters most.
+    return (ans['lose-amount'] === '30 to 60 lb' || ans['lose-amount'] === 'More than that') || ans['lose-amount'] === '10 to 30 lb'
+      ? 'aggressiveDeficit'
+      : 'deficit'
+  }
+  if (goal === 'endurance') return 'endurance'
+  if (goal === 'muscle' || goal === 'strength' || goal === 'vertical') return 'hypertrophy'
+  return 'general'
+}
+
 
 /** Daily protein in grams, for this athlete in this situation. */
 export function proteinTargetG(bodyweightLb: number, context: ProteinContext): number {
@@ -214,6 +230,29 @@ export interface MacroTargets {
   carbsG: number
   fatG: number
   kcal: number
+  /** The floor, not a target to hit exactly. See FIBER_G_PER_1000_KCAL. */
+  fiberG: number
+}
+
+/**
+ * Fibre, per thousand calories actually prescribed.
+ *
+ * The reference intakes land at 38 g a day for men and 25 for women, but
+ * those are stated at reference calorie intakes, and prescribing 38 g to
+ * somebody eating 1,600 on a cut is asking them to hit a number built for
+ * a different amount of food. The per-1000 form is the same guidance
+ * scaled to the target this app actually printed: that 1,600 kcal day
+ * gets 22 g, not 38.
+ *
+ * Worth knowing where most people start: the US average is around 8 g per
+ * 1000 kcal, so this is a floor almost nobody is already over, and it
+ * wants ramping over a week or two rather than hitting on day one.
+ */
+export const FIBER_G_PER_1000_KCAL = 14
+
+function fiberFloorG(kcal: number): number {
+  if (!(kcal > 0)) return 0
+  return Math.round((kcal / 1000) * FIBER_G_PER_1000_KCAL)
 }
 
 export function macroTargets(args: {
@@ -229,7 +268,7 @@ export function macroTargets(args: {
   // is not all carbohydrate. Carbs then take the remainder.
   const fatG = Math.round(Math.max(fatMin, (afterProtein * 0.3) / 9) / 5) * 5
   const carbsG = Math.max(0, Math.round((afterProtein - fatG * 9) / 4 / 5) * 5)
-  return { proteinG, carbsG, fatG, kcal: args.kcal }
+  return { proteinG, carbsG, fatG, kcal: args.kcal, fiberG: fiberFloorG(args.kcal) }
 }
 
 // ---------------- Hydration ----------------
@@ -261,6 +300,19 @@ export const mlToOz = (ml: number) => Math.round(ml / 29.5735)
  * roughly 0.5% a week almost all of the surplus is fat, and a trained
  * lifter is nearer the bottom of that range than the top.
  */
+/**
+ * Calories per pound of body tissue. Wishnofsky 1958.
+ *
+ * A convention, not a law, and a short-horizon one: bodies offset
+ * deficits, so applied as a forecast it overestimates long-run loss by
+ * well over half at a year. Every user of it in this codebase halves it
+ * and clamps it for exactly that reason.
+ *
+ * Lives here, in the plan layer with the rest of the sourced numbers,
+ * rather than in either engine that needs it, because both do.
+ */
+export const KCAL_PER_LB_TISSUE = 3500
+
 export const WEEKLY_CHANGE_PCT = {
   fatLossMin: 0.005,
   fatLossMax: 0.01,

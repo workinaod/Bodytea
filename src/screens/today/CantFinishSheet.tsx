@@ -45,14 +45,20 @@ interface Offer {
   run: () => void
 }
 
-/** Quiet glass, the resting state of every tappable row in the kit. */
-const GLASS =
-  'bg-white/[0.055] ring-1 ring-white/[0.06] shadow-[0_1px_0_rgba(255,255,255,0.06)_inset] active:bg-white/[0.11]'
+/**
+ * The three offers, as flat tiles.
+ *
+ * These were the last translucent gradients in the app: two ring-1 glass
+ * panels with an inset highlight, which is the exact look
+ * research/OP12-visual-law.md replaced. A row you can tap gets an edge
+ * and a lip, not a sheen.
+ */
+const QUIET = 'border-2 border-edge bg-surface shadow-[0_3px_0_var(--color-edge)]'
 
 const OFFER_TONE: Record<'lead' | 'stop' | 'quiet', string> = {
-  lead: 'bg-gradient-to-b from-accent/[0.16] to-accent/[0.05] ring-1 ring-accent/25 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset]',
-  stop: 'bg-gradient-to-b from-danger/[0.16] to-danger/[0.04] ring-1 ring-danger/30 shadow-[0_1px_0_rgba(255,255,255,0.1)_inset]',
-  quiet: GLASS,
+  lead: 'border-2 border-accent-deep bg-surface shadow-[0_3px_0_var(--lip-accent)]',
+  stop: 'border-2 border-danger/60 bg-surface shadow-[0_3px_0_var(--lip-danger)]',
+  quiet: QUIET,
 }
 
 const OFFER_TEXT: Record<'lead' | 'stop' | 'quiet', string> = {
@@ -206,7 +212,7 @@ export function CantFinishSheet({
               <button
                 key={r.id}
                 onClick={() => choose(r.id)}
-                className={`press flex w-full items-center gap-3.5 rounded-2xl px-4 py-3.5 text-left ${GLASS}`}
+                className={`press flex w-full items-center gap-3.5 rounded-2xl px-4 py-3.5 text-left ${QUIET}`}
               >
                 {/* Fixed slot: emoji glyphs differ in width, and without it
                     the four labels do not share a left edge. */}

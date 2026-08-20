@@ -62,7 +62,11 @@ test('bring your own routine: build week → notes → track it', async ({ page 
   await expect(page.getByText(/posterior chain gets its work/)).toBeVisible()
   // athletic goal + zero jump work → called out
   await expect(page.getByText(/jumps and sprints ARE the engine/)).toBeVisible()
-  await expect(page.getByText(/automatic deload/)).toBeVisible()
+  // The note used to promise "an automatic deload (sets halved)" to an
+  // athlete whose routine the app does not touch. It offers now, because
+  // the week is theirs, and this screen is the honest read of it.
+  await expect(page.getByText(/I will offer a deload/)).toBeVisible()
+  await expect(page.getByText(/automatic deload/)).toHaveCount(0)
 
   await page.getByRole('button', { name: "Start Week 1" }).click()
 
@@ -176,4 +180,28 @@ test('a routine brought from home can also declare a bad knee', async ({ page })
   // The same swap without a declared knee returns a split squat, which
   // loads it. With one declared, it must not.
   await expect(page.getByText('Split Squat')).toHaveCount(0)
+})
+
+test('the picker finds what a literal search misses, and says so when it cannot', async ({ page }) => {
+  // R-ONT's whole argument in one interaction. The picker matched on
+  // substring, so "bulgarian split squats" did not contain "Bulgarian
+  // Split Squat" by one letter, and the athlete was told nothing matched
+  // while the movement sat right there in the catalog.
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+
+  await throughGoal(page, 'I already have a routine', '💪 Gaining muscle', 'add 10 lb of lean muscle')
+  await page.getByRole('button', { name: 'Next: build my week' }).click()
+  await page.getByRole('button', { name: '+ add a training day' }).first().click()
+  await page.getByRole('button', { name: '+ Add exercise' }).click()
+
+  // A plural the substring search cannot see.
+  await page.getByPlaceholder(/Search a name, a muscle/).fill('bulgarian split squats')
+  await expect(page.getByText('Closest I can find')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Bulgarian Split Squat/ }).first()).toBeVisible()
+
+  // And when it genuinely does not have it, it says that in words rather
+  // than leaving somebody thinking they typed it wrong.
+  await page.getByPlaceholder(/Search a name, a muscle/).fill('qzxwv')
+  await expect(page.getByText(/I do not have qzxwv/)).toBeVisible()
 })

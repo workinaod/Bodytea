@@ -45,3 +45,21 @@ export function lateNightGraceDate(
   const resolved = resolveDay(yesterday, data)
   return resolved.kind === 'session' || resolved.kind === 'mobility' ? yesterday : null
 }
+
+/**
+ * Can more work still be logged against this day?
+ *
+ * A day is not over the moment one session ends. People finish the
+ * plan's session, then play ball, then remember the abs they did, and
+ * the app used to shut the door on all of it: the first finished
+ * session closed the day out.
+ *
+ * The live day is always open. Yesterday stays open until 03:00, the
+ * same window the rest of the app already uses for work that belongs to
+ * the day before the clock says so. Past that, a day is history and is
+ * edited through the record, not by adding to it.
+ */
+export function stillOpenForLogging(date: ISODate, homeDate: ISODate, now: Date): boolean {
+  if (date === homeDate) return true
+  return date === addDaysISO(localISO(now), -1) && now.getHours() < 3
+}

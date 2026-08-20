@@ -67,6 +67,7 @@ export function emptyAppData(phaseStartDate: ISODate, installedAt?: ISODate, pla
     adapt: {},
     runs: [],
     journey: emptyJourney(),
+    decisions: [],
     achievements: { earnedAt: {} },
     prefs: emptyPrefs(),
   }

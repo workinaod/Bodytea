@@ -32,7 +32,7 @@ import { DebriefSheet } from '../today/DebriefSheet'
 // it opens by pointing back at the plan, because on most days
 // the plan's session is still the right call.
 //
-// Contents per research/OP5-screen-law.md §4.
+// Contents per research/OP12-screen-law.md §4.
 // ============================================================
 
 // Nothing here hardcodes a catalog size. The preview said 194 and 14 and
@@ -78,8 +78,14 @@ export function TrainScreen({
   onOpenToday,
   requestRun,
 }: {
-  /** Jump back to Today, where every live session actually runs. */
-  onOpenToday?: () => void
+  /**
+   * Jump back to Today, where every live session actually runs.
+   *
+   * `list` asks for the list runner rather than the focus one: work logged
+   * after the fact seeds the plan's session, and the focus runner would
+   * take the whole screen for a workout nobody asked to start.
+   */
+  onOpenToday?: (opts?: { list?: boolean }) => void
   /** Run a previous plan day today. Today owns the readiness and intensity gates. */
   requestRun?: (date: ISODate, cns: boolean) => void
 } = {}) {
@@ -107,6 +113,22 @@ export function TrainScreen({
     setMakeupOpen(false)
     setWorkoutsOpen(false)
     setOwnOpen(false)
+  }
+
+  /**
+   * Work logged after the fact.
+   *
+   * A debrief only comes back when the day is genuinely OVER. On a day
+   * that still has its own workout on the table, logging extra work joins
+   * the day's session rather than standing in for it, and that session is
+   * live on Today. So there is nothing to show here and everything to show
+   * there: land the athlete on the screen their session is running on
+   * rather than leaving them on a shelf with a session open behind it.
+   */
+  const handleLogged = (d: DebriefData | null) => {
+    closeAll()
+    if (d) setDebrief(d)
+    else onOpenToday?.({ list: true })
   }
 
   return (
@@ -201,10 +223,7 @@ export function TrainScreen({
           closeAll()
           onOpenToday?.()
         }}
-        onLogged={(d) => {
-          closeAll()
-          setDebrief(d)
-        }}
+        onLogged={handleLogged}
       />
       <OwnWorkoutSheet
         open={ownOpen}
@@ -214,10 +233,7 @@ export function TrainScreen({
           closeAll()
           onOpenToday?.()
         }}
-        onLogged={(d) => {
-          closeAll()
-          setDebrief(d)
-        }}
+        onLogged={handleLogged}
       />
       {/* The library is the picker in reading mode: the same 194 movements
           with the same filters, where a tap opens the guide rather than

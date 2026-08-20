@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (W17 safety gap, on top of OP4 live at deploy 2817eed)
+Last updated: 2026-08-20 (J7 nutrition slice 2a: the calorie target can change after signup; OP5/OP6/OP8 the one rule, three doors: work added to a day never ends it or spends the plan's session; OP7 period reviews for week, month, quarter and year)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -33,6 +33,39 @@ https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
    23-commit stale-live incident.)
 7. Never assume a task on an old list is still necessary. Check it against this file and
    the code first. Several sessions' worth of work shipped between most lists and now.
+8. **REVIEW PASS at the end of every chunk** (owner instruction, 2026-08-20). Not after every
+   slice, and not never: when a JOB closes, or when three or four slices have stacked on one
+   another, stop building and review what is now there as a whole.
+
+   This exists because it works. The pass that followed J7 found three real defects in a day
+   of work that had shipped green four times: a weight trend with no window at all (an athlete
+   flat for a month read as still losing, so the plateau rule never fired), the same
+   all-history mistake repeated in two more files, and two engines contradicting each other on
+   one screen (add 150 kcal / take 250 away, both rendering at once). None of it was caught by
+   the slices, because **each slice only ever tested itself.**
+
+   What the pass actually does, in order:
+
+   - **Re-read the whole surface, not the diff.** The window bug existed from the first line
+     of `weightTrend` and survived four slices built on top of it. A diff cannot show you that.
+   - **Look for contradictions between engines.** List everything that can fire on the same
+     screen on the same day and ask whether any two can disagree. Build a probe and PROVE it
+     rather than reasoning about it; the contradiction found on 2026-08-20 was confirmed by a
+     throwaway fixture, not by reading.
+   - **Check paired quantities share a scope.** Any subtraction between two measurements needs
+     both sides over the same window. Two of the three defects were this.
+   - **Probe every new constant.** Set it to an absurd value and run its spec. If nothing goes
+     red, the constant guards nothing: either write the test that makes it bite or delete it.
+     This found `REAL_BF_CHANGE_PCT` doing a job nobody had named.
+   - **Look at the screen at 390px as a whole**, not card by card. Five stacked advice cards
+     is what building one card per slice produces.
+   - **Confirm every new export has a real caller**, and that the dead-export ledger shrank
+     rather than grew.
+   - **Re-run the full ritual** (rule 5) plus `npm run sim` and `node scripts/poison.mjs`, and
+     add a mutation for every defect the pass found, so it cannot come back quietly.
+
+   Then record it: a checkpoint entry naming each defect, how it was proved, and what now
+   guards it. A review that finds nothing gets recorded too, in one line.
 
 ---
 
@@ -261,22 +294,29 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | J4 | Freeform-first entry (composer primary, chips demote to examples; reuse inferGoal/readStatement) | product | pending | J3 | App audit session |
 | J5 | Booklet regenerates: goal edits -> generatePlan -> diff for approval; history preserved | product | pending | J3 | App audit session |
 | J6 | Limitations lifecycle (short/long-term, what hurts, region routing, expiry+restore) + core coverage guarantee + advisory volume cap for user-authored routines | either | **headline done 2026-08-19 via W7p** (limit-range: a declared joint narrows the plan instead of emptying a whole pattern). Remaining: the lifecycle itself (short vs long term, expiry and restore, editing), the core coverage guarantee, and the advisory volume cap for user-authored routines | J1 (J3 helps) | tbd |
-| J7 | User model (userModel.ts: EWMA weight, lean mass, work capacity, per-muscle recovery, per-exercise progression rate, adherence shape; facts carry source/confidence/recency) + nutrition engine (Katch-McArdle when BF known, activity from logs, carb cycling, fibre floor, self-explaining numbers) + calorie-autoregulation seed | engines | pending | J1, J2 | Algorithm session |
+| J7 | User model (userModel.ts: EWMA weight, lean mass, work capacity, per-muscle recovery, per-exercise progression rate, adherence shape; facts carry source/confidence/recency) + nutrition engine (Katch-McArdle when BF known, activity from logs, carb cycling, fibre floor, self-explaining numbers) + calorie-autoregulation seed | engines | **DONE 2026-08-20** (engine/userModel.ts: UserFact<T> carrying value, source, sample count, asOf and a DERIVED confidence; weightTrend as an EWMA that knows when creatine is confounding it, workCapacity, recoveryByRegion, adherenceShape, readUserModel; 12 tests, 5 guards proven to bite, 6 mutations). Every function returns null until it has something to say, which is the calibration.ts pattern and the right answer for a new account. FIRST CONSUMER WIRED THE SAME DAY: kcalBumpSuggestion rests entirely on "the scale is not moving" and read two raw weigh-ins to decide it; it now declines when the trend is confounded, because the dangerous direction is coming OFF creatine, where the water drop reads as under-eating and the app would tell somebody to add calories they do not need. NUTRITION SLICE 1 (2026-08-19): plan/bmr.ts, R1 section 2 and 3. The calorie baseline was bodyweight x 15 with no study behind it, no age term, and linear in total mass, so it put a 320 lb man at 4,875 kcal maintenance while two validated equations put him near 3,200. Three models now, best-first: Katch-McArdle (Cunningham 1991) when a fresh tape reading exists, Mifflin-St Jeor when height AND age exist, the old number last and unchanged so nobody moves without new information. Activity is R1 architecture (a): a non-training multiplier off the NASEM PAL bands plus each session's own net MET cost, never a blended multiplier, so a workout cannot be counted twice. Age was collected at signup and read by ONE screen; the tape estimator fed a chart and nothing else. Both reach the number now. engine/userModel.ts gained bodyComposition as a fifth fact (median of the last 3 readings, retired by 60 days OR 5 percent weight drift). plan/bmr.refs.ts carries the provenance and is the file that makes the tier column earn its keep: two A-tier equations and one tier-D house number that has no source, sitting side by side in code that made them look identical. 40 new tests, 9 mutations. NUTRITION SLICE 2a (2026-08-19): engine/nutritionRecheck.ts. Slice 1's model could never actually fire for a real athlete, because buildNutrition ran once at signup and nothing recomputed it, while the tape flow lives on a screen people reach days later. The plan now carries nutritionBasis (what the number was computed from, and what it was last CONFIRMED against), both nutrition paths write it, and the Meals screen offers the better number when a real input moves. Suggest-only: the engine never writes, applyRecheck is a separate act behind a tap. Sessions counted are COMPLETED ones, which is what J7's adherenceShape is for and the first place the facts layer pays for itself. Ownership rule: typing a target in the booklet editor clears the basis and mutes the recheck forever; declining keeps the number and stamps today's knowledge, so no once does not mean silence through the next forty pounds. Four files split to stay under caps (nutritionTypes, profileTypes, nutritionSchema, measurementSchema); types.ts 696 to 691, store/schema.ts 602 to 578; readUserModel and adherenceShape came OFF the dead-export ledger. NUTRITION SLICE 2b (2026-08-19): two flat constants that mis-scaled. (1) The rest-day drop was 300 kcal for everybody: about right for an 86 kg man lifting an hour, roughly double the session cost of a 54 kg woman lifting 45 minutes, which made her rest days punitive for no reason anyone could point at. It is now (MET - 1) x kg x hours, bounded 150 to 400, and 300 turns out to be exactly what that rule returns for an 86 kg hour. The rest-clamp test in kcalFloor.test.ts had predicted this in its own comment and now asserts the clamp BINDS rather than that it is redundant. (2) engine/energyAvailability.ts: EA = (intake - exercise) / FFM, warning under 30. This is the check no floor can make, because a floor does not know how much somebody trains; R1's eval case 10 (120 lb, 18 percent, six lifts and 30 km a week, eating 1,400) is reproduced to the decimal at EA 22.6. The 30 line is female-derived so a man below it gets a CAUTION not a finding, and a test asserts the rendered copy names no condition on either side. Needs a tape AND logged sessions or it returns nothing. NUTRITION SLICE 2c (2026-08-20): engine/calorieStep.ts (R1 s4.2) and the fibre floor (s5.5). R1 IS NOW FULLY WIRED. The step rule compares the smoothed trend against the goal's band and applies HALF the static 3,500-per-pound correction, clamped 100 to 250; the halving is the pack's own sourced limitation, not caution. It declines on a confounded trend, on under 14 days of history, and on goals with no rate band; floors and the 25 percent cap outrank it and it reports the step it will actually take rather than the one it wanted. weeklyLossRangeLb and weeklyGainRangeLb came OFF the dead-export ledger. Fibre is 14 g per 1000 kcal of prescribed calories, shown as a chip not a ring because nothing logs fibre. ALSO FIXED HERE, a defect in J7's own facts layer: weightTrend computed an EWMA, never read it, and returned an endpoint-to-endpoint slope; it is a least-squares regression now. AUTOREGULATION SEED (2026-08-20, engine/maintenanceLearned.ts) CLOSES J7. Every maintenance number was a prediction, and R1 s7.5 says the gap widens exactly where it matters: maintenance falls as a cut goes on by more than the lost mass explains, and stays down. measured = mean intake - (weekly change x 3500 / 7). Half that equation is a scale and half is somebody remembering to log, so the measurement never replaces the model: it gets a vote scaled by how much of the month was logged, capped at half for a perfect month. Errors fall the safe way (an under-reported log reads as LOW maintenance, which TIGHTENS the deficit cap); the rare dangerous direction is caught by a 40 percent sanity band. The step rule's cap now measures against the learned number. J7 IS COMPLETE. Carb cycling scaled to bodyweight is DONE (slice 2b, the rest-day swing IS that rule), and self-explaining copy exists for the two surfaces that have shipped (learnedCopy, energyCopy) rather than as a general template layer. Four of the five exports are on the dead-export ledger with J8 named as the consumer: volume autoregulation needs hardSetsPerWeek, schedule fit needs trainsOnWeekday, exercise fit needs daysSinceRegion | J1, J2 | Algorithm session |
 | J8 | Learning loop completion: volume autoregulation, schedule fit, exercise fit, intervention follow-up; all suggest-only on the calibration.ts pattern | engines | pending | J7 | Algorithm session |
 | J9 | Meal & chef engine: cost/minutes/effort/batchFriendly axes, fit-remaining-macros, batch chaining, no-repeat guards, sliders | product | pending | J1 (J7 feeds it) | product lane |
 | J10 | Explain expansion + jargon-ban sweep; machine rationale split from user sentence | tbd by Q1 | blocked on Q1 | J1 | tbd |
 | J11 | Candidate strategies lite: 2-3 genuinely different plans, scored, one recommended, compared in J5's diff UI; generic-convergence gate over 20 personas | planner | pending | J5, J7 | tbd |
 | J12 | Core-complete gate: sims + poison + paired profiles + convergence in CI; run the engine-ready checklist; passing unlocks post-core | prove | pending | all above | tbd |
 | C1 | Cloud foundation & security: RLS audit, server-side sign-in lockout, push backend (free push only), sync hardening, narrow username lookup (id/username/avatar ONLY), USDA food-proxy edge function; indexes + pagination day one | cloud | pending | J1 | new session or revived "Comback for native" |
-| C2 | Profile & social surface: social = 4th Progress view; profile via header avatar; pinned badges; zero new tabs | cloud | pending | C1 | cloud session |
-| C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending | C2 | cloud session |
+| C2 | Profile & social surface: social = 4th Progress view; profile via header avatar; pinned badges; zero new tabs | cloud | pending  **COLLABORATE FIRST: a UI/UX redesign is in flight in another session; ask it for the surface before building this.** | C1 | cloud session |
+| C3 | Friends, groups & challenges: reviewed RLS per table; unlock the 12 pending achievements; anti-farming in the fact layer | cloud | pending  **COLLABORATE FIRST: same redesign lane as C2.** | C2 | cloud session |
 | T21 | Custom food lookup: Open Food Facts (keyless) first, USDA via C1's proxy; platform/foodLookup.ts + engine/nutrition.ts split; local cache; manual fallback never blocks logging | ride-along | pending | J9, C1 | tbd |
 | RA | Small ride-alongs: max/avg ride speed; set-too-fast confirm; getExercise no-throw guard for live sessions; FocusView.tsx owes a split (allowance bumped to 670 in the reunification merge, must come back down) | ride-along | pending | touch-adjacent | any |
 | OP1 | Off-plan training (owner request): own-workout builder from the exercise list, general workouts shelf, run-any-previous-day make-ups and reruns | product | **done + LIVE 2026-08-19** (deploy 65ed650, owner approved the merge) | J1 | off-plan training session |
 | OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done + LIVE 2026-08-19** (deploy 65ed650) | OP1 | off-plan training session |
 | OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
 | OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done + LIVE 2026-08-19** (owner said deploy; merge 2817eed carries OP4 plus the W10/W11/W16/W18/W4m wiring wave, deploy.yml untouched) | - | 3D body muscle models session |
-| OP5 | UI/UX overhaul phase 1 (owner request, "Master Prompt v3"): the owner lifted the post-core visual-overhaul fence for this lane. Daily-loop experience work: motion system (3 juice tiers with habituation guards), flame ladder visible from day 1 (11 stages), Today as a mission hub (identity HUD, week path, one dominant CTA, real-badge Next up), the finish-chain ceremony (count-up, PR, flame ignition, badge delta, tomorrow), set-done haptic, Train tab (off-plan surfaces promoted from Today), My Plan tab (Week + Meals as segments, owner decision), Progress Body coverage card, and Profile replacing Coach as the identity hub (badges move in, My Room socket, honest Connected apps) with coaching redistributed into Today / My Plan / Progress. **ONBOARDING IS OUT OF SCOPE: the owner is building it elsewhere** (see the checkpoint for the multi-goal defect they caught and the engine facts that lane needs). Zero engine or generator changes; golden lock untouched | product | **in-progress 2026-08-20** (branch `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip 12e110b, 17 commits, unpushed; C0-C8 landed: motion, flame ladder, Today split, Today mission hub, finish chain, navigation, the approved visual law with a guard, the approved SCREEN law with a guard, Profile + badges with earned dates, Progress Body. C9 ship is what remains. Owner merges when ready, deploy.yml untouched) | - | UI/UX overhaul session |
+| OP5 | Extra work adds to the day instead of replacing it (owner bug report): append not overwrite, day stays open to 3am, one day one debrief | product | **done + LIVE 2026-08-19** (deploy 1450838) | OP1 | off-plan training session |
+| OP6 | Extra work never ends the day and never spends the plan's session (owner bug report, the same one twice): logExtraWork seeds the scheduled workout and adds inside it, the door stays open mid-session, a debrief only comes from a day that is over | product | **done + LIVE 2026-08-19** (deploy 316976c, live bundle verified byte-identical by sha256) | OP5 | off-plan training session |
+| OP7 | Period reviews (owner request): a Wrapped-style review when a week, month, quarter or year closes, with progression, highlights, goals accomplished and a cohort comparison; the week always asks for front and side photos, the quarter and year show the first photo next to the latest | product | **done + LIVE 2026-08-20** (deploy 9a70b5d, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
+| OP8 | A make-up never eats the day it runs on (owner bug report, the third door): startSession merges instead of overwriting, and Today offers the day's own session while the plan's work is still owed | product | **done + LIVE 2026-08-20** (deploy a24ef44, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
+| OP9 | The day knows whether ITS OWN workout has been started (owner: "the day is still closed"): SessionLog.ownPlanStarted, because an A/B week repeats a template and the movements alone cannot tell a make-up from today's session; plus the hero naming today rather than the day that was made up | product | **done + LIVE 2026-08-20** (deploy 9b355c5, live bundle verified byte-identical by sha256) | OP8 | off-plan training session |
+| OP10 | Nothing claims the day is done while today's workout is owed (owner: "bro why is it still closed"): the finished-day card stops grading the day and says "Today is not done", and the hero stops naming the made-up day once today's session is running | product | **done + LIVE 2026-08-20** (deploy de04e6a, live bundle verified byte-identical by sha256) | OP9 | off-plan training session |
+| OP11 | The day's workout list comes back while its work is owed, and the coach's offer can be closed (owner requests) | product | **done + LIVE 2026-08-20** (deploy 5019cf1, live bundle verified byte-identical by sha256) | OP10 | off-plan training session |
+| OP12 | UI/UX overhaul phase 1 (owner request, "Master Prompt v3"): the owner lifted the post-core visual-overhaul fence for this lane. Daily-loop experience work: motion system (3 juice tiers with habituation guards), flame ladder visible from day 1 (11 stages), Today as a mission hub (identity HUD, week path, one dominant CTA, real-badge Next up), the finish-chain ceremony (count-up, PR, flame ignition, badge delta, tomorrow), set-done haptic, Train tab (off-plan surfaces promoted from Today), My Plan tab (Week + Meals as segments, owner decision), Progress Body coverage card, and Profile replacing Coach as the identity hub (badges move in, My Room socket, honest Connected apps) with coaching redistributed into Today / My Plan / Progress. **ONBOARDING IS OUT OF SCOPE: the owner is building it elsewhere** (see the checkpoint for the multi-goal defect they caught and the engine facts that lane needs). Zero engine or generator changes; golden lock untouched | product | **in-progress 2026-08-20** (branch `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip 12e110b, 17 commits, unpushed; C0-C8 landed: motion, flame ladder, Today split, Today mission hub, finish chain, navigation, the approved visual law with a guard, the approved SCREEN law with a guard, Profile + badges with earned dates, Progress Body. C9 ship is what remains. Owner merges when ready, deploy.yml untouched) | - | UI/UX overhaul session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -301,7 +341,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | W15 | Wire R15: age bands into loading ceilings, calorie baseline, plyometric gating. Age is collected (W8) and read by nothing | wiring | pending | J7 partial | |
 | W10 | Wire R10: cue corpus coverage (65 of 194 movements carry no cue) + selection and outcome tracking | wiring | **coverage done 2026-08-19** (plan/cues.ts: all 65 written in the house style, merged at catalog assembly; 16 guards, 6 proven to bite, 4 mutations). R10 calls the corpus the long pole and a CONTENT job, and this is that job done: coverage 129/194 to 194/194. The reason it hid is in data.test.ts, which asserts steps, muscles, qualities, why, mistakes, a video query and a rest time and never once asked for a cue, so a silent field was not a crash. It asks now. The guards are the ones R10 s10.4 names: fits the box, fits a breath, survives speakable, makes no claim about a body the app cannot see, promises nobody an injury prevented, no em dashes. Also fixed: one shipped cue was over the voice budget at 13 words. STILL OPEN in W10: selection (engine/cueing.ts, the trigger ladder, one cue ever, silence as the common output), outcome tracking (the CueIssue ledger, which R10 says belongs inside B1 rather than a private array), the TECHNIQUE table proper, and familiarity | W-ONT | feeds J10 |
 | W8e | Wire R8: EndurancePlan shape, session-vs-30-day-max load rule (the 10 percent rule fails) | wiring | pending | J7 partial | future endurance planner |
-| B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
+| B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | **ledger + declines done 2026-08-20** (src/decisionTypes.ts + store/decisionSchema.ts + engine/decisions.ts: append-only rows carrying type, target, ruleVersion, evidence AS VALUES, offeredAt, response, plus the outcome half of the shape ready for slice 2. Three rungs: one no buys 14 days, worsening evidence may return early and must say so, three noes stop it for 56 days and nothing gets past that. Declines feed the OFFERING POLICY only, never a load, volume, calorie target or safety rule. Wired into the calorie-step and nutrition-recheck cards; the step card finally has the second button it shipped without. No SCHEMA_VERSION bump: a defaulted array parses old envelopes clean, as `adapt` and `journey` did. OUTCOMES DONE 2026-08-20 (engine/outcomes.ts): pre-registered metric/window/baseline fixed at accept time, ISOLATE closes a row as unattributable when anything else touches the same target inside its window, verdicts worked/no-change/worse/unattributable/abandoned, said out loud including the bad ones, card self-expires after 7 days. STILL OPEN: the R3 s9.2 table for the TRAINING interventions, which is the same machinery pointed at drop-load, hold-load, reduce-volume, the two substitutions and the deload) | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | **done 2026-08-19** (plan/knowledge.ts 136 lines: SourceRef, KnowledgeRecord, EvidenceTier A-D, confidenceOf; plan/knowledgeRegistry.ts as the list, separate file because a refs module needs confidenceOf and the registry needs the refs module; plan/nutrition.refs.ts as the first, annotating R1's constants IN PLACE by importing the live values so a number cannot drift from its citation; plan/knowledge.test.ts 14 checks + 3 poison mutations). Guards: a sourced tier without a source, a dangling source id, a tier better than its best source, a source nothing cites, hand-typed confidence, a duplicate or malformed id, and a refs module on disk that the registry does not name. Written down in the test: nothing here can catch a number we invented, cited to real papers that do not name it, and labelled A. That is a review problem and the record shape makes it legible, which a bare `= 1500` never did | starts with R1 | done in the audit session |
 | R10 | Technique, cueing and motor learning (no camera) | research | **synthesized 2026-08-18** (research/R10-technique-cueing.md; 24 sources, cue corpus measured, selection and outcome-tracking design) | J1 | feeds J10 |
 | R7 | Populations and adaptive training (function-first) | research | **synthesized 2026-08-18** (research/R7-populations.md; 24 tier-A sources, 11 functional dimensions, 10 population packs, 30 paired fixtures, ME/CFS pacing policy) | J1 | J6 |
@@ -341,7 +381,44 @@ retrieval/vector infra, all post-core experience work.
 
 ---
 
+### UI/UX REDESIGN LANE (owner, 2026-08-19): runs in parallel, and C2/C3 must wait for it
+
+A UI/UX redesign is in flight in another session, alongside this work. The owner's
+instruction: **collaborate before building the friends/profile surfaces.**
+
+- **C2 (profile and social surface) and C3 (friends, groups, challenges) are the handshake
+  point.** Do not design or build those screens solo. Whoever picks them up asks the
+  redesign lane for the surface first, then wires behaviour into it.
+- **C1 is not blocked.** It is the security audit, the lockout, the push backend, the sync
+  hardening and the food proxy, all of which sit under the UI rather than in it. Build it.
+- Anything else that lands a NEW screen (J4's composer, J5's diff view, J11's comparison)
+  should check in before committing to a layout, for the same reason.
+- Engine, wiring and plan-layer work is unaffected. None of it owns a screen.
+
+Recorded here rather than in a checkpoint entry because it is a standing constraint on the
+board, not an event: it stays true until the redesign lands.
+
 ## 5. DECISIONS
+- **A deload is dynamic, not a calendar law (owner, 2026-08-19).** R17 flagged that the app
+  said two contradictory things: `analyze.ts` promised imported athletes an automatic
+  fourth-week deload with sets halved, and R5's F9 said preserve an imported routine
+  untouched. Asked to settle it, the owner said it "needs to be dynamic pending
+  situations", so neither blanket is right and the engine decides from what it can see.
+  The situation it can see today is WHOSE PLAN IT IS. A booklet BodyT wrote carries a
+  block BodyT designed, so running the unload week is doing the job it was asked to do. A
+  routine somebody brought from home is theirs, and the standing rule is suggest only,
+  never auto: they get the offer and the reason on week 4 and their sets are left exactly
+  where they put them. Measured: 16 sets against 25 on the same date, the only difference
+  being who built the week.
+  More situations can join that decision later (accumulated fatigue pulling a deload
+  earlier, a block with too little work in it to unload from). Whose plan it is, is the
+  one the engine can answer today without new signals, and it is the one that was making
+  the app lie.
+- **Under-18 supplement suppression stands (owner, 2026-08-19).** Confirmed as built:
+  R16's SR-2 suppresses all supplement copy for an account that says it is under 18. Worth
+  keeping visible that this is STRICTER than the age decision for app access, which is 11
+  and lets them through. Being suggested a supplement and being allowed to train are
+  different questions and the owner took the conservative side of the first.
 
 **THE PLAN IS LOCKED (owner, 2026-08-17): roadmap J1-J12 + cloud lane C1-C3 + research
 program R1-R6 + infrastructure B1-B3 + redo-what-is-not-read rule + core-complete gate.
@@ -367,6 +444,26 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   render meanwhile); Sergeant quotes ship only with owner approval.
 
 ---
+
+### 2026-08-19 · Who owns a calorie target (needs owner confirmation)
+
+Taken while building the recheck, recorded rather than buried. Three states:
+
+- BodyT computed it and nothing has changed since. The app may offer a better number.
+- A person typed it into the booklet editor. The app never mentions it again, ever. The
+  editor clears `nutritionBasis` and an absent basis means no recheck, which is the same
+  shape as the deload call: whose plan it is decides who decides.
+- A person was offered a change and said no. The number stays theirs, but the app stamps
+  today's knowledge onto the basis, so it goes quiet until something moves AGAIN. Saying no
+  once should not mute the app through the next forty pounds.
+
+**RESOLVED SAME DAY by the owner: re-offer it.** A target typed at 200 lb is a real decision
+and is also not advice at 170, so the hand-typed case now behaves like the declined one. The
+booklet editor no longer clears `nutritionBasis`; the basis keeps saying what BodyT last
+computed, and the GAP between that and the stored number is how the app knows a person owns
+it. That gap changes what the card says ("You set this one. Since then the scale has moved.")
+and never whether it appears. Absence of a basis still means silence, but that is now only
+the pre-existing plans that genuinely have no record of what built them.
 
 ## 6. STANDING CONSTRAINTS (permanent; from the owner)
 
@@ -614,6 +711,27 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   before deleting that branch (J1).
 
 ---
+
+- R1's own eval table (section 8, "Maint. est" column) is NOT internally consistent under
+  the architecture the same pack tells J7 to build. Persona 1's range only fits if that
+  column means a training day; persona 11's only fits if it means a rest day; personas 2
+  and 7 sit in the same activity band while requiring multipliers on opposite sides of it
+  (1.366 max vs 1.376 min). plan/bmr.test.ts therefore asserts the BMR column, which is
+  the published equation applied to the persona's own numbers and reproduces all nine to
+  the kcal, and asserts behaviour rather than fitting a tolerance until the contradiction
+  goes green. Worth a pass over R1 to pin what that column means before slice 2 uses it.
+
+- ~~NOTHING RECOMPUTES NUTRITION AFTER SIGNUP.~~ FIXED 2026-08-19 by engine/nutritionRecheck.ts
+  (slice 2a). The plan now records what its calorie numbers were computed from
+  (PlanConfig.nutritionBasis) and the Meals screen offers a better number when something
+  real changes. Regression: src/engine/nutritionRecheck.test.ts, 17 tests, 7 mutations.
+
+- Onboarding never writes a weigh-in. The bodyweight typed at signup builds the plan and is
+  then not stored as a measurement, so latestBodyweightLb is null until the athlete uses the
+  Progress screen. Harmless for the recheck (no weight, no recheck, which is correct) but it
+  means the first weigh-in reads as a change from the plan-build weight rather than the
+  first point in a series. Seeding one measurement at signup is a two-line fix and would
+  also give weightTrend a head start.
 
 ## 8. SESSION DIRECTORY
 
@@ -1134,6 +1252,788 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   fast-forward, never added to. NEXT: nothing owed on OP4; J3 (product), J7 (engines),
   C1 (cloud) remain the open lane heads.
 
+- **2026-08-19 · R-ONT wave 1, the alias resolver · audit session.** R17 will not start
+  without this. Its build order says so in as many words: aliases and the prescription
+  model are prerequisites, not parallel work, and the notation parser has nowhere to land
+  until a string can become an exercise id.
+  R-ONT sized the problem with real data and the number is the whole argument. With an
+  aggressive normalizer, only 26 of BodyT's 194 names matched free-exercise-db exactly,
+  and "bulgarian" returns ZERO hits in that corpus because the same movement is filed
+  under another family name. So a name matcher is a candidate generator that a person
+  confirms, never an authority, and everything past step three of the ladder SUGGESTS.
+  An alias that silently maps a typed movement to the wrong exercise is the parsing
+  version of the load spiral: quiet, confident and wrong.
+  What landed: plan/aliases.ts with the six-step normalizer, an 18-row alias table, and
+  the resolution ladder from R-ONT s5.3. The parenthetical is KEPT rather than stripped,
+  because R-ONT found that stripping it creates four name collisions inside
+  free-exercise-db alone and every time the parenthetical was the distinction. Turkish
+  Get-Up (Lunge style) is not (Squat style).
+  THREE THINGS THE TESTS CAUGHT IN MY OWN WORK, which is the point of writing them first.
+  The singularizer was INVERTED: it turned "press" into "pres" and left "squats" alone,
+  which is both failure modes at once. A test that a word ending in s survives caught it.
+  Then the alias table turned out to be nearly half dead: 15 of 34 rows were exact
+  catalog names, which step 2 answers before step 3 ever runs, so they could never fire.
+  Fifteen rows that read as coverage and were not. A guard now refuses that class, and
+  the table is 18 rows that genuinely earn their place. And one row pointed at db-rdl for
+  "romanian deadlift" when the catalog has a literal Romanian Deadlift, so the alias was
+  both dead AND aimed at the wrong exercise.
+  LANDED AHEAD OF ITS CONSUMER, knowingly and on the ledger. All three exports are dead
+  today and sit in the plan/ dead-export list with the reason and the next slice named:
+  the picker's "I do not see my exercise" exit, which R17 s9 lists as worth shipping on
+  its own. Three rows and a date rather than an open-ended IOU, and the list is
+  shrink-only so it is a countdown.
+  Validation: typecheck clean, **1,477/1,477 unit** (24 new, 6 guards each proven to bite
+  against a known-bad input first), build green, poison 142/142 (4 new).
+  NEXT: wire resolveExercise into the picker, which kills three ledger rows and delivers
+  R17 s9 item 3, then plan/notation.ts.
+
+- **2026-08-19 · R-ONT wave 1, the consumer · audit session.** The slice named in the
+  previous entry, done the same day rather than left as an IOU: the picker calls
+  resolveExercise when a literal search comes back empty, and `resolveExercise` left the
+  dead-export ledger it had just joined.
+  The defect it closes is small and exactly the one R-ONT predicted. The picker matched on
+  substring, so "bulgarian split squats" did not contain "Bulgarian Split Squat" by a
+  single letter, and somebody was told nothing matched while the movement sat in the
+  catalog in front of them. The resolver normalizes, singularizes, token-sorts, and then
+  falls back to near misses, so the plural finds it.
+  It only ever SUGGESTS, and the group is labelled "Closest I can find" so the screen says
+  what it is doing. The tap stays the athlete's: this narrows 194 movements to a handful
+  and never picks one.
+  And when it genuinely does not have the movement, it now says "I do not have X" in
+  words, rather than a flat "nothing matches" that reads like the athlete typed it wrong.
+  R17 is explicit that the fix is NOT to invent a custom-exercise record to absorb these,
+  so the exit is honest copy and a nudge, not a new entity.
+  Proven by severing it: with the fallback filtered to nothing the e2e goes red, and the
+  first attempt at that proof silently did nothing because the mutation broke the build
+  and `&&` short-circuited the test run. A proof that cannot fail is not a proof, so it
+  was redone with one that compiles.
+  Validation: typecheck clean, **1,477/1,477 unit**, build green, **e2e 84 passed**
+  (1 new), poison 143/143 (1 new). Dead-export ledger: 36 rows to 35.
+  NEXT: unchanged. J7 is the highest-leverage thing left and nothing blocks it; the owner
+  was asked and has not answered yet.
+
+- **2026-08-19 · The deload becomes a decision · audit session.** The owner settled R17's
+  blocking question and the answer was neither of the two things the app was saying. It
+  had been promising imported athletes an automatic fourth-week deload in `analyze.ts`
+  while R5 said leave an imported routine alone, and `isDeload` was a pure calendar fact,
+  `weekInBlock === 4`, applied to every plan alike.
+  Whose plan it is turns out to be a situation the engine can already see, and no schema
+  change was needed to see it: `achievementFacts.ts` has been asking exactly this question
+  inline since custom routines shipped. That predicate is now `isAthleteAuthored` in
+  bookletOps.ts with one definition instead of two that could drift, which is a duplicate
+  retired rather than a field added.
+  What changed: a booklet BodyT wrote still deloads on week 4, so the golden lock does not
+  move and nothing about a generated athlete's week is different. A routine the athlete
+  built gets a banner offering the deload and keeps every set. `day.isDeload` now means
+  what actually happens rather than what the calendar said, because debrief.ts and
+  workoutBrief.ts both read it to tell somebody what tomorrow is, and the old field would
+  have promised an unload that never arrived.
+  The `deload-auto` note is renamed and rewritten, because it was the specific sentence
+  the owner's decision made false, and it was shown to exactly the athletes whose plan the
+  app no longer touches.
+  One thing caught in my own test before it shipped: the sets comparison sat behind an
+  `if (exercises.length > 0)` guard, which would have let the whole assertion vanish the
+  day the fixture changed. Turned into an assertion. Same trap as the picker proof an hour
+  earlier, which is twice in one session and worth saying out loud.
+  ONE THING THE SUITE CAUGHT THAT I HAD MISSED. booklet.spec.ts asserted the old copy
+  verbatim, `/automatic deload/`, and went red. The sweep for stale references had grepped
+  e2e/ for the note's ID and not for its visible TEXT, which is what an e2e actually
+  asserts on. Renaming an id is not renaming a sentence, and only one of those two greps
+  would have found it.
+  Validation: typecheck clean, **1,483/1,483 unit** (6 new, both guards proven to bite),
+  build green, **e2e 84 passed** after that fix, sim 20 personas zero invariant failures,
+  poison 145/145 (3 new).
+  NEXT: unchanged. J7 is the highest-leverage thing left and nothing blocks it.
+
+- **2026-08-19 · J7 facts layer · audit session.** The owner picked J7 off the four
+  options, and it is the right pick: nine jobs list it as their dependency and nothing
+  lists anything as blocking it.
+  What landed is the facts half. Every engine downstream wanted the same four numbers and
+  each derived its own from raw logs at the point of use, which is how two screens end up
+  disagreeing about how much somebody trains. They come from one place now, and the shape
+  is the point: a fact is never a bare number. It carries where it came from, how many
+  observations sit behind it, how old the newest one is, and a confidence DERIVED from
+  those two, never typed. Same rule plan/knowledge.ts applies to research claims, for the
+  same reason.
+  And it returns null a lot. A new account gets silence on all four, which is the
+  calibration.ts pattern: the alternative is an engine speaking confidently in week one on
+  three data points.
+  THE CONSUMER WAS WIRED THE SAME DAY rather than left as an IOU, and it found a real
+  defect. kcalBumpSuggestion rests entirely on "the scale is not moving" and decided it
+  from two raw weigh-ins with no smoothing. Creatine pulls 1 to 2 kg of water on and lets
+  it go again, and neither is energy balance. The dangerous direction is coming OFF it:
+  the drop reads as under-eating and the app would tell somebody to add calories they do
+  not need. It declines now when the trend carries the caveat W16 made possible.
+  FIVE GUARDS PROVEN TO BITE, and the fifth did not on the first attempt. The test named
+  "counts only sets that were actually ticked" used a single session, so the two-session
+  floor caught the mutation instead of the tick filter, and a test that passes because a
+  DIFFERENT rule fired is not testing the rule it names. Rewritten with three sessions so
+  only the filter can decide.
+  TWO FIXTURE TRAPS, both from the same root. `emptyAppData` falls back to the owner's
+  hand-built booklet, stack and all, so every test using it has an athlete on creatine.
+  That bit twice in one job now that a supplement can change an engine answer. makeData
+  clears it, in the one line of headroom engine.test.ts had left.
+  Also renamed: the aggregate is `readUserModel`, not `userModel`, because the dead-export
+  scan matches names anywhere in a file and every importer writes './userModel' in its
+  import path. A function sharing its module's name can never be reported dead.
+  Validation: typecheck clean, **1,495/1,495 unit** (12 new), build green, poison 151/151
+  (6 new).
+  NEXT: J8 is now unblocked and is the natural continuation, or the nutrition-engine half
+  of J7. Both are the owner's call.
+
+### 2026-08-19 · J7 nutrition slice 1 · the calorie baseline stops guessing
+  WHAT WAS WRONG: every calorie target in the app came from bodyweight x 15 (x 14 for
+  women). That number has no study behind it, no age term, and scales linearly with total
+  mass, so it inflates at the top: a 320 lb man asking for help losing weight was told his
+  maintenance was 4,875 kcal, about 1,700 above what two validated equations say. It also
+  cannot tell a 22 year old from a 55 year old at the same weight.
+  Meanwhile the app already knew better and never asked itself. Age is collected in
+  onboarding and was read by exactly one screen (the W16 minor check). Body fat has a whole
+  tape flow behind it, step-by-step instructions and a Navy-formula estimator, and the
+  number went to the progress chart and nowhere near the calorie target. Two collected
+  answers, both the exact input a validated equation wants, both ignored by the number they
+  were collected for. Same pattern as W11, W17 and W18.
+  WHAT SHIPPED: plan/bmr.ts, R1 sections 2 and 3. Katch-McArdle (Cunningham 1991, asserted
+  not to be the 1980 variant) when a fresh tape reading exists; Mifflin-St Jeor when height
+  AND age exist; the old bodyweight number last, unchanged, flagged, so nobody's target
+  moves without new information about them. Activity is architecture (a) as the pack
+  recommends: a non-training multiplier from the NASEM PAL bands plus each session's own
+  net (MET - 1) x kg x hours, added only on the day it happens. Never a blended multiplier,
+  because a multiplier that already contains training plus a session add is the classic
+  double-count. plan/nutritionPlan.ts carries buildNutrition out of generator.ts, which was
+  at its cap and about to take the rest of R1. engine/userModel.ts gained bodyComposition:
+  median of the last three readings, retired outright by 60 days OR 5 percent weight drift
+  rather than downgraded, because a stale fat-free mass is confidently wrong where the
+  anthropometric model is only ever roughly right. plan/bmr.refs.ts carries provenance and
+  is where the tier column earns its keep: two A-tier equations and a tier-D house number
+  with an empty source list, in code that made all three look the same.
+  A DEFECT I SHIPPED AND THE E2E CAUGHT: maintenanceKcal rounded the fallback number to 50
+  on its way out. The fallback is already rounded to 50 and THEN nudged by height in steps
+  of 25, so rounding again deleted the nudge and moved the target for somebody who had told
+  us nothing new, which is the one thing this change promised not to do. My unit test could
+  not see it because it used an athlete with no height. The end-to-end test that pins a
+  real athlete's rest-day calories went red. Fixed, and the unit test now asserts a height
+  case; the fallback reproduces 2925/2625 for that persona exactly as before.
+  DECISIONS TAKEN, both R1's own open questions, both resolved its way and recorded:
+  architecture (a) over (b) for activity, and a stale tape falls back to Mifflin rather
+  than carrying an old fat-free mass forward.
+  ALLOWANCES SHRANK: plan/generator.ts 790 to 747, and plan/generator.ts:proteinContextFor
+  came off the dead-export list by moving to sportsNutrition.ts beside the bands it selects.
+  The dead-export guard also did real work here: it flagged eight exports on the new module,
+  which was correct twice over. Six were internals that did not need exporting and are now
+  private, and two were the tape helpers with no caller at all, which is how I found that
+  Katch-McArdle could never actually fire.
+  TWO MUTATIONS SURVIVED THE FIRST RUN and only one of them was a weak test.
+  byor-ignores-sex survived because bookletOps.ts still had its OWN copy of the fallback
+  line: mutating the shared function could not reach it, so the one-definition claim this
+  job makes was not actually true yet. The harness caught a false claim in my own commit
+  message, not a missing assertion. Fixed in the code.
+  bmr-double-counts-a-sitting-day survived because the assertion compared two different
+  movement answers, which moves the activity multiplier as well as the flat 50, so an
+  extra 50 hides inside the difference. It now holds movement fixed and changes only the
+  goal, so the multiplier is identical on both sides and the flat 50 is the only thing
+  that can move the gap. Third time this session that a guard passed for the wrong reason.
+  Validation: tsc -b clean, **1,535/1,535 unit** (40 new), build green, sim 20 personas,
+  **84/84 e2e**, **poison 160/160** (9 new, 3 anchors re-aimed).
+  NEXT: J7 slice 2 is the rest of R1 (weight-trend calorie steps, bodyweight-scaled carb
+  cycling in place of the flat 300, fibre floor, self-explaining numbers) and it needs a
+  recompute path first, which does not exist. J8 remains unblocked.
+
+### 2026-08-19 · J7 nutrition slice 2a · the calorie target can change after signup
+  WHAT WAS WRONG: the gap I logged at the end of slice 1, fixed the same day. buildNutrition
+  ran once inside generatePlan, the two numbers landed on the plan, and nothing recomputed
+  them for the rest of the account's life. So the body-composition model that shipped four
+  hours earlier could never actually fire for anybody: the tape flow lives on the Progress
+  screen, which an athlete reaches days or weeks after their plan is built. They measure,
+  they get a better chart, and the number that decides what they eat does not move. Thirty
+  pounds down was the same silence, and so was a plan that assumed six days for somebody
+  training one.
+  WHAT SHIPPED: engine/nutritionRecheck.ts, plus PlanConfig.nutritionBasis written by both
+  nutrition paths. Four rules keep the offer honest: it needs a record of what the old
+  number came from (absent basis, no recheck, forever); it needs a genuinely new INPUT
+  rather than a different arithmetic result; it counts COMPLETED sessions, never planned
+  ones, which is the most common way a calculator lies and the first real payoff from J7's
+  adherenceShape; and it never argues with a number a person typed. Nothing in the engine
+  writes. applyRecheck reads the offer rather than re-deriving it, because two functions
+  gathering the same inputs is exactly how the offer and the thing accepted drift apart.
+  ONE DESIGN I GOT WRONG AND REDID: the first version treated any target that did not match
+  its basis as hand-set and went silent forever. That is right for the booklet editor and
+  wrong for a decline: saying no once would have muted the app through the next forty
+  pounds. The basis is now what a target was last CONFIRMED against, not only what first
+  built it, and the editor clears it explicitly instead of being inferred.
+  A CONSTANT THAT GUARDED NOTHING, AND WHAT IT ACTUALLY GUARDS: a probe set
+  REAL_BF_CHANGE_PCT to zero and nothing failed. It is not dead: it never changes the
+  calorie number, because the meaningful-kcal gate fires first at any real bodyweight, but
+  it stops the explanation crediting a tape reading for a change the scale made. Test and
+  mutation added for that, and the constant's own comment now says which job it does.
+  ALLOWANCES SHRANK AGAIN, by splitting rather than raising: nutritionTypes.ts and
+  profileTypes.ts out of types.ts (696 to 691), nutritionSchema.ts and measurementSchema.ts
+  out of store/schema.ts (602 to 578). readUserModel and adherenceShape came off the
+  dead-export ledger, leaving two of J7's five exports still waiting on J8.
+  Validation: tsc -b clean, **1,552/1,552 unit** (17 new), build green, sim 20 personas,
+  **84/84 e2e**, **poison 167/167** (7 new).
+  NEXT: the rest of R1 (weight-trend calorie steps, bodyweight-scaled carb cycling in place
+  of the flat 300, fibre floor, EA guardrail). The recompute path they all needed exists now.
+- **2026-08-19 · OP5 · Off-plan training session (owner bug report).** "If I choose an extra
+  workout it closes my session for the day, it should never close out the session for the
+  day until 3am the following day, people may have other stuff to log." Correct, and the
+  half the report could not see was worse: **`startCustomSession` assigned straight over
+  `d.sessions[date]`.** An athlete who trained their planned session and then logged
+  anything extra lost the first session whole: every ticked set, the readiness answers,
+  the make-up link, the fatigue notes. Silent data loss, shipped in OP1, live for a day.
+  Three fixes:
+  (1) The custom path now APPENDS. A repeated movement merges its sets into the entry
+  already there, because two entries for one exercise render twice in the session view and
+  once in dayRecap (which keys by exercise id), so the second would vanish from the record.
+  A skipped day is still overwritten: the skip was the plan for that day, not the record
+  of it. Adding to a finished day re-opens it and drops the stale debrief, the same way
+  reopenSession always has.
+  (2) `engine/rollover.ts stillOpenForLogging`: the live day always takes work, yesterday
+  takes it until 03:00, older days are history. Same window the rest of the app already
+  uses for late work. `ExtraTraining` now renders after a finished session ("Did something
+  else too? add it") and hides only while a session is actively running, when the session
+  view owns the screen.
+  (3) `finishSession` prunes any prior debrief for the date. Finishing can legitimately
+  happen twice now, and the Record was growing a second debrief describing a smaller day
+  than the one that happened.
+  Found on the way, from the e2e page snapshot rather than from a test: the Week day sheet
+  read "**19 of 9 sets done**" once extra work landed. Now "19 sets done, 10 past the plan".
+  PROOF THE GUARDS BITE (owner rule): restored the overwrite, watched 4 of the 5 new tests
+  fail, restored the fix, watched them pass. Structure: `logic/actions.ts` went over its
+  allowance, so the reconcile-gate answers moved to `logic/reconcileActions.ts` and the
+  allowance came DOWN 663 -> 609. Validation: typecheck clean, **1,289/1,289 unit** (9
+  new), build green, **e2e 82 passed / 0 failed** (1 new spec that drives the real report:
+  log a shelf workout, add a second, check both survive in the Week sheet).
+  Shipped at deploy `1450838`, live bundle verified byte-identical by sha256.
+  NOTE FOR EVERY LANE: this branch is now genuinely concurrent. While this job ran, other
+  sessions pushed ~40 commits to it (J7 slices, the W-waves, R-ONT, the anatomy maps).
+  Rebased onto their tip twice rather than force-pushing over it, renumbered this job
+  OP4 -> OP5 because the anatomy-map session had already taken OP4, and re-ran the full
+  ritual against the merged tree both times: **1,561 unit, e2e 85 passed / 0 failed**.
+  One of my new specs needed the age field another session added to onboarding.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+- **2026-08-19 · OP6 · Off-plan training session (owner bug report, the same one twice).**
+  "Wtf, i did an extra workout and logged it and todays session is now closed off and logged
+  as done." OP5 fixed the data loss and opened the 3am window but left the half the owner
+  had actually reported, and the half underneath it was worse than a wrong label.
+  Both "Already did it" doors ran `startCustomSession(..., markDone)` and then
+  `finishSession(date)` unconditionally. finishSession stamps `endedAt` and a final grade on
+  the WHOLE day, so a twenty minute add-on marked the plan's session complete. And on a day
+  nobody had started, the add-on BECAME that day's session: Today offers Start only while
+  `!session`, so the scheduled workout was not merely mislabelled, it was **unreachable**.
+  Log a lunchtime ab circuit on a push day you had not started and the push day was gone,
+  graded, and congratulated.
+  Two rules now, in `logic/sessionStart.ts logExtraWork`, and the rest follows from them.
+  (1) **Recording work that happened is not a statement about the rest of the day.** A
+  running day stays running, a finished day stays finished.
+  (2) **The plan's workout is never what gets spent.** On a day with scheduled work and
+  nothing logged against it, that workout is seeded first (`startSession`) and the extra
+  work is appended INSIDE it, already ticked: the session is live, the logged work is in
+  it, and every scheduled movement is still sitting there waiting.
+  The day ends here in exactly one case, when the work IS the day: an off day with nothing
+  scheduled and nothing logged, or a day already written off as skipped. A debrief comes
+  back only from a day that is over, because `composeDebrief` opens with "done/total sets,
+  graded X" and grading a day mid-flight counts sets nobody has reached ("3/27, poor" is not
+  what you show someone who just logged a workout).
+  Two consequences had to be handled or the fix would have traded one trap for another:
+  - `ExtraTraining` hid itself while a session was live, on the theory that more work
+    belonged inside the session view. **Nothing inside that view can add an exercise.** So
+    seeding would have left an athlete with nowhere to put the next thing. The door now
+    shows for any day with something logged, running or finished.
+  - The focus runner is the default view, and it is `fixed inset-0`. Seeding would have
+    thrown someone who logged a bird-dog circuit straight into a full-screen set-by-set
+    runner for a workout they never asked to start. `onLogged` now drops Today into list
+    view, where the day, the logged work and the door are all on one screen.
+  PROOF THE GUARD BITES (owner rule): disabled the seed branch, watched 2 tests fail on the
+  exact reported symptom ("the day was closed out: expected '...' to be undefined"),
+  restored it, watched 20 pass.
+  Structure: TodayScreen.tsx went 3 lines over the 600 hard cap, so the quit-confirm modal
+  moved out whole to `screens/today/QuitGate.tsx`. No allowance was added; the file came
+  DOWN from 597 to 580.
+  Shipped at deploy `316976c`, live bundle verified byte-identical by sha256.
+  Validation: typecheck clean, **1,567/1,567 unit**, build green, **e2e 85 passed /
+  0 failed** (addmore.spec.ts rewritten to drive the real report: log a shelf workout on a
+  day never started, assert the day is NOT complete, add a second workout through the door
+  that is still there, then check the Week sheet shows both plus the plan's own sets still
+  outstanding), 390px screenshots reviewed.
+  STILL TRUE, and the honest limit: a date holds ONE `SessionLog`. "The plan's session and a
+  separate extra workout, side by side on the same day" is not representable, so the extra
+  work lives inside the day's session rather than beside it. That is the right trade at this
+  size; a second session per day is a data-model change and belongs to its own job.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+
+### 2026-08-19 · owner call · a target you set yourself is re-offered too
+  The rule shipped an hour earlier muted the recheck permanently once somebody typed their
+  own calorie number. Owner overruled it, correctly: a target set at 200 lb is a real
+  decision and it is also not advice at 170.
+  The booklet editor no longer clears nutritionBasis. The basis keeps recording what BodyT
+  last computed, and the gap between that and the stored number is the ownership signal. It
+  changes the sentence ("You set this one. Since then the scale has moved.") and never
+  whether the card appears. Four tests, one mutation.
+  Also published: BodyT Build Line, the whole 63-row board on a timeline with the marker at
+  where the build actually stands. Its summary counts are derived from its own rows at render
+  time rather than typed into the header, because the first draft had a hand-typed 23 against
+  a real 21 and a status board that disagrees with its own summary is worse than no summary.
+  Validation: tsc -b clean, **1,556/1,556 unit** (4 new), build green, **84/84 e2e**,
+  **poison 168/168** (1 new).
+- **2026-08-19 · OP7 · Off-plan training session (owner request).** "At the end of every week,
+  month, quarter and year there should be a review showing progression, highlights, goals
+  accomplished, how they compare in stats to other users just like Spotify wrapped. In the
+  weeks it should always ask to take a pic of front and sides. And in the quarters and years
+  it should show before and after from the first week they submitted a pic to the final."
+  What already existed and was reused rather than rebuilt: progress photos end to end
+  (front/side/back capture in the weekly check-in, blobs in IndexedDB, ids in the
+  measurement), a Wrapped-style WeeklyRecap opened by hand from Progress, and milestone
+  reviews at 3mo/6mo/1yr keyed off days-since-start. What did not exist: calendar periods
+  of any kind, a month or quarter or year review, any offer when a period closed, the
+  standing weekly photo ask, and any comparison at all.
+  Built:
+  - `engine/periods.ts`: the week (Monday start), month, quarter and year containing a date,
+    and `lastClosed`. Boundaries are their own file because the review engine and the surface
+    that offers reviews must agree on them exactly. `lastClosed` steps back ONE DAY from the
+    current period's first day rather than doing month arithmetic, which is how February gets
+    reviewed twice on March 31st. 12 tests; the mutation that swapped in the naive version
+    failed 4 of them.
+  - `engine/periodReview.ts`: one `PeriodReview` for all four scales. Sessions, sets,
+    tonnage, PRs, adherence, protein, body deltas, tracked-lift e1RM deltas, highlights,
+    goals accomplished, the cohort lines, and the photo arc. Rates are per WEEK so a month is
+    not read as superhuman volume. `worthShowing` is false for a period with nothing in it:
+    a story of zeros with a percentile attached is worse than silence.
+  - **The photo arc reaches back to the first photo EVER TAKEN**, not the first one inside
+    the window, because the owner asked for "the first week they submitted a pic to the
+    final" and three months of near-identical September photos is not a before and after.
+  - `engine/cohort.ts`: the comparison. **There is no server aggregating other Bodytea users
+    yet**, so "you beat 84% of Bodytea users" would be a fabricated number wearing a real
+    name. Every band is published population data (CDC NHIS activity guidelines, the
+    decades-replicated ~50% six-month dropout finding, gym-operator visit rates, protein
+    intake surveys), the bands are deliberately coarse, and every line carries an `against`
+    field that is rendered on screen ("vs US adults, CDC survey data"). A test asserts no
+    cohort line can ship without one. **Swap the tables for real aggregates the day C1 can
+    serve them and nothing else changes.** OWNER DECISION OWED: whether that is the framing
+    to keep, or whether this waits for real user data.
+  - `engine/reviewStory.ts`: the review turned into story cards. Separate from the review
+    because the review is facts and this is the telling. Every card declares its own
+    precondition and is dropped rather than shown empty.
+  - `screens/progress/PeriodReviewSheet.tsx`: one story frame for all four periods, so a year
+    cannot drift into looking like a different product from a week. Photo arc with an
+    angle switcher, cohort bars, list cards, and the week's photo ask.
+  - `screens/today/ReviewOffer.tsx`: the offer. Suggest only: a closed period puts ONE card
+    on Today and waits. Longest period first, so New Year's Day leads with the year and
+    queues the rest one per open.
+  - `screens/progress/ReviewShelf.tsx`: any period on demand, for the other 6 days a week.
+  Structure paid for, never borrowed: `Measurement` and `PhotoMeta` moved to
+  `measurementTypes.ts` beside the schema that already validates them (types.ts 690 -> 673,
+  **allowance 691 -> 674**); `usePhotoUrl` had grown an identical copy in two screens and is
+  now one file; `CheckinSheet` came out of ProgressScreen whole (506 -> 374) so the weekly
+  photo ask could open the real camera rather than point at another tab.
+  No schema change and no migration: `settings.reviewsSeen` already existed for the milestone
+  marks and the id spaces cannot collide ('3mo' vs 'w-2026-08-10').
+  PROOF THE GUARDS BITE (owner rule): the naive `lastClosed` failed 4 tests. The photo-arc
+  mutation (start at the second-to-last photo instead of the first) **passed**, because the
+  fixture had only two photos and the two are identical there; the fixture now has three and
+  the mutation fails. The dead-export guard caught three exports written speculatively and
+  they were deleted rather than allowlisted.
+  Validation: typecheck clean, **1,597/1,597 unit** (27 new), build green, **e2e 88
+  passed / 0 failed** (3 new: a week closes overnight and comes back as a review whose photo
+  ask opens the real check-in; the offer is written down as seen and survives a reload; any
+  period opens on demand from Progress), 390px screenshots reviewed on the offer, all four
+  story cards and the shelf.
+  KNOWN LIMITS, said plainly: the comparison is population data and not other users of this
+  app, and the copy says so on every line. Month and year reviews have no photo arc by
+  design (the owner asked for quarters and years). Nothing pushes a notification when a
+  period closes; the offer waits on Today.
+  Shipped at deploy `9a70b5d`, live bundle verified byte-identical by sha256.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads. C1 is now
+  also what unblocks a real cohort.
+- **2026-08-20 · OP8 · Off-plan training session (owner bug report, the third door on the same
+  rule).** Screenshot: a day headed "Acceleration + Two-Foot Power + Lower" reading **"Full
+  session on a downgraded day. Honestly logged. Make-up for Monday, Aug 17."** The owner:
+  "why is my days session still closed like i did it. It shouldnt be, the extra workout i did
+  should be added on top of it but it shouldnt close until ive done it."
+  OP5 fixed the custom path and OP6 fixed the extra-work path. **`startSession` was left as a
+  plain overwrite**, and that is the door a make-up comes through: `d.sessions[date] =
+  skeleton` with the MISSED day's exercises. Run Monday's workout on a Thursday and Thursday's
+  own session was replaced by Monday's, anything logged that morning was destroyed, and
+  finishing it closed the day on a workout nobody had done. Same defect, third door.
+  Two halves, because fixing the overwrite alone would not have been enough:
+  (1) **One merge, shared.** `putOnDay` in `logic/sessionStart.ts` is now the only way a
+  session reaches a date, used by both `startSession` and `startCustomSession`, so the two
+  can never drift again. Its `reopen` flag is the whole difference between LOGGING work and
+  STARTING it: recording something that already happened never changes whether the day is
+  over (OP6's rule), while starting a workout does, because that is a deliberate tap.
+  (2) **"Is there a session?" stopped being the same question as "has the plan's work been
+  done?"** the moment a make-up or an off-plan workout could occupy the slot, and Today was
+  still asking the first one: `{today && !session && ...}` gated the Start button, so the
+  day's own workout was not merely mislabelled, it was **unreachable**.
+  `engine/stats.ts planWorkOutstanding` answers the right question, derived and never stored:
+  the plan's movements for the day against the ones on the log. Today offers the day's own
+  session while anything is owed, whatever state the session is in, and the finished card
+  stops claiming the day is over ("That was not today's workout though. X is still on the
+  table").
+  PROOF THE GUARDS BITE (owner rule): restoring the overwrite failed 3 tests; making
+  `planWorkOutstanding` return [] whenever a session exists failed 1; putting the old
+  `!session` gate back failed the new e2e, which drives the report end to end (skip
+  Wednesday, run its workout on Thursday, finish it, and Thursday's own session must still
+  be on the table). A test I wrote first was wrong rather than the code: it finished a
+  make-up with nothing ticked, which `finalStatus` correctly records as **skipped**, and a
+  skipped day owes nothing. The fixture now does the work the report described.
+  Found on the way: `QuitGate` was a modal with no role, so nothing could address it. It is
+  a labelled dialog now.
+  Structure: TodayScreen went over the 600 cap again, so the finished-day card moved out
+  whole to `screens/today/DayDoneCard.tsx`. No allowance added; the file came DOWN 585 -> 562.
+  Validation: typecheck clean, **1,605/1,605 unit** (8 new), build green, **e2e 89 passed /
+  0 failed** (1 new).
+  Shipped at deploy `a24ef44`, live bundle verified byte-identical by sha256.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+  STILL TRUE: a date holds ONE SessionLog. Three doors have now been taught not to destroy
+  what is on it, and the day's own work is reachable again, but "two separate sessions on one
+  day, each with its own grade" is still not representable. That is a data-model job.
+
+### 2026-08-19 · J7 nutrition slice 2b · the numbers scale to the body
+  TWO FLAT CONSTANTS, same defect as bodyweight-times-fifteen: a number that was one
+  person's arithmetic applied to everybody.
+  THE REST-DAY DROP was 300 kcal for every athlete. The direction is sourced (less work
+  needs less fuel); the size was not. It is about right for an 86 kg man lifting an hour and
+  roughly double the session cost of a 54 kg woman lifting 45 minutes, which turned her rest
+  days punitive. Now (MET - 1) x kg x hours, bounded 150 to 400. The old 300 is exactly what
+  that rule returns for an 86 kg hour, which is the tell.
+  A TEST THAT PREDICTED ITS OWN OBSOLESCENCE: kcalFloor.test.ts held an assertion that the
+  rest clamp could never bind, with a comment saying it would go live the day the drop
+  widened past 300. That day arrived: 1,500 floored minus the widest swing is 1,100. The
+  test now asserts the clamp binds, and the comment in kcalFloor.ts was rewritten to match.
+  ENERGY AVAILABILITY (engine/energyAvailability.ts) is the check no floor can make. A floor
+  asks whether a target is low in absolute terms; it cannot see somebody eating 1,400, which
+  clears 1,200 without complaint, while training six times a week and running 30 km. EA =
+  (intake - exercise) / FFM, warning under 30. R1's eval case 10 reproduces to the decimal:
+  FFM 44.6 kg, 392 kcal/day of training, EA 22.6, suggest 1,750.
+  TWO LIMITS KEPT RATHER THAN SMOOTHED. The 30 line is female-derived, so a man below it
+  gets a caution not a finding, and the copy says which. And it needs a tape AND logged
+  sessions or it returns nothing, because a clinical-sounding sentence built on a guessed
+  body composition is worse than silence. Nothing is diagnosed, no condition is named, and
+  a test asserts that of the RENDERED COPY rather than trusting the author.
+  Two counting traps handled: an unpriced cardio session falls back to its MET anchor rather
+  than counting as zero (cheaper training reads as higher availability, which is the
+  direction that HIDES the warning), and a GPS run counts once, by reusing the existing
+  loggedSessions de-duplication rather than writing a second definition of it.
+  A PROCESS MISS WORTH RECORDING: the four EA mutations were meant to land with the code and
+  did not. A `grep -c` that found zero em dashes exited 1 and short-circuited the rest of
+  the && chain, so the script that appends them never ran, and I read the "parses" printed
+  by the next line as confirmation that it had. Second time this session an && chain has
+  made a step that never happened look like a step that passed. The poison count is the
+  thing that caught it: 171 when it should have been 175.
+  Validation: tsc -b clean, **1,580/1,580 unit** (15 new), build green, **85/85 e2e**,
+  **poison 175/175** (7 new).
+  NEXT: what remains of R1 is the weight-trend calorie step rule (section 4.2) and the fibre
+  floor. Then J8, which has been unblocked since the facts layer landed.
+
+### 2026-08-20 · J7 nutrition slice 2c · the scale gets a say, and R1 is fully wired
+  THE STEP RULE (engine/calorieStep.ts, R1 s4.2). Every calorie number this app produces is a
+  model's opening bid. The measured weight trend is the only thing in the system that knows
+  what actually happened, and it adjusted nothing: somebody could hold a target for two
+  months, lose nothing, and the app would keep printing the same number with the same
+  confidence. It now compares the smoothed trend against the band the goal asks for and
+  applies HALF the static 3,500-per-pound correction, clamped 100 to 250. The halving is not
+  timidity, it is the pack's own sourced limitation: the convention overestimates long-run
+  loss by well over half at a year, so it is a step between measurements and never a
+  forecast. Declines on a confounded trend (creatine water is not fat), on under 14 days of
+  history, and on goals with no rate band. Floors and the quarter-off-maintenance cap outrank
+  it, and when the cap binds it reports the step it WILL take rather than the one it wanted.
+  A DEFECT IN MY OWN FACTS LAYER, found while building on it. weightTrend computed an
+  exponentially weighted average, never read it, and returned the slope between the first and
+  last weigh-in. The doc comment, my commit and this file all called it an EWMA. The mistake
+  underneath is worth naming: an EWMA smooths a LEVEL and a coach needs a RATE, so the
+  smoothed number had nowhere to go and the endpoints got used. It is a least-squares
+  regression now. Swapping the algorithm broke NO test, which is the actual finding.
+  AND THEN THE TEST I WROTE FOR IT WAS ALSO DECORATIVE. trend-is-two-points-again survived the
+  harness: the new tests asserted that a regression swings less than endpoints, is steadier
+  over a longer series, and reads a clean slope right. An endpoint slope satisfies all three,
+  and the swing comparison came down to 0.007 after rounding. Pinned as a VALUE now: six
+  weigh-ins with the last 4 lb high give -1.0 lb/wk by regression and -0.47 by endpoints,
+  which is the difference between a slow cut and a stalled one. Third time this session a
+  guard has passed for the wrong reason, and the second time the harness caught it rather
+  than a test.
+  THE FIBRE FLOOR: 14 g per 1000 kcal of what was actually prescribed. The reference intakes
+  are 38 g and 25 g but both are stated at reference calorie intakes, so handing 38 to
+  somebody eating 1,600 on a cut is a number built for a different amount of food; that day
+  gets 22. Shown as a chip rather than a ring because nothing logs fibre, and a progress arc
+  against an untracked number would be inventing one. The step card ships ONE button for the
+  same reason: there is nowhere to record a decline, so a second button would have set the
+  target to what it already was and the card would have come straight back.
+  Shared input gathering extracted (nutritionInputsNow) so the recheck and the step rule
+  cannot drift apart, which also made two mutation anchors cover both engines instead of one.
+  Validation: tsc -b clean, **1,631/1,631 unit** (19 new), build green, **88/88 e2e**,
+  **poison 181/181** (6 new).
+  NEXT: R1 is done. J7's last piece is the calorie-autoregulation seed, then J8, which has
+  been unblocked since the facts layer landed and is the natural head of the engines lane.
+- **2026-08-20 · OP9 · Off-plan training session (owner, on OP8: "the day is still closed so
+  yes fix it").** OP8 shipped and the day was still closed. Two reasons, both mine.
+  (1) **The predicate was inferring what it could not infer.** `planWorkOutstanding` asked
+  "are the plan's movements on the log?", and an A/B week repeats a template: a make-up of
+  last Tuesday and this Tuesday's session hold the IDENTICAL exercise list, so the answer was
+  yes for a session that was somebody else's day. `SessionLog.ownPlanStarted` now records it
+  outright. **Stored rather than derived, which is unusual here and deliberate**: the two
+  cases are genuinely indistinguishable from the movements, and guessing is what closed the
+  day. Optional, so no migration; `startSession` sets it true for an own-plan start and false
+  for a make-up, and `putOnDay` keeps it true once true.
+  Sessions written before the flag existed fall back to the movements, with one rescue: a
+  legacy make-up whose every movement came from the made-up day is entirely that day's work,
+  so today's own is still owed however identical the lists look. That is the exact record the
+  owner was staring at, fixed without a migration.
+  (2) **The hero was naming the wrong day.** `viewDay` resolves the MADE-UP day so the
+  session view can render it, and the header used it too, so a finished make-up put that
+  workout's title in the hero: the screen read "this is your workout, and it is done" over a
+  session nobody had started. The header now names what is RUNNING while a session runs, and
+  what the day still owes once nothing is. The owed line named the wrong day too (`viewDay`
+  where it meant `day`), which was a straight bug in what OP8 shipped.
+  Two e2e specs caught the first attempt at (2) and were RIGHT: while a make-up is running,
+  the hero must name the workout being performed, not today's.
+  PROOF THE GUARDS BITE (owner rule): reverting to movement-inference failed the same-template
+  test; making a make-up claim `ownPlanStarted: true` failed 2; dropping the legacy rescue
+  failed the rescue test, which asserts BOTH halves (without the made-up day's movements the
+  predicate cannot tell, with them it can).
+  Validation: typecheck clean, **1,643/1,643 unit** (11 new since OP8), build green,
+  **e2e 89 passed / 0 failed**, 390px screenshot of the post-make-up day reviewed: hero is
+  today's workout, "Start today's session" is offered, and the finished card says "That was
+  not today's workout though. X is still on the table."
+  Shipped at deploy `9b355c5`, live bundle verified byte-identical by sha256.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+  STILL TRUE, and now the only piece left of this: a date holds ONE SessionLog. The day no
+  longer closes on work that was not today's, and every door adds instead of replacing, but
+  two sessions on one day each carrying their own grade is still not representable. Nothing
+  reported so far needs it.
+- **2026-08-20 · OP10 · Off-plan training session (owner, on OP9: "bro why is it still
+  closed").** The screenshot with that message showed the fix WORKING: the hero read "Lower
+  Strength + Hypertrophy" (today's, correct) and **"Start today's session" was right there**.
+  What it also showed, in celebration lime at the bottom, was **"Full session on a downgraded
+  day. Honestly logged."** The day was open and the card still stamped it closed, so the app
+  was arguing with itself and the owner believed the card. That is the app's fault, not the
+  reader's: a completion stamp outranks a button.
+  `DayDoneCard` now has two modes. While today's own workout is owed it does not grade the
+  day at all: first line **"Today is not done."** in accent, then what actually ran ("What is
+  logged is Wednesday, Aug 12's make-up, not today's workout"), then the workout still owed
+  by name, then the honest small print ("Banked so far: Full session."). Only a day that owes
+  nothing gets the lime stamp.
+  Also fixed, found by screenshotting the flow through instead of stopping at the card: once
+  today's own session HAS been started, the hero went back to naming the made-up day, because
+  `viewDay` keyed off `makeupFor` alone. It now stops overriding once `ownPlanStarted` is
+  true, so a merged day is titled by today.
+  The e2e now drives the whole loop rather than the first assertion: no "Session complete."
+  anywhere, "Today is not done." present, today's workout named, the Start button TAPPED, and
+  the day running again on today's own workout with the make-up's work still on the record.
+  LESSON, worth keeping: three rounds of this bug were reported and two of my fixes were
+  correct underneath and invisible on screen. **The tell the owner gave is the right one:
+  screenshot the day and check it can be started.** Passing tests over a screen that says
+  "logged" is not a fixed bug.
+  Validation: typecheck clean, **1,643/1,643 unit**, build green, **e2e 89 passed / 0
+  failed**, 390px screenshots of both the open day and the restarted session reviewed.
+  Shipped at deploy `de04e6a`, live bundle verified byte-identical by sha256.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+- **2026-08-20 · OP11 · Off-plan training session (two owner requests on the fixed screen).**
+  "Okay its solid but i dont want this screen i want the og screen where you can see all the
+  workouts still showing. Also users should be able to X out of the same weight as last time
+  brief."
+  (1) **The workout list was gated on `!session`.** Any session at all took it away, so a day
+  holding a finished make-up showed a Start button over an empty screen with no way to see
+  what was being started. It is gated on the plan still OWING work now (`planOwed.length > 0
+  && !inProgress`), which is the same question the Start button asks, so the two can no
+  longer disagree. A fresh day is unchanged; a day mid-session still hands the screen to the
+  session view.
+  (2) **The coach's offer had no close.** The card's own comment said a declined proposal
+  leaves no trace and ignoring one costs nothing, which was true and beside the point: free
+  is not the same as gone, and a card that cannot be closed sits there all day arguing with a
+  decision already made. `AdaptChoice` gains `'dismissed'`, which both existing consumers
+  (`engine/adapt.ts`, `logic/prescription.ts`) ignore because they test for their own value,
+  so the whole feature is one union member, one zod value and a corner button. No new state,
+  no migration, and types.ts did not grow a line.
+  Validation: typecheck clean, **1,643/1,643 unit**, build green, **e2e 90 passed / 0 failed**
+  (1 new: the offer is dismissed, disappears, and the dismissal reaches the saved state; the
+  make-up spec now also asserts the workout list is on screen). 390px screenshot reviewed:
+  the day carries its hero, Start, the not-done card and the full movement list.
+  Shipped at deploy `5019cf1`, live bundle verified byte-identical by sha256.
+  A test wrinkle worth remembering: `adapt.spec.ts` boots through `addInitScript`, which
+  re-seeds localStorage on every navigation, so persistence there is asserted by polling the
+  saved state rather than by reloading.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+
+### 2026-08-20 · J7 complete · the calorie-autoregulation seed
+  WHAT WAS WRONG: every maintenance number in the app was a prediction. Good predictions from
+  validated equations, but they describe the average person with this fat-free mass, not this
+  person. R1 s7.5 is explicit that the gap widens in the situation people care most about:
+  maintenance falls as a cut goes on by more than the lost mass accounts for, and it stays
+  down. A deficit that worked in week two underdelivers by week ten and the model never
+  notices, because the model was never watching.
+  The answer was already in the data: measured maintenance = mean intake - (weekly change x
+  3500 / 7). Losing a pound a week on 2,000 means running on 2,500.
+  WHAT MAKES IT CAREFUL: half that equation is trustworthy and half is not. The scale is a
+  scale; the food log is a person remembering to write things down, and food logs under-report
+  systematically. So the measurement never replaces the model. It gets a bounded vote scaled
+  by how much of the month was actually logged, and a perfectly logged month earns at most
+  half. The errors fall the safe way: an under-reported log makes measured maintenance look
+  LOW, which TIGHTENS the deficit cap and makes the app refuse to cut further. The rare
+  dangerous direction is caught by a sanity band, because bodies do not run 40 percent cheaper
+  than two validated equations say, but logs do.
+  A DESIGN FIX ON THE WAY: the first version had a ramp and a cap that could not both be live.
+  The minimum logging threshold already put every valid case at the cap, so `logged /
+  FULL_TRUST_DAYS` never did anything. It is one expression now and every term does work.
+  KCAL_PER_LB_TISSUE moved to the plan layer beside the other sourced constants, which also
+  broke the import cycle the two engines would otherwise have formed.
+  Validation: tsc -b clean, **1,653/1,653 unit** (10 new), build green, **90/90 e2e**,
+  **poison 185/185** (4 new).
+  NEXT: J7 is closed. J8 is the engines lane head and has been unblocked since the facts layer
+  landed: volume autoregulation reads hardSetsPerWeek, schedule fit reads trainsOnWeekday,
+  exercise fit reads daysSinceRegion. Those three are the last J7 exports still on the
+  dead-export ledger, and J8 is named on each of them as the consumer.
+
+### 2026-08-20 · review pass over everything J7 shipped today
+  Owner asked for a review before continuing, and it was the right call. Three defects, all
+  mine, all from today, none of which any test noticed.
+  THE WEIGHT TREND HAD NO WINDOW. weightTrend regressed over every weigh-in ever recorded. An
+  athlete thirty pounds down over five months and perfectly FLAT for the last one read as
+  losing 1.29 lb a week, so calorieStep saw "inside the band, on track" and offered the one
+  person actually on a plateau nothing at all. Backwards, not merely imprecise. Windowed to 21
+  days per R1, and the same athlete now gets a 250 kcal step. The SAME all-history mistake
+  was in two more places I wrote today: learnedMaintenance averaged 28 days of food against
+  an unbounded trend, so the two sides of "intake minus what the scale did" covered different
+  stretches of somebody's life; and calorieStep read its 14-day span off all history, so a
+  weigh-in from last spring could vouch for a fortnight holding three readings two days apart.
+  THE CREATINE GUARD WAS READ OFF A TREND. `weightTrend(...)?.caveat` is undefined when the
+  window is too thin to produce a trend, so windowing the trend would have made the guard
+  evaporate exactly when there is least data. Extracted as trendIsConfounded and asked
+  directly by all three engines: whether creatine is on board has nothing to do with how many
+  times somebody weighed in this fortnight. This one was caught by an existing test going red
+  during the fix, which is the guard from the J7 facts layer paying for itself.
+  TWO RULES CONTRADICTED EACH OTHER ON ONE SCREEN, verified by probe rather than suspected:
+  the same athlete got "add 150 to 200 kcal" from kcalBumpSuggestion and "take 250 away" from
+  calorieStep, both rendering at once. Strength climbing on a flat scale is the cut WORKING,
+  so the scale-only reading of "too slow" is the wrong one and stands down.
+  AND THE SCREEN ITSELF: four engines can have an opinion about one number on the same day,
+  which on a 390px phone is five stacked cards. I built them one slice at a time and never
+  looked at the whole. Ranked now by how much each knows rather than the order I built them
+  in: recheck (the inputs changed) beats step (the inputs stand but the scale disagrees) beats
+  bump. The energy-availability card sits ABOVE the ladder rather than in it, because it is a
+  safety reading and not an opinion about the target.
+  Validation: tsc -b clean, **1,655/1,655 unit**, build green, **90/90 e2e**,
+  **poison 188/188** (3 new, 3 anchors re-aimed).
+  LESSON, for whoever ships the next engine: every one of these came from shipping slices
+  without re-reading the whole. The window bug existed from the moment weightTrend was
+  written and survived four slices built on top of it, because each slice only tested itself.
+  NEXT: J8, unchanged.
+
+### 2026-08-20 · J8 slice 1 · B1, the decision ledger, and a no that is actually heard
+  R3 puts this first in J8's order and it is right to: nothing else in the learning loop can
+  be evaluated until the offers are written down.
+  TWO HOLES. Nothing anywhere asked whether a suggestion WORKED, so the app could not tell an
+  intervention that helps from one that does nothing. And declines were discarded on purpose,
+  defended as keeping a rejected suggestion from reshaping next week. Right about the PLAN,
+  wrong about the CONVERSATION: with no record the same proposal returns tomorrow off the same
+  evidence, and the app cannot tell somebody who disagreed from somebody who never saw the card.
+  WHAT SHIPPED: an append-only ledger on AppData. A row is never edited; a correction is a new
+  row. Evidence stored as VALUES not prose, because a sentence cannot be compared against next
+  month's sentence. Three rungs, getting quieter: one no buys a fortnight, unless the evidence
+  genuinely worsened, in which case it returns early and has to say so; three noes stop it for
+  two months and nothing gets past that. Only the offering policy reads it. No SCHEMA_VERSION
+  bump: a defaulted array parses old envelopes clean, exactly as adapt and journey did.
+  THE STEP CARD HAS ITS SECOND BUTTON NOW. It shipped with one because there was nowhere to
+  record a no, so a hold would have set the number to what it already was and the card would
+  have come straight back.
+  TWO THINGS THE TESTS FOUND WHILE BEING WRITTEN. A signed metric crossing zero is material and
+  doubling cannot see it: an athlete on a cut losing 0.4 lb/wk who is now GAINING 0.6 is plainly
+  in a different situation, but 0.6 is not twice 0.4, so the first rule stayed silent through
+  the change most worth mentioning. And zero was deciding by accident, because every number
+  clears zero times two; it is an explicit branch each way now, something starting counts and
+  something stopping does not.
+  REVIEW PASS (rule 8, first time under the new protocol) FOUND TWO MORE, both mine:
+  (1) The constant probe set STEP_RULE_VERSION to 7 and nothing went red, because the SCREEN was
+  composing ledger rows inline where no test could reach them. Row composition moved into the
+  engine. (2) Then the test I wrote for it was ALSO decorative: it asserted row.ruleVersion
+  against STEP_RULE_VERSION, comparing a value to itself, and passed at any value. It pins the
+  literals now. Third decorative guard this session and the third time a probe rather than the
+  suite is what caught it.
+  (3) The ledger was only half populated: the step card wrote rows, the recheck card did not,
+  so the learning loop in slice 2 could have evaluated one card out of two. It writes rows now,
+  keeping its basis stamp for the different job that does.
+  Probed and clean: all three cooldown constants bite; no two engines contradict on the Meals
+  screen (the advice ladder from the J7 review holds); no paired quantity crosses windows.
+  STEP_TARGET survived its probe and stays unpinned deliberately, being an identifier shared by
+  writer and reader that cannot drift between them.
+  ALLOWANCES SHRANK by splitting, not raising: mealTypes.ts out of types.ts (674 to 604),
+  coachSchema.ts out of store/schema.ts (578 to 554).
+  Validation: tsc -b clean, **1,676/1,676 unit** (21 new), build green, sim 20 personas,
+  **90/90 e2e**, **poison 196/196** (8 new).
+  NEXT: R3 ship-order step 3, outcome evaluation for the interventions that ALREADY exist, so
+  the ledger is proven against shipped behaviour before anything new is built on it.
+
+### 2026-08-20 · J8 slice 2 · outcome evaluation, and an app that stopped arguing with itself
+  The ledger recorded what was offered and answered, which on its own is a diary. This is the
+  half that makes it evidence.
+  R3's five rules, and the fourth is the one that matters: if no observation could mark an
+  intervention "did not work", it does not ship. So `worse` and `no-change` are ordinary
+  answers here rather than edge cases, and most of the tests are about the ways a change fails.
+  PRE-REGISTERED at accept time: metric, window and the number to beat. An outcome chosen
+  afterwards is a story. ISOLATE: any later decision on the same target inside the window
+  closes the first as unattributable, and a scale creatine is moving is not evidence either.
+  Somebody who stopped weighing in is `abandoned` rather than failed and is told nothing.
+  Verdicts are said out loud including the bad ones, and the card self-expires after a week
+  rather than carrying a seen-flag.
+  THE HARNESS FOUND THE FIRST GAP: a mutation set the pre-registered baseline to 0 and all
+  sixteen outcome tests stayed green, because each built its accepted rows BY HAND and none
+  went through stepDecision, the only place pre-registration happens. Tested at the offer site
+  now, and the mutation re-aimed there.
+  REVIEW PASS (rule 8) FOUND THREE MORE:
+  (1) TWO CARDS CONTRADICTED EACH OTHER, proved by probe not reasoning. The screen rendered
+  "that 150 kcal change did not help, back to where you were is a fair call" directly beside
+  "about 250 kcal a day less would put you back in it". The stand-down rule lives in the
+  ENGINE so it is testable: a target whose last judged change came back `worse` stops being
+  proposed more of the same while that feedback is on screen, and resumes once it is old news.
+  Worth noting WHY the J7 advice ladder did not catch this: the ladder ranks simultaneous
+  SUGGESTIONS, and a verdict is not one. Feedback versus suggestion was a category it did not
+  have.
+  (2) VERDICT_VISIBLE_DAYS survived being set to 999, because the expiry test was written
+  against the constant itself and passes at any value. FOURTH guard of that exact shape this
+  session. Day counts are literals now.
+  (3) STEP_METRIC survived being set to 'zzz'. A metric id that changes silently orphans every
+  row written under the old one: judge() looks for its own metric, finds nothing, and the
+  intervention is never graded and never says why. Pinned.
+  Validation: tsc -b clean, **1,698/1,698 unit** (25 new), build green, sim 20 personas,
+  **90/90 e2e**, **poison 203/203** (7 new).
+  NEXT: R3 s9.2's table for the TRAINING interventions, which is this same machinery pointed
+  at drop-load, hold-load, reduce-volume, the two substitution kinds and the deload.
+
+### 2026-08-20 · J8 slice 3 · the same machinery, pointed at training
+  R3 step 3 wants outcome evaluation on interventions that ALREADY ship, so the ledger is
+  proven against real behaviour before anything new is built on it. hold-load and
+  reduce-volume are exactly that: offers the coach already makes, which the athlete already
+  accepts or waves away, and which NOTHING recorded either way.
+  The comment on acceptAdaptation argued that a proposal leaving no trace is what stops a
+  declined suggestion shaping next week. Right about the PLAN, wrong about the CONVERSATION,
+  and the same defence already overturned for the calorie cards. The prescription still reads
+  only `adapt`; the ledger is read by the offering policy and the outcome engine and by
+  nothing that prescribes.
+  Judged on whether sessions after the change got done, COUNTED not averaged, because one
+  clean session out of three is not a fix. All done is worked, none is worse, some is
+  no-change, nobody training at all is abandoned (a fact about attendance, not the
+  intervention). Windows in DAYS standing in for R3 s4.2's comparable exposures, and the file
+  says so: a fortnight covers one to two sessions for almost every week this app builds, and a
+  calendar cannot be stretched by a skipped week the way an exposure count can.
+  AN IMPORT CYCLE I INTRODUCED IN THE LAST REVIEW, found before it could bite. The outcome
+  engine needs to know which rows belong to which rule, and each rule asks the outcome engine
+  whether its last attempt backfired, so engine/outcomes.ts and engine/calorieStep.ts imported
+  each other. It compiled only because both read the values inside functions; the first
+  module-level use would have been a TDZ crash. engine/proposals.ts is the neutral vocabulary
+  now, which is also where the new training identifiers went.
+  A VERDICT ON THE WRONG SCREEN: freshVerdict was type-agnostic, so the food screen would have
+  announced that trimming the sets did the job. Scoped by type; training answers appear where
+  the offer was taken, and that card outlives the offers because it answers a question asked a
+  fortnight ago.
+  THE SAME TEST GAP, TWICE IN TWO SLICES. The harness deleted the ledger write from
+  acceptAdaptation and every outcome test stayed green, because they all build rows by calling
+  adaptDecision directly. Identical in shape to the pre-registration gap in slice 2: **a test
+  that constructs the artefact it wants to check will never notice that nothing in the app
+  constructs it.** Both are now tested at the write path, with the mutations re-aimed there.
+  Validation: tsc -b clean, **1,709/1,709 unit** (17 new), build green, sim 20 personas,
+  **90/90 e2e**, **poison 207/207** (4 new, 3 anchors re-aimed).
+  NEXT: R3 s9.2 still has the deload, the two substitution kinds, drop-load and the
+  failing-flag softening. Same machinery, more metrics.
 - **2026-08-20 · OP5 IN FLIGHT · UI/UX overhaul phase 1.** Seven commits on
   `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip `12e110b`, nothing pushed yet, tree
   green after each: C0 claim · C1 motion foundation (`styles/motion.css` two-mode brief,
@@ -1179,7 +2079,7 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   it, said plainly because it has now cost this project four separate corrections: **I start
   work before I finish reading the source of truth.** It happened with the flame, with the
   palette, and with Train.
-  THE FIX IS STRUCTURAL, not a promise. `research/OP5-screen-law.md` transcribes the approved
+  THE FIX IS STRUCTURAL, not a promise. `research/OP12-screen-law.md` transcribes the approved
   preview frame by frame, every screen, in order, and `src/screenLaw.test.ts` asserts those
   landmarks are actually in `src/`. It was written FIRST and watched fail 8/8 against the tree
   before a line was built, then driven to green. Same mechanism as `visualLaw.test.ts`: an
@@ -1221,13 +2121,43 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   server, 390px screenshots reviewed and iterated (the HUD collapsing to a left-hung avatar on
   day one, `60 sec / side` bursting a 40px coin, three days painted red for a Thursday signup,
   and the ring labels landing on two different baselines were all caught that way and fixed).
-  NEXT: C9 ship — `research/OP5-ux-overhaul.md`, republish the dashboard, push, and the owner's
-  screenshot review.
+  THE MERGE, and it was not small: the deploy branch moved **54 commits** while this lane was in
+  flight, including its own Today refactor. Both sides were kept whole rather than one side
+  winning. Ported IN from the deploy lane: `planWorkOutstanding`/`planOwed` and `heroDay` (a
+  finished make-up must not read as a finished day), `ReviewOffer`, `QuitGate`,
+  `stillOpenForLogging` on the make-up window, the "Today is not done." card word for word, and
+  the Mifflin-St Jeor calorie numbers. Their `DayDoneCard` folded into `TodayCompletion` and
+  their `ExtraTraining` into Train, with ONE piece kept on Today deliberately: the mid-session
+  "Did something else too?" hatch is now `AddMoreWork.tsx`, because nothing inside the session
+  view can add an exercise and that was an owner bug report twice over.
+  **ID COLLISION, resolved:** the deploy lane claimed OP5 through OP11 for its own jobs while
+  this one was using OP5. This lane is now **OP12** and its three research files were renamed
+  with it. Two rows with the same id is how a board stops being readable.
+  MERGE LEARNED: (1) A session seeded by `logExtraWork` has `ownPlanStarted === true`, so the
+  focus runner cannot be avoided by inferring from the session; Train passes an explicit
+  one-shot `pendingList` to Today, the same shape as `pendingRun`. (2) Four of their specs
+  reached the shelf through Today; they reach it through Train now, via `trainTab` in the shared
+  helper rather than inline.
+  Gates after the merge: typecheck clean, **1,747/1,747 unit** (their 256 tests included), build
+  green, **90/90 e2e** on a fresh preview server.
+  LAST SWEEP: the remaining translucent surfaces went flat too, and the ONE place glass survives
+  is now written into the visual law with its reason: map chrome. A pill over a satellite tile
+  needs a scrim; nothing sitting on the app's own ground does.
+  AND THE TRAP BIT AGAIN, so it goes in here in plain words: a full run against a preview server
+  left over from an earlier build reported **12 failures across four specs nothing had touched**
+  (onboarding chips, tracking, week, welcome). Every one of them passed on a fresh server,
+  first try. `reuseExistingServer: true` means the suite will happily test a stale bundle and
+  report it as a regression in code you are holding in your hand. Kill the preview, rebuild,
+  then run. This is the third checkpoint to record it.
+  Dashboard republished at the same url with an OP12 section and the new counts.
+  NEXT: the owner's screenshot review. Nothing in this lane is blocked.
 
 ## 10. SOURCES
 
 - Living dashboard (this plan, rendered, republishable via url):
   https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
+- BodyT Build Line (the whole board on a timeline, counts derived from this file's rows):
+  https://claude.ai/code/artifact/c7d11318-1190-48c7-b8c9-114b1d96825d
 - Bodytea Open Work: https://claude.ai/code/artifact/fc913f9c-ce3c-4ac8-91f2-51d35de8328e
 - Bodytea Build Ledger: https://claude.ai/code/artifact/b4466656-ceb2-4d54-ae8e-5b8870e8d0b6
 - Onboarding Rebuild Review: https://claude.ai/code/artifact/5210b444-304f-483b-9f1d-5e5d8070e843

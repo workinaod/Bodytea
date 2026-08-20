@@ -27,6 +27,10 @@ export default function App() {
   // Train picks the day, Today runs it. One shot: Today takes it, starts
   // its own readiness or intensity gate, and clears it behind itself.
   const [pendingRun, setPendingRun] = useState<{ date: ISODate; cns: boolean } | null>(null)
+  // Work logged on Train seeds the plan's session on Today. One shot, same
+  // shape: Today opens the list runner rather than the focus one, because
+  // nobody asked to START that session.
+  const [pendingList, setPendingList] = useState(false)
   const [track, setTrack] = useState<'choose' | GpsActivity | null>(null)
   const [timerActivity, setTimerActivity] = useState<string | null>(null)
   // Only set when the user typed their own name in the custom row.
@@ -106,11 +110,16 @@ export default function App() {
             onOpenTrain={() => setTab('train')}
             pendingRun={pendingRun}
             onPendingRunTaken={() => setPendingRun(null)}
+            pendingList={pendingList}
+            onPendingListTaken={() => setPendingList(false)}
           />
         )}
         {tab === 'train' && (
           <TrainScreen
-            onOpenToday={() => setTab('today')}
+            onOpenToday={(opts) => {
+              if (opts?.list) setPendingList(true)
+              setTab('today')
+            }}
             requestRun={(date, cns) => {
               setPendingRun({ date, cns })
               setTab('today')

@@ -1,4 +1,5 @@
 import type { ModuleRefs } from './knowledge'
+import { BMR_REFS } from './bmr.refs'
 import { NUTRITION_REFS } from './nutrition.refs'
 
 // ============================================================
@@ -19,4 +20,4 @@ import { NUTRITION_REFS } from './nutrition.refs'
 // name.
 // ============================================================
 
-export const KNOWLEDGE: ModuleRefs[] = [NUTRITION_REFS]
+export const KNOWLEDGE: ModuleRefs[] = [NUTRITION_REFS, BMR_REFS]

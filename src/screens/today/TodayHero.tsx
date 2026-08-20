@@ -19,7 +19,7 @@ import { briefForDay, briefForSession } from '../../engine/workoutBrief'
 // deciding whether to train right now wants the cost before
 // they commit, not after.
 //
-// Contents and order per research/OP5-screen-law.md §1.
+// Contents and order per research/OP12-screen-law.md §1.
 // ============================================================
 
 const BY_GOAL: Record<Goal, string> = {

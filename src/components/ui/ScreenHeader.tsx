@@ -36,7 +36,7 @@ export function ScreenHeader({
    */
   slim?: boolean
 }) {
-  // The screen's name, per research/OP5-visual-law.md: 11px, 900, tracked
+  // The screen's name, per research/OP12-visual-law.md: 11px, 900, tracked
   // wide enough to read as a plate on a door rather than as a heading.
   const label = (
     <span className="block truncate text-[11px] font-black uppercase tracking-[0.22em] text-ink-faint">

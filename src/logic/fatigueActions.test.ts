@@ -4,7 +4,8 @@ import { emptyAppData } from '../types'
 import { useAppStore } from '../store/appStore'
 import { focusQueue } from '../engine/focus'
 import { regionsFor } from '../engine/fatigue'
-import { endExercise, endGroupAhead, logFatigue } from './fatigueActions'
+import { acceptAdaptation, endExercise, endGroupAhead, logFatigue } from './fatigueActions'
+import { addDaysISO } from '../engine/calendar'
 
 // ============================================================
 // What happens after "I can't finish this".
@@ -126,5 +127,46 @@ describe('endGroupAhead', () => {
   it('reports nothing when the rest of the day asks a different muscle', () => {
     seed()
     expect(endGroupAhead(DATE, 0)).toBe(0)
+  })
+})
+
+describe('taking or waving away a coach offer leaves a trace', () => {
+  // The gap the harness found: every outcome test built its ledger rows
+  // by calling adaptDecision directly, so nothing exercised the action
+  // that actually writes them. Deleting the write left all of them green.
+  beforeEach(() => {
+    useAppStore.setState({ data: emptyAppData(DATE, DATE) })
+  })
+
+  it('records an acceptance, pre-registered so it can be judged later', () => {
+    acceptAdaptation(DATE, 'reduce-volume', 'two short sessions in a fortnight')
+    const d = useAppStore.getState().data
+    expect(d.adapt[DATE]).toContain('reduce-volume')
+    expect(d.decisions).toHaveLength(1)
+    const row = d.decisions[0]
+    expect(row.type).toBe('adapt')
+    expect(row.target).toBe('reduce-volume')
+    expect(row.response).toBe('accepted')
+    expect(row.ruleVersion).toBe(1)
+    expect(row.metricId).toBe('sessionGrade')
+    expect(row.windowClosesAt).toBe(addDaysISO(DATE, 14))
+  })
+
+  it('records a dismissal as a decline, and registers nothing to judge', () => {
+    acceptAdaptation(DATE, 'dismissed')
+    const row = useAppStore.getState().data.decisions[0]
+    expect(row.response).toBe('declined')
+    expect(row.windowClosesAt).toBeUndefined()
+    expect(row.metricId).toBeUndefined()
+  })
+
+  it('keeps the plan and the ledger as separate things', () => {
+    // The prescription reads `adapt` and nothing else. The ledger is read
+    // by the offering policy and the outcome engine, and by nothing that
+    // prescribes: a recorded decline must not move a load.
+    acceptAdaptation(DATE, 'hold-load')
+    const d = useAppStore.getState().data
+    expect(d.adapt[DATE]).toEqual(['hold-load'])
+    expect(d.decisions[0].target).toBe('hold-load')
   })
 })

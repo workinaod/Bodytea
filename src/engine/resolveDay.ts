@@ -27,6 +27,7 @@ import { capAccessorySets, orderSession } from './sequence'
 import { parseRepRange, repLabel } from './reps'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
+import { isAthleteAuthored } from '../plan/bookletOps'
 import { adaptSession, twoConsecutiveBadNightsBefore } from './adapt'
 
 // ============================================================
@@ -130,6 +131,7 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   const ball = plan.sportMode === 'ball'
   const weekday = weekdayOf(dateISO)
   const week = weekStateFor(data, dateISO)
+  const theirs = isAthleteAuthored(data.plan)
   const { weekIndex, weekInBlock, blockIndex, abWeek, isDeload } = blockMathFor(
     dateISO,
     data.settings.phaseStartDate,
@@ -165,7 +167,9 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     weekInBlock,
     blockIndex,
     abWeek,
-    isDeload,
+    // What the day IS, not what the calendar said: an athlete-authored
+    // week is never unloaded for them, and the debrief must not promise it.
+    isDeload: isDeload && !theirs,
     tier: week.tier,
     banners,
     phaseComplete,
@@ -327,13 +331,31 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   }
 
   // --- Where the week sits in the block: build, then unload ---
+  //
+  // WHOSE WEEK IS IT. A deload is not a date, it is a decision, and who
+  // gets to make it depends on who built the plan.
+  //
+  // A booklet BodyT wrote carries a block BodyT designed, so running the
+  // unload week is doing the job it was asked to do. A routine somebody
+  // brought from home is theirs. Halving their sets on a calendar is not
+  // coaching, it is taking their week off them, and the app's own rule
+  // is suggest only, never auto. So they get the offer and the reason,
+  // and the sets stay exactly where they put them.
   if (isDeload && template.kind === 'session') {
-    exercises = applyDeload(exercises)
-    banners.push({
-      id: 'deload',
-      text: 'DELOAD WEEK: sets halved, keep the weights. Leave every session feeling like you could do more. That’s the point.',
-      tone: 'success',
-    })
+    if (theirs) {
+      banners.push({
+        id: 'deload-offer',
+        text: 'Week 4. This is where a deload usually goes: same weights, half the sets, and you leave feeling like you could do more. Your call, it is your routine.',
+        tone: 'info',
+      })
+    } else {
+      exercises = applyDeload(exercises)
+      banners.push({
+        id: 'deload',
+        text: 'DELOAD WEEK: sets halved, keep the weights. Leave every session feeling like you could do more. That’s the point.',
+        tone: 'success',
+      })
+    }
   }
 
   // --- Custom life events: tonight's, and yesterday's aftermath ---

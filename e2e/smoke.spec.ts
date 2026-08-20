@@ -189,8 +189,17 @@ test('midnight rollover advances the app without a reload', async ({ page }) => 
   await expect(page.getByText(/unaccounted for/)).not.toBeVisible()
 
   // Meals follow too: Thursday is a rest day → the GENERATED rest target.
-  // 180 lb vertical plan at 5'10": 2700 bodyweight base, +25 because an
-  // inch over the reference height is a real inch, +200 goal, −300 rest.
+  //
+  // Sam is 30, so the calorie baseline runs Mifflin-St Jeor rather than
+  // the bodyweight guess: 180 lb and 5'10" at 30 gives 1783 resting, a
+  // six-day week puts the non-training multiplier at 1.425 for 2550, one
+  // session adds (5-1) x 82 kg for 2850 maintenance, and +200 for the
+  // goal makes 3050 on a training day.
+  //
+  // The rest day then drops by Sam's OWN session cost, 327, not the flat
+  // 300 every athlete used to get regardless of size. Both halves of this
+  // number have now moved for the same reason: a constant that was one
+  // body's arithmetic applied to everybody.
   await openNutrition(page)
-  await expect(page.getByText(/Rest day · 2625 kcal/)).toBeVisible()
+  await expect(page.getByText(/Rest day · 2723 kcal/)).toBeVisible()
 })

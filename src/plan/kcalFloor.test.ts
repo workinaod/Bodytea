@@ -1,7 +1,8 @@
 // Run `node scripts/poison.mjs` to re-verify these tests actually bite:
 // it reintroduces each bug one at a time and asserts the suite goes red.
 import { describe, expect, it } from 'vitest'
-import { MIN_KCAL_REST, MIN_KCAL_TRAINING, REST_DAY_DROP, flooredTargets } from './kcalFloor'
+import { MIN_KCAL_REST, MIN_KCAL_TRAINING, flooredTargets } from './kcalFloor'
+import { REST_SWING_MAX, REST_SWING_MIN, restDaySwing } from './bmr'
 import { byorNutrition } from './bookletOps'
 import { buildNutrition } from './generator'
 
@@ -22,13 +23,26 @@ describe('nobody gets prescribed a crash diet', () => {
     expect(flooredTargets(2000, 4000).kcalTraining).toBe(3000)
   })
 
-  it('the rest-day drop cannot outrun the rest-day floor', () => {
-    // This is what makes the clamp inside flooredTargets look redundant:
-    // a floored training day minus the drop lands exactly on MIN_KCAL_REST,
-    // so the clamp never binds. Pinned here because the day somebody
-    // widens REST_DAY_DROP is the day it starts binding, and a silent
-    // 1,100 kcal rest target is precisely the bug this file exists for.
-    expect(MIN_KCAL_TRAINING - REST_DAY_DROP).toBeGreaterThanOrEqual(MIN_KCAL_REST)
+  it('the rest-day clamp binds now, and it did not used to', () => {
+    // This test used to assert the opposite: that MIN_KCAL_TRAINING minus
+    // REST_DAY_DROP could never fall under MIN_KCAL_REST, which made the
+    // clamp inside flooredTargets look like dead code. Its own comment
+    // said it would go live the day the drop widened past 300.
+    //
+    // That day arrived. The drop is the athlete's own session cost now
+    // and tops out at 400, so a floored training day minus the widest
+    // swing is 1,100, and this clamp is the only thing between a heavy
+    // athlete on a hard cut and a rest target no clinician would sign.
+    expect(MIN_KCAL_TRAINING - REST_SWING_MAX).toBeLessThan(MIN_KCAL_REST)
+    expect(flooredTargets(1500, 2000, REST_SWING_MAX).kcalRest).toBe(MIN_KCAL_REST)
+    // and at the narrow end it does not interfere at all
+    expect(flooredTargets(2600, 2900, REST_SWING_MIN).kcalRest).toBe(2600 - REST_SWING_MIN)
+  })
+
+  it('caps the cut at a quarter off maintenance, which binds before the flat floor for bigger athletes', () => {
+    // 4,000 maintenance: a 2,000 target clears the 1,500 minimum easily and
+    // is still a 50% deficit. The proportional rule is what catches it.
+    expect(flooredTargets(2000, 4000).kcalTraining).toBe(3000)
   })
 
   it('only ever raises a target', () => {
@@ -90,6 +104,39 @@ describe('both nutrition paths agree, at every bodyweight', () => {
     for (let bw = 90; bw <= 330; bw += 5) {
       const n = byorNutrition(['lose-weight'], bw)
       expect(n.proteinTargetG * 4, `bw ${bw}`).toBeLessThanOrEqual(n.kcalRest * 0.6)
+    }
+  })
+})
+
+describe('the rest day scales to the body that is resting', () => {
+  it('reproduces the old flat 300 for exactly the body it was written for', () => {
+    // 300 was never a rule, it was one 86 kg body lifting for an hour.
+    // (5 - 1) METs x 86 kg x 1 h = 345, and 190 lb is 86 kg.
+    expect(restDaySwing(190)).toBe(345)
+  })
+
+  it('stops making a small athlete s rest day punitive', () => {
+    // R1's case: a 54 kg woman was dropped 300 kcal, roughly double what
+    // her session actually cost. She now drops by what she actually spent.
+    const her = restDaySwing(120)
+    expect(her).toBeLessThan(300)
+    expect(her).toBeGreaterThanOrEqual(REST_SWING_MIN)
+    // and a 45 minute session costs less again, once a duration is known
+    expect(restDaySwing(120, 0.75)).toBeLessThan(her)
+  })
+
+  it('rises with bodyweight, inside bounds at both ends', () => {
+    expect(restDaySwing(120)).toBeLessThan(restDaySwing(190))
+    expect(restDaySwing(190)).toBeLessThan(restDaySwing(300))
+    expect(restDaySwing(90, 0.25)).toBe(REST_SWING_MIN)
+    expect(restDaySwing(330, 2)).toBe(REST_SWING_MAX)
+  })
+
+  it('never lets the scaled swing push a rest day under the floor', () => {
+    for (let bw = 90; bw <= 330; bw += 10) {
+      const n = buildNutrition('lean', bw, 'female', { 'lose-amount': 'More than that' }, 62, { ageYears: 40 })
+      expect(n.kcalRest, `bw ${bw}`).toBeGreaterThanOrEqual(MIN_KCAL_REST)
+      expect(n.kcalTraining - n.kcalRest, `bw ${bw}`).toBeLessThanOrEqual(REST_SWING_MAX)
     }
   })
 })

@@ -1,10 +1,12 @@
 import type { CustomTarget, DayTemplate, DietStyle, FoodLimits, Goal, LifeEventKind, PlanConfig, RoutineGoal, TemplateEntry, Weekday } from '../types'
+import type { NutritionBasis } from '../nutritionTypes'
 import { getExercise, EXERCISES } from './exercises'
 import { equipFor } from './equip'
 import { pickCardio, rationaleFor } from './generator'
 import { buildMealPlan, type MealsPerDay } from './foods'
 import { flooredTargets } from './kcalFloor'
-import { heightAdjustmentKcal, proteinTargetG } from './sportsNutrition'
+import { proteinTargetG } from './sportsNutrition'
+import { bodyweightHeuristicKcal, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal, restDaySwing } from './bmr'
 import type { EquipTag } from '../types'
 
 // ============================================================
@@ -45,12 +47,19 @@ export function byorNutrition(
   bodyweightLb: number,
   sex?: 'male' | 'female',
   heightIn?: number,
+  body: { ageYears?: number; bodyFatPct?: number; sessionsPerWeek?: number } = {},
 ) {
   const bw = Math.min(330, Math.max(90, bodyweightLb || 175))
-  // Same baseline as the guided path: a notch lower for women. This used
-  // to be a flat ×15, which handed every woman building her own routine
-  // a man's maintenance estimate.
-  const base = Math.round((bw * (sex === 'female' ? 14 : 15)) / 50) * 50 + heightAdjustmentKcal(heightIn, sex)
+  // Same model chain as the guided path, and same last-resort number
+  // under it. Both paths used to compute this line themselves and had
+  // already drifted apart once; that is what plan/kcalFloor.ts exists to
+  // stop, and there is no reason to reopen it here.
+  const maintenance = maintenanceKcal(
+    { bodyweightLb: bw, sex, heightIn, ageYears: body.ageYears, bodyFatPct: body.bodyFatPct },
+    { sessionsPerWeek: body.sessionsPerWeek ?? DEFAULT_SESSIONS_PER_WEEK },
+    bodyweightHeuristicKcal(bw, sex, heightIn),
+  )
+  const base = maintenance.kcal
   let adj = 0
   if (goals.includes('muscle')) adj += 300
   if (goals.includes('lose-weight')) adj -= 400
@@ -70,12 +79,38 @@ export function byorNutrition(
           ? 'hypertrophy'
           : 'general',
     ),
+    // Same record of what the number came from as the guided path, so a
+    // routine the athlete brought is just as rechecked as one BodyT wrote.
+    basis: {
+      bodyweightLb: bw,
+      model: maintenance.model,
+      ...(body.ageYears !== undefined ? { ageYears: body.ageYears } : {}),
+      ...(body.bodyFatPct !== undefined ? { bodyFatPct: body.bodyFatPct } : {}),
+      ...(body.sessionsPerWeek !== undefined ? { sessionsPerWeek: body.sessionsPerWeek } : {}),
+    } satisfies NutritionBasis,
     // Floored, because this path had no floor at all: see plan/kcalFloor.ts.
-    ...flooredTargets(base + adj, base),
+    ...flooredTargets(base + adj, base, restDaySwing(bw)),
   }
 }
 
 /** A blank booklet for the bring-your-own-routine builder. */
+/**
+ * Did the athlete build this week, or did BodyT?
+ *
+ * The distinction decides what the app is allowed to do to a plan
+ * without being asked. A booklet BodyT wrote, it may run: the deload is
+ * part of the block it designed. A routine somebody brought from home
+ * is theirs, and rewriting it on a calendar is not a coaching decision,
+ * it is taking their week off them.
+ *
+ * The predicate itself is not new. achievementFacts.ts has been asking
+ * exactly this question inline since custom routines shipped; it now
+ * asks it here, so there is one answer rather than two that can drift.
+ */
+export function isAthleteAuthored(plan: Pick<PlanConfig, 'routineGoals' | 'whyWorks'>): boolean {
+  return plan.routineGoals !== undefined || plan.whyWorks !== undefined
+}
+
 export function makeEmptyByorPlan(args: {
   routineGoals: RoutineGoal[]
   goalStatement: string
@@ -120,6 +155,7 @@ export function makeEmptyByorPlan(args: {
       lifeEvents: (args.lifeSeeds ?? []).map((s, i) => ({ id: `life-${i + 1}`, label: s.label, kind: s.kind })),
       rationale: {},
       nutrition: { kcalTraining: n.kcalTraining, kcalRest: n.kcalRest },
+      nutritionBasis: n.basis,
       mealPlan: (() => {
         const mp = buildMealPlan(goal, n.proteinTargetG, n, args.mealsPerDay ?? 4, args.dietStyle ?? 'omnivore', args.foodLimits)
         return args.skipMeals ? { ...mp, templates: [] } : mp

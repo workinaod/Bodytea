@@ -17,6 +17,7 @@ const START = '2026-08-10'
 function makeData(overrides?: Partial<AppData>): AppData {
   const data = emptyAppData(START)
   data.settings.onboarded = true
+  data.plan.mealPlan.supplements = [] // neutral athlete; see userModel.test.ts
   return { ...data, ...(overrides ?? {}) }
 }
 
