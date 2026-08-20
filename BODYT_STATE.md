@@ -397,11 +397,17 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
      `transform: translate` resolves against THE ELEMENT'S OWN BOX, so a 2px ember told to
      travel -230% moved four pixels and sat there, at every size, for as long as it
      existed. Render the smallest instance and the largest before calling anything done.
-  3. **A particle has to come FROM something.** The embers spawned at a fixed height
-     already above the flame, so each one materialised in mid-air and floated. Three
-     rounds of fixes went into their size, travel and glow while the thing that actually
-     looked wrong was the spawn point. Ask where a moving thing STARTS before tuning how
-     it moves; if it is decoration attached to an object, it starts ON the object.
+  3. **A particle has to come FROM something, and an `animation-delay` without a fill
+     mode is a bug.** The embers read as "sparkles floating in the air until their frame
+     is reached" for FOUR rounds. Two causes, and neither was any of the things that got
+     fixed in between (size, travel, glow, spawn height). First: during its delay an
+     element renders in its NATURAL state, so `opacity: 0` at the 0% keyframe does not
+     apply and every waiting particle is drawn static, fully lit, at its spawn point.
+     Any delayed animation needs `backwards` or `both`. Second: they spawned at the
+     FRAME'S top edge while the fire inside it was scaled down mid-ignition, so they hung
+     a hundred pixels above a flame that had not grown yet. Ask where a moving thing
+     starts and what it looks like BEFORE it starts moving; if it is attached to an
+     object, it starts on the object and is invisible until then.
   4. **A drawing that works beats a system that computes one.** The generated-geometry
      flame was replaced four times (triangles from a floor, a picket of candles, a fan of
      needles) and every version was worse than the hand-authored path already in the repo.

@@ -565,8 +565,14 @@
   }
 }
 .spark-bit {
-  /* A gentle ease out: an ember slows as it cools, it does not teleport. */
-  animation: flame-spark var(--sd, 1.6s) cubic-bezier(0.3, 0.5, 0.6, 1) infinite;
+  /* A gentle ease out: an ember slows as it cools, it does not teleport.
+     BACKWARDS is not optional. Without a fill mode an element renders in
+     its NATURAL state during animation-delay, so every ember was drawn
+     static, at full opacity and full size, sitting at its spawn point
+     waiting for its turn. That is the whole "sparkles floating in the
+     air" bug, and it survived three rounds of fixes to their size,
+     travel and origin because none of those were what was wrong. */
+  animation: flame-spark var(--sd, 1.6s) cubic-bezier(0.3, 0.5, 0.6, 1) infinite backwards;
 }
 
 /* ---- Starting a fire ----

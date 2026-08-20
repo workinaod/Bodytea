@@ -487,9 +487,11 @@ export function Flame({
         </svg>
       </span>
       </span>
-      {/* A flame still catching throws no embers; the coals throw the
-          strike sparks instead. These start once the fire has body. */}
-      {lit && <Embers n={s.embers} color={s.core} px={px} delay={ignite ? IGNITE_MS * 0.55 : 0} />}
+      {/* A flame still catching throws no embers, and it has no tip to
+          throw them from: the body is scaled down inside this frame
+          while these sit at the frame's own top edge. They wait for the
+          fire to be up. The coals throw the strike sparks meanwhile. */}
+      {lit && <Embers n={s.embers} color={s.core} px={px} delay={ignite ? IGNITE_MS : 0} />}
     </span>
   )
 }
