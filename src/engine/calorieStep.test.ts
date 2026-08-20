@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData, type SessionLog } from '../types'
 import { addDaysISO } from './calendar'
-import { STEP_MAX, STEP_MIN, calorieStep, stepCopy } from './calorieStep'
+import { STEP_MAX, STEP_MIN, STEP_RULE_VERSION, STEP_TARGET, STEP_TYPE, calorieStep, stepCopy } from './calorieStep'
+import { appendDecision, decisionRow } from './decisions'
 import { kcalBumpSuggestion } from './stats'
 
 // ============================================================
@@ -156,5 +157,39 @@ describe('it does not argue with the recomp signal', () => {
     }
     expect(kcalBumpSuggestion(d), 'the fixture has to actually trigger the recomp rule').not.toBeNull()
     expect(calorieStep(d, TODAY)).toBeNull()
+  })
+})
+
+describe('it does not ask twice', () => {
+  const decline = (d: AppData, daysAgo: number, seq: number, evidence: Record<string, number>) => {
+    appendDecision(d, decisionRow({
+      type: STEP_TYPE, target: STEP_TARGET, ruleVersion: STEP_RULE_VERSION,
+      evidence, response: 'declined', at: addDaysISO(TODAY, -daysAgo), seq,
+    }))
+    return d
+  }
+
+  it('goes quiet for a fortnight once somebody says no', () => {
+    const d = trending(cutting(), 190, -0.4)
+    const offered = calorieStep(d, TODAY)!
+    decline(d, 1, 1, offered.evidence)
+    expect(calorieStep(d, TODAY)).toBeNull()
+  })
+
+  it('comes back early only when the scale got materially worse', () => {
+    const mild = trending(cutting(), 190, -0.4)
+    const offered = calorieStep(mild, TODAY)!
+    // the same athlete, declined, then the miss more than doubles
+    const worse = trending(cutting(), 190, 0.6)
+    decline(worse, 1, 1, offered.evidence)
+    const again = calorieStep(worse, TODAY)
+    expect(again).not.toBeNull()
+    expect(again!.returningBecauseWorse).toBe(true)
+  })
+
+  it('carries the values it will be judged on later', () => {
+    const s = calorieStep(trending(cutting(), 190, -0.4), TODAY)!
+    expect(s.evidence.stepKcal).toBe(s.stepKcal)
+    expect(s.evidence.trendLbPerWeek).toBe(s.trendLbPerWeek)
   })
 })

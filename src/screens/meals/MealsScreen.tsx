@@ -7,7 +7,8 @@ import { kcalTargetFor, nutritionDayType } from '../../engine/dayType'
 import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor, proteinStreak } from '../../engine/stats'
 import { applyRecheck, learnedCopy, nutritionRecheck } from '../../engine/nutritionRecheck'
 import { energyCheck, energyCopy } from '../../engine/energyAvailability'
-import { calorieStep, stepCopy } from '../../engine/calorieStep'
+import { STEP_RULE_VERSION, STEP_TARGET, STEP_TYPE, calorieStep, stepCopy } from '../../engine/calorieStep'
+import { appendDecision, decisionRow, returningCopy } from '../../engine/decisions'
 import { learnedCopyFor, learnedMaintenance } from '../../engine/maintenanceLearned'
 import { MIN_KCAL_REST } from '../../plan/kcalFloor'
 import { macroTargets } from '../../plan/sportsNutrition'
@@ -183,19 +184,37 @@ export function MealsScreen() {
           {advice === 'step' && step && (
             <Card className="border-accent/40">
               <p className="text-[13px] font-bold text-accent-soft">What the scale is actually doing</p>
-              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{stepCopy(step)}</p>
-              {/* One button, because the other one would have been a lie:
-                  there is nowhere to record a decline, so a "hold" would
-                  have set the number to what it already was and the card
-                  would have come straight back. Not tapping is declining. */}
-              <div className="mt-2.5">
-                <Btn kind="subtle" className="w-full !py-2"
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">
+                {returningCopy({ allowed: true, returningBecauseWorse: step.returningBecauseWorse, declines: 0 })}{step.returningBecauseWorse ? ' ' : ''}
+                {stepCopy(step)}
+              </p>
+              {/* Two buttons now. The second one used to be impossible:
+                  there was nowhere to record a no, so it would have set
+                  the number to what it already was and the card would
+                  have come straight back. The ledger fixed that. */}
+              <div className="mt-2.5 flex gap-2">
+                <Btn kind="subtle" className="flex-1 !py-2"
                   onClick={() => update((d) => {
                     const gap = d.plan.nutrition.kcalTraining - d.plan.nutrition.kcalRest
                     d.plan.nutrition.kcalTraining = step.toKcal
                     d.plan.nutrition.kcalRest = Math.max(MIN_KCAL_REST, step.toKcal - gap)
+                    appendDecision(d, decisionRow({
+                      type: STEP_TYPE, target: STEP_TARGET, ruleVersion: STEP_RULE_VERSION,
+                      evidence: step.evidence, response: 'accepted', at: today,
+                      seq: d.decisions.length,
+                    }))
                   })}>
-                  Move to {step.toKcal} kcal
+                  Move to {step.toKcal}
+                </Btn>
+                <Btn kind="subtle" className="flex-1 !py-2"
+                  onClick={() => update((d) => {
+                    appendDecision(d, decisionRow({
+                      type: STEP_TYPE, target: STEP_TARGET, ruleVersion: STEP_RULE_VERSION,
+                      evidence: step.evidence, response: 'declined', at: today,
+                      seq: d.decisions.length,
+                    }))
+                  })}>
+                  Not now
                 </Btn>
               </div>
             </Card>

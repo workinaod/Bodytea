@@ -2,6 +2,7 @@ import type { AppData, ISODate } from '../types'
 import { bodyweightHeuristicKcal, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal } from '../plan/bmr'
 import { MAX_DEFICIT, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
 import { addDaysISO } from './calendar'
+import { offerPolicy } from './decisions'
 import { KCAL_PER_LB_TISSUE, weeklyGainRangeLb, weeklyLossRangeLb } from '../plan/sportsNutrition'
 import { learnedMaintenance } from './maintenanceLearned'
 import { nutritionInputsNow } from './nutritionRecheck'
@@ -50,6 +51,13 @@ export const STEP_MAX = 250
 const MIN_DAYS_OF_TREND = 14
 const MIN_WEIGH_INS = 3
 
+/** Bumped when the rule changes, so old ledger rows stay readable. */
+export const STEP_RULE_VERSION = 1
+
+/** What this proposal is called in the decision ledger. */
+export const STEP_TYPE = 'calorie-step'
+export const STEP_TARGET = 'kcalTraining'
+
 export interface CalorieStep {
   /** Signed kcal/day, rounded to 50. Negative means eat less. */
   stepKcal: number
@@ -62,6 +70,10 @@ export interface CalorieStep {
   toKcal: number
   /** 'slow' means the goal is not happening fast enough, 'fast' too fast. */
   miss: 'slow' | 'fast'
+  /** The values behind it, as they go into the ledger. */
+  evidence: Record<string, number>
+  /** Declined before, back early because the evidence worsened. */
+  returningBecauseWorse: boolean
 }
 
 const round50 = (n: number) => Math.round(n / 50) * 50
@@ -146,6 +158,14 @@ export function calorieStep(data: AppData, today: ISODate): CalorieStep | null {
   // Already at the floor: the pace has to move, not the food.
   if (toKcal === fromKcal) return null
 
+  const evidence = { stepKcal: toKcal - fromKcal, trendLbPerWeek: rate, fromKcal }
+  // Somebody who has already said no to this does not get asked again
+  // tomorrow. The exception is evidence that genuinely got worse, which
+  // is why today's numbers are handed to the policy rather than just the
+  // question. See engine/decisions.ts.
+  const policy = offerPolicy(data, STEP_TYPE, STEP_TARGET, today, evidence)
+  if (!policy.allowed) return null
+
   return {
     stepKcal: toKcal - fromKcal,
     trendLbPerWeek: rate,
@@ -153,6 +173,8 @@ export function calorieStep(data: AppData, today: ISODate): CalorieStep | null {
     fromKcal,
     toKcal,
     miss,
+    evidence,
+    returningBecauseWorse: policy.returningBecauseWorse === true,
   }
 }
 

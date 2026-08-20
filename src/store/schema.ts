@@ -16,6 +16,8 @@ import { sessionSchema } from './sessionSchema'
 import { prefsSchema } from './prefsSchema'
 import { profileSchema, settingsSchema } from './settingsSchema'
 import { calorieTargetsSchema, nutritionBasisSchema } from './nutritionSchema'
+import { coachSchema } from './coachSchema'
+import { decisionsField } from './decisionSchema'
 import { measurementSchema, photoMetaSchema } from './measurementSchema'
 import { foodLimitsSchema, mealPlanSchema, migrateSupplementStack } from './mealPlanSchema'
 import { cardioEntrySchema, runLogSchema } from './activitySchema'
@@ -153,33 +155,6 @@ const mealDaySchema = z.object({
 })
 
 
-const coachSchema = z.object({
-  feed: z.array(
-    z.object({
-      id: z.string(),
-      at: z.string(),
-      kind: z.enum(['coach', 'debrief', 'insight']),
-      situation: z.string().optional(),
-      text: z.string(),
-      excuseId: z.string().optional(),
-      weekISO: isoDate.optional(),
-      debrief: z
-        .object({
-          date: isoDate,
-          title: z.string(),
-          recap: z.array(z.string()),
-          recovery: z.array(z.string()),
-          eat: z.array(z.string()),
-          sleep: z.array(z.string()),
-          tomorrow: z.string(),
-        })
-        .optional(),
-    }),
-  ),
-  shownMessageIds: z.array(z.string()),
-  surfacedInsights: z.record(z.string(), isoDate),
-})
-
 const appDataSchema = z.object({
   settings: settingsSchema,
   plan: planConfigSchema,
@@ -203,6 +178,7 @@ const appDataSchema = z.object({
   // either way — an unstamped stage the athlete has genuinely reached
   // gets re-derived from the history on the next render and re-stamped.
   journey: z.object({ hits: z.record(z.string(), z.string()) }).default({ hits: {} }),
+  decisions: decisionsField,
   prefs: prefsSchema,
 })
 
