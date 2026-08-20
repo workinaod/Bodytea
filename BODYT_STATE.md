@@ -385,22 +385,29 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   one component): "that is the level of animations and graphics that I'm expecting
   throughout this redesign of the app."** The reference is the streak flame in
   `components/Flame.tsx`. What it has to be matched on, concretely:
-  1. **Generated, not drawn.** The flame's geometry is computed from parameters per rung.
-     A hand-authored path can only ever be scaled, and scaling is not growth.
-  2. **The shape changes, not just the size.** A raging fire is not a big small fire, it
-     is MORE FIRE: more tongues, a wider bed, turbulence between them. Whatever the
-     surface is, its states must differ in KIND, not in transform.
-  3. **Every step in a progression changes something.** The first version keyed eleven
+  1. **Render it, look at it, grade it, THEN show it.** The owner's words: "You can take
+     screenshots of your work as you're doing it and grade yourself. You know what a flame
+     looks like." Four bad flames shipped to review because the parameters read as correct
+     and nobody opened the picture. Screenshot every visual change, judge it against the
+     real thing it depicts, and iterate before it leaves the session.
+  2. **A drawing that works beats a system that computes one.** The generated-geometry
+     flame was replaced four times (triangles from a floor, a picket of candles, a fan of
+     needles) and every version was worse than the hand-authored path already in the repo.
+     Growth does not require redrawing: keep the good silhouette and add MORE OF IT.
+  3. **The shape changes, not just the size.** A raging fire is not a big small fire, it
+     is MORE FIRE: more flames, layered, each on its own clock. Whatever the surface is,
+     its states must differ in KIND, not in transform.
+  4. **Every step in a progression changes something.** The first version keyed eleven
      rungs to seven levels and three of them rendered identically, which teaches people
      the ladder is decoration. `components/flame.test.ts` is the pattern: assert the
      progression strictly moves on every axis, so a silent duplicate fails a test rather
      than shipping.
-  4. **Nothing on screen shares a clock.** Layers run at unrelated periods with keyframe
+  5. **Nothing on screen shares a clock.** Layers run at unrelated periods with keyframe
      stops at odd percentages, so the combined loop is too long to see repeat. One
      element on a smooth sine curve reads as a logo breathing, every time.
-  5. **Earned only, and honest.** The bar applies to what somebody worked for. It never
+  6. **Earned only, and honest.** The bar applies to what somebody worked for. It never
      buys spectacle for junk volume or a number the engine did not produce.
-  6. **It still has to run on a phone.** Transform and opacity; filter animations gated to
+  7. **It still has to run on a phone.** Transform and opacity; filter animations gated to
      display sizes; particle counts capped; the full show off by default on the chips that
      sit on screen all day. Reduced motion keeps every bit of information and drops every
      bit of movement.

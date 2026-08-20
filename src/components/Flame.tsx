@@ -51,14 +51,12 @@ interface RungStyle {
   scale: number
   /** Ambient embers coming off the top. */
   embers: number
-  /** How many separate tongues this fire burns. The shape of growth. */
-  tongues: number
-  /** Height of the tallest tongue, as a fraction of the frame. */
-  height: number
-  /** How far the outer tongues sit from the middle. */
+  /** How many flames stand in this fire. THE shape of growth. */
+  flames: number
+  /** How far the outer flames sit from the main one. */
   spread: number
-  /** Width of the burning bed at the bottom. */
-  bed: number
+  /** Vertical stretch of the whole cluster. A wisp is a little squatter. */
+  height: number
 }
 
 /**
@@ -67,84 +65,74 @@ interface RungStyle {
  * anything that needs one, not a styling key.
  */
 export const RUNG: Record<number, RungStyle> = {
-  1: { outer: '#7a4e2a', mid: '#b87a3e', core: '#edcb9c', speed: 3.4, glow: 'none', scale: 0.6, embers: 0, tongues: 1, height: 0.4, spread: 0, bed: 0.3 },
-  3: { outer: '#9a5f2e', mid: '#d8913f', core: '#f5da9e', speed: 2.9, glow: '0 0 4px rgba(216,145,63,0.25)', scale: 0.74, embers: 1, tongues: 1, height: 0.58, spread: 0, bed: 0.34 },
-  7: { outer: '#e0641c', mid: '#ff9633', core: '#ffd79b', speed: 2.5, glow: '0 0 7px rgba(255,120,40,0.32)', scale: 0.88, embers: 2, tongues: 2, height: 0.7, spread: 0.11, bed: 0.42 },
-  14: { outer: '#ff6a1f', mid: '#ffa02f', core: '#ffdf9f', speed: 2.2, glow: '0 0 10px rgba(255,125,40,0.4)', scale: 1, embers: 3, tongues: 3, height: 0.78, spread: 0.16, bed: 0.5 },
-  30: { outer: '#ff5a15', mid: '#ff8a20', core: '#ffe08a', speed: 1.9, glow: '0 0 13px rgba(255,110,30,0.5)', scale: 1.14, embers: 4, tongues: 3, height: 0.84, spread: 0.21, bed: 0.58 },
-  60: { outer: '#ff4d10', mid: '#ff820e', core: '#ffe87e', speed: 1.65, glow: '0 0 16px rgba(255,95,25,0.56)', scale: 1.28, embers: 5, tongues: 4, height: 0.88, spread: 0.26, bed: 0.66 },
-  90: { outer: '#ff3d0a', mid: '#ff7a10', core: '#fff0a0', speed: 1.4, glow: '0 0 19px rgba(255,80,20,0.62)', scale: 1.42, embers: 6, tongues: 5, height: 0.92, spread: 0.31, bed: 0.74 },
-  180: { outer: '#ff2f05', mid: '#ffd23c', core: '#ffffff', speed: 1.15, glow: '0 0 24px rgba(255,90,20,0.72)', scale: 1.58, embers: 7, tongues: 6, height: 0.95, spread: 0.36, bed: 0.82 },
+  1: { outer: '#7a4e2a', mid: '#b87a3e', core: '#edcb9c', speed: 3.4, glow: 'none', scale: 0.6, embers: 0, flames: 1, spread: 0, height: 0.8 },
+  3: { outer: '#9a5f2e', mid: '#d8913f', core: '#f5da9e', speed: 2.9, glow: '0 0 4px rgba(216,145,63,0.25)', scale: 0.74, embers: 1, flames: 2, spread: 0.16, height: 0.83 },
+  7: { outer: '#e0641c', mid: '#ff9633', core: '#ffd79b', speed: 2.5, glow: '0 0 7px rgba(255,120,40,0.32)', scale: 0.88, embers: 2, flames: 3, spread: 0.24, height: 0.86 },
+  14: { outer: '#ff6a1f', mid: '#ffa02f', core: '#ffdf9f', speed: 2.2, glow: '0 0 10px rgba(255,125,40,0.4)', scale: 1, embers: 3, flames: 4, spread: 0.32, height: 0.88 },
+  30: { outer: '#ff5a15', mid: '#ff8a20', core: '#ffe08a', speed: 1.9, glow: '0 0 13px rgba(255,110,30,0.5)', scale: 1.14, embers: 4, flames: 5, spread: 0.4, height: 0.9 },
+  60: { outer: '#ff4d10', mid: '#ff820e', core: '#ffe87e', speed: 1.65, glow: '0 0 16px rgba(255,95,25,0.56)', scale: 1.28, embers: 5, flames: 6, spread: 0.48, height: 0.92 },
+  90: { outer: '#ff3d0a', mid: '#ff7a10', core: '#fff0a0', speed: 1.4, glow: '0 0 19px rgba(255,80,20,0.62)', scale: 1.42, embers: 6, flames: 7, spread: 0.56, height: 0.94 },
+  180: { outer: '#ff2f05', mid: '#ffd23c', core: '#ffffff', speed: 1.15, glow: '0 0 24px rgba(255,90,20,0.72)', scale: 1.58, embers: 7, flames: 8, spread: 0.64, height: 0.96 },
   // Past a year the core stops being orange. A fire that hot is blue at
   // the middle, and it is the first rung that looks like a different
   // substance rather than more of the same one.
-  365: { outer: '#ff2a00', mid: '#9fd8ff', core: '#ffffff', speed: 0.95, glow: '0 0 28px rgba(120,190,255,0.6)', scale: 1.74, embers: 9, tongues: 7, height: 0.97, spread: 0.41, bed: 0.9 },
-  500: { outer: '#ff1f00', mid: '#7fcaff', core: '#ffffff', speed: 0.85, glow: '0 0 34px rgba(120,190,255,0.7)', scale: 1.9, embers: 11, tongues: 8, height: 0.99, spread: 0.45, bed: 0.96 },
-  1000: { outer: '#ff1400', mid: '#cbb2ff', core: '#ffffff', speed: 0.75, glow: '0 0 42px rgba(180,150,255,0.75)', scale: 2.1, embers: 13, tongues: 9, height: 1, spread: 0.48, bed: 1 },
+  365: { outer: '#ff2a00', mid: '#9fd8ff', core: '#ffffff', speed: 0.95, glow: '0 0 28px rgba(120,190,255,0.6)', scale: 1.74, embers: 9, flames: 9, spread: 0.72, height: 0.98 },
+  500: { outer: '#ff1f00', mid: '#7fcaff', core: '#ffffff', speed: 0.85, glow: '0 0 34px rgba(120,190,255,0.7)', scale: 1.9, embers: 11, flames: 10, spread: 0.8, height: 0.99 },
+  1000: { outer: '#ff1400', mid: '#cbb2ff', core: '#ffffff', speed: 0.75, glow: '0 0 42px rgba(180,150,255,0.75)', scale: 2.1, embers: 13, flames: 11, spread: 0.88, height: 1 },
 }
 
-// The frame the geometry is drawn in. Taller than wide, because fire is.
-const W = 100
-const H = 128
-const FLOOR = 126
+// ============================================================
+// THE DRAWING.
+//
+// These three paths are the flame the app shipped with, kept
+// exactly as they were. Four generated replacements were tried
+// and every one of them was worse: triangles rooted in a floor,
+// a picket of candles, a fan of needles. The lesson is written
+// down rather than re-learned: a shape that reads as fire is
+// worth more than a system that computes one, and growth does
+// not require redrawing it.
+//
+// A bigger fire is MORE OF THIS FLAME. The rungs add copies,
+// standing behind and beside the main one, smaller, offset, and
+// each on its own clock, which is exactly how a real fire is
+// built out of individual flames.
+// ============================================================
 
-/** Half the width of what is alight at the bottom. */
-const bedHalf = (s: RungStyle) => 8 + 34 * s.bed
-/**
- * Half the width of ONE lick. Every layer derives from this, which is
- * what keeps a nine-tongue blaze made of nine slender tongues rather
- * than of one shape as wide as its own bed.
- */
-const tongueHalf = (s: RungStyle, count: number) => bedHalf(s) / (0.55 * count + 0.9)
+const FLAME_W = 24
+const FLAME_H = 32
+const OUTER_D =
+  'M12 0c1.4 5.4-2.2 7.6-4.6 10.6C5 13.6 3 16.6 3 20.4 3 26.2 7.2 32 12 32s9-5.8 9-11.6c0-4.4-2.6-7-5-10.2-1.2 1.6-2.4 2.6-3.4 2.6 1.2-3.6 1.2-8.6-.6-12.8Z'
+const MID_D =
+  'M12 8c1 3.6-1.4 5-3 7-1.6 2-3 4-3 6.6C6 25.6 8.8 29 12 29s6-3.4 6-7.4c0-3-1.8-4.8-3.4-6.8-.8 1-1.6 1.8-2.2 1.8.8-2.4.8-5.8-.4-8.6Z'
 
-/**
- * One tongue: up the left flank to a tip that leans, back down the right.
- * The control points pull inward near the top, which is what separates a
- * flame from a leaf.
- */
-function tongue(x: number, halfWidth: number, height: number, lean: number): string {
-  const tipX = x + lean
-  const tipY = FLOOR - height
-  return [
-    `M${(x - halfWidth).toFixed(1)} ${FLOOR}`,
-    `C${(x - halfWidth * 1.08).toFixed(1)} ${(FLOOR - height * 0.36).toFixed(1)}`,
-    `${(x - halfWidth * 0.62 + lean * 0.35).toFixed(1)} ${(FLOOR - height * 0.7).toFixed(1)}`,
-    `${tipX.toFixed(1)} ${tipY.toFixed(1)}`,
-    `C${(x + halfWidth * 0.62 + lean * 0.35).toFixed(1)} ${(FLOOR - height * 0.7).toFixed(1)}`,
-    `${(x + halfWidth * 1.08).toFixed(1)} ${(FLOOR - height * 0.36).toFixed(1)}`,
-    `${(x + halfWidth).toFixed(1)} ${FLOOR}`,
-    'Z',
-  ].join(' ')
-}
+/** How far the widest flame in this cluster sits from the middle. */
+const reach = (s: RungStyle) => s.spread * 8.5
 
 /**
- * The tongues of one layer.
+ * The flames behind the main one: alternating sides, further out, smaller
+ * and DIMMER as they go, and each one sunk a little lower than the last.
  *
- * The rule that makes this read as fire rather than as a comb: a tongue
- * gets NARROWER as the fire adds more of them. The bed widens, the count
- * climbs, and each individual lick stays slender, so nine tongues are
- * nine tongues instead of one slab with teeth on top. Heights are
- * jittered off the centre too, because a symmetric arch is a logo.
+ * The sinking is what stops it becoming a wedge. Rooted on one baseline,
+ * a row of flames shrinking as they fan out draws a filled triangle, and
+ * at the top rungs that is exactly what appeared: a flame standing on a
+ * red pyramid. Dropped and faded, the same copies read as depth behind
+ * the fire, which is what they are.
  */
-function tongues(
-  s: RungStyle,
-  count: number,
-  { depth, width, spread }: { depth: number; width: number; spread: number },
-) {
-  const half = tongueHalf(s, count) * width
-  const centre = (count - 1) / 2
-  const reach = Math.max(0, bedHalf(s) - half) * spread
-  return Array.from({ length: count }, (_, i) => {
-    // -1 on the far left, 0 in the middle, +1 on the far right.
-    const d = centre === 0 ? 0 : (i - centre) / centre
-    // The middle lick always runs full height; its neighbours do not, and
-    // that unevenness is most of what separates flame from decoration.
-    const jitter = Math.abs(i - centre) < 0.5 ? 1 : 0.68 + 0.3 * (((i * 37) % 7) / 6)
-    const height = H * s.height * depth * (1 - 0.34 * d * d) * jitter
-    // Outer licks lean away from the middle; a fire flares as it climbs.
-    const lean = d * (6 + 16 * s.spread)
-    return { d: tongue(W / 2 + d * reach, half, height, lean), i }
-  })
+function cluster(s: RungStyle, count: number) {
+  const out: { dx: number; dy: number; k: number; o: number; i: number }[] = []
+  for (let i = 1; i < count; i++) {
+    const rank = Math.ceil(i / 2)
+    const ranks = Math.ceil((count - 1) / 2)
+    const side = i % 2 === 0 ? 1 : -1
+    out.push({
+      dx: side * reach(s) * (rank / ranks),
+      dy: rank * 1.5,
+      k: 0.8 - 0.1 * rank,
+      o: Math.max(0.3, 0.92 - 0.11 * rank),
+      i,
+    })
+  }
+  return out
 }
 
 /** Seconds as a css duration. No two tongues may share one. */
@@ -243,12 +231,20 @@ export function Flame({
   // screen. Size is the honest signal for which one this is.
   const big = (alive ?? size >= 30) && !still
   const lit = big
-  const px = size * growth(s.scale, size)
+  const px = size * growth(s.scale, size) * s.height
 
-  // At 16px the ninth tongue is thinner than a pixel and still costs a
-  // keyframe. A chip burns the same fire with fewer of them.
-  const count = size >= 30 ? s.tongues : Math.min(3, s.tongues)
-  // Each tongue on its own clock. Nothing in the frame repeats together,
+  // Two caps, both about legibility rather than taste. At 16px the
+  // eleventh flame is thinner than a pixel and still costs a keyframe.
+  // And past eight copies the cluster stops reading as flames at all and
+  // starts filling in as a solid wedge behind the fire, so the top three
+  // rungs draw the same eight and earn their difference on the five axes
+  // that still move there: size, speed, core colour, embers and glow.
+  const count = Math.min(size >= 30 ? 8 : 3, s.flames)
+  const back = cluster(s, count)
+  // A wide fire is wider than it is tall, so the frame widens with it
+  // rather than shrinking the flames to fit a square.
+  const vw = FLAME_W + reach(s) * 2 + 6
+  // Each flame on its own clock. Nothing in the frame repeats together,
   // which is the entire difference between fire and a logo.
   const clock = (i: number) => (still ? undefined : `flame-crackle ${secs(s.speed * (0.58 + i * 0.117))} linear infinite`)
   const path = { transformBox: 'fill-box', transformOrigin: '50% 100%' } as const
@@ -257,7 +253,7 @@ export function Flame({
     <span
       className={`flame relative inline-block shrink-0 will-change-transform ${ignite && !still ? 'catch-fire' : ''}`}
       style={{
-        width: px,
+        width: (px * vw) / FLAME_H,
         height: px,
         filter: `drop-shadow(${s.glow.split(',')[0]})`,
         animation: still ? undefined : `flame-breathe ${s.speed}s ease-in-out infinite`,
@@ -269,34 +265,35 @@ export function Flame({
         className={`block h-full w-full ${lit ? 'flame-gutter' : ''}`}
         style={{ ['--gutter' as string]: secs(s.speed * 1.71) }}
       >
-        <svg viewBox={`0 0 ${W} ${H}`} className="h-full w-full">
-          {/* The bed: what is actually alight. Flat and low, so the
-              tongue roots merge into it instead of standing on a dome. */}
-          {s.bed > 0.32 && (
+        <svg viewBox={`0 0 ${vw} ${FLAME_H}`} className="h-full w-full">
+          {/* The fire behind the fire. Same flame, smaller, offset, and
+              on its own clock, so nothing in the frame moves together. */}
+          {back.map(({ dx, dy, k, o, i }) => (
+            // The placement lives on a wrapper, NOT on the path. A CSS
+            // transform (which is what the crackle animates) replaces the
+            // SVG transform attribute outright, so putting both on one
+            // element silently threw the offset and the scale away and
+            // stacked every background flame at full size on the main one.
+            <g
+              key={`b${i}`}
+              transform={`translate(${(vw / 2 - FLAME_W / 2 + dx).toFixed(2)} ${dy.toFixed(2)}) translate(12 32) scale(${k.toFixed(3)}) translate(-12 -32)`}
+            >
+              <path d={OUTER_D} fill={s.outer} opacity={o} style={{ ...path, animation: clock(i) }} />
+            </g>
+          ))}
+          <g transform={`translate(${(vw / 2 - FLAME_W / 2).toFixed(2)} 0)`}>
+            <path d={OUTER_D} fill={s.outer} style={{ ...path, animation: clock(0) }} />
+            <path d={MID_D} fill={s.mid} style={{ ...path, animation: clock(4) }} />
             <ellipse
-              cx={W / 2}
-              cy={FLOOR - 3}
-              rx={bedHalf(s) * 1.04}
-              ry={4 + s.bed * 5}
-              fill={s.outer}
+              cx="12"
+              cy="24.5"
+              rx="3.1"
+              ry="4.6"
+              fill={s.core}
+              opacity={0.92}
+              style={{ ...path, animation: still ? undefined : `flame-core ${secs(s.speed * 0.41)} ease-in-out infinite` }}
             />
-          )}
-          {tongues(s, count, { depth: 1, width: 1, spread: 1 }).map(({ d, i }) => (
-            <path key={`o${i}`} d={d} fill={s.outer} style={{ ...path, animation: clock(i) }} />
-          ))}
-          {/* The hotter inside: same licks, nested, so the body reads as
-              layered rather than as two shapes side by side. */}
-          {tongues(s, count, { depth: 0.62, width: 0.6, spread: 0.6 }).map(({ d, i }) => (
-            <path key={`m${i}`} d={d} fill={s.mid} style={{ ...path, animation: clock(i + 3) }} />
-          ))}
-          {/* The core: one short, hot lick over the hottest part of the
-              bed, sized off a single tongue rather than off the fire. */}
-          <path
-            d={tongue(W / 2, tongueHalf(s, count) * 0.85, H * s.height * 0.34, 0)}
-            fill={s.core}
-            opacity={0.94}
-            style={{ ...path, animation: still ? undefined : `flame-core ${secs(s.speed * 0.41)} ease-in-out infinite` }}
-          />
+          </g>
         </svg>
       </span>
       {lit && <Embers n={s.embers} color={s.core} spread={Math.max(1, px / 44)} />}

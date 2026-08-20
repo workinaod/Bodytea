@@ -49,22 +49,21 @@ describe('the flame ladder', () => {
     }
   })
 
-  it('burns more tongues as it climbs, because a blaze is not a big wisp', () => {
-    const tongues = FLAME_TIERS.map((t) => RUNG[t.from].tongues)
-    expect(tongues[0], 'day one is one wisp').toBe(1)
-    expect(tongues[tongues.length - 1]).toBeGreaterThanOrEqual(8)
-    for (let i = 1; i < tongues.length; i++) {
-      expect(tongues[i], `${FLAME_TIERS[i].name} burns fewer tongues than the rung below`).toBeGreaterThanOrEqual(
-        tongues[i - 1],
+  it('stands more flames as it climbs, because a blaze is a cluster', () => {
+    const flames = FLAME_TIERS.map((t) => RUNG[t.from].flames)
+    expect(flames[0], 'day one is one flame').toBe(1)
+    for (let i = 1; i < flames.length; i++) {
+      expect(flames[i], `${FLAME_TIERS[i].name} stands fewer flames than the rung below`).toBeGreaterThan(
+        flames[i - 1],
       )
     }
   })
 
-  it('widens its bed and grows taller at every step', () => {
-    const beds = FLAME_TIERS.map((t) => RUNG[t.from].bed)
+  it('spreads wider and stands taller at every step', () => {
+    const spreads = FLAME_TIERS.map((t) => RUNG[t.from].spread)
     const heights = FLAME_TIERS.map((t) => RUNG[t.from].height)
-    for (let i = 1; i < beds.length; i++) {
-      expect(beds[i]).toBeGreaterThan(beds[i - 1])
+    for (let i = 1; i < spreads.length; i++) {
+      expect(spreads[i]).toBeGreaterThan(spreads[i - 1])
       expect(heights[i]).toBeGreaterThan(heights[i - 1])
     }
   })
