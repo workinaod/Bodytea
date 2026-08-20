@@ -4,6 +4,7 @@ import { defaultWeekState, emptyAppData } from '../types'
 import { useAppStore } from '../store/appStore'
 import { finishSession, trimToday } from './actions'
 import { resolveDay } from '../engine/resolveDay'
+import { planWorkOutstanding } from '../engine/stats'
 import { logExtraWork, startCustomSession, startSession } from './sessionStart'
 
 // ============================================================
@@ -333,5 +334,100 @@ describe('logging extra work', () => {
     expect(
       logExtraWork(DATE, 'Something', [{ exerciseId: 'hollow-hold', sets: 1, repText: '30 sec' }]),
     ).toBeNull()
+  })
+})
+
+// ============================================================
+// A make-up must not eat the day it runs on.
+//
+// Reported from the live app, the third time this rule was
+// broken: "why is my days session still closed like i did it. It
+// shouldnt be, the extra workout i did should be added on top of
+// it but it shouldnt close until ive done it." Running Monday's
+// missed workout on a Thursday assigned straight over Thursday's
+// session, so Thursday's own workout was replaced by Monday's and
+// finishing it closed the day on a workout nobody had done.
+// ============================================================
+
+describe('running a previous day today', () => {
+  it('adds to the day instead of replacing it, and keeps what was already logged', () => {
+    // Something logged this morning, before the make-up was run.
+    logExtraWork(DATE, 'Morning abs', [{ exerciseId: 'hollow-hold', sets: 3, repText: '30 sec' }])
+    const before = useAppStore.getState().data.sessions[DATE]
+    const plannedCount = before.exercises.length
+    expect(before.exercises.some((e) => e.exerciseId === 'hollow-hold')).toBe(true)
+
+    startSession(DATE, undefined, 'full', '2026-08-10')
+
+    const after = useAppStore.getState().data.sessions[DATE]
+    expect(after.exercises.some((e) => e.exerciseId === 'hollow-hold'), 'the morning work was destroyed').toBe(true)
+    expect(after.exercises.length).toBeGreaterThanOrEqual(plannedCount)
+    expect(after.makeupFor).toBe('2026-08-10')
+  })
+
+  it('re-opens a finished day, because starting work is not the same as logging it', () => {
+    logExtraWork(SUNDAY, 'Sunday circuit', [{ exerciseId: 'push-up', sets: 3, repText: '10', repsNum: 10 }])
+    expect(useAppStore.getState().data.sessions[SUNDAY].endedAt, 'the fixture needs a finished day').toBeTruthy()
+
+    startSession(SUNDAY, undefined, 'full', DATE)
+
+    const after = useAppStore.getState().data.sessions[SUNDAY]
+    expect(after.endedAt, 'a day the athlete just started training is not over').toBeUndefined()
+    expect(after.status).toBe('partial')
+    // And the finished work is still on it.
+    expect(after.exercises.some((e) => e.exerciseId === 'push-up')).toBe(true)
+  })
+
+  it('leaves the first run\'s readiness answers alone', () => {
+    startSession(DATE, [true, true, false, false], 'full')
+    startSession(DATE, [false, false, false, false], 'full', '2026-08-10')
+    const after = useAppStore.getState().data.sessions[DATE]
+    expect(after.readiness?.downgraded, 'the second run overwrote the first answers').toBe(true)
+  })
+})
+
+describe('what the plan still owes the day', () => {
+  it('owes everything when nothing has been logged', () => {
+    const day = resolveDay(DATE, useAppStore.getState().data)
+    expect(planWorkOutstanding(day.exercises, undefined)).toEqual(day.exercises.map((e) => e.exerciseId))
+  })
+
+  it('owes nothing once today\'s own session is on the day', () => {
+    const day = resolveDay(DATE, useAppStore.getState().data)
+    startSession(DATE)
+    expect(planWorkOutstanding(day.exercises, useAppStore.getState().data.sessions[DATE])).toEqual([])
+  })
+
+  it('still owes today after a make-up of another day', () => {
+    // THE REPORT: Monday's workout run on Tuesday, finished, and Tuesday
+    // read as done. The plan's own movements are what decides that.
+    const day = resolveDay(DATE, useAppStore.getState().data)
+    startSession(DATE, undefined, 'full', '2026-08-10')
+    // Actually DO the make-up, the way the report did: a session finished
+    // with nothing ticked records as skipped, which is a different day.
+    useAppStore.getState().update((d) => {
+      for (const ex of d.sessions[DATE].exercises) for (const set of ex.sets) set.done = true
+    })
+    finishSession(DATE)
+    const session = useAppStore.getState().data.sessions[DATE]
+    expect(session.status, 'the fixture needs a completed session').not.toBe('skipped')
+    expect(session.endedAt, 'the fixture needs a finished session').toBeTruthy()
+    expect(planWorkOutstanding(day.exercises, session).length, 'the day claimed to be done').toBeGreaterThan(0)
+  })
+
+  it('still owes today after an off-plan workout is logged on a rest day slot', () => {
+    const day = resolveDay(DATE, useAppStore.getState().data)
+    // An off-plan log on a scheduled day seeds the plan first, so nothing
+    // is owed; the same log where the plan is empty owes nothing either.
+    logExtraWork(DATE, 'Pickup game', [{ exerciseId: 'hollow-hold', sets: 3, repText: '30 sec' }])
+    expect(planWorkOutstanding(day.exercises, useAppStore.getState().data.sessions[DATE])).toEqual([])
+  })
+
+  it('owes nothing on a day that was deliberately skipped', () => {
+    const day = resolveDay(DATE, useAppStore.getState().data)
+    useAppStore.getState().update((d) => {
+      d.sessions[DATE] = { date: DATE, templateId: 'tuesday', status: 'skipped', exercises: [] }
+    })
+    expect(planWorkOutstanding(day.exercises, useAppStore.getState().data.sessions[DATE])).toEqual([])
   })
 })

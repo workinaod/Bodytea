@@ -150,6 +150,30 @@ export function sessionSetsDone(session: SessionLog): { done: number; total: num
   return { done, total }
 }
 
+/**
+ * Movements today's plan asked for that are not on the day's session yet.
+ *
+ * A date holds one SessionLog, so whatever runs first owns the slot, and
+ * "is there a session?" stopped being the same question as "has the plan's
+ * work been done?" the moment a make-up or an off-plan workout could be the
+ * thing occupying it. Run Monday's missed lower day on a Thursday and
+ * Thursday's own session is not started, it is merely unreachable, because
+ * the screen only offered Start while the day had no session at all.
+ *
+ * Derived, never stored: the plan's movements for the day against the ones
+ * on the log. An empty answer means the day's work is on the record, done
+ * or not, and nothing more is owed.
+ */
+export function planWorkOutstanding(
+  planned: { exerciseId: string }[],
+  session: SessionLog | undefined,
+): string[] {
+  if (!session) return planned.map((p) => p.exerciseId)
+  if (session.status === 'skipped') return []
+  const on = new Set(session.exercises.map((e) => e.exerciseId))
+  return planned.map((p) => p.exerciseId).filter((id) => !on.has(id))
+}
+
 // ---------- Session grades ----------
 // "Partial" says nothing. Grades say how the day actually went, measured
 // against the session as it was started (post-intensity): extremely light

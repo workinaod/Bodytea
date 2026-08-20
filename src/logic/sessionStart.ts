@@ -76,6 +76,57 @@ function setsFor(
   }))
 }
 
+/**
+ * Put a freshly built session onto the day WITHOUT destroying what is
+ * already on it.
+ *
+ * Both doors reach this. The custom path was fixed to append first, but
+ * `startSession` was left assigning straight over `d.sessions[date]`, and
+ * that is the door a make-up comes through: run Monday's missed workout on
+ * a Thursday and Thursday's own session was replaced by Monday's, along
+ * with anything already logged that morning. The owner found it the same
+ * way as the first one, from the app: "why is my days session still closed
+ * like i did it."
+ *
+ * `reopen` is the whole difference between LOGGING work and STARTING it.
+ * Recording something that already happened never changes whether the day
+ * is over. Starting a workout does: a finished day the athlete then starts
+ * training again is a day back in progress, and that is a deliberate tap,
+ * not a side effect.
+ */
+function putOnDay(date: ISODate, skeleton: SessionLog, opts: { reopen: boolean }): void {
+  store().update((d) => {
+    const existing = d.sessions[date]
+    if (!existing || existing.status === 'skipped') {
+      // A skipped day that somebody then trains anyway is a day they
+      // trained; the skip was the plan for it, not the record of it.
+      d.sessions[date] = skeleton
+      return
+    }
+
+    // Same movement twice in a day merges its sets into the entry that is
+    // already there. Two entries for one exercise would read as two to the
+    // session view and as one to the day recap, which keys by exercise id,
+    // and the second would quietly vanish from the record.
+    for (const add of skeleton.exercises) {
+      const found = existing.exercises.find((e) => e.exerciseId === add.exerciseId)
+      if (found) found.sets.push(...add.sets)
+      else existing.exercises.push(add)
+    }
+
+    if (!opts.reopen) return
+    delete existing.endedAt
+    existing.status = 'partial'
+    // Everything the day already recorded about itself outranks the new
+    // run's blanks: the first readiness answers, the first make-up link,
+    // the clock it started on.
+    existing.startedAt = existing.startedAt ?? skeleton.startedAt
+    existing.readiness = existing.readiness ?? skeleton.readiness
+    existing.makeupFor = existing.makeupFor ?? skeleton.makeupFor
+    existing.intensity = existing.intensity ?? skeleton.intensity
+  })
+}
+
 export function startSession(
   date: ISODate,
   readinessFlags?: [boolean, boolean, boolean, boolean],
@@ -118,9 +169,7 @@ export function startSession(
       sets: setsFor(date, r),
     })),
   }
-  store().update((d) => {
-    d.sessions[date] = skeleton
-  })
+  putOnDay(date, skeleton, { reopen: true })
 }
 
 // ---------- Off-plan sessions ----------
@@ -202,30 +251,11 @@ export function startCustomSession(
       return { exerciseId: item.exerciseId, sets }
     }),
   }
-  store().update((d) => {
-    const existing = d.sessions[date]
-    if (!existing || existing.status === 'skipped') {
-      // A skipped day that somebody then trains anyway is a day they
-      // trained; the skip was the plan for it, not the record of it.
-      d.sessions[date] = skeleton
-      return
-    }
-
-    // Same movement twice in a day merges its sets into the entry that
-    // is already there. Two entries for one exercise would read as two
-    // to the session view and as one to the day recap, which keys by
-    // exercise id, and the second would quietly vanish from the record.
-    for (const add of skeleton.exercises) {
-      const found = existing.exercises.find((e) => e.exerciseId === add.exerciseId)
-      if (found) found.sets.push(...add.sets)
-      else existing.exercises.push(add)
-    }
-
-    // Whether the day is OVER is deliberately left alone here. A day
-    // mid-session stays mid-session, a finished day stays finished.
-    // Recording work that happened is not a statement about the rest of
-    // the day, and logExtraWork below is what refreshes the debrief.
-  })
+  // Whether the day is OVER is deliberately left alone. A day mid-session
+  // stays mid-session, a finished day stays finished: recording work that
+  // happened is not a statement about the rest of the day, and
+  // logExtraWork below is what refreshes the debrief.
+  putOnDay(date, skeleton, { reopen: false })
 }
 
 /**

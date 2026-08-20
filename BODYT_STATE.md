@@ -5,7 +5,7 @@ briefing and your handoff. It exists because four sessions once ran without one 
 owner had to commission a full forensic audit to find out where the project stood.
 Do not let that happen again.
 
-Last updated: 2026-08-19 (J7 nutrition slice 2a: the calorie target can change after signup; OP5 extra-work data-loss fix; OP6 extra work never ends the day or spends the plan's session; OP7 period reviews for week, month, quarter and year)
+Last updated: 2026-08-20 (J7 nutrition slice 2a: the calorie target can change after signup; OP5/OP6/OP8 the one rule, three doors: work added to a day never ends it or spends the plan's session; OP7 period reviews for week, month, quarter and year)
 Living dashboard (rendered copy of this plan):
 https://claude.ai/code/artifact/9c3f6836-93c6-43a2-af69-04c9d31d952e
 
@@ -279,6 +279,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP5 | Extra work adds to the day instead of replacing it (owner bug report): append not overwrite, day stays open to 3am, one day one debrief | product | **done + LIVE 2026-08-19** (deploy 1450838) | OP1 | off-plan training session |
 | OP6 | Extra work never ends the day and never spends the plan's session (owner bug report, the same one twice): logExtraWork seeds the scheduled workout and adds inside it, the door stays open mid-session, a debrief only comes from a day that is over | product | **done + LIVE 2026-08-19** (deploy 316976c, live bundle verified byte-identical by sha256) | OP5 | off-plan training session |
 | OP7 | Period reviews (owner request): a Wrapped-style review when a week, month, quarter or year closes, with progression, highlights, goals accomplished and a cohort comparison; the week always asks for front and side photos, the quarter and year show the first photo next to the latest | product | **done + LIVE 2026-08-20** (deploy 9a70b5d, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
+| OP8 | A make-up never eats the day it runs on (owner bug report, the third door): startSession merges instead of overwriting, and Today offers the day's own session while the plan's work is still owed | product | **done 2026-08-20** | OP6 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1544,6 +1545,48 @@ the pre-existing plans that genuinely have no record of what built them.
   Shipped at deploy `9a70b5d`, live bundle verified byte-identical by sha256.
   NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads. C1 is now
   also what unblocks a real cohort.
+- **2026-08-20 · OP8 · Off-plan training session (owner bug report, the third door on the same
+  rule).** Screenshot: a day headed "Acceleration + Two-Foot Power + Lower" reading **"Full
+  session on a downgraded day. Honestly logged. Make-up for Monday, Aug 17."** The owner:
+  "why is my days session still closed like i did it. It shouldnt be, the extra workout i did
+  should be added on top of it but it shouldnt close until ive done it."
+  OP5 fixed the custom path and OP6 fixed the extra-work path. **`startSession` was left as a
+  plain overwrite**, and that is the door a make-up comes through: `d.sessions[date] =
+  skeleton` with the MISSED day's exercises. Run Monday's workout on a Thursday and Thursday's
+  own session was replaced by Monday's, anything logged that morning was destroyed, and
+  finishing it closed the day on a workout nobody had done. Same defect, third door.
+  Two halves, because fixing the overwrite alone would not have been enough:
+  (1) **One merge, shared.** `putOnDay` in `logic/sessionStart.ts` is now the only way a
+  session reaches a date, used by both `startSession` and `startCustomSession`, so the two
+  can never drift again. Its `reopen` flag is the whole difference between LOGGING work and
+  STARTING it: recording something that already happened never changes whether the day is
+  over (OP6's rule), while starting a workout does, because that is a deliberate tap.
+  (2) **"Is there a session?" stopped being the same question as "has the plan's work been
+  done?"** the moment a make-up or an off-plan workout could occupy the slot, and Today was
+  still asking the first one: `{today && !session && ...}` gated the Start button, so the
+  day's own workout was not merely mislabelled, it was **unreachable**.
+  `engine/stats.ts planWorkOutstanding` answers the right question, derived and never stored:
+  the plan's movements for the day against the ones on the log. Today offers the day's own
+  session while anything is owed, whatever state the session is in, and the finished card
+  stops claiming the day is over ("That was not today's workout though. X is still on the
+  table").
+  PROOF THE GUARDS BITE (owner rule): restoring the overwrite failed 3 tests; making
+  `planWorkOutstanding` return [] whenever a session exists failed 1; putting the old
+  `!session` gate back failed the new e2e, which drives the report end to end (skip
+  Wednesday, run its workout on Thursday, finish it, and Thursday's own session must still
+  be on the table). A test I wrote first was wrong rather than the code: it finished a
+  make-up with nothing ticked, which `finalStatus` correctly records as **skipped**, and a
+  skipped day owes nothing. The fixture now does the work the report described.
+  Found on the way: `QuitGate` was a modal with no role, so nothing could address it. It is
+  a labelled dialog now.
+  Structure: TodayScreen went over the 600 cap again, so the finished-day card moved out
+  whole to `screens/today/DayDoneCard.tsx`. No allowance added; the file came DOWN 585 -> 562.
+  Validation: typecheck clean, **1,605/1,605 unit** (8 new), build green, **e2e 89 passed /
+  0 failed** (1 new).
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+  STILL TRUE: a date holds ONE SessionLog. Three doors have now been taught not to destroy
+  what is on it, and the day's own work is reachable again, but "two separate sessions on one
+  day, each with its own grade" is still not representable. That is a data-model job.
 
 ### 2026-08-19 · J7 nutrition slice 2b · the numbers scale to the body
   TWO FLAT CONSTANTS, same defect as bodyweight-times-fifteen: a number that was one

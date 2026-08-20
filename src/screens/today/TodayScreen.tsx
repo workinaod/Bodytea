@@ -13,12 +13,13 @@ import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
 import { chooseCardio, finishSession, reopenSession, restoreToday, swapExercise, toggleCnsSwap } from '../../logic/actions'
 import { startSession } from '../../logic/sessionStart'
-import { sessionGrade } from '../../engine/stats'
+import { planWorkOutstanding } from '../../engine/stats'
 import { briefForDay, briefForSession } from '../../engine/workoutBrief'
 import { streakDays } from '../../engine/streak'
 import { quitCopy } from '../../engine/quit'
 import { AdaptProposals } from './AdaptProposals'
 import { ExtraTraining } from './ExtraTraining'
+import { DayDoneCard } from './DayDoneCard'
 import { ReviewOffer } from './ReviewOffer'
 import { QuitGate } from './QuitGate'
 import { WorkoutBriefSheet } from './WorkoutBriefSheet'
@@ -93,6 +94,10 @@ export function TodayScreen() {
   const finished = session && (session.endedAt || session.status === 'completed' || session.status === 'downgraded-completed')
   const skipped = session?.status === 'skipped'
   const today = date === homeDate
+  // What the plan asked for today that is not on the day's log yet. Empty
+  // means today's own workout is on the record; anything in it means the
+  // day still owes work however finished the session looks.
+  const planOwed = planWorkOutstanding(day.exercises, session)
 
   const restCard = useMemo(() => {
     if (day.kind !== 'rest') return null
@@ -200,11 +205,16 @@ export function TodayScreen() {
         </p>
       </div>
 
-      {/* Actions live at the top, no reaching past the list to start */}
-      {today && !session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
+      {/* Actions live at the top, no reaching past the list to start.
+          The gate is whether the PLAN's work is still owed, not whether the
+          day happens to hold a session: a make-up or an off-plan workout
+          takes the day's one session slot, and "there is a session" used to
+          be read as "today's workout is done", which closed the day on a
+          workout nobody had done. */}
+      {today && !inProgress && !skipped && planOwed.length > 0 && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
         <div className="flex gap-2 pt-0.5">
           <Btn className="flex-[2]" onClick={handleStart}>
-            {day.cns ? 'Readiness check → start' : 'Start session'}
+            {day.cns ? 'Readiness check → start' : session ? "Start today's session" : 'Start session'}
           </Btn>
           <Btn kind="ghost" className="flex-1" onClick={() => setSkipOpen(true)}>
             Can't train
@@ -359,50 +369,17 @@ export function TodayScreen() {
         </Card>
       )}
 
-      {finished && !skipped && (() => {
-        const grade = sessionGrade(session!)
-        const strong = grade === 'full' || grade === 'overtime'
-        const line =
-          grade === 'overtime'
-            ? 'Overtime. More than the plan asked. Logged.'
-            : grade === 'full'
-              ? session!.status === 'downgraded-completed'
-                ? 'Full session on a downgraded day. Honestly logged.'
-                : 'Session complete.'
-              : grade === 'half'
-                ? 'Half session logged.'
-                : grade === 'light'
-                  ? 'Light day logged.'
-                  : 'Extremely light. Barely on the board, but on it.'
-        return (
-          <Card className={strong ? 'border-lime/30' : 'border-gold/30'}>
-            <p className={`text-[14px] font-bold ${strong ? 'text-lime' : 'text-gold'}`}>{line}</p>
-            {session!.makeupFor && (
-              <p className="mt-0.5 text-[11.5px] text-ink-faint">
-                Make-up for {formatDayLabel(session!.makeupFor)}. The week stays whole.
-              </p>
-            )}
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-              {session!.status === 'partial' && today && (
-                <button
-                  className="text-[12.5px] font-semibold text-cyan underline"
-                  onClick={() => reopenSession(date)}
-                >
-                  ↩ Re-open the session
-                </button>
-              )}
-              {pastDebrief && (
-                <button
-                  className="text-[12.5px] font-semibold text-cyan underline"
-                  onClick={() => setDebrief({ data: pastDebrief })}
-                >
-                  Re-open the debrief
-                </button>
-              )}
-            </div>
-          </Card>
-        )
-      })()}
+      {finished && !skipped && (
+        <DayDoneCard
+          session={session!}
+          date={date}
+          today={today}
+          owedTitle={planOwed.length > 0 ? viewDay.title : null}
+          pastDebrief={pastDebrief}
+          onReopenSession={reopenSession}
+          onOpenDebrief={(d) => setDebrief({ data: d })}
+        />
+      )}
 
       {inProgress && viewMode === 'focus' && (
         <FocusView

@@ -21,7 +21,12 @@ export function QuitGate({
   onGo: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center px-6">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="End session?"
+      className="fixed inset-0 z-[80] flex items-center justify-center px-6"
+    >
       <div className="absolute inset-0 bg-black/70 animate-fade-in" onClick={onStay} />
       <div className="relative w-full max-w-sm rounded-2xl border border-danger/40 bg-bg p-5 shadow-2xl animate-fade-in">
         <h3 className="text-[17px] font-black tracking-tight text-danger">{quit.title}</h3>
