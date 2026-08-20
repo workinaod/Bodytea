@@ -29,6 +29,7 @@ import { ReadinessSheet } from './ReadinessSheet'
 import { IntensitySheet } from './IntensitySheet'
 import { SkipFlow } from './SkipFlow'
 import { DebriefSheet } from './DebriefSheet'
+import { FinishChain, buildFinishChain, type ChainData } from './FinishChain'
 import { ExerciseGuideSheet } from './ExerciseGuideSheet'
 import { CardioSheet } from './CardioSheet'
 
@@ -50,6 +51,12 @@ export function TodayScreen({
   const [viewMode, setViewMode] = useState<'focus' | 'list'>('focus')
   const [guideId, setGuideId] = useState<string | null>(null)
   const [debrief, setDebrief] = useState<{ data: DebriefData; coachLine?: string } | null>(null)
+  // The ceremony holds the debrief it is on its way to, so the sheet
+  // opens the moment the chain ends and never before.
+  const [chain, setChain] = useState<{
+    beats: ChainData
+    then: { data: DebriefData; coachLine?: string }
+  } | null>(null)
   const [cardioOpen, setCardioOpen] = useState(false)
   const [briefOpen, setBriefOpen] = useState(false)
   const [remindNudgeGone, setRemindNudgeGone] = useState(() => {
@@ -109,9 +116,16 @@ export function TodayScreen({
 
   function handleFinish() {
     setConfirmEnd(false)
+    // Held across the write so the ceremony can say what CHANGED rather
+    // than what is true. The store clones on update, so this stays put.
+    const before = useAppStore.getState().data
     const d = finishSession(date)
-    const line = useAppStore.getState().data.coach.feed.find((f) => f.kind === 'coach' && f.situation === 'pr')
-    setDebrief({ data: d, coachLine: line && line.at.slice(0, 10) === todayISO() ? line.text : undefined })
+    const after = useAppStore.getState().data
+    const line = after.coach.feed.find((f) => f.kind === 'coach' && f.situation === 'pr')
+    const then = { data: d, coachLine: line && line.at.slice(0, 10) === todayISO() ? line.text : undefined }
+    const beats = buildFinishChain(before, after, date)
+    if (beats) setChain({ beats, then })
+    else setDebrief(then)
   }
 
   // A finish tap with work still on the table needs a real yes, one
@@ -390,6 +404,15 @@ export function TodayScreen({
           day={day}
           onCancel={() => setSkipOpen(false)}
           onDone={() => setSkipOpen(false)}
+        />
+      )}
+      {chain && (
+        <FinishChain
+          chain={chain.beats}
+          onDone={() => {
+            setDebrief(chain.then)
+            setChain(null)
+          }}
         />
       )}
       <DebriefSheet debrief={debrief?.data ?? null} coachLine={debrief?.coachLine} onClose={() => setDebrief(null)} />

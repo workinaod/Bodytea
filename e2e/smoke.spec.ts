@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { finishToDebrief } from './util'
 
 // One serial journey through the core loop, each step depends on the last.
 test.describe.configure({ mode: 'serial' })
@@ -88,7 +89,8 @@ test('full core loop: onboard-generate → session → meals → debrief → exp
     // sets are still open, so the quit confirmation must intercept
     await expect(page.getByText('Stop here?')).toBeVisible()
     await page.getByRole('button', { name: /^Stop, I'm done at/ }).click()
-    await expect(page.getByText('Session debrief')).toBeVisible()
+    // The finish chain plays between the last set and the sheet
+    await finishToDebrief(page)
     await expect(page.getByText('Eat now')).toBeVisible()
     await expect(page.getByRole('heading', { name: /Sleep/ })).toBeVisible()
     await page.getByRole('button', { name: 'Done', exact: true }).click()

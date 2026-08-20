@@ -260,6 +260,36 @@
   animation: bt-flicker 520ms var(--ease-out);
 }
 
+/* The flame catching, at the one moment it grows: pull back, flare
+   past the target, settle. `.flicker` is the same idea for a number
+   that ticked; this one is for the fire itself, so it charges first.
+   Anticipation is what separates a celebration from a flash. */
+@keyframes bt-ignite {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  18% {
+    transform: scale(0.86);
+    filter: brightness(0.5);
+  }
+  42% {
+    transform: scale(1.22);
+    filter: brightness(1.5);
+  }
+  68% {
+    transform: scale(0.98);
+    filter: brightness(1.15);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+.ignite {
+  animation: bt-ignite 760ms var(--ease-hit) both;
+}
+
 /* Progress rings and bars drain/fill rather than jumping. */
 .sweep {
   transition: stroke-dashoffset var(--dur-slow) var(--ease-out);
@@ -505,6 +535,7 @@
   .flip-x,
   .flip-y,
   .drop,
+  .ignite,
   .shockwave {
     animation: none !important;
   }

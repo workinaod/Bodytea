@@ -281,6 +281,18 @@ export const FLAME_TIERS: FlameTier[] = [
 ]
 
 
+/**
+ * The next rung and how far away it is, which is the only part of a
+ * streak that pulls: a number with nothing above it is a scoreboard,
+ * a number two days short of a name is a reason to show up.
+ *
+ * Null at the top of the ladder. A thousand days needs no carrot.
+ */
+export function nextFlameTier(streak: number): { tier: FlameTier; daysAway: number } | null {
+  const next = FLAME_TIERS.find((t) => t.from > streak)
+  return next ? { tier: next, daysAway: next.from - streak } : null
+}
+
 export function flameFor(streak: number): FlameTier | null {
   if (streak < FLAME_MIN) return null
   let out = FLAME_TIERS[0]

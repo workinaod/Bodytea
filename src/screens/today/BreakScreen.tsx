@@ -8,7 +8,7 @@ import { MuscleMap } from '../../components/MuscleMap'
 import { demoFor } from '../../plan/demos'
 import { photosFor } from '../../plan/demoPhotos'
 import { musclesFor } from '../../plan/muscles'
-import { buzzRestOver } from '../../platform/haptics'
+import { buzzRestOver, tapConfirm } from '../../platform/haptics'
 
 /** What the rest screen needs to know about the gap it is filling. */
 export interface BreakState {
@@ -79,6 +79,16 @@ export function BreakScreen({
 
   // Short and factual, the next gate handles weight + ready
   useEffect(() => {
+    // This screen exists because a set was just logged, so its arrival IS
+    // the confirmation of that set. The tick lives here rather than in the
+    // logger for a boring reason: FocusView is one line under its cap and
+    // this is the same instant. A superset with no rest gets no tick, which
+    // is the honest cost of not raising an allowance to buy one.
+    try {
+      tapConfirm()
+    } catch {
+      /* no vibration */
+    }
     if (mode === 'voice') say(`Rest. Next: ${brk.nextName}, ${brk.nextSetLabel}.`)
     else if (mode === 'beeps-names') say(brk.nextName)
     // eslint-disable-next-line react-hooks/exhaustive-deps
