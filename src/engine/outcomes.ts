@@ -145,6 +145,24 @@ export function settleDue(data: AppData, today: ISODate): number {
  */
 export const VERDICT_VISIBLE_DAYS = 7
 
+/**
+ * Did the last thing we tried on this target make it worse.
+ *
+ * Its own question because a rule that is about to propose more of the
+ * same needs to know. Without it the screen said, in two cards at once,
+ * "that did not help, back to where you were is a fair call" and "about
+ * 250 kcal a day less would put you back in it".
+ */
+export function lastAttemptBackfired(data: AppData, target: string, today: ISODate): boolean {
+  const judged = (data.decisions ?? []).filter(
+    (d) => d.target === target && d.verdict !== undefined && d.windowClosesAt !== undefined,
+  )
+  const last = judged[judged.length - 1]
+  if (!last?.windowClosesAt) return false
+  const age = daysBetween(last.windowClosesAt, today)
+  return last.verdict === 'worse' && age >= 0 && age <= VERDICT_VISIBLE_DAYS
+}
+
 /** The verdict worth showing today, if there is one. */
 export function freshVerdict(data: AppData, today: ISODate): DecisionRecord | null {
   const fresh = (data.decisions ?? []).filter(

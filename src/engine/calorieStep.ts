@@ -3,6 +3,7 @@ import { bodyweightHeuristicKcal, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal } f
 import { MAX_DEFICIT, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
 import { addDaysISO } from './calendar'
 import { decisionRow, offerPolicy } from './decisions'
+import { lastAttemptBackfired } from './outcomes'
 import { KCAL_PER_LB_TISSUE, weeklyGainRangeLb, weeklyLossRangeLb } from '../plan/sportsNutrition'
 import { learnedMaintenance } from './maintenanceLearned'
 import { nutritionInputsNow } from './nutritionRecheck'
@@ -111,6 +112,13 @@ export function calorieStep(data: AppData, today: ISODate): CalorieStep | null {
   // Without this the same athlete saw both cards at once: add 150 to 200
   // kcal from one, take 250 away from the other.
   if (kcalBumpSuggestion(data)) return null
+
+  // The last change on this target was judged and it made things worse.
+  // Proposing more of the same, in the same breath as a card saying "back
+  // to where you were is a fair call", is the app arguing with itself.
+  // Stand down and let the revert stand; R3 escalates on failure rather
+  // than repeating.
+  if (lastAttemptBackfired(data, STEP_TARGET, today)) return null
 
   const trend = weightTrend(data, today)
   // A trend the app knows is distorted is not evidence. Creatine pulls

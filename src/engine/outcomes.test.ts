@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData } from '../types'
-import { STEP_METRIC, STEP_TYPE, STEP_WINDOW_DAYS } from './calorieStep'
+import { STEP_METRIC, STEP_TYPE, STEP_WINDOW_DAYS, calorieStep } from './calorieStep'
 import { addDaysISO } from './calendar'
 import { appendDecision, decisionRow } from './decisions'
-import { MEANINGFUL_TREND_DELTA, VERDICT_VISIBLE_DAYS, dueForVerdict, freshVerdict, judge, settleDue, verdictCopy } from './outcomes'
+import { MEANINGFUL_TREND_DELTA, VERDICT_VISIBLE_DAYS, dueForVerdict, freshVerdict, judge, lastAttemptBackfired, settleDue, verdictCopy } from './outcomes'
 
 // ============================================================
 // R3's fourth rule is the one this file is really about: if no
@@ -170,12 +170,26 @@ describe('settling', () => {
 
 describe('a verdict does not live on the screen forever', () => {
   it('shows while it is news and expires on its own', () => {
+    // Day counts as LITERALS. Written against VERDICT_VISIBLE_DAYS the
+    // assertion moves with the constant and passes at any value, which is
+    // how a probe set it to 999 and this test stayed green. Fourth guard
+    // of that exact shape this session.
     const d = accepted(scale(account(), 190, -1), -0.3)
     settleDue(d, TODAY)
+    expect(VERDICT_VISIBLE_DAYS).toBe(7)
     expect(freshVerdict(d, TODAY)).not.toBeNull()
-    expect(freshVerdict(d, addDaysISO(TODAY, VERDICT_VISIBLE_DAYS))).not.toBeNull()
+    expect(freshVerdict(d, addDaysISO(TODAY, 7))).not.toBeNull()
     // a week later it is history rather than news
-    expect(freshVerdict(d, addDaysISO(TODAY, VERDICT_VISIBLE_DAYS + 1))).toBeNull()
+    expect(freshVerdict(d, addDaysISO(TODAY, 8))).toBeNull()
+    expect(freshVerdict(d, addDaysISO(TODAY, 30))).toBeNull()
+  })
+
+  it('keeps the pre-registered identifiers stable, because old rows are read by them', () => {
+    // A metric id that changes silently orphans every row written under
+    // the old one: judge() looks for its own metric and finds nothing, so
+    // the intervention is never graded and never says why.
+    expect(STEP_METRIC).toBe('trendLbPerWeek')
+    expect(STEP_WINDOW_DAYS).toBe(21)
   })
 
   it('never surfaces one with nothing to say', () => {
@@ -198,5 +212,51 @@ describe('a verdict does not live on the screen forever', () => {
     })
     settleDue(d, TODAY)
     expect(verdictCopy(freshVerdict(d, TODAY)!)).toContain('250')
+  })
+})
+
+describe('the app does not argue with itself', () => {
+  /** A step that was accepted, judged, and made things worse. */
+  function backfired(): AppData {
+    const d = account()
+    d.profile = { bfFormula: 'male', heightIn: 70, age: 30 }
+    d.plan.nutrition = { kcalTraining: 2450, kcalRest: 2150 }
+    // the cut is going the wrong way since the change
+    for (let i = 0; i < 4; i++) {
+      d.measurements.push({ date: addDaysISO(TODAY, -((3 - i) * 7)), weightLb: 190 + i * 0.8, photoIds: {} })
+    }
+    accepted(d, -0.3)
+    settleDue(d, TODAY)
+    return d
+  }
+
+  it('a verdict of worse stands down the rule that would repeat it', () => {
+    // Both cards used to render at once: "that did not help, back to
+    // where you were is a fair call" beside "about 250 kcal a day less
+    // would put you back in it". Same screen, same number, opposite
+    // directions.
+    const d = backfired()
+    expect(d.decisions[0].verdict).toBe('worse')
+    expect(verdictCopy(d.decisions[0])).toContain('did not help')
+    expect(calorieStep(d, TODAY)).toBeNull()
+  })
+
+  it('and starts offering again once that feedback is old news', () => {
+    // Standing down is not giving up. Past the window the verdict stops
+    // being on screen, so there is nothing left to contradict.
+    const d = backfired()
+    const later = addDaysISO(TODAY, VERDICT_VISIBLE_DAYS + 1)
+    for (let i = 1; i <= 3; i++) {
+      d.measurements.push({ date: addDaysISO(later, -((3 - i) * 7)), weightLb: 193 + i * 0.8, photoIds: {} })
+    }
+    expect(freshVerdict(d, later)).toBeNull()
+    expect(calorieStep(d, later)).not.toBeNull()
+  })
+
+  it('a verdict of worked does not stand anything down', () => {
+    const d = accepted(scale(account(), 190, -1), -0.3)
+    settleDue(d, TODAY)
+    expect(d.decisions[0].verdict).toBe('worked')
+    expect(lastAttemptBackfired(d, 'kcalTraining', TODAY)).toBe(false)
   })
 })
