@@ -11,6 +11,7 @@ import { settleDeloads } from '../../engine/deloadOutcome'
 import { limitStepCopy, limitStepDecision, limitStepOffer } from '../../engine/limitLoad'
 import { MOVEMENT } from '../../plan/movement'
 import { earlyFlagCopy, earlyFlagOffer, readinessDecision } from '../../engine/readiness'
+import { ceilingDecision, ceilingLowerCopy, ceilingLowerOffer } from '../../engine/ceiling'
 import { appendDecision } from '../../engine/decisions'
 
 /**
@@ -62,7 +63,9 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // quiet long enough to have earned it. Its own card rather than a
   // planAdjustment, because it is not about today's session: it is a
   // standing reduction being partly lifted.
-  const limit = useMemo(() => {
+  const ceilRaw = useMemo(() => ceilingLowerOffer(data, date), [data, date])
+
+  const limitRaw = useMemo(() => {
     const resolved = resolveDay(date, data)
     if (resolved.kind !== 'session') return null
     // Only the movements the limitation is actually HOLDING DOWN today,
@@ -75,6 +78,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
     )
     return limitStepOffer(data, date, joints)
   }, [data, date])
+  const limit = ceilRaw ? null : limitRaw
 
   // The readiness flags themselves, once enough dialled-back days have
   // turned out fine. Pattern-level and offered only: turning down the
@@ -86,7 +90,11 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // apology rather than a coach. Load back outranks the readiness
   // question because it is about today's bar; the flags are a standing
   // preference and will keep.
-  const early = limit ? null : earlyRaw
+  //
+  // Taking a set off outranks both: it is the only one that changes what
+  // the athlete is about to do, and R3 s5.4 says the first move is down.
+  const ceil = ceilRaw
+  const early = ceil || limit ? null : earlyRaw
 
   const proposals = useMemo(() => {
     const resolved = resolveDay(date, data)
@@ -110,7 +118,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // after every verdict: the guard said "waved AND no follow-up", so a
   // follow-up on screen meant waving the offers away did nothing.
   const offering = !waved && proposals.length > 0 && !(session?.startedAt && !session.endedAt)
-  if (!offering && !verdictLine && !limit && !early) return null
+  if (!offering && !verdictLine && !limit && !early && !ceil) return null
 
   // reduce-load is the one proposal with no switch behind it. "Take a
   // third off the pressing" is not a shape the plan can hold — there is
@@ -130,6 +138,30 @@ export function AdaptProposals({ date }: { date: ISODate }) {
             {verdict!.verdict === 'worked' ? 'That worked' : 'Following up'}
           </p>
           <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{verdictLine}</p>
+        </div>
+      )}
+      {ceil && (
+        <div className="rounded-2xl bg-white/[0.05] px-4 py-3 ring-1 ring-white/[0.08]">
+          <p className="text-[12.5px] font-black tracking-tight text-ink">Too much of this?</p>
+          <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{ceilingLowerCopy(ceil)}</p>
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() =>
+                update((d) => appendDecision(d, ceilingDecision(ceil, 'lower', 'accepted', date, d.decisions.length)))
+              }
+              className="press rounded-full bg-accent px-3.5 py-2 text-[12px] font-bold text-black"
+            >
+              Take one off
+            </button>
+            <button
+              onClick={() =>
+                update((d) => appendDecision(d, ceilingDecision(ceil, 'lower', 'declined', date, d.decisions.length)))
+              }
+              className="press rounded-full bg-white/[0.07] px-3.5 py-2 text-[12px] font-bold text-ink-dim"
+            >
+              Leave it
+            </button>
+          </div>
         </div>
       )}
       {limit && (

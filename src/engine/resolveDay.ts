@@ -26,6 +26,7 @@ import { trimToFit, type VolumeCut } from './volume'
 import { capAccessorySets, orderSession } from './sequence'
 import { parseRepRange, repLabel } from './reps'
 import { flagNotes } from './fatigue'
+import { ceilingDeltas } from './ceiling'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
 import { isAthleteAuthored } from '../plan/bookletOps'
@@ -478,7 +479,9 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
   // app shows is a day worth doing, for the preset and for generated
   // plans alike. Cardio is appended after this on purpose: a run is not
   // lifting volume.
-  const capped = trimToFit(exercises, 0, data.prefs.sessionMinutes)
+  // This athlete's own ceiling offsets, earned a fractional set at a time.
+  // Empty for everybody who has never been offered one.
+  const capped = trimToFit(exercises, 0, data.prefs.sessionMinutes, ceilingDeltas(data))
   if (capped.cuts.length > 0) {
     exercises = capped.exercises
     const gone = capped.cuts.filter((c: VolumeCut) => c.to === 0)

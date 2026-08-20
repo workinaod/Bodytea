@@ -352,3 +352,32 @@ test('one offer at a time, not a wall of them', async ({ page }) => {
   await expect(page.getByText(/You told me about your shoulder/)).toBeVisible()
   await expect(page.getByText(/shoulder has been complaining/)).toHaveCount(0)
 })
+
+test('a muscle that keeps running out gets a set taken off, and it sticks', async ({ page }) => {
+  // R3 s5.4: the first move is DOWN, one fractional set, and it is a
+  // proposal. The delta lives in the ledger and the base stays the
+  // researched constant, so a lowered ceiling can never become the new
+  // base and walk the muscle to nothing.
+  const PRESS = 'flat-db-press'
+  const state = seed((d) => {
+    for (const date of ['2026-07-06', '2026-07-13', '2026-07-20']) {
+      d.sessions[date] = {
+        date,
+        templateId: 'tuesday',
+        status: 'completed',
+        exercises: [{ exerciseId: PRESS, sets: [{ targetReps: '10', done: true, achieved: 6, weightLb: 50 }] }],
+      } as never
+    }
+  })
+  await boot(page, state)
+  await expect(page.getByText('Too much of this?')).toBeVisible()
+  await expect(page.getByText(/One less .* set per session/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Take one off' }).click()
+  await expect(page.getByText('Too much of this?')).toHaveCount(0)
+  await expect
+    .poll(async () => await page.evaluate(() => localStorage.getItem('naod.state') ?? ''), {
+      message: 'the ceiling change never reached the ledger',
+    })
+    .toContain('volume-ceiling')
+})

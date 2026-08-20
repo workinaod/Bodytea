@@ -159,7 +159,8 @@ export function Sheet({
       />
       <div
         ref={sheetRef}
-        data-was-dialog="1"
+        role="dialog"
+        aria-modal="true"
         {...(title ? { 'aria-labelledby': titleId } : { 'aria-label': 'Dialog' })}
         tabIndex={-1}
         className={`relative flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-[30px] bg-[#141416]/95 ring-1 ring-white/[0.07] backdrop-blur-2xl outline-none pb-[max(env(safe-area-inset-bottom),16px)] ${

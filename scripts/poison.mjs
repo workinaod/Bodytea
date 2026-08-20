@@ -1425,6 +1425,46 @@ const MUTATIONS = [
     spec: "src/engine/persistentPain.test.ts",
   },
   {
+    id: "ceiling-delta-never-applied",
+    bug: "the athlete agrees to take a set off and the ceiling does not move, so the answer is recorded and the session is unchanged",
+    file: "src/engine/volume.ts",
+    find: "  const own = Math.max(2, base + (deltas[region] ?? 0))",
+    to: "  const own = base",
+    spec: "src/engine/ceiling.test.ts",
+  },
+  {
+    id: "ceiling-drift-uncapped",
+    bug: "a ceiling can wander any distance from the researched number, which is the load-spiral family with volume in place of load",
+    file: "src/engine/ceiling.ts",
+    find: "export const CEILING_MAX_DRIFT = 2",
+    to: "export const CEILING_MAX_DRIFT = 99",
+    spec: "src/engine/ceiling.test.ts",
+  },
+  {
+    id: "ceiling-moves-twice-a-fortnight",
+    bug: "two ceiling changes land inside a fortnight, so neither can be attributed and a squat set gets counted off twice for quads and again for glutes",
+    file: "src/engine/ceiling.ts",
+    find: "  if (last && daysBetween(last.respondedAt ?? last.offeredAt, today) < CEILING_MIN_DAYS_BETWEEN) return null",
+    to: "",
+    spec: "src/engine/ceiling.test.ts",
+  },
+  {
+    id: "ceiling-lowered-by-two",
+    bug: "one signal takes two fractional sets off instead of one, which is exactly the step size R3 s5.4 says never to take",
+    file: "src/engine/ceiling.ts",
+    find: "    const step = d.evidence.direction === 'raise' ? 1 : -1",
+    to: "    const step = d.evidence.direction === 'raise' ? 2 : -2",
+    spec: "src/engine/ceiling.test.ts",
+  },
+  {
+    id: "ceiling-focus-bonus-drifts-too",
+    bug: "the personal offset lands on the focus bonus as well, so the muscle the day was built around drifts twice as fast as the rest",
+    file: "src/engine/volume.ts",
+    find: "  return focus?.has(region) ? own + FOCUS_BONUS : own",
+    to: "  return focus?.has(region) ? own + FOCUS_BONUS + (deltas[region] ?? 0) : own",
+    spec: "src/engine/ceiling.test.ts",
+  },
+  {
     id: "readiness-flags-never-questioned",
     bug: "a readiness downgrade that keeps being followed by a fine day never gets questioned, so somebody who sleeps badly most Mondays has an ordinary session cut every week forever",
     file: "src/engine/readiness.ts",
@@ -2077,6 +2117,14 @@ const MUTATIONS = [
 ]
 
 const E2E_MUTATIONS = [
+  {
+    id: 'ceiling-change-never-reaches-the-day',
+    bug: 'the ledger carries the ceiling change and resolveDay never reads it, so the session the athlete agreed to change is identical',
+    file: 'src/engine/resolveDay.ts',
+    find: 'trimToFit(exercises, 0, data.prefs.sessionMinutes, ceilingDeltas(data))',
+    to: 'trimToFit(exercises, 0, data.prefs.sessionMinutes, ceilingDeltas(data) && {})',
+    spec: 'e2e/adapt.spec.ts',
+  },
   {
     id: 'two-offers-stacked-on-one-screen',
     bug: 'a verdict, two offers and a proposal stack on top of two banners, which is a wall of apology rather than a coach',

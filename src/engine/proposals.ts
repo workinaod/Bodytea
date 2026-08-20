@@ -138,3 +138,18 @@ export const READY_TARGET = 'flags'
 
 /** Flags out of four before the day is dialled back, before any easing. */
 export const READY_FLAGS_TO_DOWNGRADE = 2
+
+// ---------------- Per-muscle volume ceilings ----------------
+//
+// R3 s5.3 is blunt that volume autoregulation is the under-evidenced
+// half of the literature, so the bar is high, the step is one fractional
+// set, and the whole thing is a suggestion. Lowering needs ONE signal,
+// raising needs six: the same asymmetry as the failing flag's hysteresis
+// and deliberate for the same reason.
+//
+// The delta lives in the ledger, never in the plan. R3 s5.5 guard 2: a
+// lowered ceiling must never quietly become the new base, so the base
+// stays the researched constant in volume.ts and this is the offset.
+
+export const CEILING_TYPE = 'volume-ceiling'
+export const CEILING_RULE_VERSION = 1

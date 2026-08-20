@@ -130,9 +130,27 @@ export function focusRegions(exercises: ResolvedExercise[]): Set<MuscleRegion> {
   return out
 }
 
-export function ceilingFor(region: MuscleRegion, focus?: ReadonlySet<MuscleRegion>): number {
+export type CeilingDeltas = Partial<Record<MuscleRegion, number>>
+
+/**
+ * `deltas` is this athlete's own offset, earned a fractional set at a
+ * time and capped by engine/ceiling.ts. Kept SEPARATE from the base on
+ * purpose (R3 s5.5 guard 2): a lowered ceiling that quietly becomes the
+ * new base walks a muscle to nothing one honest bad week at a time,
+ * which is the load-spiral family this repo already has a scar from.
+ * Floored at 2, because a ceiling below that is not a prescription.
+ */
+export function ceilingFor(
+  region: MuscleRegion,
+  focus?: ReadonlySet<MuscleRegion>,
+  deltas: CeilingDeltas = {},
+): number {
   const base = SMALL_ASSISTING.has(region) ? SMALL_CEILING : LARGE_CEILING
-  return focus?.has(region) ? base + FOCUS_BONUS : base
+  const own = Math.max(2, base + (deltas[region] ?? 0))
+  // The focus bonus rides on top and is NOT part of the drift: R3 s5.2
+  // keeps it exactly as researched, and a personal offset should not
+  // quietly double on the one muscle the day was built around.
+  return focus?.has(region) ? own + FOCUS_BONUS : own
 }
 
 /** Plain names, for copy that a person reads mid-decision. */
@@ -204,7 +222,11 @@ export interface Overload {
  * so today's honest ceiling is lower than the one the plan was built
  * against, and the same engine answers the new question.
  */
-export function overloadedRegions(exercises: ResolvedExercise[], slack = 0): Overload[] {
+export function overloadedRegions(
+  exercises: ResolvedExercise[],
+  slack = 0,
+  deltas: CeilingDeltas = {},
+): Overload[] {
   const load = regionLoad(exercises)
   // Judged against THIS day's targets, not a flat table. Trimming a
   // lower day for doing too much glute work would be the engine
@@ -214,7 +236,7 @@ export function overloadedRegions(exercises: ResolvedExercise[], slack = 0): Ove
   for (const key of Object.keys(load)) {
     const region = key as MuscleRegion
     const v = load[region] ?? 0
-    const ceiling = Math.max(2, ceilingFor(region, focus) - slack)
+    const ceiling = Math.max(2, ceilingFor(region, focus, deltas) - slack)
     if (v > ceiling) out.push({ region, load: v, ceiling, over: v - ceiling })
   }
   return out.sort((a, b) => b.over - a.over || a.region.localeCompare(b.region))
@@ -295,7 +317,11 @@ const MIN_MOVEMENTS = 4
  * for existing, and cutting from the bottom is the same rule the
  * session list already offers by hand.
  */
-export function trimForVolume(exercises: ResolvedExercise[], slack = 0): TrimResult {
+export function trimForVolume(
+  exercises: ResolvedExercise[],
+  slack = 0,
+  deltas: CeilingDeltas = {},
+): TrimResult {
   interface Slot {
     ex: ResolvedExercise
     origin: number
@@ -306,7 +332,7 @@ export function trimForVolume(exercises: ResolvedExercise[], slack = 0): TrimRes
 
   for (let guard = 0; guard < budget; guard++) {
     const current = slots.map((s) => s.ex)
-    const over = overloadedRegions(current, slack)
+    const over = overloadedRegions(current, slack, deltas)
     if (over.length === 0) break
     const { region } = over[0]
 
@@ -321,7 +347,7 @@ export function trimForVolume(exercises: ResolvedExercise[], slack = 0): TrimRes
         // Redundant only if EVERY muscle it targets stays saturated
         // without it. That keeps the sole prime mover for a region.
         const focus = focusRegions(slots.map((x) => x.ex))
-        if (m.primary.every((r) => (without[r] ?? 0) >= ceilingFor(r, focus) - slack)) {
+        if (m.primary.every((r) => (without[r] ?? 0) >= ceilingFor(r, focus, deltas) - slack)) {
           dropAt = i
           break
         }
@@ -354,7 +380,7 @@ export function trimForVolume(exercises: ResolvedExercise[], slack = 0): TrimRes
     if (to < e.sets) cuts.push({ exerciseId: e.exerciseId, name: e.name, from: e.sets, to })
   })
   const trimmed = slots.map((s) => s.ex)
-  return { exercises: trimmed, cuts, stillOver: overloadedRegions(trimmed, slack) }
+  return { exercises: trimmed, cuts, stillOver: overloadedRegions(trimmed, slack, deltas) }
 }
 
 export interface VolumeVerdict {
@@ -417,11 +443,12 @@ export function trimToFit(
   exercises: ResolvedExercise[],
   slack = 0,
   budgetMin?: number,
+  deltas: CeilingDeltas = {},
 ): TrimResult {
-  let result = trimForVolume(exercises, slack)
+  let result = trimForVolume(exercises, slack, deltas)
   if (!budgetMin || budgetMin <= 0) return result
   for (let extra = 1; extra <= MAX_TIME_SLACK && estimateMinutes(result.exercises) > budgetMin; extra++) {
-    result = trimForVolume(exercises, slack + extra)
+    result = trimForVolume(exercises, slack + extra, deltas)
   }
   return result
 }
