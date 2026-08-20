@@ -2273,6 +2273,7 @@ the pre-existing plans that genuinely have no record of what built them.
   Gates: typecheck clean, **1,751/1,751 unit**, build green, **91/91 e2e** on a fresh server,
   390px screenshots reviewed and iterated (the HUD, the week path, the reminder buttons and the
   plan doors are all screenshot fixes, not test fixes).
+  Dashboard republished at the same url with the density table and the new counts.
   NEXT: the owner's review of these screens. The finish chain, the logger and the sheets are
   the surfaces the concept does not frame, so they have no cap yet.
 
