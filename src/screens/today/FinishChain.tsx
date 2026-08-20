@@ -246,9 +246,11 @@ export function FinishChain({ chain, onDone }: { chain: ChainData; onDone: () =>
         {current === 'streak' && chain.streak && (
           <div key="streak" className="relative text-center">
             {burstAt === 'streak' && <ConfettiBurst />}
-            <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
-              <span className="shockwave absolute inset-2 rounded-full ring-2 ring-accent/55" aria-hidden />
-              <Flame streak={chain.streak.days} size={52} ignite alive />
+            {/* Sized for the top of the ladder: an immortal flame is 2.1x
+                an ember, so the box has to hold the biggest one. */}
+            <div className="relative mx-auto flex h-32 w-32 items-center justify-center">
+              <span className="shockwave absolute inset-5 rounded-full ring-2 ring-accent/55" aria-hidden />
+              <Flame streak={chain.streak.days} size={54} ignite alive />
             </div>
             <div className="eyebrow mt-3 text-ink-faint">Day</div>
             <div className="num mt-0.5 text-[56px] font-black leading-none">
