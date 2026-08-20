@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { supplementRecord } from '../../plan/supplements'
 import { addDaysISO, formatDayLabel } from '../../engine/calendar'
@@ -9,6 +9,7 @@ import { applyRecheck, learnedCopy, nutritionRecheck, recheckDecision } from '..
 import { energyCheck, energyCopy } from '../../engine/energyAvailability'
 import { calorieStep, stepCopy, stepDecision } from '../../engine/calorieStep'
 import { appendDecision, returningCopy } from '../../engine/decisions'
+import { dueForVerdict, freshVerdict, settleDue, verdictCopy } from '../../engine/outcomes'
 import { learnedCopyFor, learnedMaintenance } from '../../engine/maintenanceLearned'
 import { MIN_KCAL_REST } from '../../plan/kcalFloor'
 import { macroTargets } from '../../plan/sportsNutrition'
@@ -73,6 +74,15 @@ export function MealsScreen() {
     const m = learnedMaintenance(data, today)
     return m ? learnedCopyFor(m) : null
   }, [data, today])
+
+  // Judging happens on open, because there is nowhere else it can: the
+  // engines never write, and an accepted change whose window closed while
+  // the app was shut still deserves its answer.
+  const dueCount = useMemo(() => dueForVerdict(data, today).length, [data, today])
+  useEffect(() => {
+    if (dueCount > 0) update((d) => { settleDue(d, today) })
+  }, [dueCount, today, update])
+  const verdict = useMemo(() => freshVerdict(data, today), [data, today])
 
   // ONE calorie-target suggestion at a time.
   //
@@ -163,6 +173,19 @@ export function MealsScreen() {
             <Chip tone="default">fibre floor: {macroTarget.fiberG} g</Chip>
             {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
           </div>
+
+          {/* An answer to something the athlete already did outranks any
+              new suggestion, including the ones below. Saying "that did
+              not help, so it is back to how it was" out loud is the whole
+              reason the ledger exists. */}
+          {verdict && (
+            <Card className={verdict.verdict === 'worked' ? 'border-lime/40' : 'border-white/15'}>
+              <p className="text-[13px] font-bold text-ink">
+                {verdict.verdict === 'worked' ? 'That worked' : 'Following up'}
+              </p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{verdictCopy(verdict)}</p>
+            </Card>
+          )}
 
           {/* Safety first, and it is not competing with the ladder below. */}
           {energy && (

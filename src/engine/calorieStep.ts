@@ -54,6 +54,19 @@ const MIN_WEIGH_INS = 3
 /** Bumped when the rule changes, so old ledger rows stay readable. */
 export const STEP_RULE_VERSION = 1
 
+/**
+ * How long an accepted step is given before it is judged.
+ *
+ * R1's own cadence: re-evaluate after another two to three weeks, never
+ * on single weigh-ins. Registered when the offer is ACCEPTED rather than
+ * chosen when the answer is wanted, because an outcome picked after the
+ * fact is a story, not a result.
+ */
+export const STEP_WINDOW_DAYS = 21
+
+/** The one number this intervention is judged on. Fixed in advance. */
+export const STEP_METRIC = 'trendLbPerWeek'
+
 /** What this proposal is called in the decision ledger. */
 export const STEP_TYPE = 'calorie-step'
 export const STEP_TARGET = 'kcalTraining'
@@ -205,7 +218,7 @@ export function stepDecision(
   at: ISODate,
   seq: number,
 ) {
-  return decisionRow({
+  const row = decisionRow({
     type: STEP_TYPE,
     target: STEP_TARGET,
     ruleVersion: STEP_RULE_VERSION,
@@ -214,4 +227,14 @@ export function stepDecision(
     at,
     seq,
   })
+  if (response !== 'accepted') return row
+  // Pre-registered here and nowhere else: the metric, the window and the
+  // number to beat are all fixed at the moment the athlete says yes.
+  return {
+    ...row,
+    metricId: STEP_METRIC,
+    windowDays: STEP_WINDOW_DAYS,
+    windowClosesAt: addDaysISO(at, STEP_WINDOW_DAYS),
+    baseline: s.trendLbPerWeek,
+  }
 }
