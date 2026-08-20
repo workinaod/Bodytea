@@ -103,6 +103,25 @@ function roughWeeks(data: AppData, today: ISODate): number {
   return cut.size
 }
 
+/**
+ * Has a ceiling moved too recently to move another one.
+ *
+ * ANY muscle, not one per muscle: a squat set serves quads and glutes
+ * both, so taking one off for the quads has already cut the glutes'
+ * exposure, and offering the glutes next is the same fix counted twice.
+ * R3 s5.5 guard 4, read at the level the sets actually work at rather
+ * than the level the ledger files them under.
+ *
+ * One definition because both directions ask it. It was written out
+ * twice and the mutation harness caught the duplicate before I did:
+ * an anchor that matches in two places poisons whichever comes first.
+ */
+function tooSoon(data: AppData, today: ISODate): boolean {
+  const rows = (data.decisions ?? []).filter((d) => d.type === CEILING_TYPE)
+  const last = rows[rows.length - 1]
+  return !!last && daysBetween(last.respondedAt ?? last.offeredAt, today) < CEILING_MIN_DAYS_BETWEEN
+}
+
 export interface CeilingChange {
   region: MuscleRegion
   /** The athlete's word for the muscle. */
@@ -139,15 +158,7 @@ export function ceilingLowerOffer(data: AppData, today: ISODate): CeilingChange 
   }
   if (rough) for (const r of seen) candidates.push({ region: r, because: 'the last fortnight has taken a lot out of you' })
 
-  // One ceiling change at a time, ANY muscle, not one per muscle. A
-  // squat set serves quads and glutes both, so taking one off for the
-  // quads has already cut the glutes' exposure: offering the glutes next
-  // is the same fix counted twice, and neither change could then be
-  // attributed. R3 s5.5 guard 4, read at the level the sets actually
-  // work at rather than the level the ledger files them under.
-  const anyRow = (data.decisions ?? []).filter((d) => d.type === CEILING_TYPE)
-  const last = anyRow[anyRow.length - 1]
-  if (last && daysBetween(last.respondedAt ?? last.offeredAt, today) < CEILING_MIN_DAYS_BETWEEN) return null
+  if (tooSoon(data, today)) return null
 
   for (const c of candidates) {
     // Already as low as the evidence is allowed to take it.
@@ -277,9 +288,7 @@ export function ceilingRaiseOffer(data: AppData, today: ISODate): CeilingChange 
   const { rate, worstGap } = attendance(data, today)
   if (rate < RAISE_MIN_ADHERENCE || worstGap > RAISE_MAX_GAP_DAYS) return null
 
-  const anyRow = (data.decisions ?? []).filter((d) => d.type === CEILING_TYPE)
-  const last = anyRow[anyRow.length - 1]
-  if (last && daysBetween(last.respondedAt ?? last.offeredAt, today) < CEILING_MIN_DAYS_BETWEEN) return null
+  if (tooSoon(data, today)) return null
 
   const deltas = ceilingDeltas(data)
   const suggestions = nextSessionSuggestions(data, today)

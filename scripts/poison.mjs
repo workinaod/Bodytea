@@ -1492,8 +1492,8 @@ const MUTATIONS = [
     id: "ceiling-moves-twice-a-fortnight",
     bug: "two ceiling changes land inside a fortnight, so neither can be attributed and a squat set gets counted off twice for quads and again for glutes",
     file: "src/engine/ceiling.ts",
-    find: "  if (last && daysBetween(last.respondedAt ?? last.offeredAt, today) < CEILING_MIN_DAYS_BETWEEN) return null",
-    to: "",
+    find: "  return !!last && daysBetween(last.respondedAt ?? last.offeredAt, today) < CEILING_MIN_DAYS_BETWEEN",
+    to: "  return false",
     spec: "src/engine/ceiling.test.ts",
   },
   {
