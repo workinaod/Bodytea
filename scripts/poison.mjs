@@ -1415,6 +1415,38 @@ const MUTATIONS = [
     spec: "src/engine/outcomes.test.ts",
   },
   {
+    id: "adapt-rows-orphaned-by-a-rename",
+    bug: "the stored spelling of an adaptation changes, so every row a real athlete already has is invisible to the build that reads them: never graded, never shown, never explained",
+    file: "src/engine/proposals.ts",
+    find: "export const ADAPT_TYPE = 'adapt'",
+    to: "export const ADAPT_TYPE = 'adaptation'",
+    spec: "src/engine/proposals.test.ts",
+  },
+  {
+    id: "deload-rows-orphaned-by-a-rename",
+    bug: "the same rename on the deload, which also breaks the dedupe: weeks already judged stop being recognised and get judged again",
+    file: "src/engine/proposals.ts",
+    find: "export const DELOAD_TYPE = 'deload'",
+    to: "export const DELOAD_TYPE = 'deload-week'",
+    spec: "src/engine/proposals.test.ts",
+  },
+  {
+    id: "adapt-metric-orphaned-by-a-rename",
+    bug: "the metric an adaptation was registered under drifts, so judgeAdapt looks for its own metric, finds nothing, and the intervention is never graded and never says why",
+    file: "src/engine/proposals.ts",
+    find: "export const ADAPT_METRIC = 'sessionGrade'",
+    to: "export const ADAPT_METRIC = 'grade'",
+    spec: "src/engine/proposals.test.ts",
+  },
+  {
+    id: "deload-verdict-cannot-say-which-week",
+    bug: "the follow-up says \"the deload week\" while the screen above it says DELOAD WEEK in lime, so an athlete standing in one reads a report on a week a month earlier as a report on today",
+    file: "src/engine/deloadOutcome.ts",
+    find: "      return `Three weeks after your last deload, your best lift still had not come back up. Worth watching, because a deload is meant to leave you fresher, not flatter.`",
+    to: "      return `Your lifts have not come back up since the deload week. Worth watching, because a deload is meant to leave you fresher, not flatter.`",
+    spec: "src/engine/deloadOutcome.test.ts",
+  },
+  {
     id: "deload-rebound-counts-noise",
     bug: "the same lift twice reads as a rebound, so every deload week is scored a success and the most expensive habit in the app is never questioned",
     file: "src/engine/deloadOutcome.ts",
@@ -1771,6 +1803,14 @@ const MUTATIONS = [
 ]
 
 const E2E_MUTATIONS = [
+  {
+    id: 'dismiss-dies-while-a-verdict-is-up',
+    bug: 'the ✕ silently stops working for the week after every verdict, so the offers the athlete just waved away stay exactly where they were under a button that looks broken',
+    file: 'src/screens/today/AdaptProposals.tsx',
+    find: '      {offering && (',
+    to: '      {true && (',
+    spec: 'e2e/adapt.spec.ts',
+  },
   {
     id: 'settings-self-closes',
     bug: 'opening Account throws you out of Settings to the Coach screen',

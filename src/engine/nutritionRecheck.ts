@@ -224,9 +224,18 @@ export const RECHECK_TARGET = 'kcalTraining'
  *
  * The recheck mutes itself by stamping the basis, which is a statement
  * about KNOWLEDGE and does that job well. This is the other half: a
- * record that the offer was made and answered, so the learning loop can
- * later ask whether it helped. A ledger populated by one card out of two
- * teaches half a lesson.
+ * record that the offer was made and answered. A ledger populated by one
+ * card out of two teaches half a lesson.
+ *
+ * Deliberately NOT pre-registered, so nothing ever judges it. A calorie
+ * step is an experiment and has a counterfactual: eat 150 fewer and see
+ * whether the trend moves. A recheck is a correction. It replaces a
+ * guessed body composition with a measured one, and "did using your real
+ * numbers instead of an estimate help" is not a question with an answer.
+ * The row still earns its place: it is what tells isolated() that the
+ * calorie target changed inside some step's window, which is how a step
+ * whose result was muddied by a recheck comes back unattributable
+ * instead of taking credit.
  */
 export function recheckDecision(
   r: NutritionRecheck,

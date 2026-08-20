@@ -115,16 +115,28 @@ export function settleDeloads(data: AppData, today: ISODate): number {
   return rows.length
 }
 
-/** What the deload actually bought, said plainly, including nothing. */
+/**
+ * What the deload actually bought, said plainly, including nothing.
+ *
+ * Every line names the window it is about, and that is not decoration.
+ * A verdict becomes visible 27 to 34 days after its deload started, and
+ * the next deload starts on day 28, so this card lands almost entirely
+ * inside the following deload week. The J8 review pass caught the screen
+ * saying "DELOAD WEEK: sets halved" in lime and, directly beneath it,
+ * "your lifts have not come back up since the deload week" about a
+ * different week entirely. Anchoring each sentence three weeks AFTER the
+ * week being judged makes that misreading impossible, because nobody is
+ * three weeks after a week they are standing in.
+ */
 export function deloadVerdictCopy(row: DecisionRecord): string | null {
   if (row.type !== DELOAD_TYPE || !row.verdict) return null
   switch (row.verdict) {
     case 'worked':
-      return `The deload did its job. Your best lift since is up on anything from the three weeks before it.`
+      return `Three weeks after your last deload, your best lift was up on anything from the three weeks before it. That week off the gas did its job.`
     case 'no-change':
-      return `That deload week came and went without moving your best lift either way. One is not a pattern; if the next one does the same, the thing holding you back is not fatigue.`
+      return `Three weeks either side of your last deload, your best lift did not move. One is not a pattern, but if the next one does the same, what is holding you back is not fatigue.`
     case 'worse':
-      return `Your lifts have not come back up since the deload week. That is worth watching, because a deload is supposed to leave you fresher, not flatter.`
+      return `Three weeks after your last deload, your best lift still had not come back up. Worth watching, because a deload is meant to leave you fresher, not flatter.`
     default:
       return null
   }

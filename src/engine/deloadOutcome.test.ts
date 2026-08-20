@@ -176,3 +176,37 @@ describe('the ledger', () => {
     expect(row.ruleVersion).toBe(1)
   })
 })
+
+describe('the copy says which deload it means', () => {
+  // Found in the J8 review pass, proved with a screenshot. A verdict is
+  // visible 27 to 34 days after its deload week starts, and the next
+  // deload starts on day 28, so this card lands inside the following
+  // deload week almost every time. The screen was showing "DELOAD WEEK:
+  // sets halved, keep the weights" and, directly under it, "your lifts
+  // have not come back up since the deload week" about a week a month
+  // earlier. Every line has to place itself in time, or the athlete
+  // reads it as a report on the week they are being told to do today.
+  const lines = (['worked', 'no-change', 'worse'] as const).map(
+    (verdict) =>
+      deloadVerdictCopy({
+        id: 'x',
+        type: DELOAD_TYPE,
+        target: DL,
+        ruleVersion: 1,
+        evidence: {},
+        offeredAt: DL,
+        verdict,
+      })!,
+  )
+
+  it('never says "the deload week", which always reads as this one', () => {
+    for (const line of lines) expect(line).not.toContain('the deload week')
+  })
+
+  it('anchors every line three weeks off the week it judged', () => {
+    // Nobody is three weeks after a week they are standing in, which is
+    // what makes the misreading impossible rather than merely unlikely.
+    for (const line of lines) expect(line).toContain('your last deload')
+    expect(lines.filter((l) => l.startsWith('Three weeks'))).toHaveLength(3)
+  })
+})

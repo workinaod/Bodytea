@@ -173,3 +173,44 @@ test("the coach's offer can be closed, and stays closed", async ({ page }) => {
     })
     .toContain('dismissed')
 })
+
+test('closing the offer still works when a verdict is on screen', async ({ page }) => {
+  // Found in the J8 review pass. Slice 3 put a follow-up line inside the
+  // block the dismiss button owns, and the guard that hid the offers read
+  // "waved AND no verdict". So for the week after any adapt or deload
+  // result landed, tapping the ✕ did nothing at all: the offers the
+  // athlete had just waved away stayed exactly where they were, under a
+  // button that looked like it had failed.
+  const state = seed((d) => {
+    d.weeks['2026-08-10'].badSleepDates = ['2026-08-08', '2026-08-10']
+    d.decisions = [
+      {
+        id: 'v1',
+        type: 'adapt',
+        target: 'reduce-volume',
+        ruleVersion: 1,
+        evidence: { choice: 'reduce-volume' },
+        offeredAt: '2026-07-20',
+        response: 'accepted',
+        respondedAt: '2026-07-20',
+        metricId: 'sessionGrade',
+        windowDays: 14,
+        windowClosesAt: '2026-08-09',
+        baseline: 0.4,
+        outcome: 0.9,
+        verdict: 'worked',
+      },
+    ]
+  })
+  await boot(page, state)
+
+  await expect(page.getByText('A set off each lift', { exact: true })).toBeVisible()
+  await expect(page.getByText('That worked', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Dismiss what the coach noticed' }).click()
+  // The offer goes.
+  await expect(page.getByText('A set off each lift', { exact: true })).toHaveCount(0)
+  // The follow-up stays: it is the answer to a question asked a fortnight
+  // ago, not an offer, and the ✕ was never about it.
+  await expect(page.getByText('That worked', { exact: true })).toBeVisible()
+})
