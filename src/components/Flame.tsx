@@ -243,28 +243,42 @@ const secs = (n: number) => `${n.toFixed(2)}s`
  */
 const growth = (scale: number, size: number) => 1 + (scale - 1) * Math.min(1, Math.max(0.42, size / 44))
 
-/** Deterministic, so nothing reshuffles on a re-render. */
+/**
+ * Embers coming off the fire. Deterministic, so nothing reshuffles on a
+ * re-render.
+ *
+ * Every one of these used to launch from the same fixed height, which
+ * put them on one invisible line ABOVE the flame rather than coming off
+ * it, and held still in a screenshot they read as a row of dots sitting
+ * in the air. Start height, drift and travel are all per particle now.
+ */
 function Embers({ n, color, spread }: { n: number; color: string; spread: number }) {
   if (n === 0) return null
   return (
     <>
-      {Array.from({ length: n }, (_, i) => (
-        <span
-          key={i}
-          className="spark-bit absolute left-1/2 top-[16%] rounded-full"
-          style={
-            {
-              width: i % 3 === 0 ? 2.5 : 1.8,
-              height: i % 3 === 0 ? 2.5 : 1.8,
-              background: color,
-              marginLeft: `${(((i * 37) % 13) - 6) * spread}px`,
-              animationDelay: `${(i * 430) % 1900}ms`,
-              '--sx': `${(((i * 53) % 15) - 7) * spread}px`,
-              '--sd': `${1.5 + ((i * 7) % 12) / 10}s`,
-            } as React.CSSProperties
-          }
-        />
-      ))}
+      {Array.from({ length: n }, (_, i) => {
+        const d = i % 4 === 0 ? 2.2 : 1.4
+        return (
+          <span
+            key={i}
+            className="spark-bit absolute left-1/2 rounded-full"
+            style={
+              {
+                width: d,
+                height: d,
+                background: color,
+                // Off the fire, over the whole upper half of it.
+                top: `${16 + ((i * 29) % 30)}%`,
+                marginLeft: `${(((i * 37) % 13) - 6) * spread}px`,
+                animationDelay: `${(i * 337) % 2100}ms`,
+                '--sx': `${(((i * 53) % 15) - 7) * spread}px`,
+                '--sy': `${-140 - ((i * 67) % 170)}%`,
+                '--sd': `${1.5 + ((i * 7) % 12) / 10}s`,
+              } as React.CSSProperties
+            }
+          />
+        )
+      })}
     </>
   )
 }
@@ -417,9 +431,17 @@ export function Flame({
               key={`b${i}`}
               transform={`translate(${(vw / 2 - FLAME_W / 2 + dx).toFixed(2)} ${dy.toFixed(2)}) translate(12 32) scale(${k.toFixed(3)}) translate(-12 -32)`}
             >
-              <path d={OUTER_D} fill={s.outer} opacity={o} style={{ ...path, animation: clock(i) }}>
-                {morph && <Morph values={morphValues(OUTER, i * 3, 1.7)} dur={s.speed * (0.58 + i * 0.117) * 2.4} />}
-              </path>
+              {/* Placement on the outer g, catching on this one: a CSS
+                  transform replaces an SVG transform attribute, so the
+                  two cannot share an element. */}
+              <g
+                className={ignite && !still ? 'recruit' : undefined}
+                style={ignite && !still ? { animationDelay: `${140 + i * 110}ms` } : undefined}
+              >
+                <path d={OUTER_D} fill={s.outer} opacity={o} style={{ ...path, animation: clock(i) }}>
+                  {morph && <Morph values={morphValues(OUTER, i * 3, 1.7)} dur={s.speed * (0.58 + i * 0.117) * 2.4} />}
+                </path>
+              </g>
             </g>
           ))}
           <g transform={`translate(${(vw / 2 - FLAME_W / 2).toFixed(2)} 0)`}>
