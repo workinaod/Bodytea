@@ -2,6 +2,7 @@ import type { AppData, ISODate } from '../types'
 import type { ExerciseLog, SessionLog } from '../sessionTypes'
 import { musclesFor } from '../plan/muscles'
 import { daysBetween } from './calendar'
+import { stalledLifts } from './fatigue'
 
 // ============================================================
 // One rep number, never a range.
@@ -163,6 +164,18 @@ export function repStepFor(
   const history = Object.values(data.sessions)
     .filter((s) => s.date < before && s.status !== 'skipped')
     .sort((a, b) => (a.date > b.date ? -1 : 1))
+
+  // R3 s9.2 rung 3, back off and re-climb. A movement that has been
+  // flagged for six exposures without stringing two clean sessions
+  // together is not going to be rescued by another week of the same
+  // lighter weight. The load half of rung 3 already ships, in
+  // prescription.ts; this is the half that was missing, and it is the
+  // same mechanic the layoff path below already uses. Climbing from the
+  // bottom of the range is the point: a number the athlete can actually
+  // finish, with somewhere to go.
+  if (stalledLifts(data, before).has(exerciseId)) {
+    return { reps: range.low, wrapped: false, backOff: false, staleSteps: 0 }
+  }
 
   for (const session of history) {
     const log = session.exercises.find((e) => e.exerciseId === exerciseId)

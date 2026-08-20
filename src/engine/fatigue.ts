@@ -161,11 +161,30 @@ export const CLEAN_SESSIONS_TO_UNFLAG = 2
  * something the athlete earns by finishing the work, not something the
  * calendar hands back.
  */
-function failingFlags(data: AppData, today: ISODate): Map<string, number> {
+export const EXPOSURES_BEFORE_STALLED = 6
+
+interface FlagState {
+  /** Short sessions standing behind the flag. */
+  shorts: number
+  /** Sessions of this movement since the flag went up. */
+  exposures: number
+  /**
+   * Flagged, and the lighter prescription has not brought it back.
+   *
+   * R3 s9.2: if two clean sessions never arrive within six exposures,
+   * softening is not working and the answer is rung 3, back off and
+   * re-climb. Without this a flagged movement sits softened forever,
+   * silently, and the app never admits the thing it tried did not work.
+   */
+  stalled: boolean
+}
+
+function flagStates(data: AppData, today: ISODate): Map<string, FlagState> {
   interface Walk {
     flagged: boolean
     cleanRun: number
     shorts: ISODate[]
+    sinceFlag: number
   }
   const walks = new Map<string, Walk>()
   const sessions = Object.values(data.sessions)
@@ -184,7 +203,8 @@ function failingFlags(data: AppData, today: ISODate): Map<string, number> {
       // it did not, for that half of the evidence.
       const short = loadProvedWrong(log)
       let w = walks.get(log.exerciseId)
-      if (!w) walks.set(log.exerciseId, (w = { flagged: false, cleanRun: 0, shorts: [] }))
+      if (!w) walks.set(log.exerciseId, (w = { flagged: false, cleanRun: 0, shorts: [], sinceFlag: 0 }))
+      const wasFlagged = w.flagged
       if (short) {
         w.cleanRun = 0
         w.shorts.push(s.date)
@@ -199,16 +219,34 @@ function failingFlags(data: AppData, today: ISODate): Map<string, number> {
           w.shorts = []
         }
       }
+      // The session that RAISES the flag is exposure zero, not one. The
+      // six are the chances the softened prescription gets to work, and
+      // the day it was written is not one of them.
+      w.sinceFlag = w.flagged ? (wasFlagged ? w.sinceFlag + 1 : 0) : 0
     }
   }
-  const out = new Map<string, number>()
-  for (const [id, w] of walks) if (w.flagged) out.set(id, Math.max(w.shorts.length, 1))
+  const out = new Map<string, FlagState>()
+  for (const [id, w] of walks) {
+    if (!w.flagged) continue
+    out.set(id, {
+      shorts: Math.max(w.shorts.length, 1),
+      exposures: w.sinceFlag,
+      stalled: w.sinceFlag >= EXPOSURES_BEFORE_STALLED,
+    })
+  }
+  return out
+}
+
+/** Movements the lighter prescription has not rescued. */
+export function stalledLifts(data: AppData, today: ISODate): Set<string> {
+  const out = new Set<string>()
+  for (const [id, st] of flagStates(data, today)) if (st.stalled) out.add(id)
   return out
 }
 
 export function nextSessionSuggestions(data: AppData, today: ISODate): FatigueSuggestion[] {
   const notes = notesInWindow(data, today)
-  const shortfalls = failingFlags(data, today)
+  const shortfalls = flagStates(data, today)
   if (notes.length === 0 && shortfalls.size === 0) return []
 
   const byExercise = new Map<string, FatigueNote[]>()
@@ -263,17 +301,24 @@ export function nextSessionSuggestions(data: AppData, today: ISODate): FatigueSu
   //
   //     Sets that came up short are the same evidence, already on disk.
   //     Once flagged, the flag holds until two clean sessions in a row
-  //     clear it (failingFlags above), so the count here can be smaller
+  //     clear it (flagStates above), so the count here can be smaller
   //     than the one that raised it.
-  for (const [exerciseId, count] of shortfalls) {
+  for (const [exerciseId, state] of shortfalls) {
     if (spokenFor.has(exerciseId)) continue
     spokenFor.add(exerciseId)
+    const count = state.shorts
     out.push({
       kind: 'start-lighter',
       exerciseId,
       regions: regionsFor(exerciseId),
       count,
-      because: `You came up short on this in ${count} recent ${plural(count, 'session', 'sessions')}. Two clean sessions in a row puts it back to normal.`,
+      // Six exposures of a lighter weight and it still has not come back.
+      // Saying "two clean sessions puts it back to normal" for a seventh
+      // time is the app repeating advice it has already watched fail, so
+      // it says what it is actually doing instead. R3 s9.2, rung 3.
+      because: state.stalled
+        ? `${EXPOSURES_BEFORE_STALLED} sessions on this since it was flagged and it has not come back. Going lighter was not the answer, so the reps start again at the bottom of the range and climb from there.`
+        : `You came up short on this in ${count} recent ${plural(count, 'session', 'sessions')}. Two clean sessions in a row puts it back to normal.`,
     })
   }
 
