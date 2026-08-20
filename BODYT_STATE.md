@@ -282,7 +282,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP8 | A make-up never eats the day it runs on (owner bug report, the third door): startSession merges instead of overwriting, and Today offers the day's own session while the plan's work is still owed | product | **done + LIVE 2026-08-20** (deploy a24ef44, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
 | OP9 | The day knows whether ITS OWN workout has been started (owner: "the day is still closed"): SessionLog.ownPlanStarted, because an A/B week repeats a template and the movements alone cannot tell a make-up from today's session; plus the hero naming today rather than the day that was made up | product | **done + LIVE 2026-08-20** (deploy 9b355c5, live bundle verified byte-identical by sha256) | OP8 | off-plan training session |
 | OP10 | Nothing claims the day is done while today's workout is owed (owner: "bro why is it still closed"): the finished-day card stops grading the day and says "Today is not done", and the hero stops naming the made-up day once today's session is running | product | **done + LIVE 2026-08-20** (deploy de04e6a, live bundle verified byte-identical by sha256) | OP9 | off-plan training session |
-| OP11 | The day's workout list comes back while its work is owed, and the coach's offer can be closed (owner requests) | product | **done 2026-08-20** | OP10 | off-plan training session |
+| OP11 | The day's workout list comes back while its work is owed, and the coach's offer can be closed (owner requests) | product | **done + LIVE 2026-08-20** (deploy 5019cf1, live bundle verified byte-identical by sha256) | OP10 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1752,6 +1752,7 @@ the pre-existing plans that genuinely have no record of what built them.
   (1 new: the offer is dismissed, disappears, and the dismissal reaches the saved state; the
   make-up spec now also asserts the workout list is on screen). 390px screenshot reviewed:
   the day carries its hero, Start, the not-done card and the full movement list.
+  Shipped at deploy `5019cf1`, live bundle verified byte-identical by sha256.
   A test wrinkle worth remembering: `adapt.spec.ts` boots through `addInitScript`, which
   re-seeds localStorage on every navigation, so persistence there is asserted by polling the
   saved state rather than by reloading.
