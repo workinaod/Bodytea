@@ -1977,8 +1977,8 @@ const E2E_MUTATIONS = [
     id: 'flag-note-never-reaches-the-day',
     bug: 'the note is built and never put on the day, so the engine explains itself to nobody',
     file: 'src/engine/resolveDay.ts',
-    find: '    flagNotes(data, dateISO, new Set(exercises.map((e) => e.exerciseId))).forEach((text, i) =>',
-    to: '    [].forEach((text, i) =>',
+    find: 'flagNotes(data, dateISO, new Set(exercises.map((e) => e.exerciseId)))',
+    to: 'flagNotes(data, dateISO, new Set<string>())',
     spec: 'e2e/adapt.spec.ts',
   },
   {
