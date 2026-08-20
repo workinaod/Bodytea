@@ -1452,8 +1452,8 @@ const MUTATIONS = [
     id: "stalled-lift-never-re-climbs",
     bug: "a movement six sessions into a softened prescription that is not working never restarts its range, so there is nothing to climb and the athlete grinds the same failing ask indefinitely",
     file: "src/engine/reps.ts",
-    find: "  if (stalledLifts(data, before).has(exerciseId)) {",
-    to: "  if (false) {",
+    find: "  if (!stalledLifts(data, before).has(exerciseId)) return step",
+    to: "  if (true) return step",
     spec: "src/engine/stalled.test.ts",
   },
   {
@@ -1523,7 +1523,7 @@ const MUTATIONS = [
   {
     id: "physio-card-names-one-joint-of-several",
     bug: "a pressing movement stresses the shoulder and the elbow, and the athlete is told about whichever the catalog happened to list first",
-    file: "src/engine/adapt.ts",
+    file: "src/plan/words.ts",
     find: "  return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`",
     to: "  return words[0]",
     spec: "src/engine/persistentPain.test.ts",
