@@ -340,7 +340,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | W15 | Wire R15: age bands into loading ceilings, calorie baseline, plyometric gating. Age is collected (W8) and read by nothing | wiring | pending | J7 partial | |
 | W10 | Wire R10: cue corpus coverage (65 of 194 movements carry no cue) + selection and outcome tracking | wiring | **coverage done 2026-08-19** (plan/cues.ts: all 65 written in the house style, merged at catalog assembly; 16 guards, 6 proven to bite, 4 mutations). R10 calls the corpus the long pole and a CONTENT job, and this is that job done: coverage 129/194 to 194/194. The reason it hid is in data.test.ts, which asserts steps, muscles, qualities, why, mistakes, a video query and a rest time and never once asked for a cue, so a silent field was not a crash. It asks now. The guards are the ones R10 s10.4 names: fits the box, fits a breath, survives speakable, makes no claim about a body the app cannot see, promises nobody an injury prevented, no em dashes. Also fixed: one shipped cue was over the voice budget at 13 words. STILL OPEN in W10: selection (engine/cueing.ts, the trigger ladder, one cue ever, silence as the common output), outcome tracking (the CueIssue ledger, which R10 says belongs inside B1 rather than a private array), the TECHNIQUE table proper, and familiarity | W-ONT | feeds J10 |
 | W8e | Wire R8: EndurancePlan shape, session-vs-30-day-max load rule (the 10 percent rule fails) | wiring | pending | J7 partial | future endurance planner |
-| B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | pending | J7 | engines lane, inside J7/J8 |
+| B1 | Decision + intervention event log (append-only; declines, exposure, evidence, versions, outcome windows; schema v21) | infra | **ledger + declines done 2026-08-20** (src/decisionTypes.ts + store/decisionSchema.ts + engine/decisions.ts: append-only rows carrying type, target, ruleVersion, evidence AS VALUES, offeredAt, response, plus the outcome half of the shape ready for slice 2. Three rungs: one no buys 14 days, worsening evidence may return early and must say so, three noes stop it for 56 days and nothing gets past that. Declines feed the OFFERING POLICY only, never a load, volume, calorie target or safety rule. Wired into the calorie-step and nutrition-recheck cards; the step card finally has the second button it shipped without. No SCHEMA_VERSION bump: a defaulted array parses old envelopes clean, as `adapt` and `journey` did. STILL OPEN: outcome evaluation and verdicts, which is R3 ship-order step 3) | J7 | engines lane, inside J7/J8 |
 | B2 | Knowledge conventions: source_refs annotations, module registry, lift-to-data rule | infra | **done 2026-08-19** (plan/knowledge.ts 136 lines: SourceRef, KnowledgeRecord, EvidenceTier A-D, confidenceOf; plan/knowledgeRegistry.ts as the list, separate file because a refs module needs confidenceOf and the registry needs the refs module; plan/nutrition.refs.ts as the first, annotating R1's constants IN PLACE by importing the live values so a number cannot drift from its citation; plan/knowledge.test.ts 14 checks + 3 poison mutations). Guards: a sourced tier without a source, a dangling source id, a tier better than its best source, a source nothing cites, hand-typed confidence, a duplicate or malformed id, and a refs module on disk that the registry does not name. Written down in the test: nothing here can catch a number we invented, cited to real papers that do not name it, and labelled A. That is a review problem and the record shape makes it legible, which a bare `= 1500` never did | starts with R1 | done in the audit session |
 | R10 | Technique, cueing and motor learning (no camera) | research | **synthesized 2026-08-18** (research/R10-technique-cueing.md; 24 sources, cue corpus measured, selection and outcome-tracking design) | J1 | feeds J10 |
 | R7 | Populations and adaptive training (function-first) | research | **synthesized 2026-08-18** (research/R7-populations.md; 24 tier-A sources, 11 functional dimensions, 10 population packs, 30 paired fixtures, ME/CFS pacing policy) | J1 | J6 |
@@ -1854,6 +1854,50 @@ the pre-existing plans that genuinely have no record of what built them.
   without re-reading the whole. The window bug existed from the moment weightTrend was
   written and survived four slices built on top of it, because each slice only tested itself.
   NEXT: J8, unchanged.
+
+### 2026-08-20 · J8 slice 1 · B1, the decision ledger, and a no that is actually heard
+  R3 puts this first in J8's order and it is right to: nothing else in the learning loop can
+  be evaluated until the offers are written down.
+  TWO HOLES. Nothing anywhere asked whether a suggestion WORKED, so the app could not tell an
+  intervention that helps from one that does nothing. And declines were discarded on purpose,
+  defended as keeping a rejected suggestion from reshaping next week. Right about the PLAN,
+  wrong about the CONVERSATION: with no record the same proposal returns tomorrow off the same
+  evidence, and the app cannot tell somebody who disagreed from somebody who never saw the card.
+  WHAT SHIPPED: an append-only ledger on AppData. A row is never edited; a correction is a new
+  row. Evidence stored as VALUES not prose, because a sentence cannot be compared against next
+  month's sentence. Three rungs, getting quieter: one no buys a fortnight, unless the evidence
+  genuinely worsened, in which case it returns early and has to say so; three noes stop it for
+  two months and nothing gets past that. Only the offering policy reads it. No SCHEMA_VERSION
+  bump: a defaulted array parses old envelopes clean, exactly as adapt and journey did.
+  THE STEP CARD HAS ITS SECOND BUTTON NOW. It shipped with one because there was nowhere to
+  record a no, so a hold would have set the number to what it already was and the card would
+  have come straight back.
+  TWO THINGS THE TESTS FOUND WHILE BEING WRITTEN. A signed metric crossing zero is material and
+  doubling cannot see it: an athlete on a cut losing 0.4 lb/wk who is now GAINING 0.6 is plainly
+  in a different situation, but 0.6 is not twice 0.4, so the first rule stayed silent through
+  the change most worth mentioning. And zero was deciding by accident, because every number
+  clears zero times two; it is an explicit branch each way now, something starting counts and
+  something stopping does not.
+  REVIEW PASS (rule 8, first time under the new protocol) FOUND TWO MORE, both mine:
+  (1) The constant probe set STEP_RULE_VERSION to 7 and nothing went red, because the SCREEN was
+  composing ledger rows inline where no test could reach them. Row composition moved into the
+  engine. (2) Then the test I wrote for it was ALSO decorative: it asserted row.ruleVersion
+  against STEP_RULE_VERSION, comparing a value to itself, and passed at any value. It pins the
+  literals now. Third decorative guard this session and the third time a probe rather than the
+  suite is what caught it.
+  (3) The ledger was only half populated: the step card wrote rows, the recheck card did not,
+  so the learning loop in slice 2 could have evaluated one card out of two. It writes rows now,
+  keeping its basis stamp for the different job that does.
+  Probed and clean: all three cooldown constants bite; no two engines contradict on the Meals
+  screen (the advice ladder from the J7 review holds); no paired quantity crosses windows.
+  STEP_TARGET survived its probe and stays unpinned deliberately, being an identifier shared by
+  writer and reader that cannot drift between them.
+  ALLOWANCES SHRANK by splitting, not raising: mealTypes.ts out of types.ts (674 to 604),
+  coachSchema.ts out of store/schema.ts (578 to 554).
+  Validation: tsc -b clean, **1,676/1,676 unit** (21 new), build green, sim 20 personas,
+  **90/90 e2e**, **poison 196/196** (8 new).
+  NEXT: R3 ship-order step 3, outcome evaluation for the interventions that ALREADY exist, so
+  the ledger is proven against shipped behaviour before anything new is built on it.
 
 ## 10. SOURCES
 

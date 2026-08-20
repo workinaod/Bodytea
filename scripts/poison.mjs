@@ -1319,6 +1319,22 @@ const MUTATIONS = [
     spec: "src/plan/nutritionPlan.test.ts",
   },
   {
+    id: "ledger-row-lies-about-its-rule",
+    bug: "a row records the wrong rule version, so a decision made by an old rule is read as though a new one made it",
+    file: "src/engine/calorieStep.ts",
+    find: "export const STEP_RULE_VERSION = 1",
+    to: "export const STEP_RULE_VERSION = 7",
+    spec: "src/engine/calorieStep.test.ts",
+  },
+  {
+    id: "recheck-answers-never-reach-the-ledger",
+    bug: "one card of two writes to the ledger, so the learning loop can only ever evaluate half the offers it made",
+    file: "src/engine/nutritionRecheck.ts",
+    find: "export const RECHECK_RULE_VERSION = 1",
+    to: "export const RECHECK_RULE_VERSION = 9",
+    spec: "src/engine/nutritionRecheck.test.ts",
+  },
+  {
     id: "decline-leaves-no-trace",
     bug: "the same proposal comes back tomorrow off the same evidence, so the app cannot tell somebody who disagreed from somebody who never saw the card",
     file: "src/engine/decisions.ts",
