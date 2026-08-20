@@ -2089,8 +2089,8 @@ const E2E_MUTATIONS = [
     id: 'limit-load-offer-never-renders',
     bug: 'the offer is computed and the component bails before rendering it, so a joint that earned its weight back is never asked and the engine talks to nobody',
     file: 'src/screens/today/AdaptProposals.tsx',
-    find: '  if (!offering && !verdictLine && !limit) return null',
-    to: '  if (!offering && !verdictLine) return null',
+    find: '  if (!offering && !verdictLine && !limit && !early) return null',
+    to: '  if (!offering && !verdictLine && !early) return null',
     spec: 'e2e/adapt.spec.ts',
   },
   {
