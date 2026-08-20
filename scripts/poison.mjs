@@ -386,8 +386,8 @@ const MUTATIONS = [
     id: 'pain-reroute-needs-a-tap',
     bug: 'a hurting joint stops rerouting automatically',
     file: 'src/engine/adapt.ts',
-    find: "          kind: 'substitute',\n          automatic: true,\n          exerciseId: ex.exerciseId,\n          toExerciseId: sub,\n          because: `Your ${joint.replace('-', ' ')}",
-    to: "          kind: 'substitute',\n          automatic: false,\n          exerciseId: ex.exerciseId,\n          toExerciseId: sub,\n          because: `Your ${joint.replace('-', ' ')}",
+    find: "          automatic: true,\n          exerciseId: ex.exerciseId,\n          toExerciseId: sub,\n          // Told, or inferred.",
+    to: "          automatic: false,\n          exerciseId: ex.exerciseId,\n          toExerciseId: sub,\n          // Told, or inferred.",
     spec: 'src/engine/adapt.test.ts',
   },
   {
