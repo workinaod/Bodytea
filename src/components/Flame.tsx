@@ -244,20 +244,33 @@ const secs = (n: number) => `${n.toFixed(2)}s`
 const growth = (scale: number, size: number) => 1 + (scale - 1) * Math.min(1, Math.max(0.42, size / 44))
 
 /**
- * Embers coming off the fire. Deterministic, so nothing reshuffles on a
- * re-render.
+ * Embers coming off the fire.
  *
- * Every one of these used to launch from the same fixed height, which
- * put them on one invisible line ABOVE the flame rather than coming off
- * it, and held still in a screenshot they read as a row of dots sitting
- * in the air. Start height, drift and travel are all per particle now.
+ * Two bugs lived here and the second one is why these read as sparkles
+ * parked in the air rather than as anything leaving a fire.
+ *
+ * A percentage in `translate` resolves against the ELEMENT'S OWN box,
+ * not its parent. These spans are under two pixels tall, so a travel of
+ * `-230%` moved them about four pixels: they appeared, sat still, and
+ * faded, at every size, for as long as they have existed. Travel is
+ * absolute now, and measured against the fire.
+ *
+ * And their size was a fixed pixel count, which is proportionate on a
+ * 40px chip and microscopic on a 110px hero. Every dimension here now
+ * scales with the fire it is coming off.
  */
-function Embers({ n, color, spread }: { n: number; color: string; spread: number }) {
+function Embers({ n, color, px, delay }: { n: number; color: string; px: number; delay: number }) {
   if (n === 0) return null
+  // Two scales, because they are two different things. An ember is a
+  // physical speck: it does not get four times bigger because the fire
+  // did, so its SIZE grows far slower than the fire and stops. Where it
+  // starts and how far it travels DO scale with the fire it left.
+  const dot = Math.min(1.8, Math.max(1, (px / 44) ** 0.38))
+  const unit = Math.max(1, px / 44)
   return (
     <>
       {Array.from({ length: n }, (_, i) => {
-        const d = i % 4 === 0 ? 2.2 : 1.4
+        const d = (i % 4 === 0 ? 2.2 : 1.4) * dot
         return (
           <span
             key={i}
@@ -268,11 +281,13 @@ function Embers({ n, color, spread }: { n: number; color: string; spread: number
                 height: d,
                 background: color,
                 // Off the fire, over the whole upper half of it.
-                top: `${16 + ((i * 29) % 30)}%`,
-                marginLeft: `${(((i * 37) % 13) - 6) * spread}px`,
-                animationDelay: `${(i * 337) % 2100}ms`,
-                '--sx': `${(((i * 53) % 15) - 7) * spread}px`,
-                '--sy': `${-140 - ((i * 67) % 170)}%`,
+                top: `${18 + ((i * 29) % 28)}%`,
+                marginLeft: `${(((i * 37) % 13) - 6) * unit}px`,
+                animationDelay: `${delay + ((i * 337) % 2100)}ms`,
+                '--sx': `${(((i * 53) % 15) - 7) * unit}px`,
+                // Rises between half and one and a quarter of the fire's
+                // own height, so a bigger fire throws them further.
+                '--sy': `${-(0.55 + ((i * 67) % 70) / 100) * px}px`,
                 '--sd': `${1.5 + ((i * 7) % 12) / 10}s`,
               } as React.CSSProperties
             }
@@ -401,11 +416,7 @@ export function Flame({
     // that are supposed to be lit before there is a flame vanished.
     <span
       className="flame relative inline-block shrink-0"
-      style={{
-        width: (px * vw) / FLAME_H,
-        height: px,
-        filter: `drop-shadow(${s.glow.split(',')[0]})`,
-      }}
+      style={{ width: (px * vw) / FLAME_H, height: px }}
       aria-hidden
     >
       {ignite && !still && <EmberBed color={s.core} />}
@@ -418,7 +429,18 @@ export function Flame({
         className={`block h-full w-full ${lit ? 'flame-gutter' : ''}`}
         style={{ ['--gutter' as string]: secs(s.speed * 1.71) }}
       >
-        <svg viewBox={`0 0 ${vw} ${FLAME_H}`} className="h-full w-full">
+        {/* The glow belongs to the FIRE, not to the frame. On the frame
+            it also fell on the sparks and the embers, and at the top of
+            the ladder that is a 42px halo around a 2px dot: every
+            particle rendered as a fat white orb parked in the air. It
+            only ever looked right because the small rungs glow by 4px.
+            It sits on the svg because both wrappers above animate
+            `filter` already and would overwrite it. */}
+        <svg
+          viewBox={`0 0 ${vw} ${FLAME_H}`}
+          className="h-full w-full"
+          style={s.glow === 'none' ? undefined : { filter: `drop-shadow(${s.glow.split(',')[0]})` }}
+        >
           {/* The fire behind the fire. Same flame, smaller, offset, and
               on its own clock, so nothing in the frame moves together. */}
           {back.map(({ dx, dy, k, o, i }) => (
@@ -466,7 +488,9 @@ export function Flame({
         </svg>
       </span>
       </span>
-      {lit && <Embers n={s.embers} color={s.core} spread={Math.max(1, px / 44)} />}
+      {/* A flame still catching throws no embers; the coals throw the
+          strike sparks instead. These start once the fire has body. */}
+      {lit && <Embers n={s.embers} color={s.core} px={px} delay={ignite ? IGNITE_MS * 0.55 : 0} />}
     </span>
   )
 }

@@ -390,29 +390,36 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
      looks like." Four bad flames shipped to review because the parameters read as correct
      and nobody opened the picture. Screenshot every visual change, judge it against the
      real thing it depicts, and iterate before it leaves the session.
-  2. **A drawing that works beats a system that computes one.** The generated-geometry
+  2. **Check it at EVERY size it will actually render at.** Three separate bugs in the
+     flame were invisible in the code and only at one size on screen: a particle sized in
+     fixed pixels is proportionate on a 40px chip and a speck on a 110px hero; the same
+     particle scaled linearly with the fire becomes a fat orb; and a percentage in
+     `transform: translate` resolves against THE ELEMENT'S OWN BOX, so a 2px ember told to
+     travel -230% moved four pixels and sat there, at every size, for as long as it
+     existed. Render the smallest instance and the largest before calling anything done.
+  3. **A drawing that works beats a system that computes one.** The generated-geometry
      flame was replaced four times (triangles from a floor, a picket of candles, a fan of
      needles) and every version was worse than the hand-authored path already in the repo.
      Growth does not require redrawing: keep the good silhouette and add MORE OF IT.
-  3. **A transform can squash a shape; it can never change one.** The flame read as
+  4. **A transform can squash a shape; it can never change one.** The flame read as
      "constant, not dynamically flickering" through four rounds of timing work because
      every version was one rigid outline being stretched. Real movement needed the PATH to
      morph: seven cubic curves whose points wander, weighted so the tip whips and the base
      holds still. If a surface has to look alive, ask whether its geometry actually moves.
-  4. **The shape changes, not just the size.** A raging fire is not a big small fire, it
+  5. **The shape changes, not just the size.** A raging fire is not a big small fire, it
      is MORE FIRE: more flames, layered, each on its own clock. Whatever the surface is,
      its states must differ in KIND, not in transform.
-  5. **Every step in a progression changes something.** The first version keyed eleven
+  6. **Every step in a progression changes something.** The first version keyed eleven
      rungs to seven levels and three of them rendered identically, which teaches people
      the ladder is decoration. `components/flame.test.ts` is the pattern: assert the
      progression strictly moves on every axis, so a silent duplicate fails a test rather
      than shipping.
-  6. **Nothing on screen shares a clock.** Layers run at unrelated periods with keyframe
+  7. **Nothing on screen shares a clock.** Layers run at unrelated periods with keyframe
      stops at odd percentages, so the combined loop is too long to see repeat. One
      element on a smooth sine curve reads as a logo breathing, every time.
-  7. **Earned only, and honest.** The bar applies to what somebody worked for. It never
+  8. **Earned only, and honest.** The bar applies to what somebody worked for. It never
      buys spectacle for junk volume or a number the engine did not produce.
-  8. **It still has to run on a phone.** Transform and opacity; filter animations gated to
+  9. **It still has to run on a phone.** Transform and opacity; filter animations gated to
      display sizes; particle counts capped; the full show off by default on the chips that
      sit on screen all day. Reduced motion keeps every bit of information and drops every
      bit of movement.
