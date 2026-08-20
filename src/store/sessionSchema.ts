@@ -36,6 +36,7 @@ export const sessionSchema = z.object({
     .optional(),
   intensity: z.enum(['full', 'lighter', 'minimum']).optional(),
   makeupFor: isoDate.optional(),
+  ownPlanStarted: z.boolean().optional(),
   customTitle: z.string().optional(),
   trimmedFromIndex: z.number().optional(),
   exercises: z.array(

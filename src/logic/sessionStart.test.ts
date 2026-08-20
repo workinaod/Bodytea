@@ -430,4 +430,75 @@ describe('what the plan still owes the day', () => {
     })
     expect(planWorkOutstanding(day.exercises, useAppStore.getState().data.sessions[DATE])).toEqual([])
   })
+
+  it('still owes today when the make-up ran the SAME workout today is scheduled for', () => {
+    // The one the movements alone can never catch. An A/B week repeats a
+    // template, so last Tuesday's make-up and this Tuesday's session hold
+    // the identical exercise list, and "are the plan's movements on the
+    // log?" answers yes for a session that was somebody else's day.
+    const LATER = '2026-08-18' // the next Tuesday, same template
+    const today = resolveDay(LATER, useAppStore.getState().data)
+    const madeUp = resolveDay(DATE, useAppStore.getState().data)
+    expect(
+      today.exercises.map((e) => e.exerciseId),
+      'the fixture needs two dates that share a template, or this proves nothing',
+    ).toEqual(madeUp.exercises.map((e) => e.exerciseId))
+
+    startSession(LATER, undefined, 'full', DATE)
+    useAppStore.getState().update((d) => {
+      for (const ex of d.sessions[LATER].exercises) for (const set of ex.sets) set.done = true
+    })
+    finishSession(LATER)
+
+    const session = useAppStore.getState().data.sessions[LATER]
+    expect(session.ownPlanStarted, 'a make-up did not start today\'s own plan').toBe(false)
+    expect(
+      planWorkOutstanding(today.exercises, session).length,
+      'the day closed on a workout nobody had done',
+    ).toBeGreaterThan(0)
+  })
+
+  it('owes nothing once the athlete actually starts today, even after a make-up', () => {
+    const LATER = '2026-08-18'
+    const today = resolveDay(LATER, useAppStore.getState().data)
+    startSession(LATER, undefined, 'full', DATE)
+    startSession(LATER) // and now their own
+    const session = useAppStore.getState().data.sessions[LATER]
+    expect(session.ownPlanStarted).toBe(true)
+    expect(planWorkOutstanding(today.exercises, session)).toEqual([])
+    // The make-up link survives, because the missed day really was made up.
+    expect(session.makeupFor).toBe(DATE)
+  })
+
+  it('rescues a make-up written before the flag existed, even at the same template', () => {
+    // The record the report was actually staring at: written by the old
+    // build, so no flag, and the made-up day happens to share today's
+    // template. Every movement on it came from the made-up day, so today's
+    // own is still owed however identical the two lists look.
+    const LATER = '2026-08-18'
+    const today = resolveDay(LATER, useAppStore.getState().data)
+    const madeUp = resolveDay(DATE, useAppStore.getState().data)
+    startSession(LATER, undefined, 'full', DATE)
+    useAppStore.getState().update((d) => {
+      delete d.sessions[LATER].ownPlanStarted
+    })
+    const session = useAppStore.getState().data.sessions[LATER]
+    expect(planWorkOutstanding(today.exercises, session), 'without the make-up day it cannot tell').toEqual([])
+    expect(
+      planWorkOutstanding(today.exercises, session, madeUp.exercises).length,
+      'the old record still closed the day',
+    ).toBeGreaterThan(0)
+  })
+
+  it('reads the movements on a session written before the flag existed', () => {
+    startSession(DATE)
+    useAppStore.getState().update((d) => {
+      delete d.sessions[DATE].ownPlanStarted
+    })
+    const today = resolveDay(DATE, useAppStore.getState().data)
+    expect(
+      planWorkOutstanding(today.exercises, useAppStore.getState().data.sessions[DATE]),
+      'an old session holding today\'s movements still counts',
+    ).toEqual([])
+  })
 })

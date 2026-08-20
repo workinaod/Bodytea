@@ -280,6 +280,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP6 | Extra work never ends the day and never spends the plan's session (owner bug report, the same one twice): logExtraWork seeds the scheduled workout and adds inside it, the door stays open mid-session, a debrief only comes from a day that is over | product | **done + LIVE 2026-08-19** (deploy 316976c, live bundle verified byte-identical by sha256) | OP5 | off-plan training session |
 | OP7 | Period reviews (owner request): a Wrapped-style review when a week, month, quarter or year closes, with progression, highlights, goals accomplished and a cohort comparison; the week always asks for front and side photos, the quarter and year show the first photo next to the latest | product | **done + LIVE 2026-08-20** (deploy 9a70b5d, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
 | OP8 | A make-up never eats the day it runs on (owner bug report, the third door): startSession merges instead of overwriting, and Today offers the day's own session while the plan's work is still owed | product | **done + LIVE 2026-08-20** (deploy a24ef44, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
+| OP9 | The day knows whether ITS OWN workout has been started (owner: "the day is still closed"): SessionLog.ownPlanStarted, because an A/B week repeats a template and the movements alone cannot tell a make-up from today's session; plus the hero naming today rather than the day that was made up | product | **done 2026-08-20** | OP8 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1665,6 +1666,41 @@ the pre-existing plans that genuinely have no record of what built them.
   **poison 181/181** (6 new).
   NEXT: R1 is done. J7's last piece is the calorie-autoregulation seed, then J8, which has
   been unblocked since the facts layer landed and is the natural head of the engines lane.
+- **2026-08-20 · OP9 · Off-plan training session (owner, on OP8: "the day is still closed so
+  yes fix it").** OP8 shipped and the day was still closed. Two reasons, both mine.
+  (1) **The predicate was inferring what it could not infer.** `planWorkOutstanding` asked
+  "are the plan's movements on the log?", and an A/B week repeats a template: a make-up of
+  last Tuesday and this Tuesday's session hold the IDENTICAL exercise list, so the answer was
+  yes for a session that was somebody else's day. `SessionLog.ownPlanStarted` now records it
+  outright. **Stored rather than derived, which is unusual here and deliberate**: the two
+  cases are genuinely indistinguishable from the movements, and guessing is what closed the
+  day. Optional, so no migration; `startSession` sets it true for an own-plan start and false
+  for a make-up, and `putOnDay` keeps it true once true.
+  Sessions written before the flag existed fall back to the movements, with one rescue: a
+  legacy make-up whose every movement came from the made-up day is entirely that day's work,
+  so today's own is still owed however identical the lists look. That is the exact record the
+  owner was staring at, fixed without a migration.
+  (2) **The hero was naming the wrong day.** `viewDay` resolves the MADE-UP day so the
+  session view can render it, and the header used it too, so a finished make-up put that
+  workout's title in the hero: the screen read "this is your workout, and it is done" over a
+  session nobody had started. The header now names what is RUNNING while a session runs, and
+  what the day still owes once nothing is. The owed line named the wrong day too (`viewDay`
+  where it meant `day`), which was a straight bug in what OP8 shipped.
+  Two e2e specs caught the first attempt at (2) and were RIGHT: while a make-up is running,
+  the hero must name the workout being performed, not today's.
+  PROOF THE GUARDS BITE (owner rule): reverting to movement-inference failed the same-template
+  test; making a make-up claim `ownPlanStarted: true` failed 2; dropping the legacy rescue
+  failed the rescue test, which asserts BOTH halves (without the made-up day's movements the
+  predicate cannot tell, with them it can).
+  Validation: typecheck clean, **1,643/1,643 unit** (11 new since OP8), build green,
+  **e2e 89 passed / 0 failed**, 390px screenshot of the post-make-up day reviewed: hero is
+  today's workout, "Start today's session" is offered, and the finished card says "That was
+  not today's workout though. X is still on the table."
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
+  STILL TRUE, and now the only piece left of this: a date holds ONE SessionLog. The day no
+  longer closes on work that was not today's, and every door adds instead of replacing, but
+  two sessions on one day each carrying their own grade is still not representable. Nothing
+  reported so far needs it.
 
 ## 10. SOURCES
 

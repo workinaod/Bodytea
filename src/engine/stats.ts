@@ -167,11 +167,32 @@ export function sessionSetsDone(session: SessionLog): { done: number; total: num
 export function planWorkOutstanding(
   planned: { exerciseId: string }[],
   session: SessionLog | undefined,
+  /**
+   * The made-up day's movements, when the session ran one. Read only for
+   * sessions written before the flag existed, to rescue the exact record
+   * the report was staring at.
+   */
+  madeUp?: { exerciseId: string }[],
 ): string[] {
-  if (!session) return planned.map((p) => p.exerciseId)
+  const all = planned.map((p) => p.exerciseId)
+  if (!session) return all
   if (session.status === 'skipped') return []
+  // Explicit beats derived. A make-up can run the very template today is
+  // scheduled for, because an A/B week repeats one, and then the movements
+  // on the log cannot tell "I did today's session" from "I did last
+  // Monday's, which happens to be the same workout".
+  if (session.ownPlanStarted === true) return []
+  if (session.ownPlanStarted === false) return all
+  // Written before the flag existed. A session whose every movement came
+  // from the made-up day is entirely that day's work, whatever it has in
+  // common with today's, so today's own is still owed.
+  if (session.makeupFor && madeUp && session.exercises.length > 0) {
+    const fromMakeup = new Set(madeUp.map((m) => m.exerciseId))
+    if (session.exercises.every((e) => fromMakeup.has(e.exerciseId))) return all
+  }
+  // Otherwise read the movements, which is right for everything else.
   const on = new Set(session.exercises.map((e) => e.exerciseId))
-  return planned.map((p) => p.exerciseId).filter((id) => !on.has(id))
+  return all.filter((id) => !on.has(id))
 }
 
 // ---------- Session grades ----------

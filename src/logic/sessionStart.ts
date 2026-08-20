@@ -124,6 +124,10 @@ function putOnDay(date: ISODate, skeleton: SessionLog, opts: { reopen: boolean }
     existing.readiness = existing.readiness ?? skeleton.readiness
     existing.makeupFor = existing.makeupFor ?? skeleton.makeupFor
     existing.intensity = existing.intensity ?? skeleton.intensity
+    // Once today's own plan has been started it stays started: a make-up
+    // landing on top of it afterwards does not un-start it.
+    if (skeleton.ownPlanStarted === true) existing.ownPlanStarted = true
+    else existing.ownPlanStarted = existing.ownPlanStarted ?? skeleton.ownPlanStarted
   })
 }
 
@@ -163,6 +167,9 @@ export function startSession(
     readiness: readinessFlags ? { flags: readinessFlags, downgraded } : undefined,
     intensity: intensity === 'full' ? undefined : intensity,
     makeupFor,
+    // A make-up runs somebody else's day. Today's own workout has not been
+    // started by it, and that is what keeps the day open afterwards.
+    ownPlanStarted: makeupFor === undefined,
     exercises: exercises.map((r) => ({
       exerciseId: r.exerciseId,
       fromSlot: r.fromSlot,

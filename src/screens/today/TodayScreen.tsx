@@ -97,7 +97,16 @@ export function TodayScreen() {
   // What the plan asked for today that is not on the day's log yet. Empty
   // means today's own workout is on the record; anything in it means the
   // day still owes work however finished the session looks.
-  const planOwed = planWorkOutstanding(day.exercises, session)
+  const planOwed = planWorkOutstanding(
+    day.exercises,
+    session,
+    session?.makeupFor ? viewDay.exercises : undefined,
+  )
+  // The header names what is RUNNING while a session is running, and what
+  // the day still owes once nothing is. A finished make-up used to leave
+  // the made-up day's title in the hero, so the screen read "this is your
+  // workout, and it is done" over a session nobody had started.
+  const heroDay = planOwed.length > 0 && !inProgress ? day : viewDay
 
   const restCard = useMemo(() => {
     if (day.kind !== 'rest') return null
@@ -188,7 +197,7 @@ export function TodayScreen() {
         {/* A make-up or an off-plan workout IS the day once it exists;
             the hero says what is actually being done, not the schedule */}
         <div className="mt-1.5 flex items-start justify-between gap-3">
-          <h1 className="headline min-w-0 text-[31px]">{session?.customTitle ?? viewDay.title}</h1>
+          <h1 className="headline min-w-0 text-[31px]">{session?.customTitle ?? heroDay.title}</h1>
           {/* The session-level "?", the twin of the one on every exercise row:
               what this workout does, why it runs in this order, and where it
               sits in the plan. */}
@@ -201,7 +210,7 @@ export function TodayScreen() {
           </button>
         </div>
         <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">
-          {session?.customTitle ? 'Off the plan, on the record.' : viewDay.tagline}
+          {session?.customTitle ? 'Off the plan, on the record.' : heroDay.tagline}
         </p>
       </div>
 
@@ -374,7 +383,7 @@ export function TodayScreen() {
           session={session!}
           date={date}
           today={today}
-          owedTitle={planOwed.length > 0 ? viewDay.title : null}
+          owedTitle={planOwed.length > 0 ? day.title : null}
           pastDebrief={pastDebrief}
           onReopenSession={reopenSession}
           onOpenDebrief={(d) => setDebrief({ data: d })}
