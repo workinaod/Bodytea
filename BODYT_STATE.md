@@ -385,19 +385,28 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   one component): "that is the level of animations and graphics that I'm expecting
   throughout this redesign of the app."** The reference is the streak flame in
   `components/Flame.tsx`. What it has to be matched on, concretely:
-  1. **Render it, look at it, grade it, THEN show it.** The owner's words: "You can take
-     screenshots of your work as you're doing it and grade yourself. You know what a flame
-     looks like." Four bad flames shipped to review because the parameters read as correct
-     and nobody opened the picture. Screenshot every visual change, judge it against the
-     real thing it depicts, and iterate before it leaves the session.
-  2. **Check it at EVERY size it will actually render at.** Three separate bugs in the
+  0. **THE COST, so nobody repeats it.** The flame took FOURTEEN rounds of owner review.
+     Their words at the end: "look how much back and forth I had to do for a flame. Please
+     take your time and think through what you bring me." The two rules below are what
+     that cost bought, and they are the point of this whole section.
+  1. **Find the MECHANISM before touching a parameter.** Four separate fixes went into the
+     embers (their size, their travel, their glow, their spawn height) and not one of them
+     was the bug; the bug was a missing `backwards` on an animation with a delay. Every
+     round reached for the nearest knob instead of asking why the picture was wrong. If
+     you cannot say WHY it looks wrong, you have not earned the right to tune anything:
+     go and find out first. A parameter that "looks about right" fixed nothing four times.
+  2. **Do not show work you would not accept yourself.** Render it, look at it at both
+     size extremes and part-way through its animation, grade it against the real thing it
+     depicts, and iterate until it is right. THEN bring it. Every round that went out on
+     "the numbers read correct" came straight back.
+  3. **Check it at EVERY size it will actually render at.** Three separate bugs in the
      flame were invisible in the code and only at one size on screen: a particle sized in
      fixed pixels is proportionate on a 40px chip and a speck on a 110px hero; the same
      particle scaled linearly with the fire becomes a fat orb; and a percentage in
      `transform: translate` resolves against THE ELEMENT'S OWN BOX, so a 2px ember told to
      travel -230% moved four pixels and sat there, at every size, for as long as it
      existed. Render the smallest instance and the largest before calling anything done.
-  3. **A particle has to come FROM something, and an `animation-delay` without a fill
+  4. **A particle has to come FROM something, and an `animation-delay` without a fill
      mode is a bug.** The embers read as "sparkles floating in the air until their frame
      is reached" for FOUR rounds. Two causes, and neither was any of the things that got
      fixed in between (size, travel, glow, spawn height). First: during its delay an
@@ -408,29 +417,29 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
      a hundred pixels above a flame that had not grown yet. Ask where a moving thing
      starts and what it looks like BEFORE it starts moving; if it is attached to an
      object, it starts on the object and is invisible until then.
-  4. **A drawing that works beats a system that computes one.** The generated-geometry
+  5. **A drawing that works beats a system that computes one.** The generated-geometry
      flame was replaced four times (triangles from a floor, a picket of candles, a fan of
      needles) and every version was worse than the hand-authored path already in the repo.
      Growth does not require redrawing: keep the good silhouette and add MORE OF IT.
-  5. **A transform can squash a shape; it can never change one.** The flame read as
+  6. **A transform can squash a shape; it can never change one.** The flame read as
      "constant, not dynamically flickering" through four rounds of timing work because
      every version was one rigid outline being stretched. Real movement needed the PATH to
      morph: seven cubic curves whose points wander, weighted so the tip whips and the base
      holds still. If a surface has to look alive, ask whether its geometry actually moves.
-  6. **The shape changes, not just the size.** A raging fire is not a big small fire, it
+  7. **The shape changes, not just the size.** A raging fire is not a big small fire, it
      is MORE FIRE: more flames, layered, each on its own clock. Whatever the surface is,
      its states must differ in KIND, not in transform.
-  7. **Every step in a progression changes something.** The first version keyed eleven
+  8. **Every step in a progression changes something.** The first version keyed eleven
      rungs to seven levels and three of them rendered identically, which teaches people
      the ladder is decoration. `components/flame.test.ts` is the pattern: assert the
      progression strictly moves on every axis, so a silent duplicate fails a test rather
      than shipping.
-  8. **Nothing on screen shares a clock.** Layers run at unrelated periods with keyframe
+  9. **Nothing on screen shares a clock.** Layers run at unrelated periods with keyframe
      stops at odd percentages, so the combined loop is too long to see repeat. One
      element on a smooth sine curve reads as a logo breathing, every time.
-  9. **Earned only, and honest.** The bar applies to what somebody worked for. It never
+  10. **Earned only, and honest.** The bar applies to what somebody worked for. It never
      buys spectacle for junk volume or a number the engine did not produce.
-  10. **It still has to run on a phone.** Transform and opacity; filter animations gated to
+  11. **It still has to run on a phone.** Transform and opacity; filter animations gated to
      display sizes; particle counts capped; the full show off by default on the chips that
      sit on screen all day. Reduced motion keeps every bit of information and drops every
      bit of movement.
