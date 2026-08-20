@@ -111,7 +111,7 @@ const OVERSIZE_ALLOWED: Record<string, number> = {
   // the voice-shortlist work; both features are real. This file now OWES
   // a split (tracked in BODYT_STATE.md); the allowance must come back
   // down when it happens.
-  'screens/today/FocusView.tsx': 642,
+  'screens/today/FocusView.tsx': 639,
   // Session shapes moved to store/sessionSchema.ts, beside the types they
   // mirror, the shared zod primitives to store/primitives.ts, and the
   // GPS and cardio shapes to store/activitySchema.ts. The allowance

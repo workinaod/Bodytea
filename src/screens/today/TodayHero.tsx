@@ -130,8 +130,12 @@ export function TodayHero({
         {/* One action, full width, inside the tile it belongs to. It used
             to share a row with "Can't train" at half this size, which made
             the screen ask a question instead of giving an instruction. */}
+        {/* One of the two things the law lets move on a settled screen: the
+            flame breathes, and the one action sheens about once per eight
+            seconds. Nothing has ever passed this prop, so half the idle
+            whitelist has never been on. */}
         {cta && (
-          <Btn size="lg" className="mt-3.5 w-full" onClick={cta.onStart}>
+          <Btn size="lg" shimmer className="mt-3.5 w-full" onClick={cta.onStart}>
             {cta.label}
           </Btn>
         )}

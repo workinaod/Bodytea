@@ -24,7 +24,13 @@ function TabButton({ id, label, active, onClick }: { id: TabId; label: string; a
         active ? 'border-accent/45 bg-accent/15 text-accent' : 'border-transparent text-ink-faint active:text-ink-dim'
       }`}
     >
-      <Glyph name={id} active={active} />
+      {/* Keyed on the state so the pop fires on SELECT and not on every
+          re-render of a bar that is on screen the whole time. The most
+          frequent interaction in the app, so it gets the smallest beat
+          in the vocabulary and nothing else. */}
+      <span key={active ? 'on' : 'off'} className={active ? 'pop flex' : 'flex'}>
+        <Glyph name={id} active={active} />
+      </span>
       <span className={`text-[9.5px] font-bold ${active ? 'text-accent' : ''}`}>{label}</span>
     </button>
   )

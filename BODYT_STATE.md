@@ -2388,6 +2388,59 @@ the pre-existing plans that genuinely have no record of what built them.
   NEXT: the remaining dead classes (`.pop` on the set counter, `.flicker` on a streak that went
   up, `.charge`), and `MuscleMap` lighting sequentially, which still has zero animation.
 
+- **2026-08-20 · OP12 · the rest of the unspent motion, and three things that were quietly off.**
+  Round 7's audit is now fully spent. What landed:
+  **The anatomy figure moves for the first time.** `MuscleMap` had zero animation of any kind
+  and it is the second most important graphic in the app. Worked muscles now come on one at a
+  time, 55ms apart, so the figure reads as the week replaying on your body rather than as a
+  diagram. It needed a real change to the renderer: the resting sculpt is ALWAYS drawn and the
+  lit version rides on top of it, because without the layer underneath an opacity of zero is a
+  hole in the body rather than an unlit muscle. **Opt-in per surface** (`reveal`): Progress
+  earns it because there the figure IS the answer; the exercise picker and the profile glance
+  stay still, because there it is a hint, and a hint that performs is in the way.
+  **`.pop` on the set counter and the tab icon**, both keyed so they fire on the EVENT and not
+  on every re-render of something that is on screen the whole time. **`.punch` on the 3-2-1**,
+  synced to the beeps that already played with it, with `.confirm` for the longer coaching
+  captions because a sentence scaling down from 140% reads as a glitch.
+  **THREE THINGS WERE OFF AND NOBODY COULD HAVE SEEN IT:**
+  (1) **Half the idle whitelist had never been switched on.** The law names exactly two things
+  allowed to move on a settled screen: the flame breathes, and the primary CTA sheens about
+  once per eight seconds. `Btn` has had a `shimmer` prop the whole time and **nothing has ever
+  passed it**. Worse, the keyframe would have been wrong if anything had: it ran edge to edge
+  on a 3.4s `infinite` loop, which is the cadence of a loading skeleton, and would have made
+  the button the only thing moving on the screen, constantly. The travel is now 1.4s inside an
+  8s cycle with the highlight parked off-screen between passes, and Today's one action carries
+  it.
+  (2) **The body figure and its own caption disagreed.** The figure lights from the FIRST
+  session, and under it sat "Assessing. A few sessions and this fills in." A body blazing
+  orange under a line saying there is not enough data yet is the app arguing with itself. It
+  now says what is true: nothing this week yet, or one session in and how many more make it a
+  week. Same information, and one of the two versions is a reason to train tomorrow.
+  (3) **Four motion classes had no home and were deleted rather than left switched off.**
+  `.flicker` and `.charge` are superseded by `Flame.tsx`, which owns its own ignition and its
+  own wind-up. `.flip-x` and `.grow-y` describe surfaces the shipped design does not have: a
+  mission tile that flips to volt (the completion tile replaces the mission now) and a bar that
+  fills downward (there are none). motion.css 876 → 836. A class nothing can reach is not a
+  feature waiting to be switched on, it is a claim the stylesheet makes and cannot back, and
+  the round-7 audit counted them as unspent material when they were actually just gone.
+  **A THIRD GUARD, and the law it finally enforces.** `e2e/density.spec.ts` now asserts that
+  **nothing loops on a settled screen except the flame**, across all five tabs. "Invisible at
+  rest" is the rule the whole earned-moment system rests on and until now nothing checked it: a
+  stray `infinite` in a stylesheet is invisible in a diff and obvious on a phone at 2am. The
+  flame is exempt for the reason it is already exempt in the reduced-motion block, that it is
+  information rather than decoration. **Proven by mutation:** adding `infinite` to the arrival
+  animation turns it red.
+  **FocusView 641 → 638, allowance 642 → 639.** Paid for by deleting a try/catch around
+  `tapConfirm()` that could never fire: `haptics.ts` already swallows its own failures, so the
+  wrapper was dead defensiveness. Third shrink of this file in two days.
+  LEARNED: **a comment that will not fit is a comment in the wrong file.** The reason the
+  caption picks `.punch` over `.confirm` on LENGTH lives in motion.css next to the class it
+  explains, which is where somebody reading either one will actually find it, and it cost the
+  capped file nothing.
+  Gates: typecheck clean, **1,751/1,751 unit**, build green, **93/93 e2e** on a fresh server,
+  390px screenshots of all five tabs reviewed, plus mid-flight captures of the arrival and the
+  muscle reveal.
+
 ## 10. SOURCES
 
 - OP12 round 6, "Make It Move" (reminder pop-up, Progress as a scoreboard, the flame from zero):

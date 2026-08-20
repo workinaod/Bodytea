@@ -56,11 +56,23 @@ export function ProgressBody({ data, today }: { data: AppData; today: ISODate })
     <Tile>
       <div className="eyebrow text-ink-faint">Your body this week</div>
       <div className="mt-1">
-        <MuscleMap primary={primary} secondary={secondary} compact />
+        <MuscleMap primary={primary} secondary={secondary} compact reveal />
       </div>
       {sessions < 2 ? (
-        <p className="mt-1 text-center text-[12.5px] font-bold text-ink-faint">
-          Assessing. A few sessions and this fills in.
+        // The figure is lit from the first session, so "assessing" was the
+        // copy disagreeing with the graphic right above it: a body blazing
+        // orange under a line saying there is not enough data yet. There IS
+        // data, it is one day of it, and saying how many more make it a week
+        // is both true and a reason to train tomorrow.
+        <p className="mt-1 text-center text-[12.5px] font-bold text-ink-dim">
+          {sessions === 0 ? (
+            'Nothing this week yet. One session starts drawing it.'
+          ) : (
+            <>
+              One session in. <b className="text-ink">{2 - sessions} more</b> and this reads as a
+              week rather than a day.
+            </>
+          )}
         </p>
       ) : (
         <>

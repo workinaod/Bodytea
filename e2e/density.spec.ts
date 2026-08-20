@@ -136,3 +136,50 @@ test('a full-screen overlay is never given the arrival animation', async ({ page
   expect(overlay.animationName).toBe('none')
   expect(overlay.transform).toBe('none')
 })
+
+// ============================================================
+// Invisible at rest.
+//
+// The motion law's idle whitelist is short and specific: the flame
+// breathes, and the primary CTA sheens about once every eight
+// seconds. Nothing else on a settled screen loops, ever. That rule
+// is what makes the earned moments read as earned, and until now
+// nothing enforced it: a stray `infinite` in a stylesheet is
+// invisible in a diff and obvious on a phone at 2am.
+//
+// The flame is exempt because it is INFORMATION, not decoration,
+// which is the same exemption it already carries in the
+// prefers-reduced-motion block.
+// ============================================================
+const IDLE_ALLOWED = /flame|ember|coal/i
+
+test('nothing loops on a settled screen except the flame', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.clock.install({ time: new Date(2026, 7, 10, 9, 0) })
+  await page.goto('./')
+  await onboardGenerated(page)
+
+  for (const tab of ['Today', 'Train', 'Plan', 'Progress', 'Profile']) {
+    if (tab !== 'Today') {
+      await page.getByRole('button', { name: tab, exact: true }).click()
+    }
+    // Well past the longest arrival delay, so anything still running is
+    // running forever rather than still arriving.
+    await page.waitForTimeout(900)
+    const looping = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('*'))
+        .filter((el) => {
+          const cs = getComputedStyle(el)
+          return cs.animationName !== 'none' && cs.animationIterationCount === 'infinite'
+        })
+        .map((el) => `${el.tagName.toLowerCase()} ${getComputedStyle(el).animationName} .${String((el as HTMLElement).className).slice(0, 40)}`),
+    )
+    const strays = looping.filter((l) => !IDLE_ALLOWED.test(l))
+    expect(
+      strays,
+      `${tab} has something looping at rest. The idle whitelist is the flame and the CTA sheen, ` +
+        `and everything else on a settled screen holds still.\n  ` + strays.join('\n  '),
+    ).toEqual([])
+  }
+})

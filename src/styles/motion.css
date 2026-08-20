@@ -130,6 +130,21 @@
   animation-delay: 280ms;
 }
 
+/* Muscles coming on one at a time.
+   The anatomy figure has always drawn the week's work and always
+   drawn it all at once, which reads as a diagram. Lighting them in
+   sequence reads as the week replaying on your body, which is the
+   thing the figure is actually for. Opt-in per surface: the picker
+   and the profile glance stay still, because there it is a hint
+   rather than the answer. */
+@keyframes bt-light {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.light-up {
+  animation: bt-light 260ms var(--ease-out) backwards;
+}
+
 /* The week path assembling left to right.
    A connector that scales in from its left edge reads as a line being
    DRAWN; seven dots fading in together read as seven dots. The delay
@@ -301,26 +316,6 @@
   animation: bt-breathe-in 420ms var(--ease-spring) both;
 }
 
-/* A streak that just went up. Fires once, on change only. */
-@keyframes bt-flicker {
-  0%,
-  100% {
-    transform: scale(1) rotate(0deg);
-    filter: brightness(1);
-  }
-  25% {
-    transform: scale(1.12) rotate(-4deg);
-    filter: brightness(1.35);
-  }
-  55% {
-    transform: scale(0.98) rotate(3deg);
-    filter: brightness(1.1);
-  }
-}
-.flicker {
-  animation: bt-flicker 520ms var(--ease-out);
-}
-
 /* Progress rings and bars drain/fill rather than jumping. */
 .sweep {
   transition: stroke-dashoffset var(--dur-slow) var(--ease-out);
@@ -328,19 +323,34 @@
 .grow {
   transition: width var(--dur-slow) var(--ease-out);
 }
-/* The vertical twin. `.grow` transitions width and nothing else, so a
-   path that fills downward gets nothing from it and jumps instead. */
-.grow-y {
-  transition: height var(--dur-slow) var(--ease-out);
-}
+/* FOUR CLASSES WERE DELETED FROM THIS FILE, not left switched off.
+   `.flicker` and `.charge` are superseded by Flame.tsx, which owns its
+   own ignition keyframes and its own wind-up. `.flip-x` and `.grow-y`
+   describe surfaces the shipped design does not have: a mission tile
+   that flips to volt (the completion tile replaces the mission now)
+   and a bar that fills downward (there are none). A class nothing can
+   reach is not a feature waiting to be switched on, it is a claim the
+   stylesheet makes and cannot back, and round 7's audit counted them
+   as unspent material when they were actually just gone. */
 
 /* ---------- shimmer: a highlight travelling across a CTA ---------- */
 
 /* Light catching an edge as it turns. Slow and wide, so it reads as
-   material rather than as a loading skeleton. */
+   material rather than as a loading skeleton.
+
+   The travel is 1.4s inside an 8s cycle and then the highlight PARKS
+   off-screen, because the law's idle whitelist is two things and this
+   is one of them: the primary CTA sheens about once per eight seconds.
+   It used to run edge to edge on a 3.4s loop, which is the cadence of
+   a loading skeleton and would have made the button the only thing
+   moving on a settled screen, constantly. Nothing passed the prop, so
+   nobody ever saw it. */
 @keyframes bt-shimmer {
   0% {
     transform: translateX(-140%) skewX(-18deg);
+  }
+  18% {
+    transform: translateX(340%) skewX(-18deg);
   }
   100% {
     transform: translateX(340%) skewX(-18deg);
@@ -359,7 +369,7 @@
   left: 0;
   width: 32%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
-  animation: bt-shimmer 3.4s var(--ease-out) infinite;
+  animation: bt-shimmer 8s var(--ease-out) infinite;
   pointer-events: none;
 }
 
@@ -384,7 +394,13 @@
 }
 
 /* The 3-2-1 before a set. Punched in rather than faded, to match the
-   beeps that play with it. */
+   beeps that play with it.
+
+   The logger's caption line carries both the countdown digits and the
+   coaching sentences, and it picks between this and `.confirm` on the
+   caption's LENGTH: a sentence scaling down from 140% reads as a
+   glitch, while three characters read as an impact. If that line ever
+   learns whether it is counting down, the length test should go. */
 @keyframes bt-punch {
   from { transform: scale(1.4); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
@@ -404,28 +420,6 @@
 }
 .roll {
   animation: bt-roll var(--dur-slow) var(--ease-hit) both;
-}
-
-/* Anticipation. Shrink and dim BEFORE the win, never after: skipping
-   the wind-up is the difference between a moment landing and a moment
-   looking like a stock template. */
-@keyframes bt-charge {
-  from { transform: scale(1); filter: brightness(1); }
-  to { transform: scale(0.9); filter: brightness(0.55); }
-}
-.charge {
-  animation: bt-charge 180ms var(--ease-out) both;
-}
-
-/* The card turning over: the tile you started the session from becomes
-   the record of having done it. */
-@keyframes bt-flip-x {
-  0% { transform: rotateX(0deg); }
-  50% { transform: rotateX(90deg); }
-  100% { transform: rotateX(0deg); }
-}
-.flip-x {
-  animation: bt-flip-x 380ms var(--ease-out);
 }
 
 /* SPECTACLE. Earned only: a real PR, a flame tier-up, a badge unlock.
@@ -791,7 +785,8 @@
   .enter-stagger > *,
   .stagger > *:not(.fixed),
   .link-draw,
-  .node-in {
+  .node-in,
+  .light-up {
     animation: bt-fade 120ms ease-out both !important;
   }
   /* The shafts stop where they are. They are the lighting of the
@@ -823,8 +818,6 @@
   .pop,
   .punch,
   .roll,
-  .charge,
-  .flip-x,
   .flip-y,
   .drop,
   .shockwave,

@@ -248,14 +248,10 @@ export function FocusView({
     justRef.current = { exIdx: current.exIdx, setIdx: current.setIdx }
     patchSet(session.date, current.exIdx, current.setIdx, { done: true })
     // EVERY set answers back, not only the ones that happen to have rest
-    // after them. The tick used to live in BreakScreen for one reason: this
-    // file had no room. It has room now, so a superset gets the same
-    // confirmation as anything else.
-    try {
-      tapConfirm()
-    } catch {
-      /* no vibration */
-    }
+    // after them. The tick used to live in BreakScreen because this file had
+    // no room; it has room now, so a superset gets the same confirmation.
+    // No try/catch: haptics.ts already swallows its own failures.
+    tapConfirm()
     // The fifth up is the plan's rep target, not any rep. Same event,
     // different weight, and nobody has to be told which one they got.
     // `achieved` is written ONLY when the athlete came up short, so its
@@ -449,7 +445,8 @@ export function FocusView({
         <div className="flex-1" />
         <div className="text-center">
           <div className="text-[11px] font-black uppercase tracking-wider text-ink-faint">
-            {progress.done + 1} / {progress.total} sets
+            {/* Keyed on the count so the pop replays every time a set lands. */}
+            <span key={progress.done} className="pop inline-block">{progress.done + 1}</span> / {progress.total} sets
           </div>
           <div className="mx-auto mt-1 h-1 w-32 overflow-hidden rounded-full bg-surface-2">
             <div className="h-full bg-accent transition-all" style={{ width: `${(progress.done / Math.max(1, progress.total)) * 100}%` }} />
@@ -551,7 +548,7 @@ export function FocusView({
           </div>
         )}
         {caption && (
-          <p className="mb-1.5 line-clamp-2 text-center text-[12px] font-semibold leading-snug text-ink-faint">{caption}</p>
+          <p key={caption} className={`${caption.length < 12 ? 'punch' : 'confirm'} mb-1.5 line-clamp-2 text-center text-[12px] font-semibold leading-snug text-ink-faint`}>{caption}</p>
         )}
         {phase === 'go' ? (
           <button

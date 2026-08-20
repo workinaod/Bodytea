@@ -38,10 +38,20 @@ export function MuscleMap({
   primary,
   secondary = [],
   compact = false,
+  reveal = false,
 }: {
   primary: MuscleRegion[]
   secondary?: MuscleRegion[]
   compact?: boolean
+  /**
+   * Light the worked muscles in sequence rather than all at once.
+   *
+   * Opt-in per surface on purpose. On Progress this figure IS the
+   * answer to what changed because you showed up, so it earns the
+   * reveal; inside the exercise picker it is a hint about what to add
+   * next, and a hint that performs is a hint that is in the way.
+   */
+  reveal?: boolean
 }) {
   const state = makeState(primary, secondary)
   const heartListed = primary.includes('heart') || secondary.includes('heart')
@@ -51,11 +61,11 @@ export function MuscleMap({
     <div>
       <div className={`flex items-stretch justify-center gap-4 ${compact ? 'h-36' : 'h-56'}`}>
         <div className="flex flex-col items-center">
-          <AnatomyFigure data={FRONT} state={state} heart={heart} />
+          <AnatomyFigure data={FRONT} state={state} heart={heart} reveal={reveal} />
           {!compact && <span className="eyebrow mt-1 text-ink-faint">front</span>}
         </div>
         <div className="flex flex-col items-center">
-          <AnatomyFigure data={BACK} state={state} />
+          <AnatomyFigure data={BACK} state={state} reveal={reveal} />
           {!compact && <span className="eyebrow mt-1 text-ink-faint">back</span>}
         </div>
       </div>

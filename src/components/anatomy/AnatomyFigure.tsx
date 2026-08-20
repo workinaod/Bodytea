@@ -47,6 +47,10 @@ export interface FigureData {
   parts: Piece[]
 }
 
+/** How far apart the muscles come on. Slow enough to read as a sequence,
+ *  fast enough that the whole body is lit inside a second. */
+const STEP_MS = 55
+
 export type PieceState = 'base' | 'primary' | 'secondary' | 'wash'
 export type StateFn = (r: MuscleRegion | null) => PieceState
 
@@ -113,41 +117,73 @@ function Defs({ id, outline }: { id: string; outline: string }) {
   )
 }
 
-function PiecePath({ piece, state, id }: { piece: Piece; state: PieceState; id: string }) {
+/**
+ * One muscle, at rest and then lit.
+ *
+ * The resting sculpt is ALWAYS drawn and the lit version rides on top
+ * of it. That is what lets a muscle fade up into being worked instead
+ * of appearing out of the body's shadow: without the layer underneath,
+ * an opacity of zero is a hole.
+ *
+ * `order` is the muscle's place in the reveal, or null to be lit from
+ * the first frame. It counts lit muscles only, so the sequence has no
+ * gaps where an unworked group would have been.
+ */
+function PiecePath({
+  piece,
+  state,
+  id,
+  order,
+}: {
+  piece: Piece
+  state: PieceState
+  id: string
+  order: number | null
+}) {
   const g = piece.g ?? 'v'
   const lit = state === 'primary'
-  const fill = lit ? `url(#${id}-a${g})` : `url(#${id}-m${g})`
-  const stroke = lit ? 'rgba(60,8,0,0.5)' : 'rgba(0,0,0,0.42)'
-  const overlay =
-    state === 'secondary' ? 0.4 : state === 'wash' ? 0.32 : 0
+  const overlay = state === 'secondary' ? 0.4 : state === 'wash' ? 0.32 : 0
+  const reveal =
+    order === null
+      ? {}
+      : { className: 'light-up', style: { animationDelay: `${order * STEP_MS}ms` } }
+  const fibers = (colour: string, width: number) =>
+    piece.f?.map((d, i) => (
+      <path key={i} d={d} fill="none" stroke={colour} strokeWidth={width} strokeLinecap="round" />
+    ))
   return (
     <>
       <path
         d={piece.d}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={lit ? 0.4 : 0.3}
+        fill={`url(#${id}-m${g})`}
+        stroke="rgba(0,0,0,0.42)"
+        strokeWidth={0.3}
         strokeLinejoin="round"
-        {...(lit ? { filter: `url(#${id}-glow)`, 'data-m': 'p' } : {})}
       />
+      {fibers('rgba(0,0,0,0.3)', 0.3)}
+      {lit && (
+        <g {...reveal}>
+          <path
+            d={piece.d}
+            fill={`url(#${id}-a${g})`}
+            stroke="rgba(60,8,0,0.5)"
+            strokeWidth={0.4}
+            strokeLinejoin="round"
+            filter={`url(#${id}-glow)`}
+            data-m="p"
+          />
+          {fibers('rgba(80,12,0,0.55)', 0.4)}
+        </g>
+      )}
       {overlay > 0 && (
         <path
           d={piece.d}
           fill="var(--color-accent)"
           opacity={overlay}
           data-m={state === 'secondary' ? 's' : 'w'}
+          {...reveal}
         />
       )}
-      {piece.f?.map((d, i) => (
-        <path
-          key={i}
-          d={d}
-          fill="none"
-          stroke={lit ? 'rgba(80,12,0,0.55)' : 'rgba(0,0,0,0.3)'}
-          strokeWidth={lit ? 0.4 : 0.3}
-          strokeLinecap="round"
-        />
-      ))}
     </>
   )
 }
@@ -156,12 +192,18 @@ export function AnatomyFigure({
   data,
   state,
   heart,
+  reveal = false,
 }: {
   data: FigureData
   state: StateFn
   /** undefined = no heart drawn; 'hot' = working, 'listed' = present but assisting. */
   heart?: 'hot' | 'listed'
+  /** Light the worked muscles one at a time rather than all at once. */
+  reveal?: boolean
 }) {
+  // Counted across the render, so the delay ladder has no holes in it
+  // where an unworked muscle sits.
+  let order = 0
   return (
     <svg viewBox="0 0 100 200" className="h-full w-auto" aria-hidden="true">
       <Defs id={data.id} outline={data.outline} />
@@ -172,7 +214,8 @@ export function AnatomyFigure({
       <path d={data.outline} fill="#1a1a1e" transform={MIRROR} />
       {data.parts.map((p, i) => {
         const s = state(p.r)
-        const el = <PiecePath piece={p} state={s} id={data.id} />
+        const n = reveal && s !== 'base' ? order++ : null
+        const el = <PiecePath piece={p} state={s} id={data.id} order={n} />
         return p.mid ? (
           <g key={i}>{el}</g>
         ) : (
