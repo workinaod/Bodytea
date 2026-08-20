@@ -276,7 +276,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP2 | Session and plan explainers (owner request): a "how this works" question mark on the day, the shelf and the week preview, plus a generated plan reader that replaces the owner-only NAOD prose | product | **done + LIVE 2026-08-19** (deploy 65ed650) | OP1 | off-plan training session |
 | OP3 | Exercise-picking help (owner request): equipment filtering, muscle-group browsing, neglected-group suggestions, build coverage, and a UI pass on the off-plan surfaces | product | **done + LIVE 2026-08-19** | OP2 | off-plan training session |
 | OP4 | Real-anatomy muscle maps (owner request): replace the stylized silhouette body maps with a shaded anatomical figure, every superficial muscle drawn and individually lit | product | **done + LIVE 2026-08-19** (owner said deploy; merge 2817eed carries OP4 plus the W10/W11/W16/W18/W4m wiring wave, deploy.yml untouched) | - | 3D body muscle models session |
-| OP5 | UI/UX overhaul phase 1 (owner request, "Master Prompt v3"): the owner lifted the post-core visual-overhaul fence for this lane. Daily-loop experience work: motion system (3 juice tiers with habituation guards), flame ladder visible from day 1 (11 stages), Today as a mission hub (identity HUD, week path, one dominant CTA, real-badge Next up), the finish-chain ceremony (count-up, PR, flame ignition, badge delta, tomorrow), set-done haptic, Train tab (off-plan surfaces promoted from Today), My Plan tab (Week + Meals as segments, owner decision), Progress Body coverage card, and Profile replacing Coach as the identity hub (badges move in, My Room socket, honest Connected apps) with coaching redistributed into Today / My Plan / Progress. **ONBOARDING IS OUT OF SCOPE: the owner is building it elsewhere** (see the checkpoint for the multi-goal defect they caught and the engine facts that lane needs). Zero engine or generator changes; golden lock untouched | product | **in-progress 2026-08-19** (branch `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip 12e110b; owner merges when ready, deploy.yml untouched) | - | UI/UX overhaul session |
+| OP5 | UI/UX overhaul phase 1 (owner request, "Master Prompt v3"): the owner lifted the post-core visual-overhaul fence for this lane. Daily-loop experience work: motion system (3 juice tiers with habituation guards), flame ladder visible from day 1 (11 stages), Today as a mission hub (identity HUD, week path, one dominant CTA, real-badge Next up), the finish-chain ceremony (count-up, PR, flame ignition, badge delta, tomorrow), set-done haptic, Train tab (off-plan surfaces promoted from Today), My Plan tab (Week + Meals as segments, owner decision), Progress Body coverage card, and Profile replacing Coach as the identity hub (badges move in, My Room socket, honest Connected apps) with coaching redistributed into Today / My Plan / Progress. **ONBOARDING IS OUT OF SCOPE: the owner is building it elsewhere** (see the checkpoint for the multi-goal defect they caught and the engine facts that lane needs). Zero engine or generator changes; golden lock untouched | product | **in-progress 2026-08-20** (branch `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip 12e110b, 7 commits, unpushed; C0-C6 landed: motion, flame ladder, Today split, Today mission hub, finish chain, navigation, plus the fire rebuild. Owner added a visual-law commit before C7 Profile. Owner merges when ready, deploy.yml untouched) | - | UI/UX overhaul session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1070,6 +1070,44 @@ Begin-now approved. Sessions execute their lane jobs without re-asking.**
   Chromium cannot reach production. deploy.yml untouched: one deploy branch, moved by
   fast-forward, never added to. NEXT: nothing owed on OP4; J3 (product), J7 (engines),
   C1 (cloud) remain the open lane heads.
+
+- **2026-08-20 · OP5 IN FLIGHT · UI/UX overhaul phase 1.** Seven commits on
+  `claude/bodyt-ui-ux-overhaul-i4vnei` off deploy tip `12e110b`, nothing pushed yet, tree
+  green after each: C0 claim · C1 motion foundation (`styles/motion.css` two-mode brief,
+  `useCountUp`, `ConfettiBurst` on the `rrc-burst` per-particle idiom, `Odometer`) · C2
+  flame ladder from day one (FLAME_MIN 7 to 1, eleven rungs, levels 1-7) · C3 Today split
+  into four files, pure moves · C4 Today as a mission hub (identity row, week path, meta
+  chips, why line, full-width CTA, real `nextUp` badges) · C5 the finish chain · C6 the
+  new navigation. Plus a fire rebuild the owner asked for mid-flight.
+  LEARNED, in order of how much time each one costs the next session:
+  (1) **The badge beat cannot diff across the finish write.** Sets are written as they
+  are logged, so by the time FINISH is pressed every achievement counter has already
+  moved and a before/after comparison is empty every single time. `buildFinishChain`
+  measures against a clone of `after` with the day's session DELETED, which is the
+  question the beat actually asks. (2) **The streak already counts an unfinished day**:
+  `streakState` treats any non-skipped log as holding the day, so the honest test for
+  "banked a new streak day" is yesterday's run against today's, gated to non-rest days
+  (a rest day was holding the run before anybody trained on it). (3) **Two CSS
+  animations on one element fight over fill-mode**: `bt-charge both` then `bt-flicker`
+  left the flame shrunk and dim when the second ended. One named keyframe per arc.
+  (4) The set-done haptic fires from `BreakScreen` mount, not `FocusView` (669/670, one
+  line of headroom): a superset with no rest gets no tick, and that is the accepted cost
+  of not raising an allowance. (5) `walk(E2E, /\.spec\.ts$/)` in e2eSelectors.test means
+  `e2e/util.ts` is NOT scanned, so helpers there are unguarded.
+  FIRE: the flame moved every layer on one sine curve at one shared duration, which is
+  why it read as a pulsing logo. Now the layers run at unrelated speeds (mid 0.73x, core
+  0.41x, gutter 1.71x) with stops at odd percentages, plus tier-scaled ambient embers and
+  a one-shot `ignite` strike on the ceremony beat. The filter animation is gated to
+  display sizes so the 16px Today chip never pays for it. Live at
+  https://claude.ai/code/artifact/f1a3f5a9-83f0-4397-9206-ec64164c492c
+  OWNER CALL, 2026-08-20: **the visual language was missing from the commit order.**
+  Part 4 sequenced the experience and left the paint out, so everything above still wears
+  the current skin. A new commit lands the researched reference law (flat sticker fills,
+  2px borders, the 4px depressing bottom edge, slate ground) BEFORE Profile is built, so
+  Profile is authored in the new language instead of reskinned twice.
+  Gates run at C5 and C6: typecheck clean, **1,454/1,454 unit**, build green,
+  **e2e 83 passed / 0 failed** (2.8m, fresh preview server).
+  NEXT: the visual-law commit, then C7 Profile + badges, C8 Progress Body, C9 ship.
 
 ## 10. SOURCES
 
