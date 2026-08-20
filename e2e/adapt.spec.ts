@@ -254,21 +254,25 @@ test('a quiet joint earns some weight back, and it is offered not taken', async 
   // A stated limitation had no way out: tell the app about a knee at
   // signup and every squat sat at 85% forever. Three clean sessions buys
   // one step, and the athlete taps for it.
-  const SQUAT = 'goblet-squat'
+  //
+  // The joint has to be one TODAY actually loads. This test seeded a knee
+  // against a pressing day and passed until the review pass scoped the
+  // offer, which means it had been asserting the bug.
+  const PRESS = 'flat-db-press' // shoulder
   const state = seed((d) => {
-    d.prefs.limitations = [{ label: 'dodgy knee', joints: ['knee'], since: '2026-01-05' }]
+    d.prefs.limitations = [{ label: 'cranky shoulder', joints: ['shoulder'], since: '2026-01-05' }]
     for (const date of ['2026-07-06', '2026-07-13', '2026-07-20']) {
       d.sessions[date] = {
         date,
         templateId: 'tuesday',
         status: 'completed',
-        exercises: [{ exerciseId: SQUAT, sets: [{ targetReps: '8', done: true, achieved: 8, weightLb: 100 }] }],
+        exercises: [{ exerciseId: PRESS, sets: [{ targetReps: '8', done: true, achieved: 8, weightLb: 50 }] }],
       } as never
     }
   })
   await boot(page, state)
   await expect(page.getByText('Some weight back?')).toBeVisible()
-  await expect(page.getByText(/knee has been quiet for 3 sessions/)).toBeVisible()
+  await expect(page.getByText(/shoulder has been quiet for 3 sessions/)).toBeVisible()
 
   await page.getByRole('button', { name: 'Give it a go' }).click()
   // Taken once and then gone: the next step has to earn its own sessions.

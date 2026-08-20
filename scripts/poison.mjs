@@ -1417,6 +1417,14 @@ const MUTATIONS = [
     spec: "src/engine/outcomes.test.ts",
   },
   {
+    id: "limit-load-asks-on-the-wrong-day",
+    bug: "the app offers knee weight back on a pressing day, so tapping it changes nothing on screen and reads as broken",
+    file: "src/engine/limitLoad.ts",
+    find: "      if (loadedToday && !loadedToday.has(joint)) continue",
+    to: "",
+    spec: "src/engine/limitLoad.test.ts",
+  },
+  {
     id: "limit-load-never-comes-back",
     bug: "a stated limitation stays at 85% forever however many pain-free months follow, which is the app routing around an injury that may have healed eighteen months ago and never once asking",
     file: "src/engine/limitLoad.ts",
@@ -2022,11 +2030,11 @@ const MUTATIONS = [
 
 const E2E_MUTATIONS = [
   {
-    id: 'limit-load-taken-not-offered',
-    bug: 'weight goes back onto an injury the athlete told us about without anybody tapping for it, which is the one thing suggest-only exists to stop',
+    id: 'limit-load-offer-never-renders',
+    bug: 'the offer is computed and the component bails before rendering it, so a joint that earned its weight back is never asked and the engine talks to nobody',
     file: 'src/screens/today/AdaptProposals.tsx',
-    find: '      {limit && (',
-    to: '      {false && (',
+    find: '  if (!offering && !verdictLine && !limit) return null',
+    to: '  if (!offering && !verdictLine) return null',
     spec: 'e2e/adapt.spec.ts',
   },
   {

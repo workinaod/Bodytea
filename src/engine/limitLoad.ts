@@ -104,9 +104,19 @@ export interface LimitStep {
  * so each step has to be earned on its own evidence instead of one good
  * month buying four of them at once.
  */
-export function limitStepOffer(data: AppData, today: ISODate): LimitStep | null {
+export function limitStepOffer(
+  data: AppData,
+  today: ISODate,
+  loadedToday?: ReadonlySet<Joint>,
+): LimitStep | null {
   for (const lim of data.prefs?.limitations ?? []) {
     for (const joint of lim.joints) {
+      // Only on a day that actually loads it. Found by looking at the
+      // screen: the card offered knee weight back on a pressing day, so
+      // tapping it changed nothing visible and read as broken. The
+      // decision is standing, but the moment to ask is a day the answer
+      // shows up on the bar.
+      if (loadedToday && !loadedToday.has(joint)) continue
       if (flaredSinceFirstStep(data, joint, today)) continue
       const steps = stepsTaken(data, joint)
       const from = steps.length ? (steps[steps.length - 1].respondedAt ?? steps[steps.length - 1].offeredAt) : lim.since

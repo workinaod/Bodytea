@@ -9,6 +9,7 @@ import { dueForVerdict, freshVerdict, settleDue, verdictCopy } from '../../engin
 import { ADAPT_TYPE, DELOAD_TYPE } from '../../engine/proposals'
 import { settleDeloads } from '../../engine/deloadOutcome'
 import { limitStepCopy, limitStepDecision, limitStepOffer } from '../../engine/limitLoad'
+import { MOVEMENT } from '../../plan/movement'
 import { appendDecision } from '../../engine/decisions'
 
 /**
@@ -60,7 +61,12 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // quiet long enough to have earned it. Its own card rather than a
   // planAdjustment, because it is not about today's session: it is a
   // standing reduction being partly lifted.
-  const limit = useMemo(() => limitStepOffer(data, date), [data, date])
+  const limit = useMemo(() => {
+    const resolved = resolveDay(date, data)
+    if (resolved.kind !== 'session') return null
+    const joints = new Set(resolved.exercises.flatMap((e) => MOVEMENT[e.exerciseId]?.stress ?? []))
+    return limitStepOffer(data, date, joints)
+  }, [data, date])
 
   const proposals = useMemo(() => {
     const resolved = resolveDay(date, data)

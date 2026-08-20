@@ -527,6 +527,12 @@ the pre-existing plans that genuinely have no record of what built them.
 ---
 
 ## 7. KNOWN GAPS AND FAILURES LEDGER (turn each into a regression when fixed)
+- **A limitation cannot be edited or removed (found 2026-08-20, slice 7).** `prefs.limitations`
+  is written once at onboarding and by nothing else, and no screen lists or clears one. That
+  is now load-bearing: R3 s9.2 says a pain note on a limited joint stops the load-back offer
+  for good, so a single flare closes that route permanently and the athlete has no way to say
+  the knee is better. Same root as `prefs.blocked` and `prefs.pinned` having no writer, and
+  the same fix: it needs a screen, so it sits with the UI/UX redesign lane.
 - **Two of the four `Prefs` fields have no writer (found 2026-08-20, slice 5 review).**
   `prefs.blocked` and `prefs.pinned` are read (adapt.ts rule 0, phase.ts promotion) and set
   by nothing outside tests. So "a movement the athlete does not want, and does not want to
@@ -2234,6 +2240,40 @@ the pre-existing plans that genuinely have no record of what built them.
   you believe you just created.
   Validation: tsc -b clean, **1,765/1,765 unit** (2 new), build green, sim 20 personas,
   **92/92 e2e**.
+
+### 2026-08-20 · J8 slice 7 · a stated limitation stops being a life sentence
+  R3 s9.2 row 7, and the mirror of slice 6. That one was the app admitting it had run out of
+  ideas; this is the app giving something back.
+  `prefs.limitations` carries no expiry on purpose: an injury you typed in should not
+  evaporate because you went quiet for a fortnight. The cost was that it never ended either.
+  Tell the app about a knee at signup and every movement loading it drops to 85% and stays
+  there through however many pain-free months follow, with nothing in the codebase that could
+  hand the weight back. The plan routed around an injury that may have healed eighteen months
+  ago and never once asked.
+  Three clean, pain-free exposures buys ONE step, offered and never taken. Counted per JOINT,
+  because that is what the athlete told us about, and from the LAST step rather than the
+  limitation date, so each step earns its own evidence instead of one good month buying four
+  at once. A movement loading two limited joints takes the SMALLER allowance. Any pain note
+  and it stays down permanently, steps already given included: R3 says "stay down and stop
+  offering" and for something the athlete told us about rather than something the app
+  inferred, that reads as the strong version.
+  The step is added inside soften and clamped to the un-lightened weight, so it undoes the
+  reduction and is never a bonus on top of it. Zero for everybody who never mentioned a joint.
+  REVIEW PASS, TWO FINDINGS. (1) THE CARD ASKED ON THE WRONG DAY, caught by screenshot: it
+  offered knee weight back on a pressing day, so tapping it changed nothing on screen and read
+  as broken. The offer is scoped to days that actually load the joint now. (2) MY OWN E2E HAD
+  BEEN ASSERTING THAT BUG. It seeded a knee limitation against a push day and passed, and only
+  went red once the scoping landed. A test can encode the defect it was written to prove, and
+  the tell is that it goes red when you FIX something.
+  The dead-export scan earned its keep again: four exports with no caller stopped the build
+  until the card existed, which is the check that stops an engine shipping with nothing
+  invoking it.
+  Validation: tsc -b clean, **1,779/1,779 unit** (14 new), build green, sim 20 personas,
+  **93/93 e2e** (1 new), **poison 247/247 unit + 13/13 e2e** (8 new).
+  NEXT: R3 s9.2's readiness-downgrade row (pattern-level learning: downgrades followed by
+  normal sessions four times means the flags fire early for this athlete). The two volume
+  ceiling rows need the INTERVENTION built first, because `ceilingFor` is a house constant
+  with no per-athlete raise or lower, so they are not outcome work like the rest of J8.
 
 ## 10. SOURCES
 

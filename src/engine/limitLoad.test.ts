@@ -142,3 +142,29 @@ describe('a no is still a no', () => {
     expect(limitStepOffer(d, '2026-06-02')).toBeNull()
   })
 })
+
+describe('it asks on a day the answer shows up', () => {
+  // Found by screenshot in the slice 7 review. The card offered knee
+  // weight back on a pressing day, so tapping it changed nothing on
+  // screen and read as broken. The decision is standing; the moment to
+  // ask is a day that actually loads the joint.
+  const ready = (): AppData => {
+    let d = athlete()
+    for (const date of CLEAN.slice(0, 3)) d = did(d, date)
+    return d
+  }
+
+  it('asks on a day that loads the joint', () => {
+    expect(limitStepOffer(ready(), TODAY, new Set(['knee'] as never))?.joint).toBe('knee')
+  })
+
+  it('stays quiet on a day that does not', () => {
+    expect(limitStepOffer(ready(), TODAY, new Set(['shoulder'] as never))).toBeNull()
+  })
+
+  it('still answers when the caller does not care which day it is', () => {
+    // The engine is usable without a day, which is what keeps the unit
+    // tests above honest about the rule rather than about the screen.
+    expect(limitStepOffer(ready(), TODAY)?.joint).toBe('knee')
+  })
+})
