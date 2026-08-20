@@ -5,6 +5,7 @@ import { suggestedStartWeight } from '../engine/startWeight'
 import { useAppStore } from '../store/appStore'
 import { loadStepLb, repStepFor, type RepRange } from '../engine/reps'
 import { dropTo, lightLoad, nextSessionSuggestions } from '../engine/fatigue'
+import { loadBackLb } from '../engine/limitLoad'
 import { e1RM } from '../engine/stats'
 
 interface Baseline {
@@ -119,10 +120,16 @@ export function prefillFor(
    * it only refuses to soften past it.
    */
   const softened = opts.lightMode === true || failing
+  // Weight the athlete has earned back on a stated limitation, three
+  // clean sessions at a time. Added INSIDE soften and then clamped to
+  // `w`, so a limitation can walk back up to the un-lightened number and
+  // no further: the steps undo the reduction, they are not a bonus on
+  // top of it. Zero for everybody who never told us about a joint.
+  const back = loadBackLb(data, exerciseId, date)
   const soften = (w: number, baseline = w) => {
-    const out = opts.lightMode ? lightLoad(w) : failing ? dropTo(w) : w
+    const out = opts.lightMode ? lightLoad(w) + back : failing ? dropTo(w) : w
     const floor = Math.max(loadStepLb(exerciseId), Math.round((baseline * 0.6) / 5) * 5)
-    return Math.max(out, Math.min(w, floor))
+    return Math.min(w, Math.max(out, Math.min(w, floor)))
   }
 
   const sessions = Object.values(data.sessions)

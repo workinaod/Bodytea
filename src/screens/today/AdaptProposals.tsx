@@ -8,6 +8,8 @@ import { useAppStore as useStore } from '../../store/appStore'
 import { dueForVerdict, freshVerdict, settleDue, verdictCopy } from '../../engine/outcomes'
 import { ADAPT_TYPE, DELOAD_TYPE } from '../../engine/proposals'
 import { settleDeloads } from '../../engine/deloadOutcome'
+import { limitStepCopy, limitStepDecision, limitStepOffer } from '../../engine/limitLoad'
+import { appendDecision } from '../../engine/decisions'
 
 /**
  * What the coach has noticed, and what it is offering to do about it.
@@ -54,6 +56,12 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   }, [dueCount, deloadsDue, date, update])
   const verdict = useMemo(() => freshVerdict(data, date, [ADAPT_TYPE, DELOAD_TYPE]), [data, date])
 
+  // Weight back on a joint the athlete told us about, once it has been
+  // quiet long enough to have earned it. Its own card rather than a
+  // planAdjustment, because it is not about today's session: it is a
+  // standing reduction being partly lifted.
+  const limit = useMemo(() => limitStepOffer(data, date), [data, date])
+
   const proposals = useMemo(() => {
     const resolved = resolveDay(date, data)
     if (resolved.kind !== 'session') return []
@@ -76,7 +84,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // after every verdict: the guard said "waved AND no follow-up", so a
   // follow-up on screen meant waving the offers away did nothing.
   const offering = !waved && proposals.length > 0 && !(session?.startedAt && !session.endedAt)
-  if (!offering && !verdictLine) return null
+  if (!offering && !verdictLine && !limit) return null
 
   // reduce-load is the one proposal with no switch behind it. "Take a
   // third off the pressing" is not a shape the plan can hold — there is
@@ -96,6 +104,30 @@ export function AdaptProposals({ date }: { date: ISODate }) {
             {verdict!.verdict === 'worked' ? 'That worked' : 'Following up'}
           </p>
           <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{verdictLine}</p>
+        </div>
+      )}
+      {limit && (
+        <div className="rounded-2xl bg-lime/[0.07] px-4 py-3 ring-1 ring-lime/25">
+          <p className="text-[12.5px] font-black tracking-tight text-ink">Some weight back?</p>
+          <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{limitStepCopy(limit)}</p>
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() =>
+                update((d) => appendDecision(d, limitStepDecision(limit, 'accepted', date, d.decisions.length)))
+              }
+              className="press rounded-full bg-accent px-3.5 py-2 text-[12px] font-bold text-black"
+            >
+              Give it a go
+            </button>
+            <button
+              onClick={() =>
+                update((d) => appendDecision(d, limitStepDecision(limit, 'declined', date, d.decisions.length)))
+              }
+              className="press rounded-full bg-white/[0.07] px-3.5 py-2 text-[12px] font-bold text-ink-dim"
+            >
+              Not yet
+            </button>
+          </div>
         </div>
       )}
       {offering && (

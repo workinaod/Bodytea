@@ -249,3 +249,33 @@ test('a movement that keeps dying says so on the day', async ({ page }) => {
   await expect(page.getByText(/bottom of the range/)).toBeVisible()
   await expect(page.getByText(/Flat DB Press: 6 sessions lighter/)).toBeVisible()
 })
+
+test('a quiet joint earns some weight back, and it is offered not taken', async ({ page }) => {
+  // A stated limitation had no way out: tell the app about a knee at
+  // signup and every squat sat at 85% forever. Three clean sessions buys
+  // one step, and the athlete taps for it.
+  const SQUAT = 'goblet-squat'
+  const state = seed((d) => {
+    d.prefs.limitations = [{ label: 'dodgy knee', joints: ['knee'], since: '2026-01-05' }]
+    for (const date of ['2026-07-06', '2026-07-13', '2026-07-20']) {
+      d.sessions[date] = {
+        date,
+        templateId: 'tuesday',
+        status: 'completed',
+        exercises: [{ exerciseId: SQUAT, sets: [{ targetReps: '8', done: true, achieved: 8, weightLb: 100 }] }],
+      } as never
+    }
+  })
+  await boot(page, state)
+  await expect(page.getByText('Some weight back?')).toBeVisible()
+  await expect(page.getByText(/knee has been quiet for 3 sessions/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Give it a go' }).click()
+  // Taken once and then gone: the next step has to earn its own sessions.
+  await expect(page.getByText('Some weight back?')).toHaveCount(0)
+  await expect
+    .poll(async () => await page.evaluate(() => localStorage.getItem('naod.state') ?? ''), {
+      message: 'the accepted step never reached the ledger',
+    })
+    .toContain('limit-load-back')
+})

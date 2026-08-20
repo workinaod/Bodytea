@@ -87,3 +87,25 @@ export const DELOAD_METRIC = 'bestE1RM'
  * for the same reason the training adaptations use them.
  */
 export const DELOAD_WINDOW_DAYS = 21
+
+// ---------------- Load back on a stated limitation ----------------
+//
+// The one intervention with no way out. An athlete who told the app
+// about a knee at signup had every movement loading it dropped to 85%
+// and left there, permanently: `prefs.limitations` carries no expiry by
+// design, so the plan kept routing around an injury that may have healed
+// eighteen months ago and never once asked.
+//
+// R3 s9.2 gives it a route back: three clean, pain-free exposures buys
+// ONE step of load, offered and never taken automatically. A pain note
+// stops it for good, which is the safe direction for something somebody
+// told us about rather than something the app inferred.
+
+export const LIMIT_TYPE = 'limit-load-back'
+export const LIMIT_RULE_VERSION = 1
+
+/** Judged on whether the joint stayed quiet, which is the whole point. */
+export const LIMIT_METRIC = 'painNotes'
+
+/** R3 asks for three exposures either side, not a calendar window. */
+export const LIMIT_WINDOW_DAYS = 21

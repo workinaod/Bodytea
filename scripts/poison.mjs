@@ -1417,6 +1417,54 @@ const MUTATIONS = [
     spec: "src/engine/outcomes.test.ts",
   },
   {
+    id: "limit-load-never-comes-back",
+    bug: "a stated limitation stays at 85% forever however many pain-free months follow, which is the app routing around an injury that may have healed eighteen months ago and never once asking",
+    file: "src/engine/limitLoad.ts",
+    find: "      if (flared || clean < CLEAN_EXPOSURES_FOR_STEP) continue",
+    to: "      if (true) continue",
+    spec: "src/engine/limitLoad.test.ts",
+  },
+  {
+    id: "limit-load-back-on-one-good-day",
+    bug: "one pain-free session hands weight back on an injury the athlete told us about, which is the opposite of the caution a stated limitation is asking for",
+    file: "src/engine/limitLoad.ts",
+    find: "export const CLEAN_EXPOSURES_FOR_STEP = 3",
+    to: "export const CLEAN_EXPOSURES_FOR_STEP = 1",
+    spec: "src/engine/limitLoad.test.ts",
+  },
+  {
+    id: "limit-load-ignores-a-flare",
+    bug: "the joint hurts again and the weight stays up, so the app keeps loading an injury it just watched flare",
+    file: "src/engine/limitLoad.ts",
+    find: "  return sessionsUpTo(data, today).some((s) => s.date > from && painJoints(s).has(joint))",
+    to: "  return false",
+    spec: "src/engine/limitLoad.test.ts",
+  },
+  {
+    id: "limit-load-takes-the-braver-joint",
+    bug: "a movement loading a good elbow and a bad shoulder moves at the elbow's pace, so the injured joint gets weight it never earned",
+    file: "src/engine/limitLoad.ts",
+    find: "    least = Math.min(least, flaredSinceFirstStep(data, j, today) ? 0 : stepsTaken(data, j).length)",
+    to: "    least = Math.max(least === Infinity ? 0 : least, stepsTaken(data, j).length)",
+    spec: "src/engine/limitLoad.test.ts",
+  },
+  {
+    id: "limit-load-counts-the-wrong-sessions",
+    bug: "pressing sessions count as evidence a knee is fine, so three upper-body days buy weight back on a squat",
+    file: "src/engine/limitLoad.ts",
+    find: "          !e.skipped && (MOVEMENT[e.exerciseId]?.stress ?? []).includes(joint) && e.sets.some((x) => x.done),",
+    to: "          !e.skipped && e.sets.some((x) => x.done),",
+    spec: "src/engine/limitLoad.test.ts",
+  },
+  {
+    id: "limit-load-buys-four-steps-at-once",
+    bug: "every step counts from the limitation date instead of the last step, so one good month hands back the whole reduction in a week",
+    file: "src/engine/limitLoad.ts",
+    find: "      const from = steps.length ? (steps[steps.length - 1].respondedAt ?? steps[steps.length - 1].offeredAt) : lim.since",
+    to: "      const from = lim.since",
+    spec: "src/engine/limitLoad.test.ts",
+  },
+  {
     id: "flag-note-says-nothing",
     bug: "the load drops and the rep range restarts and the athlete is told nothing, which is the silence FatigueSuggestion.because was written to end and never did",
     file: "src/engine/fatigue.ts",
@@ -1973,6 +2021,14 @@ const MUTATIONS = [
 ]
 
 const E2E_MUTATIONS = [
+  {
+    id: 'limit-load-taken-not-offered',
+    bug: 'weight goes back onto an injury the athlete told us about without anybody tapping for it, which is the one thing suggest-only exists to stop',
+    file: 'src/screens/today/AdaptProposals.tsx',
+    find: '      {limit && (',
+    to: '      {false && (',
+    spec: 'e2e/adapt.spec.ts',
+  },
   {
     id: 'flag-note-never-reaches-the-day',
     bug: 'the note is built and never put on the day, so the engine explains itself to nobody',
