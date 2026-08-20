@@ -13,3 +13,21 @@ export function wordList(words: string[]): string {
   if (words.length <= 1) return words[0] ?? ''
   return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`
 }
+
+/**
+ * Weekday names, Sunday first because that is what Date.getDay returns.
+ *
+ * Lives here rather than in whichever engine needed it second:
+ * workoutBrief.ts already had a private copy, and two lists of the days
+ * of the week is exactly the shape of thing that ends up disagreeing
+ * about whether the week starts on Sunday.
+ */
+export const DAY_NAME = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+] as const

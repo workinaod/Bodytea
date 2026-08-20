@@ -381,3 +381,32 @@ test('a muscle that keeps running out gets a set taken off, and it sticks', asyn
     })
     .toContain('volume-ceiling')
 })
+
+test('the plan moves to the day the athlete actually trains', async ({ page }) => {
+  // The plan asks for one day, the athlete trains another, and nothing
+  // ever noticed. Accepting rewrites the schedule, so this checks the
+  // PLAN changed and not just that a row landed in the ledger.
+  const state = seed((d) => {
+    d.plan.tier1ByWeekday = { 0: null, 1: null, 2: 'tuesday', 3: null, 4: null, 5: null, 6: null } as never
+    for (const date of ['2026-07-16', '2026-07-23', '2026-07-30', '2026-08-06']) {
+      d.sessions[date] = {
+        date,
+        templateId: 'tuesday',
+        status: 'completed',
+        exercises: [
+          { exerciseId: 'flat-db-press', sets: [{ targetReps: '8', done: true, achieved: 8, weightLb: 50 }] },
+        ],
+      } as never
+    }
+  })
+  await boot(page, state)
+  await expect(page.getByText('Wrong day?')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Move it' }).click()
+  await expect(page.getByText('Wrong day?')).toHaveCount(0)
+  await expect
+    .poll(async () => await page.evaluate(() => localStorage.getItem('naod.state') ?? ''), {
+      message: 'the schedule move never reached the plan',
+    })
+    .toContain('schedule-fit')
+})

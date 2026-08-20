@@ -153,3 +153,14 @@ export const READY_FLAGS_TO_DOWNGRADE = 2
 
 export const CEILING_TYPE = 'volume-ceiling'
 export const CEILING_RULE_VERSION = 1
+
+// ---------------- Which day the session actually happens on ----------------
+//
+// The plan asks for Tuesday. The athlete trains Thursday, has done for a
+// month, and nothing ever noticed: the plan went on being wrong in the
+// same way indefinitely while the athlete went on "missing" a session
+// they had in fact done. J7 built adherenceShape for this and left it
+// waiting.
+
+export const SCHEDULE_TYPE = 'schedule-fit'
+export const SCHEDULE_RULE_VERSION = 1

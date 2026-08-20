@@ -1,5 +1,6 @@
 import type { AppData, ISODate, ResolvedDay, ResolvedExercise, SessionLog } from '../types'
 import type { MuscleRegion } from '../plan/muscleRegions'
+import { DAY_NAME } from '../plan/words'
 import { getExercise } from '../plan/exercises'
 import { estimateMinutes } from './focus'
 import { band } from './sequence'
@@ -252,7 +253,6 @@ export interface PlanBrief {
   rules: { title: string; text: string }[]
 }
 
-const WD_NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 /**
  * How YOUR plan works, read off your booklet.
@@ -271,7 +271,7 @@ export function planBrief(data: AppData): PlanBrief {
     const id = plan.tier1ByWeekday[wd]
     const t = id ? plan.templates[id] : null
     week.push({
-      weekday: WD_NAME[wd],
+      weekday: DAY_NAME[wd],
       title: t?.title ?? 'Rest',
       tagline: t?.tagline ?? 'Recovery is part of the program.',
     })

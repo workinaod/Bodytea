@@ -1425,6 +1425,38 @@ const MUTATIONS = [
     spec: "src/engine/persistentPain.test.ts",
   },
   {
+    id: "schedule-fit-reads-the-plan-not-the-log",
+    bug: "the schedule is checked against itself, so it always agrees and a session the athlete has moved for a month is never noticed",
+    file: "src/engine/scheduleFit.ts",
+    find: "    const did = workedOn(data, date)",
+    to: "    const did = asked",
+    spec: "src/engine/scheduleFit.test.ts",
+  },
+  {
+    id: "schedule-fit-moves-on-one-bad-week",
+    bug: "one missed session rewrites somebody's week, which is a pattern rule reading a single day",
+    file: "src/engine/scheduleFit.ts",
+    find: "export const MISSES_TO_MOVE = 3",
+    to: "export const MISSES_TO_MOVE = 1",
+    spec: "src/engine/scheduleFit.test.ts",
+  },
+  {
+    id: "schedule-fit-counts-rest-days-as-misses",
+    bug: "days the plan never asked for count as missed, so every rest day is evidence the schedule is wrong",
+    file: "src/engine/scheduleFit.ts",
+    find: "    if (asked && !did) missed[wd]++",
+    to: "    if (!did) missed[wd]++",
+    spec: "src/engine/scheduleFit.test.ts",
+  },
+  {
+    id: "schedule-fit-leaves-the-old-day-behind",
+    bug: "the session lands on the new day and stays on the old one, so accepting the move doubles the week",
+    file: "src/engine/scheduleFit.ts",
+    find: "  data.plan.tier1ByWeekday[move.from] = null",
+    to: "",
+    spec: "src/engine/scheduleFit.test.ts",
+  },
+  {
     id: "raise-fires-off-a-softened-week",
     bug: "a set is added off a fortnight of downgraded and light days, so the tolerance being claimed was never actually tested",
     file: "src/engine/ceiling.ts",
@@ -2165,6 +2197,14 @@ const MUTATIONS = [
 ]
 
 const E2E_MUTATIONS = [
+  {
+    id: 'schedule-move-never-reaches-the-plan',
+    bug: 'the athlete agrees to move the session, the ledger records it, and the plan still asks for the old day',
+    file: 'src/screens/today/AdaptProposals.tsx',
+    find: '                  applyScheduleMove(d, move)',
+    to: '',
+    spec: 'e2e/adapt.spec.ts',
+  },
   {
     id: 'ceiling-change-never-reaches-the-day',
     bug: 'the ledger carries the ceiling change and resolveDay never reads it, so the session the athlete agreed to change is identical',

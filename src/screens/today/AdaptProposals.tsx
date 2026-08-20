@@ -19,6 +19,12 @@ import {
   ceilingRaiseOffer,
 } from '../../engine/ceiling'
 import { appendDecision } from '../../engine/decisions'
+import {
+  applyScheduleMove,
+  scheduleCopy,
+  scheduleDecision,
+  scheduleFitOffer,
+} from '../../engine/scheduleFit'
 
 /**
  * What the coach has noticed, and what it is offering to do about it.
@@ -99,6 +105,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // turned out fine. Pattern-level and offered only: turning down the
   // weight the app gives somebody's own answers is not its call.
   const earlyRaw = useMemo(() => earlyFlagOffer(data, date), [data, date])
+  const moveRaw = useMemo(() => scheduleFitOffer(data, date), [data, date])
   // ONE offer at a time. The Meals screen learned this in the J7 review
   // and this screen had not: seeding every card at once put a verdict,
   // two offers and a proposal on top of two banners, which is a wall of
@@ -110,6 +117,10 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // the athlete is about to do, and R3 s5.4 says the first move is down.
   const ceil = ceilRaw
   const early = ceil || limit ? null : earlyRaw
+  // Last in the ladder and deliberately so. Rewriting somebody's week is
+  // the biggest of these asks and the least urgent: the sets in front of
+  // them today matter more than which day next week's session lands on.
+  const move = ceil || limit || early ? null : moveRaw
 
   const proposals = useMemo(() => {
     const resolved = resolveDay(date, data)
@@ -133,7 +144,7 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   // after every verdict: the guard said "waved AND no follow-up", so a
   // follow-up on screen meant waving the offers away did nothing.
   const offering = !waved && proposals.length > 0 && !(session?.startedAt && !session.endedAt)
-  if (!offering && !verdictLine && !limit && !early && !ceil) return null
+  if (!offering && !verdictLine && !limit && !early && !ceil && !move) return null
 
   // reduce-load is the one proposal with no switch behind it. "Take a
   // third off the pressing" is not a shape the plan can hold — there is
@@ -179,6 +190,33 @@ export function AdaptProposals({ date }: { date: ISODate }) {
                 update((d) =>
                   appendDecision(d, ceilingDecision(ceil.change, ceil.dir, 'declined', date, d.decisions.length)),
                 )
+              }
+              className="press rounded-full bg-white/[0.07] px-3.5 py-2 text-[12px] font-bold text-ink-dim"
+            >
+              Leave it
+            </button>
+          </div>
+        </div>
+      )}
+      {move && (
+        <div className="rounded-2xl bg-white/[0.05] px-4 py-3 ring-1 ring-white/[0.08]">
+          <p className="text-[12.5px] font-black tracking-tight text-ink">Wrong day?</p>
+          <p className="mt-1 text-[11.5px] leading-snug text-ink-dim">{scheduleCopy(move)}</p>
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() =>
+                update((d) => {
+                  applyScheduleMove(d, move)
+                  appendDecision(d, scheduleDecision(move, 'accepted', date, d.decisions.length))
+                })
+              }
+              className="press rounded-full bg-accent px-3.5 py-2 text-[12px] font-bold text-black"
+            >
+              Move it
+            </button>
+            <button
+              onClick={() =>
+                update((d) => appendDecision(d, scheduleDecision(move, 'declined', date, d.decisions.length)))
               }
               className="press rounded-full bg-white/[0.07] px-3.5 py-2 text-[12px] font-bold text-ink-dim"
             >
