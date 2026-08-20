@@ -300,6 +300,19 @@ export const mlToOz = (ml: number) => Math.round(ml / 29.5735)
  * roughly 0.5% a week almost all of the surplus is fat, and a trained
  * lifter is nearer the bottom of that range than the top.
  */
+/**
+ * Calories per pound of body tissue. Wishnofsky 1958.
+ *
+ * A convention, not a law, and a short-horizon one: bodies offset
+ * deficits, so applied as a forecast it overestimates long-run loss by
+ * well over half at a year. Every user of it in this codebase halves it
+ * and clamps it for exactly that reason.
+ *
+ * Lives here, in the plan layer with the rest of the sourced numbers,
+ * rather than in either engine that needs it, because both do.
+ */
+export const KCAL_PER_LB_TISSUE = 3500
+
 export const WEEKLY_CHANGE_PCT = {
   fatLossMin: 0.005,
   fatLossMax: 0.01,

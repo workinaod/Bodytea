@@ -8,6 +8,7 @@ import { kcalBumpSuggestion, kcalFor, latestBodyweightLb, macrosFor, proteinFor,
 import { applyRecheck, learnedCopy, nutritionRecheck } from '../../engine/nutritionRecheck'
 import { energyCheck, energyCopy } from '../../engine/energyAvailability'
 import { calorieStep, stepCopy } from '../../engine/calorieStep'
+import { learnedCopyFor, learnedMaintenance } from '../../engine/maintenanceLearned'
 import { MIN_KCAL_REST } from '../../plan/kcalFloor'
 import { macroTargets } from '../../plan/sportsNutrition'
 import { Btn, Card, Chip, DayArrow, Ring, ScreenHeader, SectionTitle } from '../../components/ui'
@@ -67,6 +68,10 @@ export function MealsScreen() {
   const recheck = useMemo(() => nutritionRecheck(data, today), [data, today])
   const energy = useMemo(() => energyCheck(data, today), [data, today])
   const step = useMemo(() => calorieStep(data, today), [data, today])
+  const learned = useMemo(() => {
+    const m = learnedMaintenance(data, today)
+    return m ? learnedCopyFor(m) : null
+  }, [data, today])
 
   return (
     <div className="space-y-3 pb-6">
@@ -140,6 +145,13 @@ export function MealsScreen() {
             <Chip tone="default">fibre floor: {macroTarget.fiberG} g</Chip>
             {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
           </div>
+
+          {learned && (
+            <Card>
+              <p className="text-[13px] font-bold text-ink">What your own weeks say</p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{learned}</p>
+            </Card>
+          )}
 
           {step && (
             <Card className="border-accent/40">

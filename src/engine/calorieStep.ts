@@ -1,7 +1,8 @@
 import type { AppData, ISODate } from '../types'
 import { bodyweightHeuristicKcal, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal } from '../plan/bmr'
 import { MAX_DEFICIT, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
-import { weeklyGainRangeLb, weeklyLossRangeLb } from '../plan/sportsNutrition'
+import { KCAL_PER_LB_TISSUE, weeklyGainRangeLb, weeklyLossRangeLb } from '../plan/sportsNutrition'
+import { learnedMaintenance } from './maintenanceLearned'
 import { nutritionInputsNow } from './nutritionRecheck'
 import { weightTrend } from './userModel'
 
@@ -36,9 +37,6 @@ import { weightTrend } from './userModel'
 //
 // Suggest only. Nothing here writes.
 // ============================================================
-
-/** kcal per lb of tissue. Wishnofsky 1958, and a convention, not a law. */
-export const KCAL_PER_LB_TISSUE = 3500
 
 /** Half the static correction, because the static rule runs hot. */
 export const STEP_FRACTION = 0.5
@@ -111,15 +109,20 @@ export function calorieStep(data: AppData, today: ISODate): CalorieStep | null {
   )
   const stepKcal = round50(magnitude) * (missLbPerWeek > 0 ? -1 : 1)
 
-  // The floors and the deficit cap outrank the scale, every time. Both
-  // are measured against this athlete's own maintenance, computed from
-  // the same inputs the rest of the nutrition engine uses rather than a
-  // second gathering of them.
-  const maintenance = maintenanceKcal(
-    { bodyweightLb: bw, sex: now.sex, heightIn: now.heightIn, ageYears: now.ageYears, bodyFatPct: now.bodyFatPct },
-    { sessionsPerWeek: now.sessionsPerWeek ?? DEFAULT_SESSIONS_PER_WEEK },
-    bodyweightHeuristicKcal(bw, now.sex, now.heightIn),
-  ).kcal
+  // The floors and the deficit cap outrank the scale, every time, and
+  // both are measured against maintenance. Use the LEARNED number when
+  // there is enough evidence for one: the cap exists to stop a deficit
+  // going too deep, and "too deep" is relative to what this body actually
+  // costs to run, not to what the equations predicted before it started
+  // adapting. Falls back to the model, computed from the same inputs the
+  // rest of the nutrition engine uses rather than a second gathering.
+  const maintenance =
+    learnedMaintenance(data, today)?.kcal ??
+    maintenanceKcal(
+      { bodyweightLb: bw, sex: now.sex, heightIn: now.heightIn, ageYears: now.ageYears, bodyFatPct: now.bodyFatPct },
+      { sessionsPerWeek: now.sessionsPerWeek ?? DEFAULT_SESSIONS_PER_WEEK },
+      bodyweightHeuristicKcal(bw, now.sex, now.heightIn),
+    ).kcal
   const floor = Math.max(MIN_KCAL_TRAINING, Math.round(maintenance * (1 - MAX_DEFICIT)))
   const toKcal = Math.max(floor, fromKcal + stepKcal)
   // Already at the floor: the pace has to move, not the food.
