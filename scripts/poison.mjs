@@ -1417,6 +1417,14 @@ const MUTATIONS = [
     spec: "src/engine/outcomes.test.ts",
   },
   {
+    id: "stated-limitation-called-a-complaint",
+    bug: "a joint the athlete told us about is described as one the app noticed complaining, which read as a flat contradiction next to the offer saying the same joint had been quiet for three sessions",
+    file: "src/engine/adapt.ts",
+    find: "          because: (ctx.limited ?? []).includes(joint)",
+    to: "          because: false",
+    spec: "src/engine/persistentPain.test.ts",
+  },
+  {
     id: "readiness-flags-never-questioned",
     bug: "a readiness downgrade that keeps being followed by a fine day never gets questioned, so somebody who sleeps badly most Mondays has an ordinary session cut every week forever",
     file: "src/engine/readiness.ts",
@@ -2069,6 +2077,22 @@ const MUTATIONS = [
 ]
 
 const E2E_MUTATIONS = [
+  {
+    id: 'two-offers-stacked-on-one-screen',
+    bug: 'a verdict, two offers and a proposal stack on top of two banners, which is a wall of apology rather than a coach',
+    file: 'src/screens/today/AdaptProposals.tsx',
+    find: '  const early = limit ? null : earlyRaw',
+    to: '  const early = earlyRaw',
+    spec: 'e2e/adapt.spec.ts',
+  },
+  {
+    id: 'load-back-offered-on-a-swapped-away-joint',
+    bug: 'weight back is offered on a joint whose movements were all swapped out, so tapping it changes nothing on screen',
+    file: 'src/screens/today/AdaptProposals.tsx',
+    find: '      resolved.exercises.filter((e) => e.lightMode).flatMap((e) => MOVEMENT[e.exerciseId]?.stress ?? []),',
+    to: '      resolved.exercises.flatMap((e) => MOVEMENT[e.exerciseId]?.stress ?? []),',
+    spec: 'e2e/adapt.spec.ts',
+  },
   {
     id: 'readiness-sheet-keeps-its-own-threshold',
     bug: 'the sheet says "the day downgrades" while sessionStart runs the full session, so the screen and the engine disagree in front of the athlete',

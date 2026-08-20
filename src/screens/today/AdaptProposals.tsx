@@ -65,14 +65,28 @@ export function AdaptProposals({ date }: { date: ISODate }) {
   const limit = useMemo(() => {
     const resolved = resolveDay(date, data)
     if (resolved.kind !== 'session') return null
-    const joints = new Set(resolved.exercises.flatMap((e) => MOVEMENT[e.exerciseId]?.stress ?? []))
+    // Only the movements the limitation is actually HOLDING DOWN today,
+    // which is the lightMode ones. Reading every exercise's stress meant
+    // offering weight back on a joint whose movements had all been
+    // swapped away, so there was nothing on screen for the answer to
+    // change. Caught by seeding every card at once.
+    const joints = new Set(
+      resolved.exercises.filter((e) => e.lightMode).flatMap((e) => MOVEMENT[e.exerciseId]?.stress ?? []),
+    )
     return limitStepOffer(data, date, joints)
   }, [data, date])
 
   // The readiness flags themselves, once enough dialled-back days have
   // turned out fine. Pattern-level and offered only: turning down the
   // weight the app gives somebody's own answers is not its call.
-  const early = useMemo(() => earlyFlagOffer(data, date), [data, date])
+  const earlyRaw = useMemo(() => earlyFlagOffer(data, date), [data, date])
+  // ONE offer at a time. The Meals screen learned this in the J7 review
+  // and this screen had not: seeding every card at once put a verdict,
+  // two offers and a proposal on top of two banners, which is a wall of
+  // apology rather than a coach. Load back outranks the readiness
+  // question because it is about today's bar; the flags are a standing
+  // preference and will keep.
+  const early = limit ? null : earlyRaw
 
   const proposals = useMemo(() => {
     const resolved = resolveDay(date, data)

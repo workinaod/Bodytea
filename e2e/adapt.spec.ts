@@ -316,3 +316,39 @@ test('flags that keep crying wolf get questioned, not silently ignored', async (
     })
     .toContain('readiness-threshold')
 })
+
+test('one offer at a time, not a wall of them', async ({ page }) => {
+  // Seeding every card at once put a verdict, TWO offers and a proposal
+  // on top of two banners. The Meals screen learned this in the J7
+  // review; this one had not. Load back outranks the readiness question
+  // because it is about today's bar.
+  const PRESS = 'flat-db-press'
+  const state = seed((d) => {
+    d.prefs.limitations = [{ label: 'cranky shoulder', joints: ['shoulder'], since: '2026-01-05' }]
+    for (const date of ['2026-07-06', '2026-07-13', '2026-07-20']) {
+      d.sessions[date] = {
+        date,
+        templateId: 'tuesday',
+        status: 'completed',
+        exercises: [{ exerciseId: PRESS, sets: [{ targetReps: '8', done: true, achieved: 8, weightLb: 50 }] }],
+      } as never
+    }
+    const days = ['2026-07-07', '2026-07-09', '2026-07-14', '2026-07-16', '2026-07-21', '2026-07-23', '2026-07-28', '2026-07-30']
+    days.forEach((date, i) => {
+      const down = i % 2 === 0
+      d.sessions[date] = {
+        date,
+        templateId: 'tuesday',
+        status: down ? 'downgraded-completed' : 'completed',
+        exercises: [],
+        readiness: { flags: down ? [true, true, false, false] : [false, false, false, false], downgraded: down },
+      } as never
+    })
+  })
+  await boot(page, state)
+  await expect(page.getByText('Some weight back?')).toBeVisible()
+  await expect(page.getByText('Are these flags early?')).toHaveCount(0)
+  // And the swap stops calling a stated limitation a complaint.
+  await expect(page.getByText(/You told me about your shoulder/)).toBeVisible()
+  await expect(page.getByText(/shoulder has been complaining/)).toHaveCount(0)
+})

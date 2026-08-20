@@ -149,3 +149,28 @@ describe('it says this once', () => {
     expect(stuck[0].because).toContain('Your shoulder has been sore')
   })
 })
+
+describe('told, or noticed', () => {
+  // Found by seeding every card at once. The reduce-load branch has
+  // distinguished a stated limitation from an inferred one since
+  // somebody eighteen months past a knee replacement was told their knee
+  // "keeps getting flagged". The SWAP branch never got the same
+  // treatment, so the screen said "your shoulder has been complaining"
+  // beside "your shoulder has been quiet for 3 sessions".
+  const swapFor = (d: AppData) =>
+    planAdjustments([ex(PRESS)], adaptContext(d, TODAY, [...GYM] as EquipTag[])).find(
+      (a) => a.kind === 'substitute',
+    )!
+
+  it('does not tell somebody their own answer has been complaining', () => {
+    const d = base()
+    d.prefs.limitations = [{ label: 'shoulder', joints: ['shoulder'], since: '2026-01-01' }]
+    expect(swapFor(d).because).toContain('You told me about your shoulder')
+    expect(swapFor(d).because).not.toContain('complaining')
+  })
+
+  it('still says complaining when the app worked it out itself', () => {
+    const d = aching(base(), ago(6, 3))
+    expect(swapFor(d).because).toContain('has been complaining')
+  })
+})

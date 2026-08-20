@@ -230,7 +230,17 @@ export function planAdjustments(
           automatic: true,
           exerciseId: ex.exerciseId,
           toExerciseId: sub,
-          because: `Your ${joint.replace('-', ' ')} has been complaining, so this trains the same pattern without loading it.`,
+          // Told, or inferred. The reduce-load branch below has drawn
+          // this line since somebody eighteen months past a knee
+          // replacement was told their knee "keeps getting flagged"; the
+          // SWAP branch never got the same treatment, so a stated
+          // limitation still read as a complaint the app had noticed.
+          // Worse once the load-back offer shipped: the screen said the
+          // shoulder was complaining and that it had been quiet for
+          // three sessions, in the same view.
+          because: (ctx.limited ?? []).includes(joint)
+            ? `You told me about your ${joint.replace('-', ' ')}, so this trains the same pattern without loading it.`
+            : `Your ${joint.replace('-', ' ')} has been complaining, so this trains the same pattern without loading it.`,
         })
       } else {
         unroutable.set(joint, [...(unroutable.get(joint) ?? []), ex.exerciseId])
