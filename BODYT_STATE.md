@@ -1787,6 +1787,41 @@ the pre-existing plans that genuinely have no record of what built them.
   exercise fit reads daysSinceRegion. Those three are the last J7 exports still on the
   dead-export ledger, and J8 is named on each of them as the consumer.
 
+### 2026-08-20 · review pass over everything J7 shipped today
+  Owner asked for a review before continuing, and it was the right call. Three defects, all
+  mine, all from today, none of which any test noticed.
+  THE WEIGHT TREND HAD NO WINDOW. weightTrend regressed over every weigh-in ever recorded. An
+  athlete thirty pounds down over five months and perfectly FLAT for the last one read as
+  losing 1.29 lb a week, so calorieStep saw "inside the band, on track" and offered the one
+  person actually on a plateau nothing at all. Backwards, not merely imprecise. Windowed to 21
+  days per R1, and the same athlete now gets a 250 kcal step. The SAME all-history mistake
+  was in two more places I wrote today: learnedMaintenance averaged 28 days of food against
+  an unbounded trend, so the two sides of "intake minus what the scale did" covered different
+  stretches of somebody's life; and calorieStep read its 14-day span off all history, so a
+  weigh-in from last spring could vouch for a fortnight holding three readings two days apart.
+  THE CREATINE GUARD WAS READ OFF A TREND. `weightTrend(...)?.caveat` is undefined when the
+  window is too thin to produce a trend, so windowing the trend would have made the guard
+  evaporate exactly when there is least data. Extracted as trendIsConfounded and asked
+  directly by all three engines: whether creatine is on board has nothing to do with how many
+  times somebody weighed in this fortnight. This one was caught by an existing test going red
+  during the fix, which is the guard from the J7 facts layer paying for itself.
+  TWO RULES CONTRADICTED EACH OTHER ON ONE SCREEN, verified by probe rather than suspected:
+  the same athlete got "add 150 to 200 kcal" from kcalBumpSuggestion and "take 250 away" from
+  calorieStep, both rendering at once. Strength climbing on a flat scale is the cut WORKING,
+  so the scale-only reading of "too slow" is the wrong one and stands down.
+  AND THE SCREEN ITSELF: four engines can have an opinion about one number on the same day,
+  which on a 390px phone is five stacked cards. I built them one slice at a time and never
+  looked at the whole. Ranked now by how much each knows rather than the order I built them
+  in: recheck (the inputs changed) beats step (the inputs stand but the scale disagrees) beats
+  bump. The energy-availability card sits ABOVE the ladder rather than in it, because it is a
+  safety reading and not an opinion about the target.
+  Validation: tsc -b clean, **1,655/1,655 unit**, build green, **90/90 e2e**,
+  **poison 188/188** (3 new, 3 anchors re-aimed).
+  LESSON, for whoever ships the next engine: every one of these came from shipping slices
+  without re-reading the whole. The window bug existed from the moment weightTrend was
+  written and survived four slices built on top of it, because each slice only tested itself.
+  NEXT: J8, unchanged.
+
 ## 10. SOURCES
 
 - Living dashboard (this plan, rendered, republishable via url):
