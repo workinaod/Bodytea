@@ -6,7 +6,7 @@ import { addDaysISO, formatDayLabel, todayISO } from '../../engine/calendar'
 import { lateNightGraceDate } from '../../engine/rollover'
 import { useToday } from '../../logic/clock'
 import { enableReminders, notificationSupport } from '../../logic/reminders'
-import { BannerRow, Btn, Card, Chip, DayArrow, ScreenHeader } from '../../components/ui'
+import { BannerRow, Btn, Card, DayArrow, ScreenHeader } from '../../components/ui'
 import { REST_DAY_CARDS } from '../../plan/debrief'
 import { pickVariant } from '../../engine/coach'
 import { finishSession, restoreToday } from '../../logic/actions'
@@ -15,6 +15,9 @@ import { briefForDay, briefForSession } from '../../engine/workoutBrief'
 import { streakDays } from '../../engine/streak'
 import { quitCopy } from '../../engine/quit'
 import { AdaptProposals } from './AdaptProposals'
+import { TodayHero } from './TodayHero'
+import { TodayIdentityRow } from './TodayIdentityRow'
+import { TodayNextUp } from './TodayNextUp'
 import { TodayCardio, CardioBackupChooser } from './TodayCardio'
 import { TodayCompletion } from './TodayCompletion'
 import { TodayPreviewList } from './TodayPreviewList'
@@ -29,7 +32,14 @@ import { DebriefSheet } from './DebriefSheet'
 import { ExerciseGuideSheet } from './ExerciseGuideSheet'
 import { CardioSheet } from './CardioSheet'
 
-export function TodayScreen() {
+export function TodayScreen({
+  onOpenProgress,
+  onOpenProfile,
+}: {
+  /** Jumps out of Today. Optional so the screen still stands alone. */
+  onOpenProgress?: () => void
+  onOpenProfile?: () => void
+} = {}) {
   const data = useAppStore((s) => s.data)
   const realToday = useToday()
   // null = follow the live day; set only by explicit ‹ › navigation
@@ -138,6 +148,15 @@ export function TodayScreen() {
         }
       />
 
+      {today && (
+        <TodayIdentityRow
+          data={data}
+          today={homeDate}
+          onOpenProgress={onOpenProgress}
+          onOpenProfile={onOpenProfile}
+        />
+      )}
+
       {graceDate && date === graceDate && (
         <div className="border-l-2 border-cyan/60 py-1 pl-3 text-[12.5px] leading-snug text-cyan/90">
           {session
@@ -146,45 +165,22 @@ export function TodayScreen() {
         </div>
       )}
 
-      {/* The hero: what today IS, with its context whispered above it */}
-      <div className="pt-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-            Week {day.weekIndex} · Block {day.blockIndex} · {day.abWeek}
-            {day.tier !== 1 && ` · Tier ${day.tier}`}
-          </span>
-          {day.isDeload && <Chip tone="lime">deload</Chip>}
-          {day.cns && <Chip tone="accent">CNS day</Chip>}
-        </div>
-        {/* A make-up or an off-plan workout IS the day once it exists;
-            the hero says what is actually being done, not the schedule */}
-        <div className="mt-1.5 flex items-start justify-between gap-3">
-          <h1 className="headline min-w-0 text-[31px]">{session?.customTitle ?? viewDay.title}</h1>
-          {/* The session-level "?", the twin of the one on every exercise row:
-              what this workout does, why it runs in this order, and where it
-              sits in the plan. */}
-          <button
-            aria-label="How this workout works"
-            onClick={() => setBriefOpen(true)}
-            className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-[15px] font-black text-cyan active:bg-white/[0.11]"
-          >
-            ?
-          </button>
-        </div>
-        <p className="mt-1.5 text-[13px] leading-snug text-ink-dim">
-          {session?.customTitle ? 'Off the plan, on the record.' : viewDay.tagline}
-        </p>
-      </div>
+      <TodayHero data={data} day={viewDay} session={session} onOpenBrief={() => setBriefOpen(true)} />
 
-      {/* Actions live at the top, no reaching past the list to start */}
+      {/* One action, full width. "Can't train" is a real door and stays,
+          but it was sharing a row with Start at half its size, which made
+          the screen ask a question instead of giving an instruction. */}
       {today && !session && day.kind !== 'rest' && !(day.kind === 'cardio-backup' && day.exercises.length === 0) && (
-        <div className="flex gap-2 pt-0.5">
-          <Btn className="flex-[2]" onClick={handleStart}>
+        <div className="pt-0.5">
+          <Btn size="lg" className="w-full" onClick={handleStart}>
             {day.cns ? 'Readiness check → start' : 'Start session'}
           </Btn>
-          <Btn kind="ghost" className="flex-1" onClick={() => setSkipOpen(true)}>
+          <button
+            onClick={() => setSkipOpen(true)}
+            className="press mt-2 w-full py-1 text-center text-[12.5px] font-semibold text-ink-faint underline underline-offset-2"
+          >
             Can't train
-          </Btn>
+          </button>
         </div>
       )}
 
@@ -285,6 +281,8 @@ export function TodayScreen() {
         }}
         onLogged={(d) => setDebrief({ data: d })}
       />
+
+      {today && <TodayNextUp data={data} today={homeDate} onOpenProgress={onOpenProgress} />}
 
       <TodayCompletion
         session={session}
