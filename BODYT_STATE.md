@@ -2506,7 +2506,50 @@ notes are in the next entry.
 
 Gates: typecheck clean, **1,757/1,757 unit**, build green, **93/93 e2e** on a fresh server.
 
+### 2026-08-20 · OP12 · the 3D ecorche, standing up but not dressed
+
+Owner's call on the demo figure: *"1 and 2"*, meaning promote the video AND build the 3D model.
+Then, with a Sketchfab link: *"Build it using that... in fact the avatar that shows muscle
+groups should also use that"*.
+
+THE MODEL THEY SENT CANNOT SHIP, and all three reasons come from Sketchfab's own API rather than
+from my opinion of it:
+- `isDownloadable: false`. There is no file to obtain, licence terms aside.
+- `riggedGeometry: null`, `animationCount: 0`. No skeleton, so it cannot be posed at all.
+- **626,713 triangles.** A web character runs 5,000 to 30,000. It is a study model.
+
+So it is built to that REFERENCE instead, in code. `src/components/anatomy3d/`:
+- `rig.ts` carries the SAME bone lengths as the 2D figure, so all 194 pose sequences transfer
+  with no retargeting whatsoever. A squat authored for the drawing is a squat here.
+- `muscles.ts` is the body as ~46 ellipsoid bellies on those bones, each tagged with the
+  `MuscleRegion` the app already uses. **The owner's second instruction is the good one**: it
+  means the movement demo and the muscle map are ONE body rather than two drawings that
+  disagreed about what a leg looks like, and highlighting is a material swap rather than a
+  second set of shapes to keep in sync.
+- `figure3d.ts` builds it, lights it (key, fill and a rim, because a rim is what separates a
+  dark limb from a dark card at 110px), poses it and orbits the camera.
+
+LEARNED: **a spindle is a muscle, but spindles alone are a bag of beans.** Four rounds of
+ellipsoid tuning did less than one continuous shaft down each limb with the bellies wrapped
+around it. The body reads as a body the moment there is something underneath the muscles.
+
+STATE: **not wired into any screen.** `three` is in package.json and is NOT in the app bundle
+(nothing imports it yet; verified against dist). The rig, pose transfer, lighting, highlighting
+and camera are done; the MESH is the part that still needs the owner's eye, which is why it went
+out as a live draggable artifact rather than as four more screenshots. That was the lesson from
+the drawing rounds earlier today and it is written down here so the next session does not repeat
+it: **show it moving, early, instead of polishing alone.**
+
+NEXT, and it needs an owner decision before any of it: whether to keep sculpting this mesh, or
+to wire a bought rigged low-poly body into the same rig. Either way the rig, the regions and the
+two call sites (ExerciseDemo's no-clip path, MuscleMap) are unchanged.
+
+Gates: typecheck clean, **1,757/1,757 unit**, build green, three.js confirmed absent from the
+shipped bundle.
+
 ## 10. SOURCES
+
+- Round 8, the 3D ecorche (live, draggable): https://claude.ai/code/artifact/7327dff2-7556-4491-bf79-645ecbf19b2d
 
 - OP12 round 6, "Make It Move" (reminder pop-up, Progress as a scoreboard, the flame from zero):
   https://claude.ai/code/artifact/939781e6-0c32-403b-8185-67f17b6a2b85
