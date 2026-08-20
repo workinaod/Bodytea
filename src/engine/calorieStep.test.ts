@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { emptyAppData, type AppData } from '../types'
+import { emptyAppData, type AppData, type SessionLog } from '../types'
 import { addDaysISO } from './calendar'
 import { STEP_MAX, STEP_MIN, calorieStep, stepCopy } from './calorieStep'
+import { kcalBumpSuggestion } from './stats'
 
 // ============================================================
 // R1 asserts this case directly: persona 1 on a cut, trending -0.2 %/wk
@@ -130,5 +131,30 @@ describe('saying why', () => {
     expect(copy).toContain('lb a week')
     expect(copy).toContain('not a prediction')
     expect(copy).toContain(String(Math.abs(s.stepKcal)))
+  })
+})
+
+describe('it does not argue with the recomp signal', () => {
+  it('stays silent when strength is climbing on a flat scale', () => {
+    // Both rules used to fire on this athlete at once. One card said add
+    // 150 to 200 kcal, the other said take 250 away, on the same screen.
+    // Strength up while weight holds is the cut WORKING, so the
+    // scale-only reading of "too slow" is the wrong one and stands down.
+    const d = cutting()
+    for (const [ago, lb] of [[24, 197], [18, 197.4], [12, 197.2], [6, 197.3], [0, 197.1]] as const) {
+      d.measurements.push({ date: addDaysISO(TODAY, -ago), weightLb: lb, photoIds: {} })
+    }
+    d.plan.trackedLifts = [{ exerciseId: 'goblet-squat', label: 'Goblet Squat' }]
+    for (const [ago, lb] of [[40, 100], [3, 115]] as const) {
+      const date = addDaysISO(TODAY, -ago)
+      d.sessions[date] = {
+        date,
+        templateId: 't',
+        status: 'done',
+        exercises: [{ exerciseId: 'goblet-squat', sets: [{ targetReps: '8', weightLb: lb, reps: 8, done: true }] }],
+      } as unknown as SessionLog
+    }
+    expect(kcalBumpSuggestion(d), 'the fixture has to actually trigger the recomp rule').not.toBeNull()
+    expect(calorieStep(d, TODAY)).toBeNull()
   })
 })

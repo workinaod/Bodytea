@@ -73,6 +73,23 @@ export function MealsScreen() {
     return m ? learnedCopyFor(m) : null
   }, [data, today])
 
+  // ONE calorie-target suggestion at a time.
+  //
+  // Four engines can have an opinion about this number on the same day,
+  // and stacking them turns a coach into a committee: five cards on a
+  // 390px screen, two of which have already been caught contradicting
+  // each other. They are ranked by how much they know rather than by the
+  // order they were built in.
+  //
+  //   recheck  the inputs themselves changed, so the target is stale
+  //   step     the inputs stand, but the scale disagrees with them
+  //   bump     the older recomp rule, kept as the floor of the ladder
+  //
+  // The energy-availability card is deliberately NOT in this ladder. It
+  // is not an opinion about the target, it is a safety reading, and it
+  // sits above whichever suggestion wins.
+  const advice = recheck ? 'recheck' : step ? 'step' : bump ? 'bump' : null
+
   return (
     <div className="space-y-3 pb-6">
       <ScreenHeader
@@ -146,14 +163,24 @@ export function MealsScreen() {
             {pStreak >= 2 && <Chip tone="gold">{pStreak}-day protein streak</Chip>}
           </div>
 
-          {learned && (
+          {/* Safety first, and it is not competing with the ladder below. */}
+          {energy && (
+            <Card className="border-gold/40">
+              <p className="text-[13px] font-bold text-gold">
+                {energy.level === 'low' ? 'Not much left to run on' : 'Worth a look'}
+              </p>
+              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{energyCopy(energy)}</p>
+            </Card>
+          )}
+
+          {learned && !advice && (
             <Card>
               <p className="text-[13px] font-bold text-ink">What your own weeks say</p>
               <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{learned}</p>
             </Card>
           )}
 
-          {step && (
+          {advice === 'step' && step && (
             <Card className="border-accent/40">
               <p className="text-[13px] font-bold text-accent-soft">What the scale is actually doing</p>
               <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{stepCopy(step)}</p>
@@ -174,16 +201,8 @@ export function MealsScreen() {
             </Card>
           )}
 
-          {energy && (
-            <Card className="border-gold/40">
-              <p className="text-[13px] font-bold text-gold">
-                {energy.level === 'low' ? 'Not much left to run on' : 'Worth a look'}
-              </p>
-              <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">{energyCopy(energy)}</p>
-            </Card>
-          )}
 
-          {recheck && (
+          {advice === 'recheck' && recheck && (
             <Card className="border-accent/40">
               <p className="text-[13px] font-bold text-accent-soft">
                 {recheck.athleteSet ? 'Worth another look' : 'Your target was set before this'}
@@ -210,7 +229,7 @@ export function MealsScreen() {
             </Card>
           )}
 
-          {bump && (
+          {advice === 'bump' && bump && (
             <Card className="border-gold/40">
               <p className="text-[13px] font-bold text-gold">Check-in rule triggered</p>
               <p className="mt-1 text-[12.5px] leading-snug text-ink-dim">

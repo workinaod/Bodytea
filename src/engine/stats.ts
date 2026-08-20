@@ -1,7 +1,7 @@
 import type { AppData, ISODate, SessionLog } from '../types'
 import { addDaysISO, daysBetween, todayISO } from './calendar'
 import { resolveDay } from './resolveDay'
-import { weightTrend } from './userModel'
+import { trendIsConfounded } from './userModel'
 import { getExercise } from '../plan/exercises'
 import { FOODS } from '../plan/foods'
 
@@ -439,9 +439,15 @@ export function kcalBumpSuggestion(data: AppData): KcalBumpSuggestion | null {
   // the drop reads as under-eating and this would tell somebody to add
   // calories they do not need.
   //
-  // So when the user model says the trend is confounded, the answer is
+  // So when the user model says the scale is confounded, the answer is
   // no answer. It re-evaluates on its own once the water settles.
-  if (weightTrend(data, last.date)?.caveat) return null
+  //
+  // Asked as its own question rather than read off a trend's caveat. A
+  // trend is windowed to recent weeks and returns null when the window is
+  // thin, and a guard that evaporates exactly when there is least data is
+  // not a guard. Whether creatine is on board has nothing to do with how
+  // many times somebody stepped on a scale this fortnight.
+  if (trendIsConfounded(data)) return null
 
   // strength climbing? any tracked lift e1RM +3% over the same window
   let bestGain = 0

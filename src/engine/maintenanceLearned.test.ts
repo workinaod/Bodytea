@@ -21,13 +21,19 @@ function athlete(): AppData {
   return d
 }
 
-/** Weigh-ins every 3 days across the window at a steady rate. */
-function scale(d: AppData, startLb: number, lbPerWeek: number, count = 10): AppData {
+/**
+ * Weekly weigh-ins across the trend window at a steady rate.
+ *
+ * Weekly rather than every third day so the rate is exact: a scale reads
+ * to a tenth of a pound, and three-day steps of a whole-pound-per-week
+ * rate do not land on tenths, which put a 5 kcal rounding wobble into an
+ * assertion that reads as though it were arithmetic.
+ */
+function scale(d: AppData, startLb: number, lbPerWeek: number, count = 4): AppData {
   for (let i = 0; i < count; i++) {
-    const daysAgo = (count - 1 - i) * 3
     d.measurements.push({
-      date: addDaysISO(TODAY, -daysAgo),
-      weightLb: Math.round((startLb + (lbPerWeek * (i * 3)) / 7) * 10) / 10,
+      date: addDaysISO(TODAY, -((count - 1 - i) * 7)),
+      weightLb: startLb + lbPerWeek * i,
       photoIds: {},
     })
   }
@@ -84,7 +90,8 @@ describe('it declines rather than guess', () => {
 
   it('when there is not three weeks of scale behind it', () => {
     const d = ate(athlete(), 2000, 24)
-    scale(d, 190, -1, 3) // three weigh-ins, nine days apart end to end
+    // three weigh-ins inside one week: not three weeks of anything
+    for (let i = 0; i < 3; i++) d.measurements.push({ date: addDaysISO(TODAY, -i * 3), weightLb: 190 - i, photoIds: {} })
     expect(learnedMaintenance(d, TODAY)).toBeNull()
   })
 

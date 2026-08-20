@@ -132,9 +132,41 @@ function bodyComposition(data: AppData, today: ISODate): UserFact<number> | null
   return fact(pct, 'measurements', last.date, recent.length, today)
 }
 
-export function weightTrend(data: AppData, today: ISODate): UserFact<number> | null {
+/**
+ * How far back a weight trend looks. R1 asks for a 2 to 3 week trend.
+ *
+ * This was unbounded, which was worse than imprecise, it was backwards.
+ * An athlete thirty pounds down over five months and perfectly FLAT for
+ * the last one regressed to 1.29 lb a week of loss, so the step rule read
+ * "on track" and offered the one person on a plateau nothing at all. A
+ * trend is a statement about recent weeks; it has to be scoped to them.
+ */
+export const TREND_WINDOW_DAYS = 21
+
+/**
+ * Something the app knows is moving the scale that is not energy balance.
+ *
+ * Its own function because three engines ask the question and only one of
+ * them wants a trend. Reading it off `weightTrend(...)?.caveat` meant the
+ * guard quietly stopped guarding whenever the window held too few
+ * weigh-ins to produce a trend at all.
+ */
+export function trendIsConfounded(data: AppData): boolean {
+  return (data.plan?.mealPlan?.supplements ?? []).some(
+    (s) => s.source === 'app' && supplementRecord(s.id)?.confoundsWeightTrend,
+  )
+}
+
+export function weightTrend(
+  data: AppData,
+  today: ISODate,
+  windowDays = TREND_WINDOW_DAYS,
+): UserFact<number> | null {
   const points = (data.measurements ?? [])
-    .filter((m) => typeof m.weightLb === 'number' && daysBetween(m.date, today) >= 0)
+    .filter((m) => {
+      const age = daysBetween(m.date, today)
+      return typeof m.weightLb === 'number' && age >= 0 && age < windowDays
+    })
     .sort((a, b) => a.date.localeCompare(b.date))
   if (points.length < 3) return null
 
@@ -164,9 +196,7 @@ export function weightTrend(data: AppData, today: ISODate): UserFact<number> | n
   const cov = xs.reduce((acc, x, i) => acc + (x - mx) * (ys[i] - my), 0)
   const perWeek = Math.round((cov / varX) * 7 * 100) / 100
 
-  const confounder = (data.plan.mealPlan.supplements ?? []).find(
-    (s) => s.source === 'app' && supplementRecord(s.id)?.confoundsWeightTrend,
-  )
+  const confounder = trendIsConfounded(data)
   return fact(
     perWeek,
     'measurements',

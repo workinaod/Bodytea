@@ -1,10 +1,12 @@
 import type { AppData, ISODate } from '../types'
 import { bodyweightHeuristicKcal, DEFAULT_SESSIONS_PER_WEEK, maintenanceKcal } from '../plan/bmr'
 import { MAX_DEFICIT, MIN_KCAL_TRAINING } from '../plan/kcalFloor'
+import { addDaysISO } from './calendar'
 import { KCAL_PER_LB_TISSUE, weeklyGainRangeLb, weeklyLossRangeLb } from '../plan/sportsNutrition'
 import { learnedMaintenance } from './maintenanceLearned'
 import { nutritionInputsNow } from './nutritionRecheck'
-import { weightTrend } from './userModel'
+import { kcalBumpSuggestion } from './stats'
+import { TREND_WINDOW_DAYS, trendIsConfounded, weightTrend } from './userModel'
 
 // ============================================================
 // The scale is the truth serum. Nothing was drinking it.
@@ -76,12 +78,28 @@ export function calorieStep(data: AppData, today: ISODate): CalorieStep | null {
   if (!goal || !fromKcal) return null
   if (goal !== 'lean' && goal !== 'muscle') return null
 
+  // A flat scale with strength climbing is not a stalled cut, it is a
+  // recomp, and it is the one reading where "you are losing too slowly"
+  // is exactly wrong. That signal is older than this rule and better
+  // evidence than the scale alone, so it wins.
+  //
+  // Without this the same athlete saw both cards at once: add 150 to 200
+  // kcal from one, take 250 away from the other.
+  if (kcalBumpSuggestion(data)) return null
+
   const trend = weightTrend(data, today)
   // A trend the app knows is distorted is not evidence. Creatine pulls
   // water on and lets it go, and neither direction is energy balance.
-  if (!trend || trend.caveat || trend.samples < MIN_WEIGH_INS) return null
+  if (trendIsConfounded(data)) return null
+  if (!trend || trend.samples < MIN_WEIGH_INS) return null
 
-  const weighed = (data.measurements ?? []).filter((m) => typeof m.weightLb === 'number')
+  // Span measured INSIDE the trend window. Reading it off all history let
+  // a weigh-in from last spring vouch for a fortnight that contained
+  // three readings in two days, which is the same defect the trend itself
+  // had and the same one learnedMaintenance had.
+  const weighed = (data.measurements ?? []).filter(
+    (m) => typeof m.weightLb === 'number' && m.date > addDaysISO(today, -TREND_WINDOW_DAYS) && m.date <= today,
+  )
   const first = weighed[0]?.date
   const last = weighed[weighed.length - 1]?.date
   if (!first || !last) return null

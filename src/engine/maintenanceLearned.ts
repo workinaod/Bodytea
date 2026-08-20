@@ -4,7 +4,7 @@ import { KCAL_PER_LB_TISSUE } from '../plan/sportsNutrition'
 import { addDaysISO } from './calendar'
 import { nutritionInputsNow } from './nutritionRecheck'
 import { kcalFor } from './stats'
-import { weightTrend } from './userModel'
+import { TREND_WINDOW_DAYS, trendIsConfounded, weightTrend } from './userModel'
 
 // ============================================================
 // What this body actually costs to run, as opposed to what the
@@ -47,13 +47,22 @@ import { weightTrend } from './userModel'
 // calories at all.
 // ============================================================
 
-const WINDOW_DAYS = 28
+/**
+ * Both halves of the equation, over the same days.
+ *
+ * This used to average intake over 28 days and pair it with a weight
+ * trend that had no window at all, so the two sides of "intake minus what
+ * the scale did" described different stretches of somebody's life. Same
+ * window now, and it is the trend's window, because that is the one R1
+ * puts a number on.
+ */
+const WINDOW_DAYS = TREND_WINDOW_DAYS
 
 /** Below this the mean intake is a story about the days somebody logged. */
 const MIN_LOGGED_FRACTION = 0.6
 
-/** A trend needs three weeks before it is a trend. */
-const MIN_TREND_DAYS = 21
+/** A trend needs a real stretch of the window behind it, not two days. */
+const MIN_TREND_DAYS = 14
 const MIN_WEIGH_INS = 3
 
 /**
@@ -104,9 +113,15 @@ export function learnedMaintenance(data: AppData, today: ISODate): LearnedMainte
   if (now.bodyweightLb === null) return null
 
   const trend = weightTrend(data, today)
-  if (!trend || trend.caveat || trend.samples < MIN_WEIGH_INS) return null
+  if (trendIsConfounded(data)) return null
+  if (!trend || trend.samples < MIN_WEIGH_INS) return null
 
-  const weighed = (data.measurements ?? []).filter((m) => typeof m.weightLb === 'number')
+  // Span measured INSIDE the window, not across all history: a weigh-in
+  // last spring does not make this fortnight three weeks long.
+  const weighed = (data.measurements ?? []).filter(
+    (m) => typeof m.weightLb === 'number' && m.date > addDaysISO(today, -WINDOW_DAYS) && m.date <= today,
+  )
+  if (weighed.length < MIN_WEIGH_INS) return null
   const spanDays =
     (Date.parse(weighed[weighed.length - 1].date) - Date.parse(weighed[0].date)) / 86_400_000
   if (spanDays < MIN_TREND_DAYS) return null

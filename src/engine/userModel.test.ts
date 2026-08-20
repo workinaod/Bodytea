@@ -83,7 +83,24 @@ describe('the weight trend', () => {
     // gaining, which is the one reading that reverses a calorie decision.
     expect(f.value).toBeLessThan(0)
     expect(f.from).toBe('measurements')
-    expect(f.samples).toBeGreaterThanOrEqual(8)
+    // The fixture weighs in every 4 days across 29 days. Only the ones
+    // inside the trend window count, which is the point: samples is
+    // evidence for THIS trend, not a tally of everything ever recorded.
+    expect(f.samples).toBe(6)
+  })
+
+  it('looks at recent weeks, not at everything ever recorded', () => {
+    // The defect this pins: the window was unbounded, so an athlete
+    // thirty pounds down over five months and perfectly FLAT for the last
+    // one regressed to 1.29 lb a week of loss. The step rule read "on
+    // track" and offered the one person actually on a plateau nothing.
+    let d = blank()
+    d.plan.mealPlan.supplements = []
+    for (let i = 0; i < 40; i++) d = weighIn(d, 180 - i * 4, 220 - i * 0.6)
+    for (const daysAgo of [18, 12, 6, 0]) d = weighIn(d, daysAgo, 190)
+    const f = weightTrend(d, TODAY)!
+    expect(f.value).toBe(0)
+    expect(f.samples).toBe(4)
   })
 
   it('says out loud when creatine is making the number lie', () => {
