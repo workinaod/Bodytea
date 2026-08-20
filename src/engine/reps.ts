@@ -161,21 +161,33 @@ export function repStepFor(
   range: RepRange,
   before: ISODate,
 ): RepStep {
+  const step = climb(data, exerciseId, range, before)
+  // R3 s9.2 rung 3, back off and re-climb. A movement flagged for six
+  // exposures without stringing two clean sessions together is not going
+  // to be rescued by another week of the same lighter weight. The load
+  // half of rung 3 already ships in prescription.ts; the re-climb was
+  // missing, so there was nothing to climb.
+  //
+  // Only the REPS are overridden. An earlier version returned a fresh
+  // step and threw away backOff and staleSteps with it, which quietly
+  // took a load reduction AWAY from the one movement going worst: a
+  // stalled lift that also fell short and felt heavy stopped getting its
+  // step down. Restarting the range is meant to add a lever, not spend
+  // one. `wrapped` goes false because nothing can be wrapping while it
+  // is starting again from the bottom.
+  if (!stalledLifts(data, before).has(exerciseId)) return step
+  return { ...step, reps: range.low, wrapped: false }
+}
+
+function climb(
+  data: AppData,
+  exerciseId: string,
+  range: RepRange,
+  before: ISODate,
+): RepStep {
   const history = Object.values(data.sessions)
     .filter((s) => s.date < before && s.status !== 'skipped')
     .sort((a, b) => (a.date > b.date ? -1 : 1))
-
-  // R3 s9.2 rung 3, back off and re-climb. A movement that has been
-  // flagged for six exposures without stringing two clean sessions
-  // together is not going to be rescued by another week of the same
-  // lighter weight. The load half of rung 3 already ships, in
-  // prescription.ts; this is the half that was missing, and it is the
-  // same mechanic the layoff path below already uses. Climbing from the
-  // bottom of the range is the point: a number the athlete can actually
-  // finish, with somewhere to go.
-  if (stalledLifts(data, before).has(exerciseId)) {
-    return { reps: range.low, wrapped: false, backOff: false, staleSteps: 0 }
-  }
 
   for (const session of history) {
     const log = session.exercises.find((e) => e.exerciseId === exerciseId)

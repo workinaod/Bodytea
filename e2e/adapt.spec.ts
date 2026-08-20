@@ -214,3 +214,38 @@ test('closing the offer still works when a verdict is on screen', async ({ page 
   // ago, not an offer, and the ✕ was never about it.
   await expect(page.getByText('That worked', { exact: true })).toBeVisible()
 })
+
+test('a movement that keeps dying says so on the day', async ({ page }) => {
+  // The failing flag softens the load and, once a movement is stalled,
+  // restarts its rep range. Neither ever said why: FatigueSuggestion has
+  // carried the sentence since it was written and prescription.ts, its
+  // only caller, reads `kind` alone. A press went from 10 at 50 to 8 at
+  // 40 in silence.
+  //
+  // Tested HERE rather than only against flagNotes, because a unit test
+  // that calls the function is exactly the gap that let two earlier
+  // slices ship an engine nothing invoked.
+  const PRESS = 'flat-db-press'
+  const dates = [
+    '2026-05-05', '2026-05-12', '2026-05-19', '2026-05-26',
+    '2026-06-02', '2026-06-09', '2026-06-16', '2026-06-23', '2026-06-30',
+  ]
+  // Three shorts raise it, then six exposures that never string two
+  // clean sessions together.
+  const achieved = [6, 6, 6, 6, 10, 6, 10, 6, 10]
+  const state = seed((d) => {
+    dates.forEach((date, i) => {
+      d.sessions[date] = {
+        date,
+        templateId: 'tuesday',
+        status: 'completed',
+        exercises: [
+          { exerciseId: PRESS, sets: [{ targetReps: '10', done: true, achieved: achieved[i], weightLb: 50 }] },
+        ],
+      } as never
+    })
+  })
+  await boot(page, state)
+  await expect(page.getByText(/bottom of the range/)).toBeVisible()
+  await expect(page.getByText(/Flat DB Press: 6 sessions on this/)).toBeVisible()
+})

@@ -1417,6 +1417,38 @@ const MUTATIONS = [
     spec: "src/engine/outcomes.test.ts",
   },
   {
+    id: "flag-note-says-nothing",
+    bug: "the load drops and the rep range restarts and the athlete is told nothing, which is the silence FatigueSuggestion.because was written to end and never did",
+    file: "src/engine/fatigue.ts",
+    find: "  const states = [...flagStates(data, today)].filter(([id]) => present.has(id))",
+    to: "  const states = []",
+    spec: "src/engine/stalled.test.ts",
+  },
+  {
+    id: "flag-note-talks-about-another-day",
+    bug: "today explains a movement that is not in today's session, so the athlete reads an apology for a lift they are not doing",
+    file: "src/engine/fatigue.ts",
+    find: "].filter(([id]) => present.has(id))",
+    to: "]",
+    spec: "src/engine/stalled.test.ts",
+  },
+  {
+    id: "easing-note-dropped",
+    bug: "a movement opening lighter says why only once it is already stalled, so the ordinary softening is still unexplained",
+    file: "src/engine/fatigue.ts",
+    find: "  if (easing.length) {",
+    to: "  if (false) {",
+    spec: "src/engine/stalled.test.ts",
+  },
+  {
+    id: "stalled-lift-drops-its-back-off",
+    bug: "restarting the range spends the load reduction instead of adding to it, so the lift going worst quietly stops getting its step down at the moment the app decides it is stuck",
+    file: "src/engine/reps.ts",
+    find: "  return { ...step, reps: range.low, wrapped: false }",
+    to: "  return { reps: range.low, wrapped: false, backOff: false, staleSteps: 0 }",
+    spec: "src/engine/stalled.test.ts",
+  },
+  {
     id: "stalled-lift-never-re-climbs",
     bug: "a movement six sessions into a softened prescription that is not working never restarts its range, so there is nothing to climb and the athlete grinds the same failing ask indefinitely",
     file: "src/engine/reps.ts",
@@ -1941,6 +1973,14 @@ const MUTATIONS = [
 ]
 
 const E2E_MUTATIONS = [
+  {
+    id: 'flag-note-never-reaches-the-day',
+    bug: 'the note is built and never put on the day, so the engine explains itself to nobody',
+    file: 'src/engine/resolveDay.ts',
+    find: '    flagNotes(data, dateISO, new Set(exercises.map((e) => e.exerciseId))).forEach((text, i) =>',
+    to: '    [].forEach((text, i) =>',
+    spec: 'e2e/adapt.spec.ts',
+  },
   {
     id: 'dismiss-dies-while-a-verdict-is-up',
     bug: 'the ✕ silently stops working for the week after every verdict, so the offers the athlete just waved away stay exactly where they were under a button that looks broken',

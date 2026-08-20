@@ -1,6 +1,8 @@
 import type { AppData, FatigueNote, FatigueReason, ISODate, SessionLog } from '../types'
 import type { MuscleRegion } from '../plan/muscleRegions'
 import { musclesFor } from '../plan/muscles'
+import { getExercise } from '../plan/exercises'
+import { wordList } from '../plan/words'
 import { daysBetween } from './calendar'
 import { loadProvedWrong } from './shortfall'
 
@@ -163,6 +165,15 @@ export const CLEAN_SESSIONS_TO_UNFLAG = 2
  */
 export const EXPOSURES_BEFORE_STALLED = 6
 
+/**
+ * What a stalled movement is told, in one place.
+ *
+ * Said on the suggestion AND on the day's note, and it was written out
+ * twice before this existed. Two copies of a sentence drift, and a coach
+ * that says almost the same thing in two places reads as two coaches.
+ */
+const STALLED_LINE = `${EXPOSURES_BEFORE_STALLED} sessions on this since it was flagged and it has not come back. Going lighter was not the answer, so the reps start again at the bottom of the range and climb from there.`
+
 interface FlagState {
   /** Short sessions standing behind the flag. */
   shorts: number
@@ -317,7 +328,7 @@ export function nextSessionSuggestions(data: AppData, today: ISODate): FatigueSu
       // time is the app repeating advice it has already watched fail, so
       // it says what it is actually doing instead. R3 s9.2, rung 3.
       because: state.stalled
-        ? `${EXPOSURES_BEFORE_STALLED} sessions on this since it was flagged and it has not come back. Going lighter was not the answer, so the reps start again at the bottom of the range and climb from there.`
+        ? STALLED_LINE
         : `You came up short on this in ${count} recent ${plural(count, 'session', 'sessions')}. Two clean sessions in a row puts it back to normal.`,
     })
   }
@@ -350,4 +361,40 @@ export function nextSessionSuggestions(data: AppData, today: ISODate): FatigueSu
 /** Reasons that mean "this exercise is over", as opposed to "less weight". */
 export function endsTheExercise(reason: FatigueReason): boolean {
   return reason === 'form' || reason === 'pain'
+}
+
+
+/**
+ * What today should say about the movements it has quietly made easier.
+ *
+ * The failing flag was the only automatic adjustment in this app that
+ * never said why. It softens the load and, once a movement is stalled,
+ * restarts its rep range, and the athlete saw a squat go from 10 at 100
+ * to 8 at 90 with nothing on screen about it. FatigueSuggestion has
+ * carried a `because` since it was written, whose own comment reads "the
+ * evidence, in a sentence: an unexplained change reads as a bug", and
+ * nothing ever rendered it: prescription.ts is the only caller and it
+ * reads `kind` alone.
+ *
+ * Stalled movements get a line each, because that message is an
+ * escalation and worth the room. The ordinary softening is collapsed
+ * into one, because one note per movement is how a bad month turns the
+ * top of the screen into a wall of apology.
+ */
+export function flagNotes(data: AppData, today: ISODate, present: Set<string>): string[] {
+  const states = [...flagStates(data, today)].filter(([id]) => present.has(id))
+  if (!states.length) return []
+  const out: string[] = []
+  for (const [id, st] of states) {
+    if (!st.stalled) continue
+    out.push(`${getExercise(id).name}: ${STALLED_LINE}`)
+  }
+  const easing = states.filter(([, st]) => !st.stalled).map(([id]) => getExercise(id).name)
+  if (easing.length) {
+    const many = easing.length > 1
+    out.push(
+      `${wordList(easing)} ${many ? 'open' : 'opens'} lighter today. You came up short on ${many ? 'them' : 'it'} recently, and two clean sessions in a row puts ${many ? 'each' : 'it'} back to normal.`,
+    )
+  }
+  return out
 }

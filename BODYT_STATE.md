@@ -528,14 +528,11 @@ the pre-existing plans that genuinely have no record of what built them.
   prefsTypes.ts says "every field here is read somewhere, deliberately" and that is true and
   beside the point: a preference nobody can SET is the same silence from the other end.
   Fix needs a screen, so it sits with the UI/UX redesign lane.
-- **R3 s9.2's failing-flag escalation is still open (scoped 2026-08-20).** "If 2 clean
-  sessions never arrive within 6 exposures, escalate to plateau ladder rung 3." The LOAD
-  half of rung 3 already ships and is more aggressive than R3 asks: prescription.ts softens
-  a flagged movement via dropTo with a proportional 60% floor. The missing half is
-  "restart the range at its bottom", which is the rep-progression system (repStepFor and a
-  re-climb path), plus the fact that nothing currently notices a movement sitting flagged
-  for 6 exposures at all. It just stays softened, silently, forever. That is a slice of its
-  own rather than the tail of this one, and it is the next thing in the engines lane.
+- ~~R3 s9.2's failing-flag escalation~~ **DONE 2026-08-20**, slice 6. Kept here because the
+  finding underneath it is not closed: the failing flag was the ONLY automatic adjustment in
+  this app that never said why, and `FatigueSuggestion.because` had carried the sentence
+  since it was written with no reader at all. Worth asking of anything else that changes a
+  number: who renders the reason.
 - **One e2e flake, seen once, recorded rather than waved off (2026-08-19).**
   `settings.spec.ts:68` "the detour flag does not linger for the next visit" failed one
   full-suite run on the tree that merges W17 with OP4's anatomy figure, and passed in
@@ -2154,6 +2151,50 @@ the pre-existing plans that genuinely have no record of what built them.
   **poison 231/231**.
   NEXT: the failing-flag 6-exposure escalation (gaps ledger), then the R3 s9.2 rows nothing
   has touched yet: volume ceiling, rest change, schedule change, exercise variation.
+
+### 2026-08-20 · J8 slice 6 · the lift the lighter weight never rescued
+  R3 s9.2's last row I could close: "if 2 clean sessions never arrive within 6 exposures,
+  escalate to plateau ladder rung 3". Nothing noticed. A flagged movement was softened and
+  left there, silently, for as long as it took, while the coach repeated "two clean sessions
+  in a row puts it back to normal" every session having already watched six go by without
+  it. Advice the app has seen fail is not advice.
+  Rung 3 is back off AND re-climb. The load half already shipped (prescription.ts softens via
+  dropTo with a proportional floor); the re-climb was missing entirely, so the reps never
+  restarted at the bottom of the range and there was nothing to climb.
+  The flag walk counts exposures since it went up, and the session that RAISED the flag is
+  exposure ZERO rather than one: the six are the chances the softened prescription gets to
+  work, and the day it was written is not one of them. Off by one there is a whole extra
+  session of somebody grinding, so it has its own test and its own mutation. Two clean
+  sessions still clear the flag at any point, and a cleared flag has no exposures to
+  accumulate, so a movement that actually came back never stalls.
+  THE REVIEW PASS FOUND THE THING THAT UNDERCUT THE WHOLE SLICE. The failing flag was the
+  ONLY automatic adjustment in this app that never said why. It softens the load and now
+  restarts the range, and the athlete watched a squat go from 10 at 100 to 8 at 90 with
+  nothing on screen. `FatigueSuggestion.because` has carried the sentence since the day it
+  was written, its own comment reads "the evidence, in a sentence: an unexplained change
+  reads as a bug", and NOTHING has ever rendered it: prescription.ts is the only caller and
+  it reads `kind` alone. So the escalation I had just built would have been invisible.
+  engine/fatigue.ts owns the note now (flagNotes) and resolveDay puts it on the day through
+  the banner path that already explains the volume trim. Stalled movements get a line each;
+  the ordinary softening collapses into one, because one note per movement is how a bad
+  month turns the top of the screen into a wall of apology. Tested at the E2E level as well
+  as the unit level, deliberately: a unit test that calls the function is exactly the gap
+  that let two earlier slices ship an engine nothing invoked.
+  TWO MORE FROM THE SAME PASS. (1) The first version returned a fresh step for a stalled
+  movement and threw backOff and staleSteps away with it, quietly taking a load reduction
+  AWAY from the one lift going worst at the moment the app decided it was stuck. Only the
+  reps are overridden now. Rung 3 adds a lever, it does not spend one. (2) I wrote the
+  stalled sentence out twice, once on the suggestion and once on the note, which is the
+  same two-definitions smell this session has now fixed four times. One STALLED_LINE.
+  ALSO: resolveDay.ts hit 622 lines against the 600 cap, and the answer was to move the note
+  to the file that owns the flag rather than to raise the cap. plan/words.ts is the shared
+  list formatter, because adapt.ts and the new note had each grown their own join and
+  "shoulder, elbow" and "shoulder and elbow" both shipped depending which file you read.
+  Validation: tsc -b clean, **1,763/1,763 unit** (14 new), build green, sim 20 personas,
+  **92/92 e2e** (1 new), **poison 240/240 unit + 12/12 e2e** (9 new).
+  NEXT: the R3 s9.2 rows nothing has touched yet, in the pack's order: readiness downgrade,
+  volume ceiling raise and lower, rest change, schedule change, exercise variation, phase
+  promotion. The equipment-substitute default stays blocked on the owner (section 5).
 
 ## 10. SOURCES
 

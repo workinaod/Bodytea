@@ -5,6 +5,7 @@ import { loggedSessions } from './activityLog'
 import { EXERCISE_EQUIP, canDo } from '../plan/equip'
 import { MOVEMENT, sessionFatigue, substitutesFor, type Joint } from '../plan/movement'
 import { blockedIds, limitedJoints } from '../prefsTypes'
+import { wordList } from '../plan/words'
 // The reading half. Re-exported because "what happened" and "so what" are
 // one subject to everybody outside this pair, and moving a function should
 // not move every import in the app.
@@ -125,11 +126,7 @@ export interface AdaptContext {
 const can = (owned: Set<EquipTag>) => (id: string) => canDo(id, owned)
 
 /** "shoulder", "shoulder and elbow", "shoulder, elbow and wrist". */
-function jointList(joints: Joint[]): string {
-  const words = joints.map((j) => j.replace('-', ' '))
-  if (words.length <= 1) return words[0] ?? ''
-  return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`
-}
+const jointList = (joints: Joint[]) => wordList(joints.map((j) => j.replace('-', ' ')))
 
 /**
  * Everything that should change about a session, given what has actually

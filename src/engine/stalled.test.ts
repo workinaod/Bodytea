@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyAppData, type AppData } from '../types'
 import type { SessionLog } from '../sessionTypes'
-import { EXPOSURES_BEFORE_STALLED, nextSessionSuggestions, stalledLifts } from './fatigue'
+import { EXPOSURES_BEFORE_STALLED, flagNotes, nextSessionSuggestions, stalledLifts } from './fatigue'
 import { repStepFor } from './reps'
 
 // ============================================================
@@ -31,7 +31,7 @@ const WEEK = [
 ]
 const TODAY = '2026-03-03'
 
-function log(d: AppData, date: string, achieved: number): AppData {
+function log(d: AppData, date: string, achieved: number, rir?: number): AppData {
   d.sessions[date] = {
     date,
     templateId: 't',
@@ -39,6 +39,7 @@ function log(d: AppData, date: string, achieved: number): AppData {
     exercises: [
       {
         exerciseId: SQUAT,
+        ...(rir === undefined ? {} : { rir }),
         sets: [{ targetReps: '10', done: true, achieved, weightLb: 100 }],
       },
     ],
@@ -114,5 +115,70 @@ describe('what the athlete actually gets', () => {
       (s) => s.exerciseId === SQUAT && s.kind === 'start-lighter',
     )
     expect(said!.because).toContain('puts it back to normal')
+  })
+})
+
+describe('restarting the range adds a lever, it does not spend one', () => {
+  it('keeps the load back-off a stalled lift had already earned', () => {
+    // Caught in the slice 6 review. The first version returned a fresh
+    // step for a stalled movement and threw backOff away with it, so the
+    // one lift going worst quietly STOPPED getting its step down at the
+    // moment the app decided it was stuck. Rung 3 is back off AND
+    // re-climb, not re-climb instead of backing off.
+    let d = emptyAppData(TODAY, TODAY)
+    for (const date of WEEK.slice(0, 3)) d = log(d, date, SHORT)
+    LIMPING.forEach((a, i) => {
+      d = log(d, WEEK[3 + i], a)
+    })
+    // The most recent session fell short with nothing left in the tank,
+    // which is the exact pair that earns a step down.
+    d = log(d, WEEK[8], SHORT, 0)
+
+    const step = repStepFor(d, SQUAT, RANGE, TODAY)
+    expect(step.reps).toBe(RANGE.low) // still restarted
+    expect(step.backOff).toBe(true) // and still owed the weight back
+    expect(step.wrapped).toBe(false) // nothing wraps while it restarts
+  })
+})
+
+describe('the athlete is actually told', () => {
+  // Found in the slice 6 review, and it undercut the whole slice. The
+  // failing flag softens the load and now restarts the range, and
+  // NOTHING said why: FatigueSuggestion.because has carried the sentence
+  // since it was written, its own comment reads "an unexplained change
+  // reads as a bug", and prescription.ts (the only caller) reads `kind`
+  // alone. A squat went from 10 at 100 to 8 at 90 in silence.
+  const HERE = new Set([SQUAT])
+
+  it('says why a stalled movement restarted its range', () => {
+    const notes = flagNotes(history(LIMPING), TODAY, HERE)
+    expect(notes).toHaveLength(1)
+    expect(notes[0]).toContain('bottom of the range')
+  })
+
+  it('says why an ordinary flagged movement opens lighter', () => {
+    const notes = flagNotes(history(LIMPING.slice(0, 3)), TODAY, HERE)
+    expect(notes).toHaveLength(1)
+    expect(notes[0]).toContain('opens lighter today')
+    expect(notes[0]).toContain('back to normal')
+  })
+
+  it('says nothing about a movement that is not in today', () => {
+    // The flag is global; the note belongs to the day on screen.
+    expect(flagNotes(history(LIMPING), TODAY, new Set(['bench-press']))).toEqual([])
+  })
+
+  it('says nothing at all when nothing is flagged', () => {
+    expect(flagNotes(emptyAppData(TODAY, TODAY), TODAY, HERE)).toEqual([])
+  })
+
+  it('writes the stalled sentence once, not once per place it appears', () => {
+    // Two copies of a sentence drift, and a coach that says almost the
+    // same thing in two places reads as two coaches.
+    const note = flagNotes(history(LIMPING), TODAY, HERE)[0]
+    const said = nextSessionSuggestions(history(LIMPING), TODAY).find(
+      (x) => x.exerciseId === SQUAT && x.kind === 'start-lighter',
+    )!
+    expect(note.endsWith(said.because)).toBe(true)
   })
 })

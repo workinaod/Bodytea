@@ -25,6 +25,7 @@ import { phaseFor, phaseNote } from './phase'
 import { trimToFit, type VolumeCut } from './volume'
 import { capAccessorySets, orderSession } from './sequence'
 import { parseRepRange, repLabel } from './reps'
+import { flagNotes } from './fatigue'
 import { EXERCISES, getExercise } from '../plan/exercises'
 import { cardioActivity } from '../plan/cardio'
 import { isAthleteAuthored } from '../plan/bookletOps'
@@ -507,6 +508,13 @@ export function resolveDay(dateISO: ISODate, data: AppData): ResolvedDay {
     // Re-sequenced: a substitute inherits a slot it may not belong in.
     exercises = orderSession(adapted.exercises)
     adapted.notes.forEach((text, i) => banners.push({ id: `adapted-${i}`, text, tone: 'info' }))
+
+    // The failing flag was the only automatic adjustment in this app that
+    // never said why. engine/fatigue.ts owns the flag, the copy and now
+    // the note; this end just puts them on the day.
+    flagNotes(data, dateISO, new Set(exercises.map((e) => e.exerciseId))).forEach((text, i) =>
+      banners.push({ id: `flag-${i}`, text, tone: 'info' }),
+    )
   }
 
   // --- One rep number, never a range. LAST, after every decision ---
