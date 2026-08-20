@@ -71,7 +71,28 @@ test("a make-up leaves today's own session on the table", async ({ page }) => {
   await expect(gate).toBeVisible()
   await gate.getByRole('button').last().click()
 
+  // The debrief opens over the day; read it and close it.
+  const debrief = page.getByRole('dialog', { name: 'Session debrief' })
+  if (await debrief.isVisible().catch(() => false)) {
+    await debrief.getByRole('button', { name: 'Done', exact: true }).click()
+  }
+
   // THE BUG: from here the day read as done and Thursday's own work was gone.
-  await expect(page.getByRole('button', { name: /Start today's session/ })).toBeVisible({ timeout: 10_000 })
+  // Nothing on this screen may claim the day is finished.
+  await expect(page.getByText('Today is not done.')).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText('Session complete.')).toHaveCount(0)
   await expect(page.getByText(/still on the table/)).toBeVisible()
+
+  // Thursday's own workout is named, and startable.
+  const start = page.getByRole('button', { name: /Start today's session|Readiness check/ })
+  await expect(start).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Mobility + Active Recovery' })).toBeVisible()
+
+  // And the button does what it says: the day is running again, on today's
+  // own workout, with the make-up's work still on the record beside it.
+  await start.click()
+  const full = page.getByRole('button', { name: /^Full session/ })
+  if (await full.isVisible().catch(() => false)) await full.click()
+  await expect(page.getByRole('button', { name: /Finish session|☰ list/ }).first()).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByRole('heading', { name: 'Mobility + Active Recovery' })).toBeVisible()
 })

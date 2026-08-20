@@ -67,9 +67,14 @@ export function TodayScreen() {
   const day = useMemo(() => resolveDay(date, data), [date, data])
   const session = data.sessions[date]
   // A make-up session runs a MISSED day's workout on a rest day, the
-  // views need that day's resolution, not the rest day's empty one.
+  // views need that day's resolution, not the rest day's empty one. Only
+  // until today's own session is started, though: after that the log holds
+  // both workouts and the day is the athlete's own again.
   const viewDay = useMemo(
-    () => (session?.makeupFor ? resolveDay(session.makeupFor, data) : day),
+    () =>
+      session?.makeupFor && session.ownPlanStarted !== true
+        ? resolveDay(session.makeupFor, data)
+        : day,
     [session, day, data],
   )
   // What today IS, explained: the session if one is running (custom work

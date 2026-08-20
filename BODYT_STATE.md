@@ -281,6 +281,7 @@ v12 against this repo, and all evidence for this file, is in the dashboard artif
 | OP7 | Period reviews (owner request): a Wrapped-style review when a week, month, quarter or year closes, with progression, highlights, goals accomplished and a cohort comparison; the week always asks for front and side photos, the quarter and year show the first photo next to the latest | product | **done + LIVE 2026-08-20** (deploy 9a70b5d, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
 | OP8 | A make-up never eats the day it runs on (owner bug report, the third door): startSession merges instead of overwriting, and Today offers the day's own session while the plan's work is still owed | product | **done + LIVE 2026-08-20** (deploy a24ef44, live bundle verified byte-identical by sha256) | OP6 | off-plan training session |
 | OP9 | The day knows whether ITS OWN workout has been started (owner: "the day is still closed"): SessionLog.ownPlanStarted, because an A/B week repeats a template and the movements alone cannot tell a make-up from today's session; plus the hero naming today rather than the day that was made up | product | **done + LIVE 2026-08-20** (deploy 9b355c5, live bundle verified byte-identical by sha256) | OP8 | off-plan training session |
+| OP10 | Nothing claims the day is done while today's workout is owed (owner: "bro why is it still closed"): the finished-day card stops grading the day and says "Today is not done", and the hero stops naming the made-up day once today's session is running | product | **done 2026-08-20** | OP9 | off-plan training session |
 | R6 | Safety boundaries + functional constraints pack | research | **synthesized 2026-08-18** (research/R6-safety.md; PAR-Q+ 2025 verbatim, ACSM algorithm, 28 adversarial cases, SafetyRule shape) | J1 | product lane, with J3/J6 |
 | R2 | Bodyweight progression standards (rep thresholds, chain-order check) | research | **done 2026-08-18** (inside J2: rep-gain floor of +2 on the max set, GAIN_TO_PROMOTE percentage kept; chains already skill-gated in nextUp, unchanged) | J1 | engines lane |
 | R1 | Nutrition evidence pack | research | **synthesized 2026-08-18** (research/R1-nutrition.md; 28 sources, model-selection rule, 14 eval cases, NutritionRule shape) | J1 | engines lane, start of J7 |
@@ -1702,6 +1703,32 @@ the pre-existing plans that genuinely have no record of what built them.
   longer closes on work that was not today's, and every door adds instead of replacing, but
   two sessions on one day each carrying their own grade is still not representable. Nothing
   reported so far needs it.
+- **2026-08-20 · OP10 · Off-plan training session (owner, on OP9: "bro why is it still
+  closed").** The screenshot with that message showed the fix WORKING: the hero read "Lower
+  Strength + Hypertrophy" (today's, correct) and **"Start today's session" was right there**.
+  What it also showed, in celebration lime at the bottom, was **"Full session on a downgraded
+  day. Honestly logged."** The day was open and the card still stamped it closed, so the app
+  was arguing with itself and the owner believed the card. That is the app's fault, not the
+  reader's: a completion stamp outranks a button.
+  `DayDoneCard` now has two modes. While today's own workout is owed it does not grade the
+  day at all: first line **"Today is not done."** in accent, then what actually ran ("What is
+  logged is Wednesday, Aug 12's make-up, not today's workout"), then the workout still owed
+  by name, then the honest small print ("Banked so far: Full session."). Only a day that owes
+  nothing gets the lime stamp.
+  Also fixed, found by screenshotting the flow through instead of stopping at the card: once
+  today's own session HAS been started, the hero went back to naming the made-up day, because
+  `viewDay` keyed off `makeupFor` alone. It now stops overriding once `ownPlanStarted` is
+  true, so a merged day is titled by today.
+  The e2e now drives the whole loop rather than the first assertion: no "Session complete."
+  anywhere, "Today is not done." present, today's workout named, the Start button TAPPED, and
+  the day running again on today's own workout with the make-up's work still on the record.
+  LESSON, worth keeping: three rounds of this bug were reported and two of my fixes were
+  correct underneath and invisible on screen. **The tell the owner gave is the right one:
+  screenshot the day and check it can be started.** Passing tests over a screen that says
+  "logged" is not a fixed bug.
+  Validation: typecheck clean, **1,643/1,643 unit**, build green, **e2e 89 passed / 0
+  failed**, 390px screenshots of both the open day and the restarted session reviewed.
+  NEXT: unchanged. J3 (product), J7 (engines), C1 (cloud) are the open lane heads.
 
 ## 10. SOURCES
 
